@@ -6,6 +6,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "RelicRunners/Inventory/InventoryComponent.h"
+#include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
 
 AAresCharacter::AAresCharacter()
@@ -172,6 +173,21 @@ void AAresCharacter::GiveUltimateAbilities()
 		// start ability cooldown
 		//AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
 	}
+}
+
+void AAresCharacter::OnLevelUp()
+{
+	Super::OnLevelUp();
+
+	UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Greatsword");
+	Item->ItemData.Level++;
+	Item->ItemData.Health += FMath::RandRange(1, 5);
+	Item->ItemData.Armor += FMath::RandRange(1, 3);
+	Item->ItemData.Strength += FMath::RandRange(0, 1);
+	Item->ItemData.Intelligence += FMath::RandRange(0, 1);
+	Item->ItemData.Dexterity += FMath::RandRange(0, 1);
+	Inventory->RefreshEquippedUI();
+	InventoryComponent->UpdateTotalEquippedStats(this);
 }
 
 

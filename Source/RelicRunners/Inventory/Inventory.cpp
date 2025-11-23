@@ -235,7 +235,7 @@ void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemT
     {
         Components.Image->SetBrushFromTexture(Item->ItemData.Icon, true);
         FVector2D NewSize(75.f, 75.f);
-        Components.Image->SetBrushSize(NewSize);
+        Components.Image->SetDesiredSizeOverride(NewSize);
     }
 
     Components.LevelText->SetVisibility(ESlateVisibility::Visible);

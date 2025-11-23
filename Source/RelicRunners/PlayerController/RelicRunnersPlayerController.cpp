@@ -196,7 +196,7 @@ void ARelicRunnersPlayerController::UpdatePreviewItemVisual(UObject* MeshAsset, 
 	if (!PlayerPreviewInstance) return;
 
 	// Set or clear the mesh on the preview actor based on asset type
-	if (ItemType == "Mainhand" || ItemType == "Offhand")
+	if (ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Staff" || ItemType == "Bow" || ItemType == "Offhand")
 	{
 		PlayerPreviewInstance->SetPreviewMeshByItemType(ItemType, Cast<UStaticMesh>(MeshAsset));
 	}

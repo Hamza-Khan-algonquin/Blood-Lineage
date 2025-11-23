@@ -106,7 +106,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
 
     for (const FStatInfo& Stat : Stats)
     {
-        if (Stat.Value == 0 && Stat.Label != "Gold")
+        if (Stat.Value == 0 && Stat.Label != "Gold" )
         {
             Stat.HoveredBox->SetVisibility(ESlateVisibility::Collapsed);
             Stat.HoveredBorder->SetVisibility(ESlateVisibility::Collapsed);
@@ -129,6 +129,15 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
                 Stat.HoveredText->SetText(FText::FromString(FString::FromInt(Stat.Value)));
                 Stat.HoveredText->SetColorAndOpacity(FLinearColor(1, 1, 0.3, 1));
                 Stat.HoveredBorder->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f, 1));
+
+                if (HoveredItem->ItemData.ItemType == "Greatsword"
+                    || HoveredItem->ItemData.ItemType == "Sword"
+                    || HoveredItem->ItemData.ItemType == "Staff"
+                    || HoveredItem->ItemData.ItemType == "Bow")
+                {
+                    Stat.HoveredBox->SetVisibility(ESlateVisibility::Collapsed);
+                    Stat.HoveredBorder->SetVisibility(ESlateVisibility::Collapsed);
+                }
             }
         }
 
@@ -189,7 +198,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
                 
                 if (Stat.ComparisonTextValue != nullptr)
                 {
-                    Stat.ComparisonTextValue->SetText(FText::FromString("*"));
+                    Stat.ComparisonTextValue->SetText(FText::FromString("--"));
                     Stat.ComparisonTextValue->SetColorAndOpacity(FLinearColor(1,0.5f,0,1));
                 }
             }

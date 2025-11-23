@@ -1,11 +1,13 @@
 #include "ModeSelectionWidget.h"
 #include "MainMenuWidget.h"
 #include "Components/Button.h"
+#include "Components/TileView.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "Components/EditableTextBox.h"
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
+#include "SaveFileListData.h"
 
 
 void UModeSelectionWidget::NativeConstruct()
@@ -37,29 +39,27 @@ void UModeSelectionWidget::NativeConstruct()
 		CreditsButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::CreditsButtonClicked);
 	}
 
+	if (CreditsButton)
+	{
+		ExitButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::ExitButtonClicked);
+	}
+
 	if (NameTextBox)
 	{
 		NameTextBox->OnTextChanged.AddDynamic(this, &UModeSelectionWidget::OnPlayerNameTextChanged);
 	}
 
 	MaxCharacterLimit = 12;
-}
 
-//void UModeSelectionWidget::SetSaveFileName(int index, FString Name)
-//{
-//	switch (index)
-//	{
-//	case 0:
-//		SavefileName0->SetText(FText::FromString(Name));
-//		break;
-//	case 1:
-//		SavefileName1->SetText(FText::FromString(Name));
-//		break;
-//	case 2:
-//		SavefileName2->SetText(FText::FromString(Name));
-//		break;
-//	}
-//}
+	USaveFileListData* NewSave = NewObject<USaveFileListData>();
+
+	if (NewSave)
+	{
+		NewSave->ParentWidget = this;
+		NewSave->bIsEmptySlot = true;
+		SaveFiles->AddItem(NewSave);
+	}
+}
 
 void UModeSelectionWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
 {
@@ -143,6 +143,11 @@ void UModeSelectionWidget::CreditsButtonClicked()
 		}
 		ParentMenu->ShowCreditsWidget();
 	}
+}
+
+void UModeSelectionWidget::ExitButtonClicked()
+{
+	
 }
 
 void UModeSelectionWidget::TutorialButtonClicked()

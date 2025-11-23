@@ -631,7 +631,7 @@ void ARelicRunnersCharacter::SpawnStarterItems()
 	{
 		for (int i = 0; i < 50; ++i)
 		{
-			UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(100, ItemStats::GetRandomItemType(), ItemMeshData), InventoryComponent);
+			UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, ItemStats::GetRandomItemType(), ItemMeshData), InventoryComponent);
 			InventoryComponent->AddItem(Item);
 		}
 	}

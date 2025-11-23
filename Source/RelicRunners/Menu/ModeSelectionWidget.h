@@ -24,25 +24,14 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* TutorialButton = nullptr;
-
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UTileView* SaveFiles;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* CreditsButton = nullptr;
-
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UButton* ExitButton = nullptr;
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	class UEditableTextBox* NameTextBox = nullptr;
-
-
-	//UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	//class UTextBlock* SavefileName0 = nullptr;
-
-	//UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	//class UTextBlock* SavefileName1 = nullptr;
-
-	//UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	//class UTextBlock* SavefileName2 = nullptr;
-
-	//UFUNCTION(BlueprintCallable)
-	//void SetSaveFileName(int index, FString Name);
 
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 
@@ -60,7 +49,8 @@ protected:
 	void TutorialButtonClicked();
 	UFUNCTION()
 	void UpgradesButtonClicked();
-
+	UFUNCTION()
+	void ExitButtonClicked();
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
 

@@ -38,4 +38,28 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_LinkedPlayerState)
 	class ARelicRunnersPlayerState* LinkedPlayerState;
+
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* UpperMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* HelmetMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* LowerMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* ArmsMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* NecklaceMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* MainhandItemMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* OffhandItemMesh;
+	FString GetMeshPathByItemType(const FString& ItemType);
+	UStaticMeshComponent* GetStaticMeshComponentByItemType(const FString& ItemType);
+	void SetPreviewMeshByItemType(const FString& ItemType, UObject* MeshAsset);
 };

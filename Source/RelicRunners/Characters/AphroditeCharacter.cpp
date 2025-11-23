@@ -6,6 +6,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "RelicRunners/Inventory/InventoryComponent.h"
+#include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
 
 AAphroditeCharacter::AAphroditeCharacter()
@@ -117,6 +118,19 @@ void AAphroditeCharacter::GiveUltimateAbilities()
 		// start ability cooldown
         //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
     }
+}
+
+void AAphroditeCharacter::OnLevelUp()
+{
+    Super::OnLevelUp();
+
+    UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Staff");
+    Item->ItemData.Level++;
+    Item->ItemData.Dexterity += FMath::RandRange(0, 1);
+    Item->ItemData.Strength += FMath::RandRange(0, 1);
+    Item->ItemData.Intelligence += FMath::RandRange(2, 5);
+    Inventory->RefreshEquippedUI();
+    InventoryComponent->UpdateTotalEquippedStats(this);
 }
 
 

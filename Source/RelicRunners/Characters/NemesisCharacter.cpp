@@ -3,6 +3,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "RelicRunners/Inventory/InventoryComponent.h"
+#include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
 
 ANemesisCharacter::ANemesisCharacter()
@@ -138,5 +139,16 @@ void ANemesisCharacter::GiveUltimateAbilities()
     }
 }
 
+void ANemesisCharacter::OnLevelUp()
+{
+    Super::OnLevelUp();
 
+    UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Sword");
+    Item->ItemData.Level++;
+    Item->ItemData.Strength += FMath::RandRange(1, 5);
+    Item->ItemData.Intelligence += FMath::RandRange(0, 1);
+    Item->ItemData.Dexterity += FMath::RandRange(1, 3);
+    Inventory->RefreshEquippedUI();
+    InventoryComponent->UpdateTotalEquippedStats(this);
+}
 
