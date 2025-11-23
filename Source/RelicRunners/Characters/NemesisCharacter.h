@@ -21,6 +21,9 @@ public:
 
     void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    class UClassInfo* ClassInfo;
+
 protected:
     virtual void BeginPlay() override;
 

@@ -60,7 +60,6 @@ void UInventory::NativeConstruct()
     if (B_Upper) B_Upper->OnClicked.AddDynamic(this, &UInventory::UpperSlotClicked);
     if (B_Lower) B_Lower->OnClicked.AddDynamic(this, &UInventory::LowerSlotClicked);
     if (B_Mainhand) B_Mainhand->OnClicked.AddDynamic(this, &UInventory::MainhandSlotClicked);
-    if (B_Offhand) B_Offhand->OnClicked.AddDynamic(this, &UInventory::OffhandlotClicked);
     if (B_Necklace) B_Necklace->OnClicked.AddDynamic(this, &UInventory::NecklaceSlotClicked);
     if (B_SortingType) B_SortingType->OnClicked.AddDynamic(this, &UInventory::SortingTypeClicked);
     
@@ -159,7 +158,7 @@ void UInventory::RefreshEquippedUI()
 {
     TArray<FString> AllItemTypes = {
         "Helmet", "Upper", "Lower", "Arms",
-        "Necklace", "Shield", "Sword"
+        "Necklace", "Greatsword", "Sword", "Staff", "Bow"
     };
 
     for (const FString& Type : AllItemTypes)
@@ -203,8 +202,10 @@ UInventory::FSlotUIComponents UInventory::GetUIComponentsForItemType(const FStri
     if (ItemType == "Upper") return { B_Upper, I_Upper, TB_LevelUpper };
     if (ItemType == "Lower") return { B_Lower, I_Lower, TB_LevelLower };
     if (ItemType == "Necklace") return { B_Necklace, I_Necklace, TB_LevelNecklace };
-    if (ItemType == "Shield") return { B_Offhand, I_Offhand, TB_LevelOffhand };
+    if (ItemType == "Greatsword") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
     if (ItemType == "Sword") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
+    if (ItemType == "Bow") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
+    if (ItemType == "Staff") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
 
     return { nullptr, nullptr, nullptr };
 }
@@ -230,6 +231,13 @@ void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemT
     Components.Button->SetColorAndOpacity(Tint);
 
     Components.Image->SetColorAndOpacity(FLinearColor(1, 1, 1, Opacity));
+    if (Item && Item->ItemData.Icon)
+    {
+        Components.Image->SetBrushFromTexture(Item->ItemData.Icon, true);
+        FVector2D NewSize(75.f, 75.f);
+        Components.Image->SetBrushSize(NewSize);
+    }
+
     Components.LevelText->SetVisibility(ESlateVisibility::Visible);
 
     if (Item)
@@ -414,12 +422,7 @@ void UInventory::NecklaceSlotClicked()
 
 void UInventory::MainhandSlotClicked()
 {
-    OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Sword"));
-}
-
-void UInventory::OffhandlotClicked()
-{
-    OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Shield"));
+    //OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Mainhand"));
 }
 
 void UInventory::SortingTypeClicked()
@@ -599,7 +602,7 @@ void UInventory::OnFuseButtonPressed()
     FString NewType = ForgeItemLeft->ItemData.ItemType;
     int NewLevel = FMath::RandRange(ForgeItemLeft->ItemData.Level, ForgeItemRight->ItemData.Level);
     FItemData NewItemData = ItemStats::CreateSpecificItemData(NewLevel, NewType, NewRarity, OwningCharacter->ItemMeshData);
-    UItemObject* NewItem = ItemStats::CreateItemFromData(NewItemData);
+    UItemObject* NewItem = ItemStats::CreateItemFromData(NewItemData, InventoryComponent);
 
     //Clear forge items from inventory and UI
     ForgeItemLeft = nullptr;

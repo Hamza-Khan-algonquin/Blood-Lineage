@@ -144,8 +144,7 @@ USkeletalMeshComponent* APlayerPreview::GetSkeletalMeshComponentByItemType(const
 
 UStaticMeshComponent* APlayerPreview::GetStaticMeshComponentByItemType(const FString& ItemType)
 {
-	if (ItemType == "Sword") return MainhandItemMesh;
-	if (ItemType == "Shield") return OffhandItemMesh;
+	if (ItemType == "Mainhand") return MainhandItemMesh;
 	return nullptr;
 }
 
@@ -176,12 +175,12 @@ void APlayerPreview::SetPreviewMeshByItemType(const FString& ItemType, UObject* 
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
 		if (NecklaceMesh && Mesh) NecklaceMesh->SetSkeletalMesh(Mesh);
 	}
-	else if (ItemType == "Sword" || ItemType == "Mainhand")
+	else if (ItemType == "Mainhand")
 	{
 		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
 		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
 	}
-	else if (ItemType == "Shield" || ItemType == "Offhand")
+	else if (ItemType == "Offhand")
 	{
 		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
 		if (OffhandItemMesh && Mesh) OffhandItemMesh->SetStaticMesh(Mesh);

@@ -176,7 +176,7 @@ void ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems()
 		const FString MeshPath = Char->GetMeshPathByItemType(ItemType);
 
 		UObject* LoadedMesh = nullptr;
-		if (ItemType == "Sword" || ItemType == "Shield")
+		if (ItemType == "Staff" || ItemType == "Sword" || ItemType == "Greatsword"  || ItemType == "Bow" || ItemType == "Offhand")
 		{
 			LoadedMesh = StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *MeshPath);
 		}
@@ -196,7 +196,7 @@ void ARelicRunnersPlayerController::UpdatePreviewItemVisual(UObject* MeshAsset, 
 	if (!PlayerPreviewInstance) return;
 
 	// Set or clear the mesh on the preview actor based on asset type
-	if (ItemType == "Sword" || ItemType == "Shield")
+	if (ItemType == "Mainhand" || ItemType == "Offhand")
 	{
 		PlayerPreviewInstance->SetPreviewMeshByItemType(ItemType, Cast<UStaticMesh>(MeshAsset));
 	}

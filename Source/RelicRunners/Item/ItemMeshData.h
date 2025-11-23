@@ -27,6 +27,9 @@ class UItemMeshData : public UDataAsset
 
 public:
     UPROPERTY(EditDefaultsOnly, Category = "Meshes") UStaticMesh* SwordMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Meshes") UStaticMesh* GreatswordMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Meshes") UStaticMesh* BowMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Meshes") UStaticMesh* StaffMesh;
     UPROPERTY(EditDefaultsOnly, Category = "Meshes") UStaticMesh* ShieldMesh;
     UPROPERTY(EditDefaultsOnly, Category = "Meshes") UStaticMesh* LowerMesh;
     UPROPERTY(EditDefaultsOnly, Category = "Meshes") UStaticMesh* UpperMesh;

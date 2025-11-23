@@ -108,8 +108,6 @@ public:
 	UFUNCTION()
 	void MainhandSlotClicked();
 	UFUNCTION()
-	void OffhandlotClicked();
-	UFUNCTION()
 	void SortingTypeClicked();
 	UFUNCTION()
 	void OnFuseButtonPressed();
@@ -211,8 +209,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_Mainhand;
 	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Offhand;
-	UPROPERTY(meta = (BindWidget))
 	class UButton* B_SortingType;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_SortingType;
@@ -229,8 +225,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_LevelMainhand;
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_LevelOffhand;
-	UPROPERTY(meta = (BindWidget))
 	class UImage* I_PlayerPreview;
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_Helmet;
@@ -244,8 +238,6 @@ public:
 	class UImage* I_Arms;
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_Mainhand;
-	UPROPERTY(meta = (BindWidget))
-	class UImage* I_Offhand;
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* EquippedCanvas;
 	

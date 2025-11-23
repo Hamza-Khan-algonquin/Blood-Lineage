@@ -39,6 +39,13 @@ public:
 
 	//UI Elements
 	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelEquip;
+
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_LevelTooltip;
 
 	UPROPERTY(meta = (BindWidget))
@@ -114,9 +121,6 @@ public:
 	class UTextBlock* TB_GoldTooltip_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_GoldTooltip_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_FromWhere;
 
 	UPROPERTY(meta = (BindWidget))
@@ -147,9 +151,6 @@ public:
 	class UBorder* B_Gold_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Gold_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_FromWhere;
 
 	UPROPERTY(meta = (BindWidget))
@@ -174,9 +175,6 @@ public:
 	class UHorizontalBox* HB_Gold_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* HB_Gold_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_LevelTooltip_1;
 
 	UPROPERTY(meta = (BindWidget))
@@ -189,37 +187,19 @@ public:
 	class UTextBlock* TB_HealthTooltip_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_HealthTooltip_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_ArmorTooltip_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_ArmorTooltip_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_DexterityTooltip_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_DexterityTooltip_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_StrengthTooltip_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_StrengthTooltip_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_IntelligenceTooltip_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_IntelligenceTooltip_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_FromWhere_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_FromWhere_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Rarity_1;
@@ -231,71 +211,35 @@ public:
 	class UBorder* B_Health_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Health_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Armor_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Armor_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Dexterity_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Dexterity_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Strength_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Strength_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Intelligence_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Intelligence_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_FromWhere_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_FromWhere_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Equipped;
 
 	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Comparison;
-
-	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* HB_Health_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* HB_Health_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* HB_Armor_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* HB_Armor_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* HB_Dexterity_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* HB_Dexterity_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* HB_Strength_1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* HB_Strength_2;
-
-	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* HB_Intelligence_1;
-
-	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* HB_Intelligence_2;
 };

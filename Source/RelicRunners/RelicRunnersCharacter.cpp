@@ -161,7 +161,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	//Health
 	PlayerStartingMaxHealth = 100;
 	PlayerMaxHealth = PlayerStartingMaxHealth;
-	PlayerHealth = 20;
+	PlayerHealth = PlayerMaxHealth;
 	//Resource
 	PlayerStartingMaxResource = 100;
 	PlayerMaxResource = PlayerStartingMaxResource;
@@ -234,14 +234,10 @@ void ARelicRunnersCharacter::Server_EquipItemByID_Implementation(FGuid ID)
 {
 	if (!InventoryComponent) return;
 
-	UItemObject** ItemPtr = InventoryComponent->InventoryItems.FindByPredicate([&](UItemObject* Obj)
-		{
-			return Obj && Obj->ItemData.UniqueID == ID;
-		});
+	UItemObject* Item = InventoryComponent->FindItemByID(ID);
 
-	if (ItemPtr && *ItemPtr)
+	if (Item)
 	{
-		UItemObject* Item = *ItemPtr;
 		InventoryComponent->EquipItem(Item);
 		UpdateItemVisuals(Item);
 		InventoryComponent->UpdateTotalEquippedStats(this);
@@ -351,12 +347,12 @@ void ARelicRunnersCharacter::SetReplicatedMeshByItemType(UObject* MeshAsset, con
 		ReplicatedNecklaceMesh = Cast<USkeletalMesh>(MeshAsset);
 		OnRep_NecklaceMesh();
 	}
-	else if (ItemType == "Sword" || ItemType == "Mainhand")
+	else if (ItemType == "Greatsword" || ItemType == "Bow" || ItemType == "Sword" || ItemType == "Staff")
 	{
 		ReplicatedMainhandMesh = Cast<UStaticMesh>(MeshAsset);
 		OnRep_MainhandMesh();
 	}
-	else if (ItemType == "Shield" || ItemType == "Offhand")
+	else if (ItemType == "Offhand")
 	{
 		ReplicatedOffhandMesh = Cast<UStaticMesh>(MeshAsset);
 		OnRep_OffhandMesh();
@@ -635,7 +631,7 @@ void ARelicRunnersCharacter::SpawnStarterItems()
 	{
 		for (int i = 0; i < 50; ++i)
 		{
-			UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, ItemStats::GetRandomItemType(), ItemMeshData), InventoryComponent);
+			UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(100, ItemStats::GetRandomItemType(), ItemMeshData), InventoryComponent);
 			InventoryComponent->AddItem(Item);
 		}
 	}
@@ -757,7 +753,7 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 
 	for (const FHitResult& Hit : Hits)
 	{
-		DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 12, FColor::Red, false, 1.0f);
+		//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 12, FColor::Red, false, 1.0f);
 		if (AActor* HitActor = Hit.GetActor())
 		{
 			if (!AlreadyHitActors.Contains(HitActor))
@@ -777,7 +773,7 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 		}
 	}
 
-	DrawDebugLine(GetWorld(), Start, End, FColor::Cyan, false, 0.1f, 0, 2.0f);
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Cyan, false, 0.1f, 0, 2.0f);
 
 }
 
@@ -797,7 +793,10 @@ void ARelicRunnersCharacter::BasicAttack()
 	{
 		return;
 	}
-	if (InventoryComponent->GetEquippedItemByType("Sword"))
+	if (InventoryComponent->GetEquippedItemByType("Greatsword")
+		|| InventoryComponent->GetEquippedItemByType("Sword")
+		|| InventoryComponent->GetEquippedItemByType("Staff")
+		|| InventoryComponent->GetEquippedItemByType("Bow"))
 	{
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (!AnimInstance) return;
@@ -1115,7 +1114,7 @@ void ARelicRunnersCharacter::Server_BuyItem_Implementation(const FItemData& Item
 
 	if (!CheckEnoughGold(ItemData.Gold)) return;
 
-	UItemObject* NewItem = ItemStats::CreateItemFromData(ItemData);
+	UItemObject* NewItem = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
 	InventoryComponent->AddItem(NewItem);
 	Vendor->RemoveStock(ItemData);
 
@@ -1276,7 +1275,7 @@ void ARelicRunnersCharacter::Server_PickupItem_Implementation(AItemActor* Target
 
 void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType)
 {
-	if (ItemType == "Sword" || ItemType == "Shield")
+	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff" || ItemType == "Offhand")
 	{
 		if (UStaticMeshComponent* TargetMesh = GetStaticMeshComponentByItemType(ItemType))
 		{
@@ -1301,7 +1300,7 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UItemObject* Item)
 	const FString& ItemType = Item->ItemData.ItemType;
 	const FString MeshPath = GetMeshPathByItemType(ItemType);
 
-	if (ItemType == "Sword" || ItemType == "Shield")
+	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow")
 	{
 		if (UStaticMesh* LoadedMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath))
 		{
@@ -1369,7 +1368,7 @@ USkeletalMeshComponent* ARelicRunnersCharacter::GetSkeletalMeshComponentByItemTy
 
 UStaticMeshComponent* ARelicRunnersCharacter::GetStaticMeshComponentByItemType(const FString& ItemType)
 {
-	if (ItemType == "Sword") return MainhandItemMesh;
-	if (ItemType == "Shield") return OffhandItemMesh;
+	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow") return MainhandItemMesh;
+	if (ItemType == "Offhand") return OffhandItemMesh;
 	return nullptr;
 }

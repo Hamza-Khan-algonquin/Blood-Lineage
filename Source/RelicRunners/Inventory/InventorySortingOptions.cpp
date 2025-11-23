@@ -74,7 +74,8 @@ void UInventorySortingOptions::NativeTick(const FGeometry& MyGeometry, float InD
 
 void UInventorySortingOptions::CloseAnyOpenPopup()
 {
-	if (CurrentPopup && CurrentPopup->IsInViewport())
+	if (!CurrentPopup) return;
+	if (CurrentPopup->IsInViewport())
 	{
 		CurrentPopup->RemoveFromParent();
 		CurrentPopup = nullptr;

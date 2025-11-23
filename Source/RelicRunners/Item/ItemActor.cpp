@@ -157,7 +157,7 @@ void AItemActor::SetupVisuals()
 
     static const TMap<FString, FVector> ItemScaleMap = {
         { "Lower", FVector(1.50f) }, { "Upper", FVector(1.75f) },
-        { "Shield", FVector(0.4f) }, { "Sword", FVector(2.0f) }, 
+        { "Mainhand", FVector(2.0f) }, 
         { "Helmet", FVector(3.0f) }, { "Arms", FVector(2.5f) }, 
         { "Necklace", FVector(3.25f) },
     };

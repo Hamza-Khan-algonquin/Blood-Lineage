@@ -4,6 +4,9 @@
 #include "AresCharacter.h"
 #include "RelicRunners/AbilitySystem/AbilityPointCounter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include <RelicRunners/Item/ItemStats.h>
+#include "RelicRunners/Inventory/InventoryComponent.h"
+#include <RelicRunners/Classes/ClassInfo.h>
 
 AAresCharacter::AAresCharacter()
 {
@@ -23,6 +26,24 @@ void AAresCharacter::BeginPlay()
 	{
 		// Give Earthquake ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UEarthquakeAbility::StaticClass(), 1, 0));
+	}
+
+	//Starting Weapon
+	UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, "Greatsword", "Common", ItemMeshData), InventoryComponent);
+	InventoryComponent->AddItem(Item);
+	Server_EquipItemByID(Item->ItemData.UniqueID);
+
+	//Starting Stats
+	if (ClassInfo)
+	{
+		FClassData Stats = ClassInfo->GetStats("Ares");
+		SetPlayerStartingHealth(Stats.Health);
+		PlayerMaxHealth = Stats.Health;
+		PlayerHealth = Stats.Health;
+		SetPlayerStartingArmor(Stats.Armor);
+		SetPlayerStartingStrength(Stats.Strength);
+		SetPlayerStartingDexterity(Stats.Dexterity);
+		SetPlayerStartingIntelligence(Stats.Intelligence);
 	}
 }
 

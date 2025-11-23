@@ -87,8 +87,7 @@ public:
     static FString GetRandomItemType()
     {
         static const TArray<FString> ItemTypes = {
-            "Helmet", "Arms", "Upper", "Lower",
-            "Sword", "Shield", "Necklace"
+            "Helmet", "Arms", "Upper", "Lower", "Necklace"
         };
 
         return ItemTypes[FMath::RandRange(0, ItemTypes.Num() - 1)];
@@ -104,13 +103,6 @@ public:
         }
 
         UItemObject* Item = NewObject<UItemObject>(Outer);
-        Item->SetItemData(ItemData);
-        return Item;
-    }
-
-    static UItemObject* CreateItemFromData(const FItemData& ItemData)
-    {
-        UItemObject* Item = NewObject<UItemObject>();
         Item->SetItemData(ItemData);
         return Item;
     }
@@ -136,8 +128,7 @@ public:
         float Max = BaseMax * ItemData.Level * Multiplier;
 
         TSet<FString> ArmorTypes = { "Helmet", "Upper", "Lower", "Arms" };
-        TSet<FString> WeaponTypes = { "Sword" };
-        TSet<FString> ShieldTypes = { "Shield" };
+        TSet<FString> WeaponTypes = { "Greatsword", "Bow", "Sword", "Staff"};
         TSet<FString> MixedTypes = { "Necklace" };
 
         if (ArmorTypes.Contains(ItemData.ItemType))
@@ -151,16 +142,7 @@ public:
         }
         else if (WeaponTypes.Contains(ItemData.ItemType))
         {
-            ItemData.Dexterity = FMath::RoundToInt(FMath::FRandRange(Min, Max * 1.5f));
-            ItemData.Strength = FMath::RoundToInt(FMath::FRandRange(Min, Max * 1.5f));
-            ItemData.Intelligence = FMath::RoundToInt(FMath::FRandRange(Min, Max * 1.5f));
-            ItemData.Gold = FMath::RoundToInt(FMath::FRandRange(Min, Max * 1.5f));
-        }
-        else if (ShieldTypes.Contains(ItemData.ItemType))
-        {
-            ItemData.Health = FMath::RoundToInt(ItemData.Level + FMath::FRandRange(Min * 1.5f, Max * 2.0f));
-            ItemData.Armor = FMath::RoundToInt(ItemData.Level + FMath::FRandRange(Min * 1.5f, Max * 2.0f));
-            ItemData.Gold = FMath::RoundToInt(ItemData.Level + FMath::FRandRange(Min * 1.5f, Max * 2.0f));
+
         }
         else if (MixedTypes.Contains(ItemData.ItemType))
         {
@@ -195,12 +177,15 @@ public:
         if (!MeshData) return;
 
         const TMap<FString, UStaticMesh*> MeshMap = {
+            { "Greatsword", MeshData->GreatswordMesh },
+            { "Bow", MeshData->BowMesh },
+            { "Staff", MeshData->StaffMesh },
             { "Sword", MeshData->SwordMesh },
             { "Helmet", MeshData->HelmetMesh },
             { "Upper", MeshData->UpperMesh },
             { "Lower", MeshData->LowerMesh },
             { "Arms", MeshData->ArmsMesh },
-            { "Shield", MeshData->ShieldMesh },
+            { "Offhand", MeshData->ShieldMesh },
             { "Necklace", MeshData->NecklaceMesh },
         };
 
