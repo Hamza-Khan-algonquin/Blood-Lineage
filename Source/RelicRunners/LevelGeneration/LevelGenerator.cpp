@@ -17,7 +17,6 @@ Setup Lava spawning
 */
 
 ALevelGenerator::ALevelGenerator() :
-	ObjectiveType(0),
 	TileScale(1.0f),
 	CameraActor(nullptr),
 	LevelChangeTrigger(nullptr),
@@ -40,6 +39,7 @@ ALevelGenerator::ALevelGenerator() :
 	MaxCapturableFlagAmount(0),
 	MaxEnemyZoneAmount(0),
 	PayloadActor(nullptr),
+	ObjectiveType(0),
 	PayloadMovementSpeed(1.0f)
 {
 	PrimaryActorTick.bCanEverTick = false;

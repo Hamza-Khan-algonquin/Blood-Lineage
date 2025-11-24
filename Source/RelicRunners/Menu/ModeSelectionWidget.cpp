@@ -61,7 +61,7 @@ void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelecti
 	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
 	{
 		GI->SelectedSaveSlot = CurrentSelectedSlot->SaveFileData;
-		GI->PlayerName = CurrentSelectedSlot->SaveFileData ? CurrentSelectedSlot->SaveFileData->SavefileName : "";
+		GI->PlayerName = CurrentSelectedSlot->SaveFileData ? CurrentSelectedSlot->SaveFileData->GetName() : "";
 	}
 }
 
@@ -77,7 +77,7 @@ void UModeSelectionWidget::HostButtonClicked()
 	{
 		if (!GameInstance || !GameInstance->SelectedSaveSlot) return;
 
-		GameInstance->PlayerName = GameInstance->SelectedSaveSlot->SavefileName;
+		GameInstance->PlayerName = GameInstance->SelectedSaveSlot->GetName();
 
 		if (HostButton)
 		{

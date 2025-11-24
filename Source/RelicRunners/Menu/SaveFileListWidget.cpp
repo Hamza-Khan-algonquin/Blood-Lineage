@@ -53,11 +53,11 @@ void USaveFileListWidget::Setup(USaveFileListData* InData)
 
     if (SaveFileData)
     {
-        TB_Name->SetText(FText::FromString(SaveFileData->SavefileName));
+        TB_Name->SetText(FText::FromString(SaveFileData->GetName()));
         TB_NumUpgrades->SetVisibility(ESlateVisibility::Visible);
-        TB_NumUpgrades->SetText(FText::FromString(FString::FromInt(SaveFileData->NumUpgrades)));
+        TB_NumUpgrades->SetText(FText::FromString(FString::FromInt(SaveFileData->GetNumUpgrades())));
         TB_CreateNew->SetText(FText::FromString(""));
-        TB_TimePlayed->SetText(FText::FromString(FString::FromInt(SaveFileData->TimePlayed)));
+        TB_TimePlayed->SetText(FText::FromString(FString::FromInt(SaveFileData->GetTimePlayed())));
         B_Upgrades->SetVisibility(ESlateVisibility::Visible);
         B_Edit->SetVisibility(ESlateVisibility::Visible);
     }
@@ -114,18 +114,20 @@ void USaveFileListWidget::ResetBorderVisibility()
 
 void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 {
+    if (!SaveFileData) return;
+
     SaveFileData->IsEmptySlot = false;
-    SaveFileData->SavefileName = PlayerName;
-    SaveFileData->NumUpgrades = 0;
+
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetNumUpgrades());
 
     Setup(SaveFileData);
 }
 
+
 void USaveFileListWidget::FinalizeSaveCreation(const FString& PlayerName)
 {
     SaveFileData->IsEmptySlot = false;
-    SaveFileData->SavefileName = PlayerName;
-    SaveFileData->NumUpgrades = 0;
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, 0);
     Setup(SaveFileData);
 
     SpawnEmptySlot();
