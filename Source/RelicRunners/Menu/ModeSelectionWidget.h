@@ -43,6 +43,8 @@ public:
 	void ResetUI();
 
 	void OpenSaveFilePopupWidget(class USaveFileListWidget* TargetSlot);
+
+	void PromptCreateSaveFile();
 protected:
 	UFUNCTION()
 	void HostButtonClicked();

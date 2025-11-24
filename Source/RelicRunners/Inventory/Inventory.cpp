@@ -197,15 +197,15 @@ void UInventory::RefreshEquippedUI()
 
 UInventory::FSlotUIComponents UInventory::GetUIComponentsForItemType(const FString& ItemType)
 {
-    if (ItemType == "Helmet") return { B_Helmet, I_Helmet, TB_LevelHelmet };
-    if (ItemType == "Arms") return { B_Arms, I_Arms, TB_LevelArms };
-    if (ItemType == "Upper") return { B_Upper, I_Upper, TB_LevelUpper };
-    if (ItemType == "Lower") return { B_Lower, I_Lower, TB_LevelLower };
-    if (ItemType == "Necklace") return { B_Necklace, I_Necklace, TB_LevelNecklace };
-    if (ItemType == "Greatsword") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
-    if (ItemType == "Sword") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
-    if (ItemType == "Bow") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
-    if (ItemType == "Staff") return { B_Mainhand, I_Mainhand, TB_LevelMainhand };
+    if (ItemType == "Helmet") return { B_Helmet, B_Helmet1, I_Helmet, TB_LevelHelmet };
+    if (ItemType == "Arms") return { B_Arms, B_Arms1, I_Arms, TB_LevelArms };
+    if (ItemType == "Upper") return { B_Upper, B_Upper1, I_Upper, TB_LevelUpper };
+    if (ItemType == "Lower") return { B_Lower, B_Lower1, I_Lower, TB_LevelLower };
+    if (ItemType == "Necklace") return { B_Necklace, B_Necklace1, I_Necklace, TB_LevelNecklace };
+    if (ItemType == "Greatsword"
+        || ItemType == "Sword"
+        || ItemType == "Bow"
+        || ItemType == "Staff") return { B_Mainhand, B_Mainhand1, I_Mainhand, TB_LevelMainhand };
 
     return { nullptr, nullptr, nullptr };
 }
@@ -219,16 +219,10 @@ void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemT
 
     Components.Button->SetToolTip(ToolTip);
 
-    const bool bHasEquipped = (ToolTip != nullptr);
-    const float Opacity = bHasEquipped ? 1.0f : 0.3f;
-    const FLinearColor Tint = bHasEquipped ? Color : FLinearColor(0.3f, 0.3f, 0.3f, Opacity);
-
-    FButtonStyle Style = Components.Button->GetStyle();
-    Style.Normal.TintColor = FSlateColor(Tint);
-    Style.Hovered.TintColor = FSlateColor(Tint);
-    Style.Pressed.TintColor = FSlateColor(Tint);
-    Components.Button->SetStyle(Style);
-    Components.Button->SetColorAndOpacity(Tint);
+    const bool HasEquipped = (ToolTip != nullptr);
+    const float Opacity = HasEquipped ? 1.0f : 0.3f;
+    const FLinearColor Tint = HasEquipped ? Color : FLinearColor(0.3f, 0.3f, 0.3f, Opacity);
+    Components.Border->SetBrushColor(Tint);
 
     Components.Image->SetColorAndOpacity(FLinearColor(1, 1, 1, Opacity));
     if (Item && Item->ItemData.Icon)
@@ -254,7 +248,7 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
 {
     if (!NewComponent || !NewComponent->IsRegistered() || !NewComponent->GetOwner())
     {
-        // Try again next frame if it's not ready
+        //Try again next frame if it's not ready
         UE_LOG(LogTemp, Warning, TEXT("[UI] InventoryComponent not ready, retrying..."));
 
         FTimerHandle RetryHandle;
@@ -306,7 +300,7 @@ void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)
         return;
     }
 
-    // Create the dynamic material
+    //Create the dynamic material
     UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
     if (!DynMaterial)
     {
@@ -462,7 +456,7 @@ void UInventory::OnEquippedSlotClick(UItemObject* EquippedItem)
             Popup->AddToViewport();
             Popup->Setup(EquippedItem);
 
-            // (Hide Equip, Show Unequip, Show Sell, Show Buy) for equipped items
+            //(Hide Equip, Show Unequip, Show Sell, Show Buy) for equipped items
             Popup->ConfigureButtons(false, true, false, false);
 
             FVector2D ScreenPosition;
@@ -490,7 +484,7 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     FGeometry EquippedGeometry = EquippedCanvas->GetCachedGeometry();
     const FVector2D EquippedLocal = EquippedGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
     const FVector2D EquippedSize = EquippedGeometry.GetLocalSize();
-    const bool bInsideEquipped =
+    const bool InsideEquipped =
         EquippedLocal.X >= 0.f &&
         EquippedLocal.Y >= 0.f &&
         EquippedLocal.X <= EquippedSize.X &&
@@ -500,7 +494,7 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     FGeometry InventoryGeometry = InventorySlots->GetCachedGeometry();
     const FVector2D InventoryLocal = InventoryGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
     const FVector2D InventorySize = InventoryGeometry.GetLocalSize();
-    const bool bInsideInventory =
+    const bool InsideInventory =
         InventoryLocal.X >= 0.f &&
         InventoryLocal.Y >= 0.f &&
         InventoryLocal.X <= InventorySize.X &&
@@ -510,7 +504,7 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     FGeometry ForgeGeometry = ForgeBox->GetCachedGeometry();
     const FVector2D ForgeLocal = ForgeGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
     const FVector2D ForgeSize = ForgeGeometry.GetLocalSize();
-    const bool bInsideForge =
+    const bool InsideForge =
         ForgeLocal.X >= 0.f &&
         ForgeLocal.Y >= 0.f &&
         ForgeLocal.X <= ForgeSize.X &&
@@ -520,18 +514,20 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     FGeometry ShopGeometry = ShopBox->GetCachedGeometry();
     const FVector2D ShopLocal = ShopGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
     const FVector2D ShopSize = ShopGeometry.GetLocalSize();
-    const bool bInsideShop =
+    const bool InsideShop =
         ShopLocal.X >= 0.f &&
         ShopLocal.Y >= 0.f &&
         ShopLocal.X <= ShopSize.X &&
         ShopLocal.Y <= ShopSize.Y;
 
-    if (bInsideEquipped)
+    if (InsideEquipped)
     {
         EquipItem(DraggedItem);
     }
-    else if (bInsideForge && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory && DraggedItem->GetRarity() != "Relic")
+    else if (InsideForge && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
+        if (DraggedItem->GetRarity() == "Relic") return true;
+
         if (!ForgeItemLeft)
         {
             ForgeItemLeft = DraggedItem;
@@ -548,11 +544,11 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
         SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
         UpdateForgeUI();
     }
-    else if (bInsideShop && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideShop && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
         SellItem(DraggedItem);
     }
-    else if (bInsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Shop)
+    else if (InsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Shop)
     {
         BuyItem(DraggedItem);
     }
@@ -610,6 +606,8 @@ void UInventory::OnFuseButtonPressed()
 
     InventoryComponent->AddItem(NewItem);
     ForgeItemResult = NewItem;
+    //Clear the forge result after 2 seconds
+    GetWorld()->GetTimerManager().SetTimer(ForgeResultTimer,this,&UInventory::ClearForgeResult,2.f,false);
 
     UpdateForgeUI();
 
@@ -644,6 +642,15 @@ void UInventory::OnFuseButtonPressed()
     {
         PlayAnimation(ForgeCompleted, 0.f, 1); 
     }
+}
+
+void UInventory::ClearForgeResult()
+{
+    ForgeItemResult = nullptr;
+
+    SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
+
+    UpdateForgeUI();
 }
 
 
@@ -765,14 +772,14 @@ void UInventory::UpdateForgeOdds(const FString& LeftRarity, const FString& Right
 
 void UInventory::UpdateForgeUI()
 {
-    const bool bLeftFilled = (ForgeItemLeft != nullptr);
-    const bool bRightFilled = (ForgeItemRight != nullptr);
-    const bool bBothFilled = bLeftFilled && bRightFilled;
+    bool LeftFilled = (ForgeItemLeft != nullptr);
+    bool RightFilled = (ForgeItemRight != nullptr);
+    bool BothFilled = LeftFilled && RightFilled;
 
-    Throbber1->SetVisibility(bLeftFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-    Throbber2->SetVisibility(bRightFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    Throbber1->SetVisibility(LeftFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    Throbber2->SetVisibility(RightFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 
-    if (bLeftFilled)
+    if (LeftFilled)
     {
         TB_ForgeItemLevel1->SetText(FText::AsNumber(ForgeItemLeft->ItemData.Level));
 
@@ -795,7 +802,7 @@ void UInventory::UpdateForgeUI()
         B_ForgeItem1->SetBrushColor(FLinearColor::Transparent);
     }
 
-    if (bRightFilled)
+    if (RightFilled)
     {
         TB_ForgeItemLevel2->SetText(FText::AsNumber(ForgeItemRight->ItemData.Level));
 
@@ -818,19 +825,19 @@ void UInventory::UpdateForgeUI()
         B_ForgeItem2->SetBrushColor(FLinearColor::Transparent);
     }
 
-    FuseBorder->SetVisibility(bBothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-    TB_Odds->SetVisibility(bBothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-    TB_Odds1->SetVisibility(bBothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-    TB_Odds2->SetVisibility(bBothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    FuseBorder->SetVisibility(BothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    TB_Odds->SetVisibility(BothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    TB_Odds1->SetVisibility(BothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    TB_Odds2->SetVisibility(BothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 
-    if (bBothFilled)
+    if (BothFilled)
     {
         UpdateForgeOdds(ForgeItemLeft->ItemData.Rarity, ForgeItemRight->ItemData.Rarity);
     }
 
-    if (!bLeftFilled || !bRightFilled)
+    if (!LeftFilled || !RightFilled)
     {
-        B_ForgeItemResult->SetVisibility(ESlateVisibility::Collapsed);
+        B_ForgeItemResult->SetBrushColor(FLinearColor::Transparent);
         TB_ForgeItemResultLevel->SetText(FText::GetEmpty());
 
         // Clear icon
@@ -842,8 +849,6 @@ void UInventory::UpdateForgeUI()
     }
     if (ForgeItemResult)
     {
-        B_ForgeItemResult->SetVisibility(ESlateVisibility::Visible);
-
         FSlateBrush ResultBrush;
         ResultBrush.SetResourceObject(ForgeItemResult->ItemData.Icon);
         ResultBrush.ImageSize = FVector2D(75.f, 75.f);

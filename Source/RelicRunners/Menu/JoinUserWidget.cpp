@@ -117,7 +117,7 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	FLinearColor Black(0,0,0,1);
 	FLinearColor White(1, 1, 1, 1);
 
-	// Reset all buttons to cyan
+	//Reset all buttons to cyan
 	SetButtonColor(AresButton, Cyan);
 	SetButtonColor(ArtemisButton, Cyan);
 	SetButtonColor(AphroditeButton, Cyan);
@@ -131,7 +131,7 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	SetImageColor(I_Aphrodite, White);
 	SetImageColor(I_Nemesis, White);
 
-	// Highlight the selected one gold
+	//Highlight the selected one gold
 	if (ClassKey == "Ares")
 	{
 		SetButtonColor(AresButton, Gold);
@@ -175,7 +175,6 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 
 	auto Normalize = [](float Value, float Max) { return (Max > 0.f) ? (Value / Max) : 0.f; };
 
-	// Normalized progress bars
 	if (HealthBar)       HealthBar->SetPercent(Normalize(Info.Health, MaxValues.Health)); TB_Health->SetText(FText::FromString(FString::FromInt(Info.Health)));
 	if (ArmorBar)        ArmorBar->SetPercent(Normalize(Info.Armor, MaxValues.Armor)); TB_Armor->SetText(FText::FromString(FString::FromInt(Info.Armor)));
 	if (DexterityBar)    DexterityBar->SetPercent(Normalize(Info.Dexterity, MaxValues.Dexterity)); TB_Dexterity->SetText(FText::FromString(FString::FromInt(Info.Dexterity)));

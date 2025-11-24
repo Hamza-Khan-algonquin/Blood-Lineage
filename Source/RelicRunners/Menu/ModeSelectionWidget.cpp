@@ -75,19 +75,26 @@ void UModeSelectionWidget::HostButtonClicked()
 	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
 	if (GameInstance)
 	{
-		if (!GameInstance || !GameInstance->SelectedSaveSlot) return;
-
-		GameInstance->PlayerName = GameInstance->SelectedSaveSlot->GetName();
-
-		if (HostButton)
+		if(!GameInstance->SelectedSaveSlot)
 		{
-			HostButton->SetIsEnabled(false);
-			GameInstance->HostGame();
+			//No savefile so prompt player to make one
+			PromptCreateSaveFile();
 		}
-
-		if (ParentMenu)
+		else
 		{
-			ParentMenu->ShowSessionsWidget();
+			//Play game
+			GameInstance->PlayerName = GameInstance->SelectedSaveSlot->GetName();
+
+			if (HostButton)
+			{
+				HostButton->SetIsEnabled(false);
+				GameInstance->HostGame();
+			}
+
+			if (ParentMenu)
+			{
+				ParentMenu->ShowSessionsWidget();
+			}
 		}
 	}
 }
@@ -144,4 +151,24 @@ void UModeSelectionWidget::OpenSaveFilePopupWidget(USaveFileListWidget* TargetSl
 	USaveFilePopupWidget* Popup = CreateWidget<USaveFilePopupWidget>(GetWorld(), SaveFilePopupClass);
 	Popup->TargetSlot = TargetSlot;
 	Popup->AddToViewport();
+}
+
+void UModeSelectionWidget::PromptCreateSaveFile()
+{
+	if (!SaveFilePopupClass || !SaveFiles) return;
+
+	for (int i = 0; i < SaveFiles->GetNumItems(); i++)
+	{
+		USaveFileListData* Data = Cast<USaveFileListData>(SaveFiles->GetItemAt(i));
+		if (Data && Data->IsEmptySlot)
+		{
+			USaveFileListWidget* Widget = Cast<USaveFileListWidget>(SaveFiles->GetEntryWidgetFromItem(Data));
+
+			if (Widget)
+			{
+				OpenSaveFilePopupWidget(Widget);
+				return;
+			}
+		}
+	}
 }

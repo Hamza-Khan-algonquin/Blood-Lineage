@@ -31,7 +31,8 @@ void UEditSaveFilePopupWidget::OnDeleteClicked()
     UObject* ObjectData = Cast<UObject>(TargetSlot->SaveFileData);
     TargetSlot->ParentWidget->SaveFiles->RemoveItem(ObjectData);
 
-    //If the deleted slot was the selected one, pick the first save
+    //If the deleted slot was the selected one, auto select a new one
+    bool SelectedNew = false;
     if (GI->SelectedSaveSlot == TargetSlot->SaveFileData)
     {
         for (int i = 0; i < TargetSlot->ParentWidget->SaveFiles->GetNumItems(); i++)
@@ -42,10 +43,17 @@ void UEditSaveFilePopupWidget::OnDeleteClicked()
                 if (USaveFileListWidget* Widget = Cast<USaveFileListWidget>(TargetSlot->ParentWidget->SaveFiles->GetEntryWidgetFromItem(SlotData)))
                 {
                     TargetSlot->ParentWidget->HighlightSelectedSlot(Widget); 
+                    SelectedNew = true;
                 }
                 break;
             }
         }
+    }
+
+    if (!SelectedNew)
+    {
+        GI->SelectedSaveSlot = nullptr;
+        GI->PlayerName = "";
     }
 
     TargetSlot->SpawnEmptySlot();

@@ -32,6 +32,7 @@ public:
 	struct FSlotUIComponents
 	{
 		class UButton* Button;
+		class UBorder* Border;
 		class UImage* Image;
 		class UTextBlock* LevelText;
 	};
@@ -64,6 +65,8 @@ public:
 	float ForgeChance1;
 	float ForgeChance2;
 	float ForgeChance3;
+	FTimerHandle ForgeResultTimer;
+	void ClearForgeResult();
 
 	//Functions
 	virtual void NativeConstruct() override;
@@ -208,6 +211,18 @@ public:
 	class UButton* B_Arms;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_Mainhand;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Helmet1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Upper1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Lower1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Necklace1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Arms1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Mainhand1;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_SortingType;
 	UPROPERTY(meta = (BindWidget))

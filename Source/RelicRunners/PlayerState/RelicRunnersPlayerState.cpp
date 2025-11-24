@@ -44,8 +44,7 @@ void ARelicRunnersPlayerState::SetSelectedClass(FName NewClass)
     if (HasAuthority())
     {
         SelectedClass = NewClass;
-        OnRep_SelectedClass(); // update immediately on server too
-        
+        OnRep_SelectedClass();
     }
 }
 

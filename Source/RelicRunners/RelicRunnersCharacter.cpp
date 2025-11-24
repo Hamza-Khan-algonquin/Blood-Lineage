@@ -267,6 +267,8 @@ void ARelicRunnersCharacter::Server_UnequipItemByID_Implementation(FGuid ID)
 		UpdateItemVisuals(nullptr, ItemType);
 		InventoryComponent->UpdateTotalEquippedStats(this);
 	}
+
+	InventoryComponent->SortInventoryByCurrentMethod();
 }
 
 void ARelicRunnersCharacter::Server_SetReplicatedMeshByItemType_Implementation(UObject* MeshAsset, const FString& ItemType)
@@ -1118,7 +1120,6 @@ void ARelicRunnersCharacter::Server_BuyItem_Implementation(const FItemData& Item
 	InventoryComponent->AddItem(NewItem);
 	Vendor->RemoveStock(ItemData);
 
-	//Get client to update its inventory
 	Client_UpdateVendorUI(Vendor);
 }
 
@@ -1126,7 +1127,7 @@ void ARelicRunnersCharacter::Server_SellItem_Implementation(const FItemData& Ite
 {
 	if (!Vendor || !InventoryComponent) return;
 
-	// Unequip if equipped
+	//Unequip if equipped
 	UItemObject* EquippedItem = InventoryComponent->GetEquippedItemReference(ItemData.ItemType);
 	if (EquippedItem && EquippedItem->ItemData.UniqueID == ItemData.UniqueID)
 	{
@@ -1137,7 +1138,6 @@ void ARelicRunnersCharacter::Server_SellItem_Implementation(const FItemData& Ite
 	AddGold(ItemData.Gold);
 	Vendor->AddStock(ItemData);
 
-	//Get client to update its inventory
 	Client_UpdateVendorUI(Vendor);
 }
 
