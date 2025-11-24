@@ -41,7 +41,7 @@ AItemActor::AItemActor()
     TooltipWidgetComponent->SetupAttachment(RootComponent);
     TooltipWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
     TooltipWidgetComponent->SetDrawAtDesiredSize(true);
-    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 75.f));
+    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 0));
     TooltipWidgetComponent->SetRelativeScale3D(FVector(0.1f));
     TooltipWidgetComponent->CastShadow = false;
 
@@ -66,9 +66,9 @@ void AItemActor::InitializeTooltipWidget()
 
     TooltipWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
     TooltipWidgetComponent->SetDrawAtDesiredSize(true);
-    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 75.f));
+    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 0));
     TooltipWidgetComponent->SetRelativeScale3D(FVector(0.1f));
-    TooltipWidgetComponent->SetPivot(FVector2D(0.5f, 0.f));
+    TooltipWidgetComponent->SetPivot(FVector2D(0.5f, 1.f));
     TooltipWidgetComponent->CastShadow = false;
 }
 

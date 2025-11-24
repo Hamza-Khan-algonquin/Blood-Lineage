@@ -30,13 +30,16 @@ public:
 	class UButton* CreditsButton = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* ExitButton = nullptr;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UEditableTextBox* NameTextBox = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<class USaveFilePopupWidget> SaveFilePopupClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Save System")
+	TSubclassOf<class UEditSaveFilePopupWidget> EditPopupClass;
 
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 
 	void ResetUI();
 
+	void OpenSaveFilePopupWidget(class USaveFileListWidget* TargetSlot);
 protected:
 	UFUNCTION()
 	void HostButtonClicked();
@@ -54,8 +57,6 @@ protected:
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
 
-	UFUNCTION()
-	void OnPlayerNameTextChanged(const FText& Text);
 
 	int32 MaxCharacterLimit;
 };

@@ -8,6 +8,8 @@
 #include "Components/EditableTextBox.h"
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 #include "SaveFileListData.h"
+#include "SaveFileListWidget.h"
+#include "SaveFilePopupWidget.h"
 
 
 void UModeSelectionWidget::NativeConstruct()
@@ -44,20 +46,15 @@ void UModeSelectionWidget::NativeConstruct()
 		ExitButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::ExitButtonClicked);
 	}
 
-	if (NameTextBox)
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	SaveFiles->ClearListItems();
+
+	for (USaveFileListData* Data : GI->SaveSlots)
 	{
-		NameTextBox->OnTextChanged.AddDynamic(this, &UModeSelectionWidget::OnPlayerNameTextChanged);
-	}
-
-	MaxCharacterLimit = 12;
-
-	USaveFileListData* NewSave = NewObject<USaveFileListData>();
-
-	if (NewSave)
-	{
-		NewSave->ParentWidget = this;
-		NewSave->bIsEmptySlot = true;
-		SaveFiles->AddItem(NewSave);
+		Data->ParentWidget = this;
+		SaveFiles->AddItem(Data);
 	}
 }
 
@@ -74,16 +71,6 @@ void UModeSelectionWidget::HostButtonClicked()
 		if (HostButton)
 		{
 			HostButton->SetIsEnabled(false);
-			static int32 PlayerIndex = 1;
-			FString EnteredName = TEXT("Player") + FString::FromInt(PlayerIndex++);
-			if (NameTextBox)
-			{
-				EnteredName = NameTextBox->GetText().ToString();
-			}
-
-			// Set GameInstance name
-			GameInstance->SetCharacterName(EnteredName);
-
 			GameInstance->HostGame();
 		}
 
@@ -102,31 +89,10 @@ void UModeSelectionWidget::ResetUI()
 	}
 }
 
-
-//void UModeSelectionWidget::SessionsButtonClicked()
-//{
-//	if (ParentMenu)
-//	{
-//		URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-//
-//		if (GameInstance && NameTextBox)
-//		{
-//			GameInstance->SetCharacterName(NameTextBox->GetText().ToString());
-//		}
-//		ParentMenu->ShowSessionsWidget();
-//	}
-//}
-
 void UModeSelectionWidget::SettingsButtonClicked()
 {
 	if (ParentMenu)
 	{
-		URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-
-		if (GameInstance && NameTextBox)
-		{
-			GameInstance->SetCharacterName(NameTextBox->GetText().ToString());
-		}
 		ParentMenu->ShowSettingsWidget();
 	}
 }
@@ -135,12 +101,6 @@ void UModeSelectionWidget::CreditsButtonClicked()
 {
 	if (ParentMenu)
 	{
-		URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-
-		if (GameInstance && NameTextBox)
-		{
-			GameInstance->SetCharacterName(NameTextBox->GetText().ToString());
-		}
 		ParentMenu->ShowCreditsWidget();
 	}
 }
@@ -154,12 +114,6 @@ void UModeSelectionWidget::TutorialButtonClicked()
 {
 	if (ParentMenu)
 	{
-		URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-
-		if (GameInstance && NameTextBox)
-		{
-			GameInstance->SetCharacterName(NameTextBox->GetText().ToString());
-		}
 		ParentMenu->ShowTutorialWidget();
 	}
 }
@@ -168,25 +122,15 @@ void UModeSelectionWidget::UpgradesButtonClicked()
 {
 	if (ParentMenu)
 	{
-		URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-
-		if (GameInstance && NameTextBox)
-		{
-			GameInstance->SetCharacterName(NameTextBox->GetText().ToString());
-		}
 		ParentMenu->ShowUpgradesWidget();
 	}
 }
 
-void UModeSelectionWidget::OnPlayerNameTextChanged(const FText& Text)
+void UModeSelectionWidget::OpenSaveFilePopupWidget(USaveFileListWidget* TargetSlot)
 {
-	FString CurrentText = Text.ToString();
+	if (!SaveFilePopupClass) return;
 
-	if (CurrentText.Len() > MaxCharacterLimit)
-	{
-		// Truncate the text
-		FString TruncatedText = CurrentText.Left(MaxCharacterLimit);
-		NameTextBox->SetText(FText::FromString(TruncatedText));
-	}
+	USaveFilePopupWidget* Popup = CreateWidget<USaveFilePopupWidget>(GetWorld(), SaveFilePopupClass);
+	Popup->TargetSlot = TargetSlot;
+	Popup->AddToViewport();
 }
-

@@ -72,6 +72,13 @@ public:
     UFUNCTION(BlueprintCallable)
     void ApplyKeybindings();
 
+    //Savefiles
+    UPROPERTY()
+    TArray<class USaveFileListData*> SaveSlots;
+    bool HasInitializedSlots = false;
+    UFUNCTION()
+    void InitializeSaveSlots();
+
     //Properties
     UPROPERTY()
     TArray<FUniqueNetIdRepl> SavedPlayers;

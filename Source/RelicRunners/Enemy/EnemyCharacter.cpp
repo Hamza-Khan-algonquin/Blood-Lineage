@@ -203,18 +203,24 @@ void AEnemyCharacter::SpawnItem()
 	{
 		float chance = FMath::FRandRange(0.f, 1.f);
 
-		if (chance <= ChanceToDrpopItem)
+		if (chance <= ChanceToDropItem)
 		{
-			//int randomIndex = FMath::RandRange(0, ItemLootPool.Num() - 1);
-			//FItemData itemToSpawn = ItemLootPool[randomIndex];
+			UItemObject* DroppedItem = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(Level, ItemStats::GetRandomItemType(), ItemMeshData), this);
 
-			FVector spawnLocation = GetActorLocation();
-			FRotator spawnRotation = FRotator::ZeroRotator;
-			FActorSpawnParameters spawnParams;
-			spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+			// Spawn new dropped item
+			FActorSpawnParameters Params;
+			Params.Owner = this;
+			Params.Instigator = this;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+			// Desired drop location
+			FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+			AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(
+				ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
 
-			AItemActor* spawnedItem = GetWorld()->SpawnActor<AItemActor>(AItemActor::StaticClass(), spawnLocation, spawnRotation, spawnParams);
-			spawnedItem->Initialize(ItemStats::CreateSpecificItemData(Level, ItemStats::GetRandomItemType(), ItemMeshData));
+			if (Dropped && DroppedItem)
+			{
+				Dropped->Initialize(DroppedItem->ItemData);
+			}
 		}
 	}
 }

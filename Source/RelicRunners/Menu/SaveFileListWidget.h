@@ -20,11 +20,19 @@ public:
 	void Setup(class USaveFileListData* InData);
 	UFUNCTION()
 	void OnSaveFileButtonClicked();
-	class USaveFileListData* GetData() const;
+	UFUNCTION()
+	void OnEditButtonClicked();
+	void ResetBorderVisibility();
+	void FinalizeEdit(const FString& PlayerName);
+	void FinalizeSaveCreation(const FString& PlayerName);
+	void SpawnEmptySlot();
 	void RefreshVisual();
 	void SetParent(class UModeSelectionWidget* Parent) { ParentWidget = Parent; };
-private:
+	class UModeSelectionWidget* ParentWidget;
+	UPROPERTY()
 	class USaveFileListData* SaveFileData;
+private:
+
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Name;
@@ -38,10 +46,17 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_CreateNew;
 
-	FString CreateNew;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_SaveFile;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Upgrades;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Edit;
 
-	class UModeSelectionWidget* ParentWidget;
+
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* SaveFileButton;
+	UPROPERTY(meta = (BindWidget))
+	class UButton* EditButton;
 };

@@ -26,5 +26,5 @@ public:
 	class UModeSelectionWidget* ParentWidget;
 
 	UPROPERTY()
-	bool bIsEmptySlot = true;
+	bool IsEmptySlot = true;
 };
