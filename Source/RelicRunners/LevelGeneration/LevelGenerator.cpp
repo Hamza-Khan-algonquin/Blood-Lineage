@@ -17,13 +17,13 @@ Setup Lava spawning
 */
 
 ALevelGenerator::ALevelGenerator() :
-	ObjectiveType(0),
 	TileScale(1.0f),
 	CameraActor(nullptr),
 	LevelChangeTrigger(nullptr),
 	TargetLevel(nullptr),
 	GenerationIsRandom(true),
 	LevelTexture(nullptr),
+	StartingToEndingMinDistance(0),
 	SpawnWidth(2),
 	SpawnDepth(2),
 	FullPercentage(75.0f),
@@ -37,6 +37,7 @@ ALevelGenerator::ALevelGenerator() :
 	SidePiece(nullptr),
 	ConcaveCornerPiece(nullptr),
 	ConvexCornerPiece(nullptr),
+	ObjectiveType(0),
 	MaxCapturableFlagAmount(0),
 	MaxEnemyZoneAmount(0),
 	PayloadActor(nullptr),
@@ -149,16 +150,15 @@ void ALevelGenerator::PostInitializeComponents()
 			}
 
 			//Initialize the starting and ending tiles.
-			int startingIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
-			int endingIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
-
+			int startingIndex = 0, endingIndex = 0;
 
 			//If somehow both are at the exact same index, reinitialize starting and ending tiles
-			while (startingIndex == endingIndex)
+			do
 			{
 				startingIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
 				endingIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
-			}
+
+			} while (CalculateDistanceBetweenTiles(startingIndex, endingIndex) || startingIndex == endingIndex);
 
 			for (int y = 0; y < SpawnDepth; y++)
 			{
@@ -179,7 +179,7 @@ void ALevelGenerator::PostInitializeComponents()
 				if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::MoveThePayload) && PayloadActor != nullptr)
 				{
 					APayloadActor* payload = GetWorld()->SpawnActor<APayloadActor>(PayloadActor, FVector::ZeroVector, FRotator::ZeroRotator);
-					payload->Initialize(DeliverySpline, PayloadMovementSpeed);
+					payload->Multicast_Initialize(DeliverySpline, PayloadMovementSpeed);
 				}
 			}
 
@@ -325,6 +325,35 @@ void ALevelGenerator::GenerateFloor(int x, int y)
 			}
 		}
 	}
+}
+
+bool ALevelGenerator::CalculateDistanceBetweenTiles(int firstIndex, int secondIndex)
+{
+	if ((StartingToEndingMinDistance + (StartingToEndingMinDistance * SpawnWidth)) > SpawnWidth * SpawnDepth)
+	{
+		return false;
+	}
+
+	for (int y = -StartingToEndingMinDistance; y < StartingToEndingMinDistance; y++)
+	{
+		for (int x = -StartingToEndingMinDistance; x < StartingToEndingMinDistance; x++)
+		{
+			int currentX = firstIndex % SpawnWidth + x;
+			int currentY = firstIndex / SpawnWidth + y;
+
+			bool validX = currentX >= 0 && currentX < SpawnWidth;
+			bool validY = currentY >= 0 && currentY < SpawnDepth;
+
+			if (validX && validY)
+			{
+				if ((currentX + (currentY * SpawnWidth)) == secondIndex)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 void ALevelGenerator::InitializeFloor()
@@ -583,20 +612,32 @@ void ALevelGenerator::FloorCheckTopNeighbours(bool checkLeft, bool checkRight, i
 		if (FloorValuesArray[indexToCheck-1].IsFullTile)
 		{
 			FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::TopLeft;
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::TopLeft;
 		}
 		else
 		{
 			FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::TopLeft;
+		}
+
+		if (FloorValuesArray[indexToCheck - 1].FloorObstacle == EFloorObstacle::Hole)
+		{
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::TopLeft;
 		}
 	}
 
 	if (FloorValuesArray[indexToCheck].IsFullTile)
 	{
 		FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::TopMiddle;
+		FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::TopMiddle;
 	}
 	else
 	{
 		FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::TopMiddle;
+	}
+
+	if (FloorValuesArray[indexToCheck].FloorObstacle == EFloorObstacle::Hole)
+	{
+		FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::TopMiddle;
 	}
 
 	if (checkRight)
@@ -604,10 +645,16 @@ void ALevelGenerator::FloorCheckTopNeighbours(bool checkLeft, bool checkRight, i
 		if (FloorValuesArray[indexToCheck + 1].IsFullTile)
 		{
 			FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::TopRight;
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::TopRight;
 		}
 		else
 		{
 			FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::TopRight;
+		}
+
+		if (FloorValuesArray[indexToCheck + 1].FloorObstacle == EFloorObstacle::Hole)
+		{
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::TopRight;
 		}
 	}
 }
@@ -622,10 +669,16 @@ void ALevelGenerator::FloorCheckMiddleNeighbours(bool checkLeft, bool checkRight
 		if (FloorValuesArray[indexToCheck - 1].IsFullTile)
 		{
 			FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::MiddleLeft;
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::MiddleLeft;
 		}
 		else
 		{
 			FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::MiddleLeft;
+		}
+		
+		if (FloorValuesArray[indexToCheck - 1].FloorObstacle == EFloorObstacle::Hole)
+		{
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::MiddleLeft;
 		}
 	}
 
@@ -634,10 +687,16 @@ void ALevelGenerator::FloorCheckMiddleNeighbours(bool checkLeft, bool checkRight
 		if (FloorValuesArray[indexToCheck + 1].IsFullTile)
 		{
 			FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::MiddleRight;
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::MiddleRight;
 		}
 		else
 		{
 			FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::MiddleRight;
+		}
+
+		if (FloorValuesArray[indexToCheck + 1].FloorObstacle == EFloorObstacle::Hole)
+		{
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::MiddleRight;
 		}
 	}
 
@@ -653,20 +712,32 @@ void ALevelGenerator::FloorCheckBottomNeighbours(bool checkLeft, bool checkRight
 		if (FloorValuesArray[indexToCheck - 1].IsFullTile)
 		{
 			FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::BottomLeft;
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::BottomLeft;
 		}
 		else
 		{
 			FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::BottomLeft;
+		}
+
+		if (FloorValuesArray[indexToCheck - 1].FloorObstacle == EFloorObstacle::Hole)
+		{
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::BottomLeft;
 		}
 	}
 
 	if (FloorValuesArray[indexToCheck].IsFullTile)
 	{
 		FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::BottomMiddle;
+		FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::BottomMiddle;
 	}
 	else
 	{
 		FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::BottomMiddle;
+	}
+
+	if (FloorValuesArray[indexToCheck].FloorObstacle == EFloorObstacle::Hole)
+	{
+		FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::BottomMiddle;
 	}
 
 	if (checkRight)
@@ -674,10 +745,16 @@ void ALevelGenerator::FloorCheckBottomNeighbours(bool checkLeft, bool checkRight
 		if (FloorValuesArray[indexToCheck + 1].IsFullTile)
 		{
 			FloorValuesArray[index].FloorNeighbours |= EFloorNeighbours::BottomRight;
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::BottomRight;
 		}
 		else
 		{
 			FloorValuesArray[index].FloorNeighbours &= ~EFloorNeighbours::BottomRight;
+		}
+
+		if (FloorValuesArray[indexToCheck + 1].FloorObstacle == EFloorObstacle::Hole)
+		{
+			FloorValuesArray[index].ObstacleNeighbours |= EFloorNeighbours::BottomRight;
 		}
 	}
 }
@@ -921,12 +998,54 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 		{
 			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, yaw, 0.0f));
 		}
+
+		if (PackedActorWallArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
+		{
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 0.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 90.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 180.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].FloorNeighbours, EFloorNeighbours::BottomMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
+			}
+		}
+
 		break;
 	case EFloorObstacle::Hole:
 		if (HoleTilePackedActorArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
 		{
 			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(HoleTilePackedActorArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, yaw, 0.0f));
 		}
+
+		if (HoleTilePackedActorWallArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
+		{
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(HoleTilePackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 0.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(HoleTilePackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 90.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(HoleTilePackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 180.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(HoleTilePackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
+			}
+		}
+
 		break;
 	case EFloorObstacle::CapturableFlag:
 		if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::CaptureTheFlag))
