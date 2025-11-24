@@ -78,6 +78,8 @@ public:
     bool HasInitializedSlots = false;
     UFUNCTION()
     void InitializeSaveSlots();
+    UPROPERTY(BlueprintReadWrite)
+    class USaveFileListData* SelectedSaveSlot = nullptr;
 
     //Properties
     UPROPERTY()

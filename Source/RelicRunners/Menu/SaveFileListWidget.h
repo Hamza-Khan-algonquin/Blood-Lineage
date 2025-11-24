@@ -22,6 +22,7 @@ public:
 	void OnSaveFileButtonClicked();
 	UFUNCTION()
 	void OnEditButtonClicked();
+	void SetSelected(bool bSelected);
 	void ResetBorderVisibility();
 	void FinalizeEdit(const FString& PlayerName);
 	void FinalizeSaveCreation(const FString& PlayerName);
@@ -59,4 +60,6 @@ private:
 	class UButton* SaveFileButton;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* EditButton;
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Upgrades;
 };

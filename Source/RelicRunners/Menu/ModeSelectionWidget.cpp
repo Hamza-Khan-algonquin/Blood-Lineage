@@ -16,45 +16,52 @@ void UModeSelectionWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (HostButton)
-	{
-		HostButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::HostButtonClicked);
-	}
-
-	if (UpgradesButton)
-	{
-		UpgradesButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::UpgradesButtonClicked);
-	}
-
-	if (SettingsButton)
-	{
-		SettingsButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::SettingsButtonClicked);
-	}
-
-	if (TutorialButton)
-	{
-		TutorialButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::TutorialButtonClicked);
-	}
-
-	if (CreditsButton)
-	{
-		CreditsButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::CreditsButtonClicked);
-	}
-
-	if (CreditsButton)
-	{
-		ExitButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::ExitButtonClicked);
-	}
+	if (HostButton)      HostButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::HostButtonClicked);
+	if (UpgradesButton)  UpgradesButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::UpgradesButtonClicked);
+	if (SettingsButton)  SettingsButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::SettingsButtonClicked);
+	if (TutorialButton)  TutorialButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::TutorialButtonClicked);
+	if (CreditsButton)   CreditsButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::CreditsButtonClicked);
+	if (ExitButton)      ExitButton->OnClicked.AddDynamic(this, &UModeSelectionWidget::ExitButtonClicked);
 
 	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
 	if (!GI) return;
 
 	SaveFiles->ClearListItems();
 
+	//Re-populate any previously made save slots
 	for (USaveFileListData* Data : GI->SaveSlots)
 	{
 		Data->ParentWidget = this;
 		SaveFiles->AddItem(Data);
+	}
+
+	//Re-highlight if previously selected slot
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, GI]() 
+	{
+		if (GI->SelectedSaveSlot)
+		{
+			if (USaveFileListWidget* Widget = Cast<USaveFileListWidget>(SaveFiles->GetEntryWidgetFromItem(GI->SelectedSaveSlot)))
+			{
+				HighlightSelectedSlot(Widget);
+			}
+		}
+	}, 0.05f, false);
+}
+
+void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelection)
+{
+	if (!NewSelection) return;
+
+	if (CurrentSelectedSlot) CurrentSelectedSlot->SetSelected(false);
+
+	CurrentSelectedSlot = NewSelection;
+	CurrentSelectedSlot->SetSelected(true);
+
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GI->SelectedSaveSlot = CurrentSelectedSlot->SaveFileData;
+		GI->PlayerName = CurrentSelectedSlot->SaveFileData ? CurrentSelectedSlot->SaveFileData->SavefileName : "";
 	}
 }
 
@@ -68,6 +75,10 @@ void UModeSelectionWidget::HostButtonClicked()
 	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
 	if (GameInstance)
 	{
+		if (!GameInstance || !GameInstance->SelectedSaveSlot) return;
+
+		GameInstance->PlayerName = GameInstance->SelectedSaveSlot->SavefileName;
+
 		if (HostButton)
 		{
 			HostButton->SetIsEnabled(false);

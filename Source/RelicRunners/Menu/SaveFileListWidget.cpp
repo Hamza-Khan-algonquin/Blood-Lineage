@@ -76,7 +76,22 @@ void USaveFileListWidget::OnSaveFileButtonClicked()
         }
         return;
     }
+
+    ParentWidget->HighlightSelectedSlot(this);
 }
+
+void USaveFileListWidget::SetSelected(bool bSelected)
+{
+    TB_Name->SetColorAndOpacity(bSelected ? FLinearColor(1,0.5,0,1) : FLinearColor::White);
+    TB_TimePlayed->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
+    B_SaveFile->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : FLinearColor(0, 0.021f, 0.02f, 1));
+    B_Upgrades->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : FLinearColor(0, 0.021f, 0.02f, 1));
+    B_Edit->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : FLinearColor(0, 0.021f, 0.02f, 1));
+    SaveFileButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(0, 1, 1, 1));
+    EditButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(0, 1, 1, 1));
+    Upgrades->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(0, 1, 1, 1));
+}
+
 
 void USaveFileListWidget::OnEditButtonClicked()
 {
@@ -111,10 +126,30 @@ void USaveFileListWidget::FinalizeSaveCreation(const FString& PlayerName)
     SaveFileData->IsEmptySlot = false;
     SaveFileData->SavefileName = PlayerName;
     SaveFileData->NumUpgrades = 0;
-
     Setup(SaveFileData);
 
     SpawnEmptySlot();
+
+    int NumRealSaves = 0;
+    USaveFileListWidget* OnlyRealSaveWidget = nullptr;
+
+    if (!ParentWidget) return;
+
+    for (int i = 0; i < ParentWidget->SaveFiles->GetNumItems(); i++)
+    {
+        USaveFileListData* SlotData = Cast<USaveFileListData>(ParentWidget->SaveFiles->GetItemAt(i));
+        if (SlotData && !SlotData->IsEmptySlot)
+        {
+            NumRealSaves++;
+
+            OnlyRealSaveWidget = Cast<USaveFileListWidget>(ParentWidget->SaveFiles->GetEntryWidgetFromItem(SlotData));
+        }
+    }
+
+    if (NumRealSaves == 1 && OnlyRealSaveWidget)
+    {
+        ParentWidget->HighlightSelectedSlot(OnlyRealSaveWidget);
+    }
 }
 
 void USaveFileListWidget::SpawnEmptySlot()

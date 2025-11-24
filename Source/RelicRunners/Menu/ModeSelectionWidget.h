@@ -13,6 +13,9 @@ class RELICRUNNERS_API UModeSelectionWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	void NativeConstruct() override;
+	void HighlightSelectedSlot(class USaveFileListWidget* NewSelection);
+	UPROPERTY()
+	class USaveFileListWidget* CurrentSelectedSlot = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* HostButton = nullptr;
 
