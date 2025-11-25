@@ -8,7 +8,6 @@
 #include <Net/UnrealNetwork.h>
 #include <RelicRunners/PlayerHUD/LobbyHUDWorld.h>
 
-// Sets default values
 ALobbyPreview::ALobbyPreview()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -71,7 +70,6 @@ ALobbyPreview::ALobbyPreview()
     LobbyHUDWorld->SetDrawAtDesiredSize(true);
     LobbyHUDWorld->SetVisibility(true);
     LobbyHUDWorld->CastShadow = false;
-
 }
 
 void ALobbyPreview::BeginPlay()
@@ -99,10 +97,17 @@ void ALobbyPreview::Tick(float DeltaTime)
 
 void ALobbyPreview::SetupFromPlayerState(ARelicRunnersPlayerState* PS)
 {
-    if (!HasAuthority() || !PS) return;
-
     LinkedPlayerState = PS;
     OnRep_LinkedPlayerState();
+}
+
+void ALobbyPreview::OnRep_LinkedPlayerState()
+{
+    if (LinkedPlayerState)
+    {
+        LinkedPlayerState->OnSelectedClassChanged.AddUObject(this, &ALobbyPreview::OnPlayerClassChanged);
+        OnPlayerClassChanged(LinkedPlayerState->SelectedClass);
+    }
 }
 
 void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
@@ -141,15 +146,6 @@ void ALobbyPreview::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ALobbyPreview, LinkedPlayerState);
-}
-
-void ALobbyPreview::OnRep_LinkedPlayerState()
-{
-    if (LinkedPlayerState)
-    {
-        LinkedPlayerState->OnSelectedClassChanged.AddUObject(this, &ALobbyPreview::OnPlayerClassChanged);
-        OnPlayerClassChanged(LinkedPlayerState->SelectedClass);
-    }
 }
 
 UStaticMeshComponent* ALobbyPreview::GetStaticMeshComponentByItemType(const FString& ItemType)

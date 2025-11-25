@@ -17,6 +17,7 @@
 #include "RelicRunnersPlayerState.h"
 #include "RelicRunners/Menu/Keybinds.h"
 #include "Net/UnrealNetwork.h"
+#include <RelicRunners/Menu/LobbyGameMode.h>
 
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
@@ -44,8 +45,7 @@ void ARelicRunnersPlayerState::SetSelectedClass(FName NewClass)
     if (HasAuthority())
     {
         SelectedClass = NewClass;
-        OnRep_SelectedClass(); // update immediately on server too
-        
+        ForceNetUpdate();
     }
 }
 

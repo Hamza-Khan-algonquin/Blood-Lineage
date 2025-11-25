@@ -18,6 +18,7 @@ public:
     virtual void PostLogin(APlayerController* NewPlayer) override;
     virtual void Logout(AController* Exiting) override;
     virtual void BeginPlay() override;
+    void RefreshPreviewForPlayer(class ARelicRunnersPlayerState* RPS);
 protected:
     // Where to put players in lobby (pillars etc.)
     UPROPERTY(EditDefaultsOnly, Category = "Lobby")
