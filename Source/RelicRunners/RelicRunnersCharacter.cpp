@@ -227,7 +227,7 @@ EInventorySorting ARelicRunnersCharacter::GetCurrentSortingMethod() const
 		return InventoryComponent->CurrentSortingMethod;
 	}
 
-	return EInventorySorting::SortByRarity;
+	return EInventorySorting::SortByNewest;
 }
 
 void ARelicRunnersCharacter::Server_EquipItemByID_Implementation(FGuid ID)

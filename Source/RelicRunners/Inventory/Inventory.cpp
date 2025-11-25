@@ -282,7 +282,7 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
         }
     }
     
-    InventoryComponent->SetSortingMethod(EInventorySorting::SortByRarity);
+    InventoryComponent->SetSortingMethod(EInventorySorting::SortByNewest);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());
 }
 

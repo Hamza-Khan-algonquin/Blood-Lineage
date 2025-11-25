@@ -119,6 +119,12 @@ void UInventorySlotsEntry::NativeOnDragDetected(const FGeometry& InGeometry, con
         DragOp->FromWhere = UInventoryDragOperation::Locations::Shop;
     }
     OutOperation = DragOp;
+
+    if (Item->IsNewItem)
+    {
+        Item->IsNewItem = false;
+        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+    }
 }
 
 void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

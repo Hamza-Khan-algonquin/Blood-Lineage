@@ -26,6 +26,7 @@ enum class EInventorySorting : uint8
 	SortByItemType,
 	SortByRarity,
 	SortByLevel,
+	SortByNewest
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSortingSelected, EInventorySorting, SortingMethod);
@@ -49,6 +50,8 @@ public:
 	UFUNCTION()
 	void SortByRarityClicked();
 	UFUNCTION()
+	void SortByNewestClicked();
+	UFUNCTION()
 	void SortByLevelClicked();
 	static void CloseAnyOpenPopup();
 	void ClosePopup();
@@ -60,6 +63,8 @@ public:
 	class UButton* B_SortByType;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_SortByRarity;
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_SortByNewest;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_SortByLevel;
 
