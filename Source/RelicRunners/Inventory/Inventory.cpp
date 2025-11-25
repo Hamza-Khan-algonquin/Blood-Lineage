@@ -179,7 +179,7 @@ void UInventory::RefreshEquippedUI()
             {
                 FLinearColor RarityColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
 
-                // Avoid comparing the item to itself
+                //Avoid comparing the item to itself
                 UItemObject* EquippedItem = InventoryComponent->GetEquippedItemByType(ItemType);
                 if (EquippedItem == Item)
                 {
@@ -215,7 +215,7 @@ void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemT
     const FString& ItemType = itemType;
 
     auto Components = GetUIComponentsForItemType(itemType);
-    if (!Components.Button || !Components.Image || !Components.LevelText) return;
+    if (!Components.Border || !Components.Button || !Components.Image || !Components.LevelText) return;
 
     Components.Button->SetToolTip(ToolTip);
 

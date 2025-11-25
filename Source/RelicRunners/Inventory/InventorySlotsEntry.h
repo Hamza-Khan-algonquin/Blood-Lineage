@@ -35,6 +35,7 @@ public:
     bool IsPressed = false;
     bool IsDragging = false;
     float PressedTime = 0.0f;
+    float HoveredTime = 0.0f;
     UPROPERTY()
     class UInventory* ParentInventory;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tooltip")

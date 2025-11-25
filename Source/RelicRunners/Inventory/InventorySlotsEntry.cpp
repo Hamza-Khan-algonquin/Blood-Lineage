@@ -140,25 +140,28 @@ void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const
         if (UInventoryComponent* InventoryComponent = PC->GetPossessedPawn()->GetInventoryComponent())
         {
             EquippedItem = InventoryComponent->GetEquippedItemByType(Item->GetItemType());
-            if (EquippedItem == Item)
-                EquippedItem = nullptr;
+            if (EquippedItem == Item) EquippedItem = nullptr;
         }
     }
 
     ToolTip->Setup(Item, RarityColor, EquippedItem);
     B_Item->SetToolTip(ToolTip);
 
-    if (Item->IsNewItem)
-    {
-        Item->IsNewItem = false;
-        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
-    }
+    HoveredTime = GetWorld()->GetRealTimeSeconds();
 }
 
 void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
     Super::NativeOnMouseLeave(InMouseEvent);
     B_Item->SetToolTip(nullptr);
+
+    float HoveredTimeOnLeave = GetWorld()->GetRealTimeSeconds() - HoveredTime;
+    HoveredTime = 0;
+    if (Item->IsNewItem && HoveredTimeOnLeave >= 0.25f)
+    {
+        Item->IsNewItem = false;
+        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+    }
 }
 
 void UInventorySlotsEntry::OnEntryClicked()
