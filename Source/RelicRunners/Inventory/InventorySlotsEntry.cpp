@@ -215,4 +215,10 @@ void UInventorySlotsEntry::OnEntryClicked()
         UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
         Popup->SetPositionInViewport(ScreenPosition, false);
     }
+
+    if (Item->IsNewItem)
+    {
+        Item->IsNewItem = false;
+        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+    }
 }
