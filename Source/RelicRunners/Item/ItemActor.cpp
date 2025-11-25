@@ -230,7 +230,9 @@ void AItemActor::HandlePickup(ARelicRunnersCharacter* Char)
 
     if (UInventoryComponent* InventoryComponent = Char->GetInventoryComponent())
     {
-        InventoryComponent->AddItem(ItemStats::CreateItemFromData(ItemData, InventoryComponent));
+        UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+        Item->IsNewItem = true;
+        InventoryComponent->AddItem(Item);
         Destroy();
     }
 }

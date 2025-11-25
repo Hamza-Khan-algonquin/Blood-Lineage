@@ -59,6 +59,9 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     B_Item->SetBrushColor(ItemFrameColor);
     B_Color->SetBrushColor(ItemFrameColor);
     I_Item->SetBrushFromTexture(Item->ItemData.Icon);
+
+    if(Item->IsNewItem) B_NewItem->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+    else B_NewItem->SetVisibility(ESlateVisibility::Hidden);
 }
 
 FReply UInventorySlotsEntry::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -144,6 +147,12 @@ void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const
 
     ToolTip->Setup(Item, RarityColor, EquippedItem);
     B_Item->SetToolTip(ToolTip);
+
+    if (Item->IsNewItem)
+    {
+        Item->IsNewItem = false;
+        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+    }
 }
 
 void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)

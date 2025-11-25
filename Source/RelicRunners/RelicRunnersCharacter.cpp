@@ -634,6 +634,7 @@ void ARelicRunnersCharacter::SpawnStarterItems()
 		for (int i = 0; i < 50; ++i)
 		{
 			UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, ItemStats::GetRandomItemType(), ItemMeshData), InventoryComponent);
+			Item->IsNewItem = true;
 			InventoryComponent->AddItem(Item);
 		}
 	}
@@ -1117,6 +1118,7 @@ void ARelicRunnersCharacter::Server_BuyItem_Implementation(const FItemData& Item
 	if (!CheckEnoughGold(ItemData.Gold)) return;
 
 	UItemObject* NewItem = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+	NewItem->IsNewItem = true;
 	InventoryComponent->AddItem(NewItem);
 	Vendor->RemoveStock(ItemData);
 

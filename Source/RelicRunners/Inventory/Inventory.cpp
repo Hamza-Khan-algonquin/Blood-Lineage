@@ -604,6 +604,7 @@ void UInventory::OnFuseButtonPressed()
     ForgeItemLeft = nullptr;
     ForgeItemRight = nullptr;
 
+    NewItem->IsNewItem = true;
     InventoryComponent->AddItem(NewItem);
     ForgeItemResult = NewItem;
     //Clear the forge result after 2 seconds

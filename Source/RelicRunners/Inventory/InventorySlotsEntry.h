@@ -46,6 +46,8 @@ public:
     UPROPERTY(meta = (BindWidget))
     class UBorder* B_Item;
     UPROPERTY(meta = (BindWidget))
+    class UBorder* B_NewItem;
+    UPROPERTY(meta = (BindWidget))
     class UBorder* B_Color;
     UPROPERTY(meta = (BindWidget))
     class UImage* I_Item;
