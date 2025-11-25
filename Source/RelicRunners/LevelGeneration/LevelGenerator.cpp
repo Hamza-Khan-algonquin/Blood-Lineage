@@ -212,7 +212,7 @@ void ALevelGenerator::PostInitializeComponents()
 				}
 			}
 
-			//Override previously initialized tiles with capturable flag tiles
+			//Override previously initialized tiles with enemy zone tiles
 			for (int i = 0; i < MaxEnemyZoneAmount; i++)
 			{
 				int keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
@@ -236,6 +236,35 @@ void ALevelGenerator::PostInitializeComponents()
 				if (whileLoopLimit < 10)
 				{
 					SetEnemyZoneTile(keyTileIndex);
+
+					FindStartToEndPath(startingIndex, keyTileIndex, SpawnWidth);
+				}
+			}
+
+			//Override previously initialized tiles with survival zone tiles
+			for (int i = 0; i < MaxSurvivalZoneAmount; i++)
+			{
+				int keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+
+				int whileLoopLimit = 0;
+
+				//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+				while (FloorValuesArray[keyTileIndex].FloorObstacle > EFloorObstacle::Basic)
+				{
+					keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+
+					whileLoopLimit++;
+
+					if (whileLoopLimit >= 10)
+					{
+						break;
+					}
+				}
+
+				//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+				if (whileLoopLimit < 10)
+				{
+					SetSurvivalZoneTile(keyTileIndex);
 
 					FindStartToEndPath(startingIndex, keyTileIndex, SpawnWidth);
 				}
@@ -273,8 +302,8 @@ void ALevelGenerator::PostInitializeComponents()
 		enumName.Add(TEXT("Capture the Flag"));
 	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::DefeatAllEnemies))
 		enumName.Add(TEXT("Defeat all anemies"));
-	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::DefendTheCrystal))
-		enumName.Add(TEXT("Defend the crystal"));
+	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::Survival))
+		enumName.Add(TEXT("Survival"));
 	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::MoveThePayload))
 		enumName.Add(TEXT("Deliver package"));
 
@@ -419,6 +448,14 @@ void ALevelGenerator::SetEnemyZoneTile(int index)
 {
 	FloorValuesArray[index].IsFullTile = true;
 	FloorValuesArray[index].FloorObstacle = EFloorObstacle::EnemyZone;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void ALevelGenerator::SetSurvivalZoneTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].FloorObstacle = EFloorObstacle::SurvivalZone;
 	FloorValuesArray[index].randomFloorToSpawn = 0;
 	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
 }
@@ -1071,6 +1108,20 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 				if (EnemyZonePackedActorArray.IsValidIndex(randIndex))
 				{
 					APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(EnemyZonePackedActorArray[randIndex], posOffset, FRotator(0.0f, yaw, 0.0f));
+				}
+			}
+		}
+		break;
+	case EFloorObstacle::SurvivalZone:
+		if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::Survival))
+		{
+			if (!SurvivalZonePackedActorArray.IsEmpty())
+			{
+				int randIndex = FMath::RandRange(0, SurvivalZonePackedActorArray.Num() - 1);
+
+				if (SurvivalZonePackedActorArray.IsValidIndex(randIndex))
+				{
+					APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(SurvivalZonePackedActorArray[randIndex], posOffset, FRotator(0.0f, yaw, 0.0f));
 				}
 			}
 		}

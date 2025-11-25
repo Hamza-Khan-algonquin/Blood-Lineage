@@ -53,6 +53,9 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000"))
 	float Acceleration;
 
+	UPROPERTY(Replicated, EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000"))
+	float Deceleration;
+
 	UPROPERTY(Replicated)
 	float MaxSpeed;
 

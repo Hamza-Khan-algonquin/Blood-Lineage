@@ -13,6 +13,7 @@
 APayloadActor::APayloadActor() :
 	DeliverySpline(nullptr),
 	Acceleration(0),
+	Deceleration(0),
 	Distance(0),
 	MaxSpeed(0),
 	TargetSpeed(0),
@@ -59,7 +60,15 @@ void APayloadActor::Tick(float DeltaTime)
 
 	if (DeliverySpline)
 	{
-		CurrentSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, DeltaTime, Acceleration);
+		if (CollidingActors.IsEmpty())
+		{
+			CurrentSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, DeltaTime, Deceleration);
+		}
+		else
+		{
+			CurrentSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, DeltaTime, Acceleration);
+		}
+
 		Distance = FMath::FInterpConstantTo(Distance, DeliverySpline->GetSplineLength(), DeltaTime, CurrentSpeed);
 
 		SetActorTransform(DeliverySpline->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World));
@@ -74,6 +83,8 @@ void APayloadActor::Tick(float DeltaTime)
 				gameState->Server_DecrementObjective(EObjectiveType::MoveThePayload);
 			}
 			GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Yellow, FString::Printf(TEXT("Payload has reached destination")));
+			TriggerCollision->SetGenerateOverlapEvents(false);
+			PrimaryActorTick.bCanEverTick = false;
 		}
 	}
 }
@@ -136,6 +147,7 @@ void APayloadActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME(APayloadActor, Distance);
 	DOREPLIFETIME(APayloadActor, Acceleration);
+	DOREPLIFETIME(APayloadActor, Deceleration);
 	DOREPLIFETIME(APayloadActor, MaxSpeed);
 	DOREPLIFETIME(APayloadActor, TargetSpeed);
 	DOREPLIFETIME(APayloadActor, CurrentSpeed);

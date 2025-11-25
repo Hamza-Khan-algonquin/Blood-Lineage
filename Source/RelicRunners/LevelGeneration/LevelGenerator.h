@@ -32,6 +32,7 @@ enum class EFloorObstacle : uint8
 	Hole,
 	CapturableFlag,
 	EnemyZone,
+	SurvivalZone,
 	Start,
 	End,
 };
@@ -169,7 +170,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Floor", meta = (ToolTip = "Mesh used for the quarter of a walkable tile without any neighbours."))
 	class UStaticMeshComponent* ConvexCornerPiece;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GenerationValues | Objective Values", meta = (Bitmask, BitmaskEnum = EObjectiveType))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GenerationValues | Objective Values", meta = (Bitmask, BitmaskEnum = "/Script/RelicRunners.EObjectiveType"))
 	int ObjectiveType;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Capture the Flag", meta = (ToolTip = "Array of Packed level actor used as the *Capture the flag* objective points."));
@@ -189,6 +190,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Move the Payload", meta = (ClampMin = "1", UIMin = "1", ToolTip = "Speed at which the payload moves towards the target."))
 	float PayloadMovementSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Survival Zone", meta = (ToolTip = "Array of Packed level actor used as the *Survival Zone* objective points."));
+	TArray<TSubclassOf<class APackedLevelActor>> SurvivalZonePackedActorArray;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Survival Zone", meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Maximum amount of tiles in which a survival zone objective is spawned on top of. Tile that are set as unwalkable are overriden to be walkable."))
+	int MaxSurvivalZoneAmount;
 
 protected:
 
@@ -220,6 +227,9 @@ public:
 
 	//Overrides tiles set by *InitializeFloor()* and sets them as Enemy Zone Tiles.
 	void SetEnemyZoneTile(int index);
+
+	//Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
+	void SetSurvivalZoneTile(int index);
 
 	//Creates a path from *startingIndex* to *targetIndex* by setting those tile to walkable.
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width);

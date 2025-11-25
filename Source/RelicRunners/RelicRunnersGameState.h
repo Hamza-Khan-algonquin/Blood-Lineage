@@ -19,7 +19,7 @@ enum class EObjectiveType : uint8
 	CaptureTheFlag = 1 << 0,
 	DefeatAllEnemies = 1 << 1,
 	MoveThePayload = 1 << 2,
-	DefendTheCrystal = 1 << 3,
+	Survival = 1 << 3,
 };
 ENUM_CLASS_FLAGS(EObjectiveType);
 
