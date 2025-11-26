@@ -322,6 +322,8 @@ void AEnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 }
 
 
+
+
 void AEnemyCharacter::SetCurrentHealth(const float& NewHealth)
 {
 	CurrentHealth = FMath::Clamp(NewHealth, 0.f, MaxHealth);
