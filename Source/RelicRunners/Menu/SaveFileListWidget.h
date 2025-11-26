@@ -17,6 +17,7 @@ class RELICRUNNERS_API USaveFileListWidget : public UUserWidget, public IUserObj
 public:
 	virtual void NativeConstruct() override;
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+	UFUNCTION(BlueprintCallable)
 	void Setup(class USaveFileListData* InData);
 	UFUNCTION()
 	void OnSaveFileButtonClicked();
@@ -30,7 +31,7 @@ public:
 	void RefreshVisual();
 	void SetParent(class UModeSelectionWidget* Parent) { ParentWidget = Parent; };
 	class UModeSelectionWidget* ParentWidget;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	class USaveFileListData* SaveFileData;
 private:
 

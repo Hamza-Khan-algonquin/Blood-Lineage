@@ -7,6 +7,7 @@
 #include "AdvancedFriendsGameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSubsystem.h"
+#include "RelicRunners/Menu/SaveFileListData.h"
 #include "OnlineSubsystemUtils.h"
 #include "RelicRunnersGameInstance.generated.h"
 
@@ -75,6 +76,8 @@ public:
     //Savefiles
     UPROPERTY()
     TArray<class USaveFileListData*> SaveSlots;
+    UFUNCTION(BlueprintCallable)
+    TArray<class USaveFileListData*> GetSaveSlots() { return SaveSlots; }
     bool HasInitializedSlots = false;
     UFUNCTION()
     void InitializeSaveSlots();
