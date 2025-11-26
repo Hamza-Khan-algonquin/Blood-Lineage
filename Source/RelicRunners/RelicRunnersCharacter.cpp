@@ -629,14 +629,16 @@ void ARelicRunnersCharacter::InitLocalUI()
 
 void ARelicRunnersCharacter::SpawnStarterItems()
 {
-	if (ItemMeshData && InventoryComponent)
+	if (!ItemMeshData || !InventoryComponent) return;
+
+	for (int i = 0; i < 50; i++)
 	{
-		for (int i = 0; i < 50; ++i)
-		{
-			UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, ItemStats::GetRandomItemType(), ItemMeshData), InventoryComponent);
-			Item->IsNewItem = true;
-			InventoryComponent->AddItem(Item);
-		}
+		FString RandomType = ItemStats::GetRandomItemType();
+		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, ItemMeshData);
+		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+		if (!Item) continue;
+
+		InventoryComponent->AddItem(Item);
 	}
 }
 
@@ -1160,49 +1162,49 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 {
 	if (!HasAuthority() || !InventoryComponent) return;
 
-	bool bFoundAndRemoved = false;
+	bool FoundAndRemoved = false;
 
-	// Remove from Inventory
-	for (int32 i = 0; i < InventoryComponent->InventoryItems.Num(); ++i)
+	//Remove from Inventory
+	for (int i = 0; i < InventoryComponent->InventoryItems.Num(); i++)
 	{
 		if (InventoryComponent->InventoryItems[i]->GetUniqueID() == Data.UniqueID)
 		{
 			InventoryComponent->InventoryItems.RemoveAt(i);
-			bFoundAndRemoved = true;
+			FoundAndRemoved = true;
 			break;
 		}
 	}
 
-	// Remove from Equipped
-	if (!bFoundAndRemoved)
+	//Remove from Equipped
+	if (!FoundAndRemoved)
 	{
-		for (int32 i = 0; i < InventoryComponent->EquippedItems.Num(); ++i)
+		for (int i = 0; i < InventoryComponent->EquippedItems.Num(); i++)
 		{
 			if (InventoryComponent->EquippedItems[i].Item &&
 				InventoryComponent->EquippedItems[i].Item->GetUniqueID() == Data.UniqueID)
 			{
 				InventoryComponent->EquippedItems.RemoveAt(i);
-				bFoundAndRemoved = true;
+				FoundAndRemoved = true;
 				break;
 			}
 		}
 	}
 
-	if (!bFoundAndRemoved)
+	if (!FoundAndRemoved)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Could not find item to drop: %s"), *Data.Name);
 		return;
 	}
 
-	// Desired drop location
+	//Desired drop location
 	FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 	const float MinDistance = 50.f;
 
-	// Get all items in the world
+	//Get all items in the world
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundActors);
 
-	// Handle overlap resolution for existing nearby items
+	//Handle overlap resolution for existing nearby items
 	for (AActor* Actor : FoundActors)
 	{
 		AItemActor* OtherItem = Cast<AItemActor>(Actor);
@@ -1211,12 +1213,12 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 		FVector OtherLoc = OtherItem->GetActorLocation();
 		if (FVector::Dist(OtherLoc, SpawnLoc) < MinDistance)
 		{
-			bool bMoved = false;
+			bool Moved = false;
 
 			// Try circular spreading from original location
-			for (int32 Radius = 50; Radius <= 300; Radius += 50)
+			for (int Radius = 50; Radius <= 300; Radius += 50)
 			{
-				for (int32 Angle = 0; Angle < 360; Angle += 45)
+				for (int Angle = 0; Angle < 360; Angle += 45)
 				{
 					const float Radians = FMath::DegreesToRadians(Angle);
 					FVector Offset = FVector(FMath::Cos(Radians), FMath::Sin(Radians), 0.f) * Radius;
@@ -1236,14 +1238,14 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 					if (!bTooClose)
 					{
 						OtherItem->SetActorLocation(NewLoc);
-						bMoved = true;
+						Moved = true;
 						break;
 					}
 				}
-				if (bMoved) break;
+				if (Moved) break;
 			}
 
-			if (!bMoved)
+			if (!Moved)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Could not reposition item: %s"), *OtherItem->GetName());
 			}

@@ -52,6 +52,11 @@ public:
     class UBorder* B_Color;
     UPROPERTY(meta = (BindWidget))
     class UImage* I_Item;
+    UPROPERTY(meta = (BindWidget))
+    class UImage* ItemFrame;
+    UPROPERTY(meta = (BindWidget))
+    class UBorder* B_Level;
+
     UPROPERTY()
     class UItemObject* Item;
 

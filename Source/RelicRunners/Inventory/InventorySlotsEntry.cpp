@@ -58,6 +58,8 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     FLinearColor ItemFrameColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
     B_Item->SetBrushColor(ItemFrameColor);
     B_Color->SetBrushColor(ItemFrameColor);
+    B_Level->SetBrushColor(ItemFrameColor);
+    ItemFrame->SetBrushTintColor(ItemFrameColor);
     I_Item->SetBrushFromTexture(Item->ItemData.Icon);
 
     if(Item->IsNewItem) B_NewItem->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
@@ -119,12 +121,6 @@ void UInventorySlotsEntry::NativeOnDragDetected(const FGeometry& InGeometry, con
         DragOp->FromWhere = UInventoryDragOperation::Locations::Shop;
     }
     OutOperation = DragOp;
-
-    if (Item->IsNewItem)
-    {
-        Item->IsNewItem = false;
-        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
-    }
 }
 
 void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -167,6 +163,10 @@ void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
     {
         Item->IsNewItem = false;
         B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+        if (ParentInventory && ParentInventory->InventoryComponent)
+        {
+            ParentInventory->InventoryComponent->SortInventoryByCurrentMethod();
+        }
     }
 }
 
@@ -214,11 +214,5 @@ void UInventorySlotsEntry::OnEntryClicked()
         FVector2D ScreenPosition;
         UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
         Popup->SetPositionInViewport(ScreenPosition, false);
-    }
-
-    if (Item->IsNewItem)
-    {
-        Item->IsNewItem = false;
-        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
     }
 }

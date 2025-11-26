@@ -34,7 +34,9 @@ public:
 		class UButton* Button;
 		class UBorder* Border;
 		class UImage* Image;
+		class UImage* ItemFrame;
 		class UTextBlock* LevelText;
+		class UBorder* LevelBorder;
 	};
 
 	//Properties
@@ -152,6 +154,34 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_ForgeItem2;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameHelmet;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameUpper;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameLower;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameNecklace;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameArms;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameMainhand;
+
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrame;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* ItemFrame_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* ItemFrame_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_ForgeItem1;
@@ -161,6 +191,26 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_ForgeItemResult;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelHelmet;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelUpper;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelLower;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelNecklace;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelArms;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelMainhand;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UThrobber* Throbber1;

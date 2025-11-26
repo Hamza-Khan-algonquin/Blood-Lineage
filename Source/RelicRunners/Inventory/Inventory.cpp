@@ -105,19 +105,25 @@ void UInventory::ToggleVendorUI(bool value)
 
 void UInventory::DisplaySelectedVendorItems(const TArray<FItemData>& Items, AVendor* Vendor)
 {
-    VendorSlots->ClearListItems();
-    if (!Vendor) return;
+    if (!Vendor || !VendorSlots) return;
+
     CurrentVendor = Vendor;
+
+    //Reserving array space
+    TArray<UItemObject*> VendorItems;
+    VendorItems.Reserve(Items.Num());
 
     for (const FItemData& Data : Items)
     {
         UItemObject* NewItem = NewObject<UItemObject>(this);
-
         NewItem->ItemData = Data;
 
-        VendorSlots->AddItem(NewItem);
+        VendorItems.Add(NewItem);
     }
+    //Set all items at once
+    VendorSlots->SetListItems(VendorItems);
 }
+
 
 void UInventory::HandleSortSelected(EInventorySorting Method)
 {
@@ -145,11 +151,7 @@ void UInventory::RefreshInventoryUI()
     if (!InventorySlots || !InventoryComponent) return;
 
     InventorySlots->ClearListItems();
-
-    for (UItemObject* Item : InventoryComponent->InventoryItems)
-    {
-        InventorySlots->AddItem(Item); 
-    }
+    InventorySlots->SetListItems(InventoryComponent->InventoryItems);
 
     OnEquippedStatsUpdated(InventoryComponent->CachedEquippedStats);
 }
@@ -197,15 +199,15 @@ void UInventory::RefreshEquippedUI()
 
 UInventory::FSlotUIComponents UInventory::GetUIComponentsForItemType(const FString& ItemType)
 {
-    if (ItemType == "Helmet") return { B_Helmet, B_Helmet1, I_Helmet, TB_LevelHelmet };
-    if (ItemType == "Arms") return { B_Arms, B_Arms1, I_Arms, TB_LevelArms };
-    if (ItemType == "Upper") return { B_Upper, B_Upper1, I_Upper, TB_LevelUpper };
-    if (ItemType == "Lower") return { B_Lower, B_Lower1, I_Lower, TB_LevelLower };
-    if (ItemType == "Necklace") return { B_Necklace, B_Necklace1, I_Necklace, TB_LevelNecklace };
+    if (ItemType == "Helmet") return { B_Helmet, B_Helmet1, I_Helmet, ItemFrameHelmet, TB_LevelHelmet, B_LevelHelmet };
+    if (ItemType == "Arms") return { B_Arms, B_Arms1, I_Arms, ItemFrameArms, TB_LevelArms, B_LevelArms };
+    if (ItemType == "Upper") return { B_Upper, B_Upper1, I_Upper, ItemFrameUpper, TB_LevelUpper, B_LevelUpper };
+    if (ItemType == "Lower") return { B_Lower, B_Lower1, I_Lower, ItemFrameLower, TB_LevelLower, B_LevelLower };
+    if (ItemType == "Necklace") return { B_Necklace, B_Necklace1, I_Necklace, ItemFrameNecklace, TB_LevelNecklace, B_LevelNecklace };
     if (ItemType == "Greatsword"
         || ItemType == "Sword"
         || ItemType == "Bow"
-        || ItemType == "Staff") return { B_Mainhand, B_Mainhand1, I_Mainhand, TB_LevelMainhand };
+        || ItemType == "Staff") return { B_Mainhand, B_Mainhand1, I_Mainhand, ItemFrameMainhand, TB_LevelMainhand, B_LevelMainhand };
 
     return { nullptr, nullptr, nullptr };
 }
@@ -223,7 +225,7 @@ void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemT
     const float Opacity = HasEquipped ? 1.0f : 0.3f;
     const FLinearColor Tint = HasEquipped ? Color : FLinearColor(0.3f, 0.3f, 0.3f, Opacity);
     Components.Border->SetBrushColor(Tint);
-
+    Components.ItemFrame->SetBrushTintColor(Color);
     Components.Image->SetColorAndOpacity(FLinearColor(1, 1, 1, Opacity));
     if (Item && Item->ItemData.Icon)
     {
@@ -232,15 +234,18 @@ void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemT
         Components.Image->SetDesiredSizeOverride(NewSize);
     }
 
-    Components.LevelText->SetVisibility(ESlateVisibility::Visible);
+    Components.LevelText->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
     if (Item)
     {
         Components.LevelText->SetText(FText::AsNumber(Item->GetLevel()));
+        Components.LevelBorder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+        Components.LevelBorder->SetBrushColor(Color);
     }
     else
     {
         Components.LevelText->SetText(FText::FromString(""));
+        Components.LevelBorder->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -789,7 +794,11 @@ void UInventory::UpdateForgeUI()
         Brush.ImageSize = FVector2D(75.f, 75.f);
         Brush.TintColor = FSlateColor(FLinearColor::White);
         I_ForgeItem1->SetBrush(Brush);
-        B_ForgeItem1->SetBrushColor(ItemStats::GetRarityDataMap()[ForgeItemLeft->GetRarity()].Color);
+        FLinearColor color = ItemStats::GetRarityDataMap()[ForgeItemLeft->GetRarity()].Color;
+        ItemFrame->SetBrushTintColor(color);
+        B_ForgeItem1->SetBrushColor(color);
+        B_Level->SetBrushColor(color);
+        B_Level->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
     }
     else
     {
@@ -800,7 +809,10 @@ void UInventory::UpdateForgeUI()
         Brush.ImageSize = FVector2D(75.f, 75.f);
         Brush.TintColor = FSlateColor(FLinearColor(1, 1, 1, 0)); 
         I_ForgeItem1->SetBrush(Brush);
-        B_ForgeItem1->SetBrushColor(FLinearColor::Transparent);
+        FLinearColor color = FLinearColor::Transparent;
+        ItemFrame->SetBrushTintColor(FLinearColor(0.2, 0.2, 0.2, 1));
+        B_ForgeItem1->SetBrushColor(color);
+        B_Level->SetVisibility(ESlateVisibility::Hidden);
     }
 
     if (RightFilled)
@@ -812,7 +824,11 @@ void UInventory::UpdateForgeUI()
         Brush.ImageSize = FVector2D(75.f, 75.f);
         Brush.TintColor = FSlateColor(FLinearColor::White);
         I_ForgeItem2->SetBrush(Brush);
-        B_ForgeItem2->SetBrushColor(ItemStats::GetRarityDataMap()[ForgeItemRight->GetRarity()].Color);
+        FLinearColor color = ItemStats::GetRarityDataMap()[ForgeItemRight->GetRarity()].Color;
+        ItemFrame_1->SetBrushTintColor(color);
+        B_ForgeItem2->SetBrushColor(color);
+        B_Level_1->SetBrushColor(color);
+        B_Level_1->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
     }
     else
     {
@@ -823,7 +839,10 @@ void UInventory::UpdateForgeUI()
         Brush.ImageSize = FVector2D(75.f, 75.f);
         Brush.TintColor = FSlateColor(FLinearColor(1, 1, 1, 0));
         I_ForgeItem2->SetBrush(Brush);
-        B_ForgeItem2->SetBrushColor(FLinearColor::Transparent);
+        FLinearColor color = FLinearColor::Transparent;
+        ItemFrame_1->SetBrushTintColor(FLinearColor(0.2, 0.2, 0.2, 1));
+        B_ForgeItem2->SetBrushColor(color);
+        B_Level_1->SetVisibility(ESlateVisibility::Hidden);
     }
 
     FuseBorder->SetVisibility(BothFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
@@ -847,6 +866,8 @@ void UInventory::UpdateForgeUI()
         ClearBrush.ImageSize = FVector2D(75.f, 75.f);
         ClearBrush.TintColor = FSlateColor(FLinearColor(1, 1, 1, 0));
         I_ForgeItemResult->SetBrush(ClearBrush);
+        B_Level_2->SetVisibility(ESlateVisibility::Hidden);
+        ItemFrame_2->SetBrushTintColor(FLinearColor(0.2, 0.2, 0.2, 1));
     }
     if (ForgeItemResult)
     {
@@ -858,6 +879,9 @@ void UInventory::UpdateForgeUI()
         TB_ForgeItemResultLevel->SetText(FText::AsNumber(ForgeItemResult->ItemData.Level));
         FLinearColor RarityColor = ItemStats::GetRarityDataMap()[ForgeItemResult->GetRarity()].Color;
         B_ForgeItemResult->SetBrushColor(RarityColor);
+        B_Level_2->SetBrushColor(RarityColor);
+        B_Level_2->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+        ItemFrame_2->SetBrushTintColor(RarityColor);
     }
 }
 

@@ -24,24 +24,6 @@ class RELICRUNNERS_API ItemStats
 {
 public:
 
-    // Ascending by ItemType
-    static bool SortByItemType(const UItemObject& A, const UItemObject& B)
-    {
-        return A.ItemData.ItemType < B.ItemData.ItemType;
-    }
-
-    // Descending by Rarity
-    static bool SortByRarity(const UItemObject& A, const UItemObject& B)
-    {
-        return A.ItemData.Rarity > B.ItemData.Rarity;
-    }
-
-    // Descending by Level
-    static bool SortByLevel(const UItemObject& A, const UItemObject& B)
-    {
-        return A.ItemData.Level > B.ItemData.Level;
-    }
-
     struct FRarityData
     {
         FString Name;

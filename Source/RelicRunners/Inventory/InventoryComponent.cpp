@@ -100,12 +100,12 @@ void UInventoryComponent::SetSortingMethod(EInventorySorting NewMethod)
 
     if (!GetOwner()->HasAuthority())
     {
-        // Client requests the server to sort
+        //Client requests the server to sort
         Server_SortInventory(NewMethod);
         return;
     }
 
-    // Server sorts immediately
+    //Server sorts immediately
     SortInventoryByCurrentMethod();
 }
 
@@ -131,100 +131,79 @@ void UInventoryComponent::HandleSortingNow()
 
     const TMap<FString, ItemStats::FRarityData>& RarityMap = ItemStats::GetRarityDataMap();
     TMap<FString, int> RarityRank;
-
-    int Index = 0;
-    for (const auto& Elem : RarityMap)
     {
-        RarityRank.Add(Elem.Key, Index++);
+        int Rank = 0;
+        for (const auto& Elem : RarityMap)
+        {
+            RarityRank.Add(Elem.Key, Rank++);
+        }
     }
 
-    //Different sorting methods
+    auto CompareBase = [&](const UItemObject& A, const UItemObject& B)
+        {
+            //Rarity first
+            const int ARank = RarityRank.FindRef(A.ItemData.Rarity);
+            const int BRank = RarityRank.FindRef(B.ItemData.Rarity);
+            if (ARank != BRank) return ARank > BRank;
+
+            //Level second
+            if (A.ItemData.Level != B.ItemData.Level)
+                return A.ItemData.Level > B.ItemData.Level;
+
+            //ItemType third
+            return A.ItemData.ItemType < B.ItemData.ItemType;
+        };
+
     switch (CurrentSortingMethod)
     {
     case EInventorySorting::SortByItemType:
-        Items.Sort([&RarityRank](UItemObject& A, UItemObject& B)
+        Items.Sort(
+            [&](const UItemObject& A, const UItemObject& B)
             {
-                //Sort itemtype first
-                if (A.ItemData.ItemType != B.ItemData.ItemType) return A.ItemData.ItemType < B.ItemData.ItemType;
+                //Itemtype first
+                if (A.ItemData.ItemType != B.ItemData.ItemType)
+                    return A.ItemData.ItemType < B.ItemData.ItemType;
 
-                //Sort rarity second
-                int ARank = RarityRank.FindRef(A.ItemData.Rarity);
-                int BRank = RarityRank.FindRef(B.ItemData.Rarity);
-                if (ARank != BRank) return ARank > BRank;
-
-                //Sort level third
-                return A.ItemData.Level > B.ItemData.Level;
+                return CompareBase(A, B);
             });
         break;
 
     case EInventorySorting::SortByRarity:
-        Items.Sort([&RarityRank](UItemObject& A, UItemObject& B)
+        Items.Sort(
+            [&](const UItemObject& A, const UItemObject& B)
             {
-                //Sort rarity first
-                int ARank = RarityRank.FindRef(A.ItemData.Rarity);
-                int BRank = RarityRank.FindRef(B.ItemData.Rarity);
-                if (ARank != BRank) return ARank > BRank;
-
-                //Sort level second
-                if (A.ItemData.Level != B.ItemData.Level) return A.ItemData.Level > B.ItemData.Level;
-
-                //Sort itemtype third
-                return A.ItemData.ItemType < B.ItemData.ItemType;
+                return CompareBase(A, B);
             });
         break;
+
     case EInventorySorting::SortByNewest:
-        Items.Sort([&RarityRank](UItemObject& A, UItemObject& B)
+        Items.Sort(
+            [&](const UItemObject& A, const UItemObject& B)
             {
-                //If new
-                //Sort rarity first
-                if (A.IsNewItem)
-                {
-                    int ARank = RarityRank.FindRef(A.ItemData.Rarity);
-                    int BRank = RarityRank.FindRef(B.ItemData.Rarity);
-                    if (ARank != BRank) return ARank > BRank;
+                //New items first
+                if (A.IsNewItem != B.IsNewItem)
+                    return A.IsNewItem > B.IsNewItem;
 
-                    //Sort level second
-                    if (A.ItemData.Level != B.ItemData.Level) return A.ItemData.Level > B.ItemData.Level;
-
-                    //Sort itemtype third
-                    return A.ItemData.ItemType < B.ItemData.ItemType;
-                }
-
-                //If not new
-                //Sort rarity first
-                int ARank = RarityRank.FindRef(A.ItemData.Rarity);
-                int BRank = RarityRank.FindRef(B.ItemData.Rarity);
-                if (ARank != BRank) return ARank > BRank;
-
-                //Sort level second
-                if (A.ItemData.Level != B.ItemData.Level) return A.ItemData.Level > B.ItemData.Level;
-
-                //Sort itemtype third
-                return A.ItemData.ItemType < B.ItemData.ItemType;
+                return CompareBase(A, B);
             });
         break;
 
     case EInventorySorting::SortByLevel:
-        Items.Sort([&RarityRank](UItemObject& A, UItemObject& B)
+        Items.Sort(
+            [&](const UItemObject& A, const UItemObject& B)
             {
-                //Sort level first
-                if (A.ItemData.Level != B.ItemData.Level) return A.ItemData.Level > B.ItemData.Level;
+                //Level first
+                if (A.ItemData.Level != B.ItemData.Level)
+                    return A.ItemData.Level > B.ItemData.Level;
 
-                //Sort rarity second
-                int ARank = RarityRank.FindRef(A.ItemData.Rarity);
-                int BRank = RarityRank.FindRef(B.ItemData.Rarity);
-                if (ARank != BRank) return ARank > BRank;
-
-                //Sort itemtype third
-                return A.ItemData.ItemType < B.ItemData.ItemType;
+                return CompareBase(A, B);
             });
-        break;
-    default:
         break;
     }
 
     OnInventoryChanged.Broadcast();
 }
+
 
 void UInventoryComponent::EquipItem(UItemObject* Item)
 {
