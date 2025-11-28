@@ -36,13 +36,13 @@ public:
 	public :
 
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UTextBlock* TB_Name;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_NumUpgrades;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UTextBlock* TB_TimePlayed;
 
 	UPROPERTY(meta = (BindWidget))

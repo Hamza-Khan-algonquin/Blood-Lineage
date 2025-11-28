@@ -16,6 +16,7 @@
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
+#include "RelicRunners/Menu/SaveFilePopupWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include <RelicRunners/AbilitySystem/AbilityPointCounter.h>
 
