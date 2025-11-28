@@ -7,6 +7,7 @@
 #include "AdvancedFriendsGameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSubsystem.h"
+#include "RelicRunners/Menu/SaveFileListData.h"
 #include "OnlineSubsystemUtils.h"
 #include "RelicRunnersGameInstance.generated.h"
 
@@ -73,8 +74,14 @@ public:
     void ApplyKeybindings();
 
     //Savefiles
+    UFUNCTION(BlueprintCallable)
+    class USaveFileListData* CreateSaveFromData(const struct FSaveData& SaveData, UObject* Outer);
     UPROPERTY()
     TArray<class USaveFileListData*> SaveSlots;
+    UFUNCTION(BlueprintCallable)
+    void AddSaveSlot(USaveFileListData* NewSave) { SaveSlots.Add(NewSave); }
+    UFUNCTION(BlueprintCallable)
+    TArray<class USaveFileListData*> GetSaveSlots() { return SaveSlots; }
     bool HasInitializedSlots = false;
     UFUNCTION()
     void InitializeSaveSlots();

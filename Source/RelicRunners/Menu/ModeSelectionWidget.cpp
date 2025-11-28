@@ -152,6 +152,7 @@ void UModeSelectionWidget::OpenSaveFilePopupWidget(USaveFileListWidget* TargetSl
 	if (!SaveFilePopupClass) return;
 
 	USaveFilePopupWidget* Popup = CreateWidget<USaveFilePopupWidget>(GetWorld(), SaveFilePopupClass);
+	
 	Popup->TargetSlot = TargetSlot;
 	Popup->AddToViewport();
 }

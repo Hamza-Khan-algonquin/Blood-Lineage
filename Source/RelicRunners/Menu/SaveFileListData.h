@@ -19,6 +19,10 @@ struct FSaveData
 
 	UPROPERTY(BlueprintReadWrite)
 	int NumUpgrades;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FGuid UniqueID = FGuid::NewGuid();
+
 };
 
 UCLASS()
@@ -32,14 +36,23 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetTimePlayed() { return SaveData.TimePlayed; }
 	UFUNCTION(BlueprintCallable)
+	void SetTimePlayed(float Time) { SaveData.TimePlayed = Time; }
+
+	UFUNCTION(BlueprintCallable)
+	FGuid GetUniqueID() { return SaveData.UniqueID; }
+
+	UFUNCTION(BlueprintCallable)
 	int GetNumUpgrades() { return SaveData.NumUpgrades; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int NumUpgrades);
+    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int NumUpgrades, FGuid UniqueID);
+
+	UFUNCTION(BlueprintCallable)
+	void SetSaveData(FSaveData data) { SaveData = data; }
 
 	UPROPERTY(BlueprintReadWrite)
 	struct FSaveData SaveData;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	class UModeSelectionWidget* ParentWidget;
 
 	UPROPERTY()

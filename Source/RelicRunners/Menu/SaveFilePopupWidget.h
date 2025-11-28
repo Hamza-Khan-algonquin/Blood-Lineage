@@ -17,7 +17,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	class UEditableTextBox* NameTextBox = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	class USaveFileListWidget* TargetSlot;
 
 	virtual void NativeConstruct() override;
@@ -28,11 +28,11 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* CancelButton;
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnConfirmClicked();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnCancelClicked();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnNameTextChanged(const FText& NewText);
 };

@@ -17,10 +17,11 @@ class RELICRUNNERS_API USaveFileListWidget : public UUserWidget, public IUserObj
 public:
 	virtual void NativeConstruct() override;
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+	UFUNCTION(BlueprintCallable)
 	void Setup(class USaveFileListData* InData);
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnSaveFileButtonClicked();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnEditButtonClicked();
 	void SetSelected(bool bSelected);
 	void ResetBorderVisibility();
@@ -30,18 +31,18 @@ public:
 	void RefreshVisual();
 	void SetParent(class UModeSelectionWidget* Parent) { ParentWidget = Parent; };
 	class UModeSelectionWidget* ParentWidget;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	class USaveFileListData* SaveFileData;
-private:
+	public :
 
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UTextBlock* TB_Name;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_NumUpgrades;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UTextBlock* TB_TimePlayed;
 
 	UPROPERTY(meta = (BindWidget))
@@ -56,7 +57,7 @@ private:
 
 
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UButton* SaveFileButton;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* EditButton;
