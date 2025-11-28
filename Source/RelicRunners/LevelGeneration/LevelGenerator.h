@@ -30,6 +30,7 @@ enum class EFloorObstacle : uint8
 	None,
 	Basic,
 	Hole,
+	Vantage,
 	CapturableFlag,
 	EnemyZone,
 	SurvivalZone,
@@ -134,6 +135,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which a normal modular obstacle will be spawned on a walkable tile."))
 	float BasicObstaclePercentage;
 
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which a normal modular obstacle will be spawned on a walkable tile."))
+	int MaxVantagePointActors;
+
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Size in which the center of the level is forced to spawn a walkable tile."))
 	int CenterForceFull;
 
@@ -151,6 +155,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array of walls associated with the packed level actor for hole tiles (full tiles without a floor) of the same index."));
 	TArray <TSubclassOf<class APackedLevelActor>> HoleTilePackedActorWallArray;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array of Vantage Point packed level actors."));
+	TArray <TSubclassOf<class APackedLevelActor>> VantagePackedActorArray;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Packed level actor used as the starting point of the level."));
 	TSubclassOf<class APackedLevelActor> LevelStartPackedActor;
@@ -230,6 +237,9 @@ public:
 
 	//Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
 	void SetSurvivalZoneTile(int index);
+
+	//Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
+	void SetVantagePointTile(int index);
 
 	//Creates a path from *startingIndex* to *targetIndex* by setting those tile to walkable.
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width);

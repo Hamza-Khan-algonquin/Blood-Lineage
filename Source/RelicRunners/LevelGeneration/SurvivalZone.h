@@ -45,6 +45,9 @@ public:
 	UFUNCTION()
 	void OnTimelineEnd();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_HandleOverlapEnter(AActor* OtherActor, bool OnOverlapBegin);
+
 	UPROPERTY(Replicated, EditAnywhere)
 	float Duration;
 

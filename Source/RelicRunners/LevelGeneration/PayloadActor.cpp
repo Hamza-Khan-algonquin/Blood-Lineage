@@ -50,7 +50,14 @@ APayloadActor::APayloadActor() :
 void APayloadActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
+
+	if (gameState)
+	{
+		gameState->Server_IncrementObjective(EObjectiveType::MoveThePayload);
+	}
+
 }
 
 // Called every frame

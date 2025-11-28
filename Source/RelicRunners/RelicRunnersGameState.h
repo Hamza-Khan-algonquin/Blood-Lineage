@@ -68,7 +68,17 @@ public:
 	UFUNCTION()
 	void OnRep_EnemyObjectivesChange();
 
-	bool PayloadHadBeenDelivered = false;
+	UPROPERTY(ReplicatedUsing = OnRep_PayloadObjectivesChange)
+	int RemainingPayloads = 0;
+
+	UFUNCTION()
+	void OnRep_PayloadObjectivesChange();
+
+	UPROPERTY(ReplicatedUsing = OnRep_SurvivalObjectivesChange)
+	int RemainingSurvivalZones = 0;
+
+	UFUNCTION()
+	void OnRep_SurvivalObjectivesChange();
 
 	UPROPERTY(BlueprintAssignable)
 	FOnObjectiveActionCompleted OnObjectiveActionCompleted;

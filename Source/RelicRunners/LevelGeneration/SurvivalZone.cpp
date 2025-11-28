@@ -47,6 +47,13 @@ void ASurvivalZone::BeginPlay()
 		SurvivalTimelineComp->SetTimelineLength(1.0f);
 		SurvivalTimelineComp->SetPlayRate(1.0f / Duration);
 		SurvivalTimelineComp->SetLooping(false);
+
+		ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
+
+		if (gameState)
+		{
+			gameState->Server_IncrementObjective(EObjectiveType::Survival);
+		}
 	}
 }
 
@@ -59,10 +66,9 @@ void ASurvivalZone::Tick(float DeltaTime)
 
 void ASurvivalZone::OnTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (HasAuthority())
+	if (HasAuthority() && OtherActor->ActorHasTag("Player"))
 	{
-		SurvivalTimelineComp->SetPlayRate(1.0f / Duration);
-		SurvivalTimelineComp->Play();
+		Multicast_HandleOverlapEnter(OtherActor, true);
 	}
 }
 
@@ -70,8 +76,7 @@ void ASurvivalZone::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Ot
 {
 	if (HasAuthority() && Remaining > 0.0f)
 	{
-		SurvivalTimelineComp->SetPlayRate(1.0f / Duration / 3.0f);
-		SurvivalTimelineComp->Reverse();
+		Multicast_HandleOverlapEnter(OtherActor, false);
 	}
 }
 
@@ -95,6 +100,26 @@ void ASurvivalZone::OnTimelineEnd()
 		gameState->Server_DecrementObjective(EObjectiveType::Survival);
 	}
 	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Green, FString::Printf(TEXT("Survived the zone.")));
+}
+
+void ASurvivalZone::Multicast_HandleOverlapEnter_Implementation(AActor* OtherActor, bool OnOverlapBegin)
+{
+	if (OnOverlapBegin)
+	{
+		CollidingActors.AddUnique(OtherActor);
+		SurvivalTimelineComp->SetPlayRate(1.0f / Duration);
+		SurvivalTimelineComp->Play();
+	}
+	else
+	{
+		CollidingActors.Remove(OtherActor);
+
+		if (CollidingActors.IsEmpty())
+		{
+			SurvivalTimelineComp->SetPlayRate(1.0f / Duration / 3.0f);
+			SurvivalTimelineComp->Reverse();
+		}
+	}
 }
 
 void ASurvivalZone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
