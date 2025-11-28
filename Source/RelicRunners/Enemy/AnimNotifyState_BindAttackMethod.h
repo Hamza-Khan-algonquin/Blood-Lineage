@@ -28,6 +28,8 @@ public:
 	FString AttackMethodName;
 	UPROPERTY(DisplayName = "Collider Property", EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "GetPropertyOptions"))
 	FString ColliderName;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FScriptDelegate onOverlapDelegate;
 
 public:
 	virtual void NotifyBegin(class USkeletalMeshComponent* MeshComp, class UAnimSequenceBase* Animation, float TotalDuration) override;

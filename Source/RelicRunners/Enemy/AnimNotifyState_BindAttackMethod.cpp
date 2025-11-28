@@ -1,18 +1,43 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Components/PrimitiveComponent.h"
 #include "AnimNotifyState_BindAttackMethod.h"
+#include "Components/PrimitiveComponent.h"
 
 void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Notify Begin Attack"));
+
 	Owner = MeshComp->GetOwner();
 
 	if (!Owner)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Owner not set"));
 		return;
 	}
 
-	colliderComp = Owner->GetComponentByName
+	TArray<UPrimitiveComponent*> colliders; 
+	Owner->GetComponents<UPrimitiveComponent>(colliders);
+	
+	FObjectProperty* objProp = CastField<FObjectProperty>(TargetClass->FindPropertyByName(*ColliderName));
+
+	if (!objProp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Object property not found"));
+		return;
+	}
+
+	UPrimitiveComponent* collider = Cast<UPrimitiveComponent>(objProp->GetObjectPropertyValue_InContainer(Owner));
+
+	if (!collider)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Collider not found"));
+		return;
+	}
+
+	colliderComp = collider;
+	onOverlapDelegate.BindUFunction(Owner, FName(*AttackMethodName));
+	collider->OnComponentBeginOverlap.Add(onOverlapDelegate);
+	collider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void UAnimNotifyState_BindAttackMethod::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
@@ -21,6 +46,14 @@ void UAnimNotifyState_BindAttackMethod::NotifyEnd(USkeletalMeshComponent* MeshCo
 	{
 		return;
 	}
+
+	if (!colliderComp)
+	{
+		return;
+	}
+
+	colliderComp->OnComponentBeginOverlap.Remove(onOverlapDelegate);
+	colliderComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 #if WITH_EDITOR
@@ -47,6 +80,7 @@ void UAnimNotifyState_BindAttackMethod::PostEditChangeProperty(FPropertyChangedE
 			FObjectProperty* prop = *itProp;
 
 			//prop->
+			
 
 			if (prop->PropertyClass->IsChildOf(UPrimitiveComponent::StaticClass()))
 			{

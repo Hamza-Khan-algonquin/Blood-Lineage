@@ -1,0 +1,171 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "ObjectPoolManager.h"
+#include "PoolActorInterface.h"
+#include "Kismet/GameplayStatics.h"
+
+TWeakObjectPtr<AObjectPoolManager> AObjectPoolManager::Instance = nullptr;
+
+// Sets default values
+AObjectPoolManager::AObjectPoolManager()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = false;
+
+}
+
+AObjectPoolManager* AObjectPoolManager::GetInstance(const UObject* WorldContext)
+{
+	if (Instance.IsValid())
+	{
+		return Instance.Get();
+	}
+
+	UWorld* World = WorldContext->GetWorld();
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(World, AObjectPoolManager::StaticClass(), FoundActors);
+
+	if (FoundActors.Num() > 0)
+	{
+		Instance = Cast<AObjectPoolManager>(FoundActors[0]);
+		return Instance.Get();
+	}
+
+	Instance = Cast<AObjectPoolManager>(World->SpawnActor(AObjectPoolManager::StaticClass()));
+
+	return Instance.Get();
+}
+
+void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float lifeSpan)
+{
+	TSubclassOf<AActor> actorType = actor->GetClass();
+
+	if (actorType->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	{
+		IPoolActorInterface* poolActor = Cast<IPoolActorInterface>(actor);
+		if (poolActor)
+		{
+			poolActor->SetIsActive(activeState);
+		}
+	}
+	else
+	{
+		if (activeState)
+		{
+			actor->SetActorHiddenInGame(false);
+			actor->SetActorEnableCollision(true);
+			actor->SetActorTickEnabled(true);
+		}
+		else
+		{
+			actor->SetActorHiddenInGame(true);
+			actor->SetActorEnableCollision(false);
+			actor->SetActorTickEnabled(false);
+		}
+	}
+	
+}
+
+void AObjectPoolManager::AddActor(AActor* actorToAdd, TSubclassOf<AActor> actorType)
+{
+	PooledObjects.FindOrAdd(actorType).Add(actorToAdd);
+
+	if (!actorType->ImplementsInterface(UPoolActorInterface::StaticClass()) && !PooledObjectsShouldTick.Contains(actorType))
+	{
+		PooledObjectsShouldTick.Add(actorType, actorToAdd->PrimaryActorTick.bCanEverTick);
+	}
+
+	actorToAdd->OnDestroyed.AddDynamic(this, &AObjectPoolManager::RemoveActor);
+}
+
+AActor* AObjectPoolManager::CreateActor(TSubclassOf<AActor> actorType)
+{
+	AActor* newActor = GetWorld()->SpawnActor<AActor>(actorType);
+
+	if (!newActor)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Object Pool Manager failed to spawn actor of type %s"), *actorType->GetName());
+		return nullptr;
+	}
+
+	AddActor(newActor, actorType);
+	return newActor;
+	
+}
+
+AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSpan)
+{
+	if (PooledObjects.Contains(actorType))
+	{
+		bool isInterface = actorType->ImplementsInterface(UPoolActorInterface::StaticClass());
+		for (TWeakObjectPtr<AActor>& pointer : PooledObjects[actorType])
+		{
+			if (pointer.IsValid() && ((isInterface && !Cast<IPoolActorInterface>(pointer.Get())->GetIsActive()) || (!isInterface && pointer->IsHidden())))
+			{
+				SetActorActive(pointer.Get(), true, lifeSpan);
+				return pointer.Get();
+			}
+		}
+	}
+
+	AActor* newActor = CreateActor(actorType);
+	return newActor;
+}
+
+//if this does not work try using actor->IsA(loop through all keys and see if any match)
+void AObjectPoolManager::RemoveActor(AActor* actorToRemove)
+{
+	TSubclassOf<AActor> actorType = actorToRemove->GetClass();
+
+	if (PooledObjects.Contains(actorType))
+	{
+		PooledObjects[actorType].RemoveAll([actorToRemove](const TWeakObjectPtr<AActor>& pointer)
+			{
+				return pointer.Get() == actorToRemove;
+			});
+	}
+}
+
+void AObjectPoolManager::CleanUpPool(TSubclassOf<AActor> actorType)
+{
+	PooledObjects[actorType].RemoveAll([](const TWeakObjectPtr<AActor>& pointer)
+		{
+			return !pointer.IsValid();
+		});
+}
+
+void AObjectPoolManager::CleanUpPools()
+{
+	for (TMap<TSubclassOf<AActor>, TArray<TWeakObjectPtr<AActor>>>::TIterator it = PooledObjects.CreateIterator(); it; ++it)
+	{
+		CleanUpPool(it.Key());
+	}
+}
+
+// Called when the game starts or when spawned
+void AObjectPoolManager::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	if (Instance.IsValid())
+	{
+		Instance = this;
+	}
+#if WITH_EDITOR || UE_BUILD_TEST
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Multiple instances of ObjectPoolManager detected!"));
+		return;
+	}
+#endif
+}
+
+// Called every frame
+void AObjectPoolManager::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
