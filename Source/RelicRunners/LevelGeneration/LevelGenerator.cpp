@@ -41,7 +41,6 @@ ALevelGenerator::ALevelGenerator() :
 	MaxCapturableFlagAmount(0),
 	MaxEnemyZoneAmount(0),
 	PayloadActor(nullptr),
-	ObjectiveType(0),
 	PayloadMovementSpeed(1.0f)
 {
 	PrimaryActorTick.bCanEverTick = false;
