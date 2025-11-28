@@ -125,8 +125,11 @@ void UModeSelectionWidget::CreditsButtonClicked()
 
 void UModeSelectionWidget::ExitButtonClicked()
 {
-	
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+
+	UKismetSystemLibrary::QuitGame(this,PC,EQuitPreference::Quit, false);
 }
+
 
 void UModeSelectionWidget::TutorialButtonClicked()
 {
