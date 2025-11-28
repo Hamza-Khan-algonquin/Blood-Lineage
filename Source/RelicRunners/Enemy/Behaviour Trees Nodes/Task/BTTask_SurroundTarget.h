@@ -41,12 +41,12 @@ public:
 	UPROPERTY(DisplayName = "Move To AcceptanceRadius", EditAnywhere, BlueprintReadWrite, Category = "Behaviour", AdvancedDisplay, meta = (ClampMin = 1, ToolTip = "The distance the enemy needs to be within the target location to be considered there."))
 	//The distance the enemy needs to be within the target location to be considered there
 	float MoveToAcceptanceRadius = 10.f;
-	UPROPERTY(DisplayName = "Move To Acceptance Radius", EditAnywhere, BlueprintReadWrite, Category = "Behaviour", AdvancedDisplay, meta = (ClampMin = 1, ToolTip = "If the target has moved this far from the last known location the enemy will recalculate a new location to move to."))
+	UPROPERTY(DisplayName = "Repath Distance", EditAnywhere, BlueprintReadWrite, Category = "Behaviour", AdvancedDisplay, meta = (ClampMin = 1, ToolTip = "If the target has moved this far from the last known location the enemy will recalculate a new location to move to."))
 	//If the target has moved this far from the last known location the enemy will recalculate a new location to move to
 	float RepathDistance = 50.f;
-	UPROPERTY(DisplayName = "Nav Extent", EditAnywhere, BlueprintReadWrite, Category = "Behaviour", AdvancedDisplay, meta = (ClampMin = 10, AllowPreserveRatio, ToolTip = "The extents of the navmesh search box when finding a location to move to."))
+	UPROPERTY(DisplayName = "Nav Extent", EditAnywhere, BlueprintReadWrite, Category = "Behaviour", AdvancedDisplay, meta = (ClampMin = 75, AllowPreserveRatio, ToolTip = "The extents of the navmesh search box when finding a location to move to."))
 	//The extents of the navmesh search box when finding a location to move to
-	FVector NavExtent = FVector(50.f, 50.f, 50.f);
+	FVector NavExtent = FVector(150.f, 150.f, 150.f);
 	UPROPERTY(DisplayName = "Repath Distance", EditAnywhere, BlueprintReadWrite, Category = "Behaviour", meta = (ToolTip = "Object types considered friendly for separation checks."))
 	//Object types considered friendly for separation checks
 	TArray<TEnumAsByte<EObjectTypeQuery>> FriendlyObjectTypes;

@@ -116,26 +116,25 @@ bool UBTTask_SurroundTarget::FindSurroundLocation(FVector& result)
 		for (AActor* actor : overlappingActors)
 		{
 			//make sure we are only considering enemies
-			if (!actor->Tags.Contains("Enemy"))
+			if (actor->Tags.Contains("Enemy") || actor->Tags.Contains("Player"))
 			{
-				continue;
-			}
 
-			//check the distance to make sure their is nothing funcky going on
-			float distance = FVector::Dist(actor->GetActorLocation(), targetLocation);
+				//check the distance to make sure their is nothing funcky going on
+				float distance = FVector::Dist(actor->GetActorLocation(), targetLocation);
 
-			if (distance > 0.f)
-			{
-				//calculate weight and direction away from the other enemy
-				float weight = 1.f / distance;
-				FVector direction = (ControlledPawn->GetActorLocation() - actor->GetActorLocation()).GetSafeNormal();
+				if (distance > 0.f)
+				{
+					//calculate weight and direction away from the other enemy
+					float weight = 1.f / distance;
+					FVector direction = (ControlledPawn->GetActorLocation() - actor->GetActorLocation()).GetSafeNormal();
 
-				//add everything up
-				moveDirection += direction * weight;
-				totalWeights += weight;
+					//add everything up
+					moveDirection += direction * weight;
+					totalWeights += weight;
 
-				//check for closest distance for later use
-				closestDistance = FMath::Min(closestDistance, distance);
+					//check for closest distance for later use
+					closestDistance = FMath::Min(closestDistance, distance);
+				}
 			}
 		}
 
@@ -189,7 +188,7 @@ EBTNodeResult::Type UBTTask_SurroundTarget::AbortTask(UBehaviorTreeComponent& Ow
 
 void UBTTask_SurroundTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
-	UE_LOG(LogTemp, Error, TEXT("Should tick"));
+	//UE_LOG(LogTemp, Error, TEXT("Should tick"));
 
 	//checking all needed references
 	if (!OwnerController || !BlackBoard || !ControlledPawn || !Target)

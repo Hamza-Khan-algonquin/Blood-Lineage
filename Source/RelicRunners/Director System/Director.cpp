@@ -59,6 +59,19 @@ void ADirector::AddEnemy(AActor* enemy)
 	}
 }
 
+bool ADirector::ContainsEnemy(AActor* enemy)
+{
+	//cast the actor point as a APawn then check to make sure it when through before checking it
+	APawn* enemyPtr = static_cast<APawn*>(enemy);
+
+	if (enemyPtr)
+	{
+		return EnemiesInWorld.Contains(enemyPtr);
+	}
+
+	return false;
+}
+
 TArray<USpawnCard*> ADirector::GetDefaultSpawnCards()
 {
 	return DefaultSpawningCards;

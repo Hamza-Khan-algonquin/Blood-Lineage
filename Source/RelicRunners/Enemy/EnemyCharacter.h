@@ -11,12 +11,16 @@ Contributors:
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "RelicRunners/ObjectPool/PoolActorInterface.h"
 #include "EnemyCharacter.generated.h"
 
 /*
 To Do:
 	- Add a method that run a animation both on client and server that work like play montage in blueprints
 */
+
+//same delegate signature as AActor's OnDestroyed but for enemies
+//DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDied, AEnemyCharacter, OnDied, AActor*, DiedActor);
 
 class UWidgetComponent;
 
@@ -33,7 +37,7 @@ enum class EEnemyType : uint8
 class UAnimMontage;
 
 UCLASS(Blueprintable, Abstract)
-class RELICRUNNERS_API AEnemyCharacter : public ACharacter
+class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
 {
 	GENERATED_BODY()
 
@@ -75,6 +79,15 @@ protected:
 	UWidgetComponent* EnemyHUDWorld;
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
+
+
+	//UPROPERTY(BlueprintAssignable)
+	//FEnemyCharacterDied OnDied;
+
+	//interface implementation variable
+	bool IsActive = true;
+
+
 public:
 	// Sets default values for this character's properties
 	AEnemyCharacter();
@@ -136,6 +149,8 @@ public:
 	//Setter for the current level
 	void SetEnemyLevel(const int& newLevel) { Level = newLevel; }
 
+	void AddEnemyToDirector();
+
 	
 
 	//Need to be netmulticast to play on all clients as client does own the actor their for client rpc won't work
@@ -171,4 +186,9 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+public:
+	//IPoolActorInterface implementation
+	virtual bool GetIsActive() override;
+	virtual bool GetShouldTick() override;
+	virtual void SetIsActive(bool newIsActive) override;
 };

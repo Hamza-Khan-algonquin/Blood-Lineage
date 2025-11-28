@@ -51,6 +51,8 @@ public:
 	//A Method that will remove a provided enemy from EnemiesInWorld. It is meant to be called only by APawn when a OnDestroy event happens
 	UFUNCTION(meta = ( ToolTip = "A Method that will remove a provided enemy from EnemiesInWorld. It is meant to be called only by APawn when a OnDestroy event happens", ShortToolTip = "Adds the provided enemy from EnemiesInWorld"))
 	void AddEnemy(AActor* enemy);
+	UFUNCTION(meta = (ToolTip = "A Method to check and see if the director knows about a enemy", ShortToolTip = "A Method to check and see if the director knows about a enemy"))
+	bool ContainsEnemy(AActor* enemy);
 	//A Method to get the default spawn cards
 	UFUNCTION(meta = (ToolTip = "A Method to get the default spawn cards", ShortToolTip = "Thomas was here"))
 	TArray<USpawnCard*> GetDefaultSpawnCards();
