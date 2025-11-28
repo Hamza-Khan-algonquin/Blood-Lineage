@@ -10,6 +10,7 @@
 
 /*
 * Look into switching this to a UWorldSubsystem at a later date. Doing it his way for now because I know who to do it this way so it will be faster to make.
+* add timer functionality to set actors inactive after a certain amount of time
 */ 
 UCLASS()
 class RELICRUNNERS_API AObjectPoolManager : public AActor
@@ -40,9 +41,11 @@ public:
 	UFUNCTION()
 	void RemoveActor(AActor* actorToRemove);
 
-	//nwither of these should ever need to be called but their here just incase
+	//neither of these should ever need to be called but their here just incase
 	void CleanUpPool( TSubclassOf<AActor> actorType);
 	void CleanUpPools();
+
+	bool IsActorClassPooled(TSubclassOf<AActor> actorType);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

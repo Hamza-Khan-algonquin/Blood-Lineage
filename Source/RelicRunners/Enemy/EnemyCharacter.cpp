@@ -12,6 +12,7 @@
 #include "EnemyHUDWorld.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include "Components/CapsuleComponent.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
 // Sets default values
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
@@ -116,14 +117,24 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 			}
 		}
 		
-		//be gone hud of my enemy
-		if (EnemyHUDWorld)
-		{
-			EnemyHUDWorld->DestroyComponent();
-		}
+		//OnDied.Broadcast(this);
 
-		//The actor destroy 
-		Destroy();
+		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+
+		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
+		{
+			SetIsActive(false);
+		}
+		else
+		{
+			//be gone hud of my enemy
+			if (EnemyHUDWorld)
+			{
+				EnemyHUDWorld->DestroyComponent();
+			}
+
+			Destroy();
+		}
 	}
 }
 
@@ -180,12 +191,13 @@ void AEnemyCharacter::BeginPlay()
 			//get the director
 			ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(World, ADirector::StaticClass()));
 
-			if (Director)
+			if (Director && !Director->ContainsEnemy(enemy))
 			{
 				//add the enemy to the director
 				Director->AddEnemy(enemy);
 				//add the remove enemy method to the OnDestroyed delegate
 				enemy->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
+				//Cast<AEnemyCharacter>(enemy)->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
 			}
 		#if WITH_EDITOR || UE_BUILD_TEST
 			else
@@ -321,6 +333,27 @@ void AEnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+bool AEnemyCharacter::GetIsActive()
+{
+	return IsActive;
+}
+
+bool AEnemyCharacter::GetShouldTick()
+{
+	return true;
+}
+
+void AEnemyCharacter::SetIsActive(bool newIsActive)
+{
+	IsActive = newIsActive;
+	IPoolActorInterface::SetIsActive(newIsActive);
+
+	if (GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	{
+		Cast<IPoolActorInterface>(GetController())->SetIsActive(newIsActive);
+	}
+}
+
 
 
 
@@ -333,4 +366,18 @@ void AEnemyCharacter::SetMaxHealth(const float& newHealth)
 {
 	MaxHealth = FMath::Max(0.f, newHealth);
 	CurrentHealth = FMath::Min(CurrentHealth, MaxHealth);
+}
+
+void AEnemyCharacter::AddEnemyToDirector()
+{
+	ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(this->GetWorld(), ADirector::StaticClass()));
+
+	if (Director && !Director->ContainsEnemy(this))
+	{
+		//add the enemy to the director
+		Director->AddEnemy(this);
+		//add the remove enemy method to the OnDestroyed delegate
+		this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
+		//this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
+	}
 }

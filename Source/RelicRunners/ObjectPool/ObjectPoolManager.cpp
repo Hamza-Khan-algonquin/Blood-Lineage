@@ -144,6 +144,11 @@ void AObjectPoolManager::CleanUpPools()
 	}
 }
 
+bool AObjectPoolManager::IsActorClassPooled(TSubclassOf<AActor> actorType)
+{
+	return PooledObjects.Contains(actorType);
+}
+
 // Called when the game starts or when spawned
 void AObjectPoolManager::BeginPlay()
 {
