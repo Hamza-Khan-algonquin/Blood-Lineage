@@ -19,9 +19,9 @@ public:
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 	UFUNCTION(BlueprintCallable)
 	void Setup(class USaveFileListData* InData);
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnSaveFileButtonClicked();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnEditButtonClicked();
 	void SetSelected(bool bSelected);
 	void ResetBorderVisibility();
@@ -33,7 +33,7 @@ public:
 	class UModeSelectionWidget* ParentWidget;
 	UPROPERTY(BlueprintReadWrite)
 	class USaveFileListData* SaveFileData;
-private:
+	public :
 
 
 	UPROPERTY(meta = (BindWidget))
@@ -57,7 +57,7 @@ private:
 
 
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UButton* SaveFileButton;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* EditButton;

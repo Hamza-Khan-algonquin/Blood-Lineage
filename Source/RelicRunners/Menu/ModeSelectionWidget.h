@@ -41,7 +41,7 @@ public:
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 
 	void ResetUI();
-
+	UFUNCTION(BlueprintCallable)
 	void OpenSaveFilePopupWidget(class USaveFileListWidget* TargetSlot);
 
 	void PromptCreateSaveFile();
