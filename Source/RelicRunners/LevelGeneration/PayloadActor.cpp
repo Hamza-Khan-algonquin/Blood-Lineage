@@ -12,8 +12,11 @@
 // Sets default values
 APayloadActor::APayloadActor() :
 	DeliverySpline(nullptr),
+	Acceleration(0),
+	Deceleration(0),
 	Distance(0),
 	MaxSpeed(0),
+	TargetSpeed(0),
 	CurrentSpeed(0),
 	IsActive(false),
 	HasReachedDestination(false)
@@ -40,13 +43,21 @@ APayloadActor::APayloadActor() :
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
 void APayloadActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
+
+	if (gameState)
+	{
+		gameState->Server_IncrementObjective(EObjectiveType::MoveThePayload);
+	}
+
 }
 
 // Called every frame
@@ -56,6 +67,15 @@ void APayloadActor::Tick(float DeltaTime)
 
 	if (DeliverySpline)
 	{
+		if (CollidingActors.IsEmpty())
+		{
+			CurrentSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, DeltaTime, Deceleration);
+		}
+		else
+		{
+			CurrentSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, DeltaTime, Acceleration);
+		}
+
 		Distance = FMath::FInterpConstantTo(Distance, DeliverySpline->GetSplineLength(), DeltaTime, CurrentSpeed);
 
 		SetActorTransform(DeliverySpline->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World));
@@ -70,11 +90,13 @@ void APayloadActor::Tick(float DeltaTime)
 				gameState->Server_DecrementObjective(EObjectiveType::MoveThePayload);
 			}
 			GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Yellow, FString::Printf(TEXT("Payload has reached destination")));
+			TriggerCollision->SetGenerateOverlapEvents(false);
+			PrimaryActorTick.bCanEverTick = false;
 		}
 	}
 }
 
-void APayloadActor::Initialize(USplineComponent* newSpline, float newSpeed)
+void APayloadActor::Multicast_Initialize_Implementation(USplineComponent* newSpline, float newSpeed)
 {
 	DeliverySpline = newSpline;
 	MaxSpeed = newSpeed;
@@ -82,17 +104,47 @@ void APayloadActor::Initialize(USplineComponent* newSpline, float newSpeed)
 
 void APayloadActor::OnTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (OtherActor->ActorHasTag("Player") && HasAuthority())
 	{
-		CurrentSpeed = MaxSpeed;
+		Multicast_OnTriggerChange(OtherActor, true);
 	}
 }
 
 void APayloadActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (OtherActor->ActorHasTag("Player") && HasAuthority())
 	{
-		CurrentSpeed = 0.0f;
+		AActor* actorToRemove = nullptr;
+		for (AActor* actor: CollidingActors)
+		{
+			if (actor == OtherActor)
+			{
+				actorToRemove = OtherActor;
+			}
+		}
+
+		if (actorToRemove)
+		{
+			Multicast_OnTriggerChange(actorToRemove, false);
+		}
+	}
+}
+
+void APayloadActor::Multicast_OnTriggerChange_Implementation(AActor* OtherActor, bool OnOverlapBegin)
+{
+	if (OnOverlapBegin)
+	{
+		CollidingActors.AddUnique(OtherActor);
+		TargetSpeed = MaxSpeed;
+	}
+	else
+	{
+		CollidingActors.Remove(OtherActor);
+
+		if (CollidingActors.IsEmpty())
+		{
+			TargetSpeed = 0.0f;
+		}
 	}
 }
 
@@ -101,8 +153,12 @@ void APayloadActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APayloadActor, Distance);
+	DOREPLIFETIME(APayloadActor, Acceleration);
+	DOREPLIFETIME(APayloadActor, Deceleration);
 	DOREPLIFETIME(APayloadActor, MaxSpeed);
+	DOREPLIFETIME(APayloadActor, TargetSpeed);
 	DOREPLIFETIME(APayloadActor, CurrentSpeed);
 	DOREPLIFETIME(APayloadActor, IsActive);
 	DOREPLIFETIME(APayloadActor, HasReachedDestination);
+	DOREPLIFETIME(APayloadActor, CollidingActors);
 }

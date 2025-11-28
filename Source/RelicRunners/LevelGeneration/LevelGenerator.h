@@ -30,8 +30,10 @@ enum class EFloorObstacle : uint8
 	None,
 	Basic,
 	Hole,
+	Vantage,
 	CapturableFlag,
 	EnemyZone,
+	SurvivalZone,
 	Start,
 	End,
 };
@@ -47,6 +49,9 @@ public:
 
 	UPROPERTY()
 	EFloorNeighbours FloorNeighbours = EFloorNeighbours::Blank;
+
+	UPROPERTY()
+	EFloorNeighbours ObstacleNeighbours = EFloorNeighbours::Blank;
 
 	UPROPERTY()
 	EFloorObstacle FloorObstacle = EFloorObstacle::None;
@@ -112,6 +117,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "!GenerationIsRandom", ToolTip = "If there are any specific modular pieces needed on a specific tile, define the colour and what spawns on top of every instance of that colour. Note: All non-white pixels in texture will have a floor set to that tile even if the specific colour isn't specified to have a modular piece."))
 	TMap <FColor, FSFloorObstacleByTexture> TileColourToPackedActor;
 
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Minimum distance the starting and ending tiles can be from each other."))
+	int StartingToEndingMinDistance;
+
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "2", UIMin = "2", ClampMax = "100", UIMax = "100"))
 	int SpawnWidth;
 
@@ -127,6 +135,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which a normal modular obstacle will be spawned on a walkable tile."))
 	float BasicObstaclePercentage;
 
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which a normal modular obstacle will be spawned on a walkable tile."))
+	int MaxVantagePointActors;
+
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Size in which the center of the level is forced to spawn a walkable tile."))
 	int CenterForceFull;
 
@@ -136,20 +147,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array of regular packed level actors that the level generator will pick out of randomly to spawn."));
 	TArray <TSubclassOf<class APackedLevelActor>> PackedActorArray;
 
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array packed level actors specifically for hole tiles (full tiles without a floor)."));
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array of walls associated with the regular packed level actor of the same index."));
+	TArray <TSubclassOf<class APackedLevelActor>> PackedActorWallArray;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array of packed level actors specifically for hole tiles (full tiles without a floor)."));
 	TArray <TSubclassOf<class APackedLevelActor>> HoleTilePackedActorArray;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array of walls associated with the packed level actor for hole tiles (full tiles without a floor) of the same index."));
+	TArray <TSubclassOf<class APackedLevelActor>> HoleTilePackedActorWallArray;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Array of Vantage Point packed level actors."));
+	TArray <TSubclassOf<class APackedLevelActor>> VantagePackedActorArray;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Packed level actor used as the starting point of the level."));
 	TSubclassOf<class APackedLevelActor> LevelStartPackedActor;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle", meta = (ToolTip = "Packed level actor used as the ending point of the level."));
 	TSubclassOf<class APackedLevelActor> LevelEndPackedActor;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle| Key Tiles", meta = (ToolTip = "Array of Packed level actor used as the *Capture the flag* objective points."));
-	TArray<TSubclassOf<class APackedLevelActor>> CapturableFlagPackedActorArray;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Obstacle| Key Tiles", meta = (ToolTip = "Array of Packed level actor used as the *Enemy Zone* objective points."));
-	TArray<TSubclassOf<class APackedLevelActor>> EnemyZonePackedActorArray;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Floor", meta = (ToolTip = "Mesh used for the quarter of a walkable tile with neighbours."))
 	class UStaticMeshComponent* FullPiece;
@@ -163,11 +177,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Floor", meta = (ToolTip = "Mesh used for the quarter of a walkable tile without any neighbours."))
 	class UStaticMeshComponent* ConvexCornerPiece;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GenerationValues | Objective Values", meta = (Bitmask, BitmaskEnum = EObjectiveType))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GenerationValues | Objective Values", meta = (Bitmask, BitmaskEnum = "/Script/RelicRunners.EObjectiveType"))
 	int ObjectiveType;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Capture the Flag", meta = (ToolTip = "Array of Packed level actor used as the *Capture the flag* objective points."));
+	TArray<TSubclassOf<class APackedLevelActor>> CapturableFlagPackedActorArray;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Capture the Flag", meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Maximum amount of tiles in which a flag objective is spawned on top of. Tile that are set as unwalkable are overriden to be walkable."))
 	int MaxCapturableFlagAmount;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Enemies", meta = (ToolTip = "Array of Packed level actor used as the *Enemy Zone* objective points."));
+	TArray<TSubclassOf<class APackedLevelActor>> EnemyZonePackedActorArray;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Enemies", meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Maximum amount of tiles in which an enemy zone objective is spawned on top of. Tile that are set as unwalkable are overriden to be walkable."))
 	int MaxEnemyZoneAmount;
@@ -177,6 +197,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Move the Payload", meta = (ClampMin = "1", UIMin = "1", ToolTip = "Speed at which the payload moves towards the target."))
 	float PayloadMovementSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Survival Zone", meta = (ToolTip = "Array of Packed level actor used as the *Survival Zone* objective points."));
+	TArray<TSubclassOf<class APackedLevelActor>> SurvivalZonePackedActorArray;
+
+	UPROPERTY(EditAnywhere, Category = "GenerationValues | Objective Values| Survival Zone", meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Maximum amount of tiles in which a survival zone objective is spawned on top of. Tile that are set as unwalkable are overriden to be walkable."))
+	int MaxSurvivalZoneAmount;
 
 protected:
 
@@ -188,6 +214,8 @@ public:
 	//Used to call the functions that will initialize each tile individual and set it as a walkable or non-walkable tile.
 	//Also used to set the regular modular obstacle that would spawn on it if it is set to walkable.
 	void GenerateFloor(int x, int y);
+
+	bool CalculateDistanceBetweenTiles(int firstIndex, int secondIndex);
 
 	//Initializes the floor tile and adds it to the array of floor tiles
 	void InitializeFloor();
@@ -206,6 +234,12 @@ public:
 
 	//Overrides tiles set by *InitializeFloor()* and sets them as Enemy Zone Tiles.
 	void SetEnemyZoneTile(int index);
+
+	//Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
+	void SetSurvivalZoneTile(int index);
+
+	//Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
+	void SetVantagePointTile(int index);
 
 	//Creates a path from *startingIndex* to *targetIndex* by setting those tile to walkable.
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width);
