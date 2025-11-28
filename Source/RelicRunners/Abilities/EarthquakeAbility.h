@@ -38,7 +38,6 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Earthquake")
     float StunDuration = 3.f;
 
-
     FGameplayAbilityActivationInfo CachedActivationInfo;
 
 
