@@ -36,6 +36,12 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 
 	colliderComp = collider;
 	onOverlapDelegate.BindUFunction(Owner, FName(*AttackMethodName));
+	
+	if (collider->OnComponentBeginOverlap.Contains(onOverlapDelegate))
+	{
+		collider->OnComponentBeginOverlap.Remove(onOverlapDelegate);
+	}
+
 	collider->OnComponentBeginOverlap.Add(onOverlapDelegate);
 	collider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
