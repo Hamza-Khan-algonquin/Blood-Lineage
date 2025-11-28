@@ -105,6 +105,7 @@ void ALobbyPreview::OnRep_LinkedPlayerState()
 {
     if (LinkedPlayerState)
     {
+        LinkedPlayerState->OnSelectedClassChanged.RemoveAll(this);
         LinkedPlayerState->OnSelectedClassChanged.AddUObject(this, &ALobbyPreview::OnPlayerClassChanged);
         OnPlayerClassChanged(LinkedPlayerState->SelectedClass);
     }
@@ -117,17 +118,13 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     UE_LOG(LogTemp, Log, TEXT("[LobbyPreview] %s -> %s"),*GetNameSafe(LinkedPlayerState), *NewClass.ToString());
 
     FString ItemType;
-
     if (NewClass == "Ares")             ItemType = "Greatsword";
     else if (NewClass == "Nemesis")     ItemType = "Sword";
     else if (NewClass == "Aphrodite")   ItemType = "Staff";
     else if (NewClass == "Artemis")     ItemType = "Bow";
-    if (ItemType.IsEmpty())
-    {
-        return;
-    }
+    if (ItemType.IsEmpty()) return;
 
-    const FString MeshPath = GetMeshPathByItemType(ItemType);
+    FString MeshPath = GetMeshPathByItemType(ItemType);
 
     UObject* LoadedMesh = nullptr;
     if (ItemType == "Staff" || ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Bow" || ItemType == "Offhand")

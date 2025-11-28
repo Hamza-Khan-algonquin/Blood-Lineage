@@ -13,6 +13,7 @@ void ULobbyHUDWorld::NativeConstruct()
     if (OwningPreview && OwningPreview->LinkedPlayerState)
     {
         ARelicRunnersPlayerState* PS = OwningPreview->LinkedPlayerState;
+        PS->OnSelectedClassChanged.RemoveAll(this);
         PS->OnSelectedClassChanged.AddUObject(this, &ULobbyHUDWorld::UpdatePlayerClassDisplay);
         UpdatePlayerClassDisplay(PS->SelectedClass);
     }

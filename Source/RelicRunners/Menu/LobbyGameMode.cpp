@@ -61,9 +61,6 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
     {
         SpawnedPreview->SetupFromPlayerState(RPS);
         LobbyPreviews.Add(NewPlayer, SpawnedPreview);
-
-        FTimerHandle TimerHandle;
-        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [RPS](){ RPS->OnSelectedClassChanged.Broadcast(RPS->SelectedClass); }, 0.05f, false);
     }
     else
     {
@@ -107,6 +104,11 @@ void ALobbyGameMode::UpdateSetup()
         if (ARelicRunnersPlayerController* RRPC = Cast<ARelicRunnersPlayerController>(PC))
         {
             RRPC->Client_UpdateLobbyUI();
+
+            if (ARelicRunnersPlayerState* RPS = RRPC->GetPlayerState<ARelicRunnersPlayerState>())
+            {
+                RPS->OnSelectedClassChanged.Broadcast(RPS->SelectedClass);
+            }
         }
     }
 }

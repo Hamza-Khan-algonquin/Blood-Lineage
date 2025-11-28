@@ -187,16 +187,9 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 		ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
 		if (PS)
 		{
-			if (PC->HasAuthority())
+			if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
 			{
-				PS->SetSelectedClass(ClassKey);
-			}
-			else
-			{
-				if (ARelicRunnersPlayerController* RPC_PC = Cast<ARelicRunnersPlayerController>(PC))
-				{
-					RPC_PC->Server_SetSelectedClass(ClassKey);
-				}
+				RPC->Server_SetSelectedClass(ClassKey);
 			}
 		}
 	}
