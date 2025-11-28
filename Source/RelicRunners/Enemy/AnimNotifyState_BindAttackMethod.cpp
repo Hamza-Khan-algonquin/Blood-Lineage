@@ -15,6 +15,12 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 		return;
 	}
 
+	if (!TargetClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Target Class Not Set"));
+		return;
+	}
+
 	TArray<UPrimitiveComponent*> colliders; 
 	Owner->GetComponents<UPrimitiveComponent>(colliders);
 	
@@ -26,7 +32,16 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 		return;
 	}
 
-	UPrimitiveComponent* collider = Cast<UPrimitiveComponent>(objProp->GetObjectPropertyValue_InContainer(Owner));
+	TObjectPtr<UObject> uncastedCollider = objProp->GetObjectPropertyValue_InContainer(Owner);
+
+	if (uncastedCollider)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Problem finding the collider"));
+		return;
+	}
+
+
+	UPrimitiveComponent* collider = Cast<UPrimitiveComponent>(uncastedCollider);
 
 	if (!collider)
 	{
