@@ -100,6 +100,19 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     Subsystem->AddMappingContext(MappingContext, 0);
 }
 
+USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)
+{
+    if (!Outer)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CreateItemFromData called with null Outer!"));
+        return nullptr;
+    }
+
+    USaveFileListData* Save = NewObject<USaveFileListData>(Outer);
+    Save->SetSaveData(SaveData);
+    return Save;
+}
+
 void URelicRunnersGameInstance::InitializeSaveSlots()
 {
     if (HasInitializedSlots) return; 

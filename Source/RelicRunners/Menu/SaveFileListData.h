@@ -44,7 +44,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int GetNumUpgrades() { return SaveData.NumUpgrades; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int NumUpgrades);
+    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int NumUpgrades, FGuid UniqueID);
+
+	UFUNCTION(BlueprintCallable)
+	void SetSaveData(FSaveData data) { SaveData = data; }
 
 	UPROPERTY(BlueprintReadWrite)
 	struct FSaveData SaveData;

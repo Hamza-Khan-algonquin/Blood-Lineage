@@ -118,7 +118,7 @@ void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 
     SaveFileData->IsEmptySlot = false;
 
-    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetNumUpgrades());
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetNumUpgrades(), SaveFileData->GetUniqueID());
 
     Setup(SaveFileData);
 }
@@ -127,7 +127,7 @@ void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 void USaveFileListWidget::FinalizeSaveCreation(const FString& PlayerName)
 {
     SaveFileData->IsEmptySlot = false;
-    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, 0);
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, 0, SaveFileData->GetUniqueID());
     Setup(SaveFileData);
 
     SpawnEmptySlot();
