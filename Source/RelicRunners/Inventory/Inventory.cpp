@@ -782,8 +782,8 @@ void UInventory::UpdateForgeUI()
     bool RightFilled = (ForgeItemRight != nullptr);
     bool BothFilled = LeftFilled && RightFilled;
 
-    Throbber1->SetVisibility(LeftFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-    Throbber2->SetVisibility(RightFilled ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    Throbber1->SetRenderOpacity(LeftFilled ? 1.0f : 0.2f);
+    Throbber2->SetRenderOpacity(RightFilled ? 1.0f : 0.2f);
 
     if (LeftFilled)
     {

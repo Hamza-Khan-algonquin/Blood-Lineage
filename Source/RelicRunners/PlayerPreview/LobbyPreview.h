@@ -62,4 +62,8 @@ public:
 	FString GetMeshPathByItemType(const FString& ItemType);
 	UStaticMeshComponent* GetStaticMeshComponentByItemType(const FString& ItemType);
 	void SetPreviewMeshByItemType(const FString& ItemType, UObject* MeshAsset);
+
+	DECLARE_MULTICAST_DELEGATE(FOnPreviewPlayerStateReady);
+	FOnPreviewPlayerStateReady OnPlayerStateReady;
+
 };

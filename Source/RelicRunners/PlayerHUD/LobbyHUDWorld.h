@@ -16,6 +16,8 @@ class RELICRUNNERS_API ULobbyHUDWorld : public UUserWidget
 
 public:
 	void NativeConstruct();
+	UFUNCTION()
+	void BindToPlayerState();
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Class;
