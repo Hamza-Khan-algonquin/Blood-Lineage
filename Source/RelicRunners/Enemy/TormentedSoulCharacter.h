@@ -26,6 +26,11 @@ public:
 	//The collider object types to be check for with the attack collider
 	TArray<TEnumAsByte<EObjectTypeQuery>> AttackQuery;
 
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool CallEditorDebugMessages = true;
+#endif
+
 protected:
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite)
 	//If the actor is attacking

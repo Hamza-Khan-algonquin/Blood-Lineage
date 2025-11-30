@@ -117,7 +117,7 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 			}
 		}
 		
-		//OnDied.Broadcast(this);
+		OnDied.Broadcast(this);
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
@@ -187,25 +187,7 @@ void AEnemyCharacter::BeginPlay()
 		APawn* enemy = static_cast<APawn*>(this);
 
 		//call it next tick so their no problem with stuff not loaded in yet
-		GetWorld()->GetTimerManager().SetTimerForNextTick([World, enemy] {
-			//get the director
-			ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(World, ADirector::StaticClass()));
-
-			if (Director && !Director->ContainsEnemy(enemy))
-			{
-				//add the enemy to the director
-				Director->AddEnemy(enemy);
-				//add the remove enemy method to the OnDestroyed delegate
-				enemy->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
-				//Cast<AEnemyCharacter>(enemy)->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
-			}
-		#if WITH_EDITOR || UE_BUILD_TEST
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("missing director"));
-			}
-		#endif
-		});
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyCharacter::AddEnemyToDirector);
 	}
 }
 
@@ -226,8 +208,7 @@ void AEnemyCharacter::SpawnItem()
 			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 			// Desired drop location
 			FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
-			AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(
-				ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+			AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
 
 			if (Dropped && DroppedItem)
 			{
@@ -339,30 +320,6 @@ void AEnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-bool AEnemyCharacter::GetIsActive()
-{
-	return IsActive;
-}
-
-bool AEnemyCharacter::GetShouldTick()
-{
-	return true;
-}
-
-void AEnemyCharacter::SetIsActive(bool newIsActive)
-{
-	IsActive = newIsActive;
-	IPoolActorInterface::SetIsActive(newIsActive);
-
-	if (GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
-	{
-		Cast<IPoolActorInterface>(GetController())->SetIsActive(newIsActive);
-	}
-}
-
-
-
-
 void AEnemyCharacter::SetCurrentHealth(const float& NewHealth)
 {
 	CurrentHealth = FMath::Clamp(NewHealth, 0.f, MaxHealth);
@@ -382,8 +339,35 @@ void AEnemyCharacter::AddEnemyToDirector()
 	{
 		//add the enemy to the director
 		Director->AddEnemy(this);
-		//add the remove enemy method to the OnDestroyed delegate
+		//add the remove enemy method to the OnDestroyed delegate/ on die
+		this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
 		this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
-		//this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
+	}
+#if WITH_EDITOR || UE_BUILD_TEST
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("missing director"));
+	}
+#endif
+}
+
+bool AEnemyCharacter::GetIsActive()
+{
+	return IsActive;
+}
+
+bool AEnemyCharacter::GetShouldTick()
+{
+	return true;
+}
+
+void AEnemyCharacter::SetIsActive(bool newIsActive)
+{
+	IsActive = newIsActive;
+	IPoolActorInterface::SetIsActive(newIsActive);
+
+	if (GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	{
+		Cast<IPoolActorInterface>(GetController())->SetIsActive(newIsActive);
 	}
 }

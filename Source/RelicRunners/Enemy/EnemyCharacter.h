@@ -20,7 +20,7 @@ To Do:
 */
 
 //same delegate signature as AActor's OnDestroyed but for enemies
-//DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDied, AEnemyCharacter, OnDied, AActor*, DiedActor);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDied, AEnemyCharacter, OnDied, AActor*, DiedActor);
 
 class UWidgetComponent;
 
@@ -40,7 +40,11 @@ UCLASS(Blueprintable, Abstract)
 class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
 {
 	GENERATED_BODY()
+public:
 
+	//Delegate that is called when the enemy dies
+	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
+	FEnemyCharacterDied OnDied;
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -81,8 +85,7 @@ protected:
 	TSubclassOf<class AItemActor> ItemActorClass;
 
 
-	//UPROPERTY(BlueprintAssignable)
-	//FEnemyCharacterDied OnDied;
+	
 
 	//interface implementation variable
 	bool IsActive = true;
