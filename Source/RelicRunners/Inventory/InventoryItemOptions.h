@@ -32,6 +32,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Item Options")
     void Setup(class UItemObject* InItem);
     void ConfigureButtons(bool ShowEquip, bool ShowUnequip, bool ShowSell, bool ShowBuy);
+    void SetForgeButtonVisibility(bool value);
     void ClosePopup();
     static void CloseAnyOpenPopup();
     UFUNCTION()
@@ -44,6 +45,8 @@ public:
     void OnBuyClicked();
     UFUNCTION()
     void OnSellClicked();
+    UFUNCTION()
+    void OnForgeClicked();
 
 protected:
 
@@ -66,7 +69,8 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UButton* SellButton;
-
+    UPROPERTY(meta = (BindWidget))
+    class UButton* ForgeButton;
 private:
 
     //Properties

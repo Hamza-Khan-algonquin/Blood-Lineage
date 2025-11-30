@@ -45,6 +45,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include "InventoryDragOperation.h"
+#include "InventorySlotsEntry.h"
 
 void UInventory::NativeConstruct()
 {
@@ -76,6 +77,7 @@ void UInventory::ToggleVendorUI(bool value)
     if (!value)
     {
         VendorCanvas->SetVisibility(ESlateVisibility::Collapsed);
+        ShopCanvas->SetVisibility(ESlateVisibility::Collapsed);
         VendorSlots->ClearListItems();
         CurrentVendor = nullptr;
         if (ForgeItemLeft)
@@ -99,6 +101,8 @@ void UInventory::ToggleVendorUI(bool value)
     else
     {
         VendorCanvas->SetVisibility(ESlateVisibility::Visible);
+        ShopCanvas->SetVisibility(ESlateVisibility::Visible);
+
         UpdateForgeUI();
     }
 }
@@ -117,10 +121,8 @@ void UInventory::DisplaySelectedVendorItems(const TArray<FItemData>& Items, AVen
     {
         UItemObject* NewItem = NewObject<UItemObject>(this);
         NewItem->ItemData = Data;
-
         VendorItems.Add(NewItem);
     }
-    //Set all items at once
     VendorSlots->SetListItems(VendorItems);
 }
 
@@ -385,6 +387,17 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 {
     Super::NativeTick(MyGeometry, DeltaTime);
 
+    float VendorMaxDistance = 500.f;
+
+    if (CurrentVendor)
+    {
+        float Dist = FVector::Dist(OwningCharacter->GetActorLocation(), CurrentVendor->GetActorLocation());
+
+        if (Dist > VendorMaxDistance)
+        {
+            ToggleVendorUI(false);
+        }
+    }
 }
 
 FReply UInventory::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -531,23 +544,7 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     }
     else if (InsideForge && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
-        if (DraggedItem->GetRarity() == "Relic") return true;
-
-        if (!ForgeItemLeft)
-        {
-            ForgeItemLeft = DraggedItem;
-            SetForgeTooltip(I_ForgeItem1, B_ForgeItem1, ForgeItemLeft);
-            InventoryComponent->RemoveItemByID(DraggedItem->ItemData.UniqueID);
-        }
-        else if (!ForgeItemRight)
-        {
-            ForgeItemRight = DraggedItem;
-            SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, ForgeItemRight);
-            InventoryComponent->RemoveItemByID(DraggedItem->ItemData.UniqueID);
-        }
-        ForgeItemResult = nullptr;    
-        SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
-        UpdateForgeUI();
+        ForgeItem(DraggedItem);
     }
     else if (InsideShop && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
@@ -563,6 +560,28 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     }
 
     return true;
+}
+
+void UInventory::ForgeItem(UItemObject* Item)
+{
+    if (!VendorCanvas->IsVisible()) return;
+    if (Item->GetRarity() == "Relic") return;
+
+    if (!ForgeItemLeft)
+    {
+        ForgeItemLeft = Item;
+        SetForgeTooltip(I_ForgeItem1, B_ForgeItem1, ForgeItemLeft);
+        InventoryComponent->RemoveItemByID(Item->ItemData.UniqueID);
+    }
+    else if (!ForgeItemRight)
+    {
+        ForgeItemRight = Item;
+        SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, ForgeItemRight);
+        InventoryComponent->RemoveItemByID(Item->ItemData.UniqueID);
+    }
+    ForgeItemResult = nullptr;
+    SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
+    UpdateForgeUI();
 }
 
 void UInventory::SetForgeTooltip(UImage* IconWidget, UBorder* BorderWidget, UItemObject* Item)

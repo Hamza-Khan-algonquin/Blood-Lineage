@@ -75,6 +75,7 @@ public:
 	void ToggleVendorUI(bool value);
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, AVendor* Vendor);
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
 	FString RollForgeRarity(const FString R1, float C1, const FString R2, float C2, const FString R3, float C3);
 	void UpdateForgeOdds(const FString& LeftRarity, const FString& RightRarity);
@@ -127,6 +128,9 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* VendorCanvas;
+
+	UPROPERTY(meta = (BindWidget))
+	class UCanvasPanel* ShopCanvas;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	class UWidgetAnimation* ForgeCompleted;

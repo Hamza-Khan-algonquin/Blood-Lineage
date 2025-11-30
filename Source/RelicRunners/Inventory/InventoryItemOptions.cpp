@@ -48,6 +48,10 @@ void UInventoryItemOptions::NativeConstruct()
     {
         SellButton->OnClicked.AddDynamic(this, &UInventoryItemOptions::OnSellClicked);
     }
+    if (ForgeButton)
+    {
+        ForgeButton->OnClicked.AddDynamic(this, &UInventoryItemOptions::OnForgeClicked);
+    }
 }
 
 void UInventoryItemOptions::Setup(UItemObject* InItem)
@@ -126,11 +130,19 @@ void UInventoryItemOptions::ConfigureButtons(bool ShowEquip, bool ShowUnequip, b
     }
 }
 
+void UInventoryItemOptions::SetForgeButtonVisibility(bool value)
+{
+    if (ForgeButton)
+    {
+        ForgeButton->SetVisibility(value ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    }
+}
+
 void UInventoryItemOptions::ClosePopup()
 {
-    if (UInventoryItemOptions::CurrentPopup == this)
+    if (CurrentPopup == this)
     {
-        UInventoryItemOptions::CurrentPopup = nullptr;
+        CurrentPopup = nullptr;
     }
 
     RemoveFromParent();
@@ -196,6 +208,15 @@ void UInventoryItemOptions::OnSellClicked()
     if (UInventory* Inventory = UInventory::Get(this))
     {
         Inventory->SellItem(Item);
+        RemoveFromParent();
+    }
+}
+
+void UInventoryItemOptions::OnForgeClicked()
+{
+    if (UInventory* Inventory = UInventory::Get(this))
+    {
+        Inventory->ForgeItem(Item);
         RemoveFromParent();
     }
 }

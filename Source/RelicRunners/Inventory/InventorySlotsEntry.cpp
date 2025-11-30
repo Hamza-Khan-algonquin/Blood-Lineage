@@ -62,8 +62,10 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     ItemFrame->SetBrushTintColor(ItemFrameColor);
     I_Item->SetBrushFromTexture(Item->ItemData.Icon);
 
+    TB_GoldPrice->SetText(FText::FromString(FString::FromInt(Item->ItemData.Gold)));
+
     if(Item->IsNewItem) B_NewItem->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-    else B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+    else B_NewItem->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 FReply UInventorySlotsEntry::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -162,11 +164,23 @@ void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
     if (Item->IsNewItem && HoveredTimeOnLeave >= 0.25f)
     {
         Item->IsNewItem = false;
-        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+        B_NewItem->SetVisibility(ESlateVisibility::Collapsed);
         if (ParentInventory && ParentInventory->InventoryComponent)
         {
             ParentInventory->InventoryComponent->SortInventoryByCurrentMethod();
         }
+    }
+}
+
+void UInventorySlotsEntry::ToggleGoldPriceBorder(bool value)
+{
+    if (value)
+    {
+        B_GoldPrice->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+    }
+    else
+    {
+        B_GoldPrice->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -200,15 +214,18 @@ void UInventorySlotsEntry::OnEntryClicked()
             if (TileView->GetName() == "InventorySlots")
             {
                 Popup->ConfigureButtons(true, false, true, false);
+                Popup->SetForgeButtonVisibility(true);
             }
             else if (TileView->GetName() == "VendorSlots")
             {
                 Popup->ConfigureButtons(false, false, false, true);
+                Popup->SetForgeButtonVisibility(false);
             }
         }
         else
         {
             Popup->ConfigureButtons(true, false, false, false);
+            Popup->SetForgeButtonVisibility(false);
         }
 
         FVector2D ScreenPosition;
