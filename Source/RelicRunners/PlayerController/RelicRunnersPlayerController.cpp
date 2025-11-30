@@ -85,15 +85,6 @@ void ARelicRunnersPlayerController::ClientTravelToGame_Implementation()
 	GI->ClientTravelToSession(0, NAME_GameSession);
 }
 
-void ARelicRunnersPlayerController::Server_SetPlayerName_Implementation(const FString& NewName)
-{
-	ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>();
-	if (PS)
-	{
-		PS->SetPlayerName(NewName);
-	}
-}
-
 void ARelicRunnersPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
@@ -151,7 +142,7 @@ void ARelicRunnersPlayerController::Client_LeaveSession_Implementation()
 	{
 		UE_LOG(LogTemp, Log, TEXT("Client %s leaving current session."), *GetName());
 
-		// Leave the session without queuing as host
+		//Leave the session without queuing as host
 		GI->LeaveSession(false);
 	}
 }
@@ -163,7 +154,7 @@ void ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems()
 	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
 	if (!Char) return;
 
-	// Clear all visuals on preview first
+	//Clear all visuals on preview first
 	PlayerPreviewInstance->ClearAllPreviewMeshes();
 
 	const TArray<FEquippedItemEntry>& EquippedEntries = Char->GetInventoryComponent()->EquippedItems;
@@ -176,7 +167,7 @@ void ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems()
 		const FString MeshPath = Char->GetMeshPathByItemType(ItemType);
 
 		UObject* LoadedMesh = nullptr;
-		if (ItemType == "Sword" || ItemType == "Shield")
+		if (ItemType == "Staff" || ItemType == "Sword" || ItemType == "Greatsword"  || ItemType == "Bow" || ItemType == "Offhand")
 		{
 			LoadedMesh = StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *MeshPath);
 		}
@@ -195,8 +186,8 @@ void ARelicRunnersPlayerController::UpdatePreviewItemVisual(UObject* MeshAsset, 
 {
 	if (!PlayerPreviewInstance) return;
 
-	// Set or clear the mesh on the preview actor based on asset type
-	if (ItemType == "Sword" || ItemType == "Shield")
+	//Set or clear the mesh on the preview actor based on asset type
+	if (ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Staff" || ItemType == "Bow" || ItemType == "Offhand")
 	{
 		PlayerPreviewInstance->SetPreviewMeshByItemType(ItemType, Cast<UStaticMesh>(MeshAsset));
 	}
@@ -231,10 +222,21 @@ void ARelicRunnersPlayerController::OnUnPossess()
 
 void ARelicRunnersPlayerController::Client_UpdateLobbyUI_Implementation()
 {
+	TryUpdateLobbyUI(0);
+}
+
+void ARelicRunnersPlayerController::TryUpdateLobbyUI(int Attempt)
+{
+	int MaxAttempts = 5;
+	if (Attempt >= MaxAttempts) return;
+
 	if (LobbyWidget)
 	{
 		LobbyWidget->UpdateFindGamesButtonVisibility();
 	}
+
+	FTimerHandle RetryHandle;
+	GetWorld()->GetTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateUObject(this, &ARelicRunnersPlayerController::TryUpdateLobbyUI, Attempt + 1), 0.2f, false);
 }
 
 void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview)
@@ -303,7 +305,7 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 
 	if (Cameras.Num() == 0)
 	{
-		// Retry until the camera exists
+		//Retry until the camera exists
 		UE_LOG(LogTemp, Warning, TEXT("LobbyCamera not found, retrying..."));
 		FTimerHandle RetryHandle;
 		GetWorldTimerManager().SetTimer(RetryHandle, this, &ARelicRunnersPlayerController::SetupLobbyView, 0.1f, false);
@@ -312,7 +314,6 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 
 	SetViewTargetWithBlend(Cameras[0], 0.0f);
 
-	// Only create UI once
 	if (!LobbyWidget && LobbyWidgetClass)
 	{
 		LobbyWidget = CreateWidget<UJoinUserWidget>(this, LobbyWidgetClass);
@@ -324,7 +325,10 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 			SetInputMode(FInputModeUIOnly());
 		}
 	}
-
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
+	}
 	UE_LOG(LogTemp, Log, TEXT("Lobby setup complete for %s"), *GetNameSafe(this));
 }
 
@@ -352,11 +356,6 @@ void ARelicRunnersPlayerController::SetupMainMenuView()
 			SetInputMode(FInputModeUIOnly());
 		}
 	}
-}
-
-void ARelicRunnersPlayerController::Client_SetupLobby_Implementation()
-{
-	SetupLobbyView();
 }
 
 void ARelicRunnersPlayerController::BeginPlay()
@@ -396,8 +395,34 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		FTimerHandle DelayHandle;
 		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 0.2f, false);
-		Server_SetPlayerName(GI->GetCharacterName());
-		UE_LOG(LogTemp, Log, TEXT("BeginPlay: Sent server player name: %s"), *GI->GetCharacterName());
+	}
+}
+
+void ARelicRunnersPlayerController::Server_SendPlayerInfo_Implementation(const FString& PlayerName, const FName& SelectedClass)
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->SelectedClass = SelectedClass;
+		PS->SetPlayerName(PlayerName);
+		PS->ForceNetUpdate();
+	}
+}
+
+void ARelicRunnersPlayerController::Client_SetupLobby_Implementation()
+{
+	SetupLobbyView();
+
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
+	}
+}
+
+void ARelicRunnersPlayerController::Client_SendPlayerInfo_Implementation()
+{
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
 }
 

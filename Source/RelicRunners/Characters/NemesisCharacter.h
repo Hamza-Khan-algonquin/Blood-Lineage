@@ -21,6 +21,9 @@ public:
 
     void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    class UClassInfo* ClassInfo;
+
 protected:
     virtual void BeginPlay() override;
 
@@ -28,6 +31,7 @@ protected:
     virtual void GiveDefenceAbilities() override;
     virtual void GiveUtilityAbilities() override;
     virtual void GiveUltimateAbilities() override;
+    virtual void OnLevelUp() override;
 
     UPROPERTY(EditAnywhere, Category = "Abilities")
     TSubclassOf<UGameplayAbility> VengefulDanceAbilityBP;

@@ -24,9 +24,10 @@ FString UInventorySortingOptions::GetSortingMethodDisplayName(EInventorySorting 
 {
 	switch (Method)
 	{
-		case EInventorySorting::SortByItemType:		return TEXT("Item Type");
+		case EInventorySorting::SortByItemType:		return TEXT("ItemType");
 		case EInventorySorting::SortByRarity:		return TEXT("Rarity");
 		case EInventorySorting::SortByLevel:		return TEXT("Level");
+		case EInventorySorting::SortByNewest:		return TEXT("Newest");
 		default: return TEXT("Sort");
 	}
 }
@@ -74,7 +75,8 @@ void UInventorySortingOptions::NativeTick(const FGeometry& MyGeometry, float InD
 
 void UInventorySortingOptions::CloseAnyOpenPopup()
 {
-	if (CurrentPopup && CurrentPopup->IsInViewport())
+	if (!CurrentPopup) return;
+	if (CurrentPopup->IsInViewport())
 	{
 		CurrentPopup->RemoveFromParent();
 		CurrentPopup = nullptr;
@@ -88,6 +90,7 @@ void UInventorySortingOptions::NativeConstruct()
 	if (B_SortByType) B_SortByType->OnClicked.AddDynamic(this, &UInventorySortingOptions::SortByItemTypeClicked);
 	if (B_SortByRarity) B_SortByRarity->OnClicked.AddDynamic(this, &UInventorySortingOptions::SortByRarityClicked);
 	if (B_SortByLevel) B_SortByLevel->OnClicked.AddDynamic(this, &UInventorySortingOptions::SortByLevelClicked);
+	if (B_SortByNewest) B_SortByNewest->OnClicked.AddDynamic(this, &UInventorySortingOptions::SortByNewestClicked);
 }
 
 void UInventorySortingOptions::SortByItemTypeClicked()
@@ -99,7 +102,10 @@ void UInventorySortingOptions::SortByRarityClicked()
 {
 	OnSortingSelected.Broadcast(EInventorySorting::SortByRarity);
 }
-
+void UInventorySortingOptions::SortByNewestClicked()
+{
+	OnSortingSelected.Broadcast(EInventorySorting::SortByNewest);
+}
 void UInventorySortingOptions::SortByLevelClicked()
 {
 	OnSortingSelected.Broadcast(EInventorySorting::SortByLevel);

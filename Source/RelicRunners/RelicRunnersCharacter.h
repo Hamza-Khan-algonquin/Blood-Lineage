@@ -278,7 +278,7 @@ public:
 
 	void AddExperience(int Amount);
 
-	void OnLevelUp();
+	virtual void OnLevelUp();
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 

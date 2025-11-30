@@ -58,7 +58,12 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     FLinearColor ItemFrameColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
     B_Item->SetBrushColor(ItemFrameColor);
     B_Color->SetBrushColor(ItemFrameColor);
+    B_Level->SetBrushColor(ItemFrameColor);
+    ItemFrame->SetBrushTintColor(ItemFrameColor);
     I_Item->SetBrushFromTexture(Item->ItemData.Icon);
+
+    if(Item->IsNewItem) B_NewItem->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+    else B_NewItem->SetVisibility(ESlateVisibility::Hidden);
 }
 
 FReply UInventorySlotsEntry::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -137,19 +142,32 @@ void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const
         if (UInventoryComponent* InventoryComponent = PC->GetPossessedPawn()->GetInventoryComponent())
         {
             EquippedItem = InventoryComponent->GetEquippedItemByType(Item->GetItemType());
-            if (EquippedItem == Item)
-                EquippedItem = nullptr;
+            if (EquippedItem == Item) EquippedItem = nullptr;
         }
     }
 
     ToolTip->Setup(Item, RarityColor, EquippedItem);
     B_Item->SetToolTip(ToolTip);
+
+    HoveredTime = GetWorld()->GetRealTimeSeconds();
 }
 
 void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
     Super::NativeOnMouseLeave(InMouseEvent);
     B_Item->SetToolTip(nullptr);
+
+    float HoveredTimeOnLeave = GetWorld()->GetRealTimeSeconds() - HoveredTime;
+    HoveredTime = 0;
+    if (Item->IsNewItem && HoveredTimeOnLeave >= 0.25f)
+    {
+        Item->IsNewItem = false;
+        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+        if (ParentInventory && ParentInventory->InventoryComponent)
+        {
+            ParentInventory->InventoryComponent->SortInventoryByCurrentMethod();
+        }
+    }
 }
 
 void UInventorySlotsEntry::OnEntryClicked()

@@ -161,7 +161,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	//Health
 	PlayerStartingMaxHealth = 100;
 	PlayerMaxHealth = PlayerStartingMaxHealth;
-	PlayerHealth = 20;
+	PlayerHealth = PlayerMaxHealth;
 	//Resource
 	PlayerStartingMaxResource = 100;
 	PlayerMaxResource = PlayerStartingMaxResource;
@@ -227,21 +227,17 @@ EInventorySorting ARelicRunnersCharacter::GetCurrentSortingMethod() const
 		return InventoryComponent->CurrentSortingMethod;
 	}
 
-	return EInventorySorting::SortByRarity;
+	return EInventorySorting::SortByNewest;
 }
 
 void ARelicRunnersCharacter::Server_EquipItemByID_Implementation(FGuid ID)
 {
 	if (!InventoryComponent) return;
 
-	UItemObject** ItemPtr = InventoryComponent->InventoryItems.FindByPredicate([&](UItemObject* Obj)
-		{
-			return Obj && Obj->ItemData.UniqueID == ID;
-		});
+	UItemObject* Item = InventoryComponent->FindItemByID(ID);
 
-	if (ItemPtr && *ItemPtr)
+	if (Item)
 	{
-		UItemObject* Item = *ItemPtr;
 		InventoryComponent->EquipItem(Item);
 		UpdateItemVisuals(Item);
 		InventoryComponent->UpdateTotalEquippedStats(this);
@@ -271,6 +267,8 @@ void ARelicRunnersCharacter::Server_UnequipItemByID_Implementation(FGuid ID)
 		UpdateItemVisuals(nullptr, ItemType);
 		InventoryComponent->UpdateTotalEquippedStats(this);
 	}
+
+	InventoryComponent->SortInventoryByCurrentMethod();
 }
 
 void ARelicRunnersCharacter::Server_SetReplicatedMeshByItemType_Implementation(UObject* MeshAsset, const FString& ItemType)
@@ -351,12 +349,12 @@ void ARelicRunnersCharacter::SetReplicatedMeshByItemType(UObject* MeshAsset, con
 		ReplicatedNecklaceMesh = Cast<USkeletalMesh>(MeshAsset);
 		OnRep_NecklaceMesh();
 	}
-	else if (ItemType == "Sword" || ItemType == "Mainhand")
+	else if (ItemType == "Greatsword" || ItemType == "Bow" || ItemType == "Sword" || ItemType == "Staff")
 	{
 		ReplicatedMainhandMesh = Cast<UStaticMesh>(MeshAsset);
 		OnRep_MainhandMesh();
 	}
-	else if (ItemType == "Shield" || ItemType == "Offhand")
+	else if (ItemType == "Offhand")
 	{
 		ReplicatedOffhandMesh = Cast<UStaticMesh>(MeshAsset);
 		OnRep_OffhandMesh();
@@ -631,13 +629,16 @@ void ARelicRunnersCharacter::InitLocalUI()
 
 void ARelicRunnersCharacter::SpawnStarterItems()
 {
-	if (ItemMeshData && InventoryComponent)
+	if (!ItemMeshData || !InventoryComponent) return;
+
+	for (int i = 0; i < 50; i++)
 	{
-		for (int i = 0; i < 50; ++i)
-		{
-			UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, ItemStats::GetRandomItemType(), ItemMeshData), InventoryComponent);
-			InventoryComponent->AddItem(Item);
-		}
+		FString RandomType = ItemStats::GetRandomItemType();
+		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, ItemMeshData);
+		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+		if (!Item) continue;
+
+		InventoryComponent->AddItem(Item);
 	}
 }
 
@@ -757,7 +758,7 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 
 	for (const FHitResult& Hit : Hits)
 	{
-		DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 12, FColor::Red, false, 1.0f);
+		//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 12, FColor::Red, false, 1.0f);
 		if (AActor* HitActor = Hit.GetActor())
 		{
 			if (!AlreadyHitActors.Contains(HitActor))
@@ -777,7 +778,7 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 		}
 	}
 
-	DrawDebugLine(GetWorld(), Start, End, FColor::Cyan, false, 0.1f, 0, 2.0f);
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Cyan, false, 0.1f, 0, 2.0f);
 
 }
 
@@ -797,7 +798,10 @@ void ARelicRunnersCharacter::BasicAttack()
 	{
 		return;
 	}
-	if (InventoryComponent->GetEquippedItemByType("Sword"))
+	if (InventoryComponent->GetEquippedItemByType("Greatsword")
+		|| InventoryComponent->GetEquippedItemByType("Sword")
+		|| InventoryComponent->GetEquippedItemByType("Staff")
+		|| InventoryComponent->GetEquippedItemByType("Bow"))
 	{
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (!AnimInstance) return;
@@ -1115,11 +1119,11 @@ void ARelicRunnersCharacter::Server_BuyItem_Implementation(const FItemData& Item
 
 	if (!CheckEnoughGold(ItemData.Gold)) return;
 
-	UItemObject* NewItem = ItemStats::CreateItemFromData(ItemData);
+	UItemObject* NewItem = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+	NewItem->IsNewItem = true;
 	InventoryComponent->AddItem(NewItem);
 	Vendor->RemoveStock(ItemData);
 
-	//Get client to update its inventory
 	Client_UpdateVendorUI(Vendor);
 }
 
@@ -1127,7 +1131,7 @@ void ARelicRunnersCharacter::Server_SellItem_Implementation(const FItemData& Ite
 {
 	if (!Vendor || !InventoryComponent) return;
 
-	// Unequip if equipped
+	//Unequip if equipped
 	UItemObject* EquippedItem = InventoryComponent->GetEquippedItemReference(ItemData.ItemType);
 	if (EquippedItem && EquippedItem->ItemData.UniqueID == ItemData.UniqueID)
 	{
@@ -1138,7 +1142,6 @@ void ARelicRunnersCharacter::Server_SellItem_Implementation(const FItemData& Ite
 	AddGold(ItemData.Gold);
 	Vendor->AddStock(ItemData);
 
-	//Get client to update its inventory
 	Client_UpdateVendorUI(Vendor);
 }
 
@@ -1159,49 +1162,49 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 {
 	if (!HasAuthority() || !InventoryComponent) return;
 
-	bool bFoundAndRemoved = false;
+	bool FoundAndRemoved = false;
 
-	// Remove from Inventory
-	for (int32 i = 0; i < InventoryComponent->InventoryItems.Num(); ++i)
+	//Remove from Inventory
+	for (int i = 0; i < InventoryComponent->InventoryItems.Num(); i++)
 	{
 		if (InventoryComponent->InventoryItems[i]->GetUniqueID() == Data.UniqueID)
 		{
 			InventoryComponent->InventoryItems.RemoveAt(i);
-			bFoundAndRemoved = true;
+			FoundAndRemoved = true;
 			break;
 		}
 	}
 
-	// Remove from Equipped
-	if (!bFoundAndRemoved)
+	//Remove from Equipped
+	if (!FoundAndRemoved)
 	{
-		for (int32 i = 0; i < InventoryComponent->EquippedItems.Num(); ++i)
+		for (int i = 0; i < InventoryComponent->EquippedItems.Num(); i++)
 		{
 			if (InventoryComponent->EquippedItems[i].Item &&
 				InventoryComponent->EquippedItems[i].Item->GetUniqueID() == Data.UniqueID)
 			{
 				InventoryComponent->EquippedItems.RemoveAt(i);
-				bFoundAndRemoved = true;
+				FoundAndRemoved = true;
 				break;
 			}
 		}
 	}
 
-	if (!bFoundAndRemoved)
+	if (!FoundAndRemoved)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Could not find item to drop: %s"), *Data.Name);
 		return;
 	}
 
-	// Desired drop location
+	//Desired drop location
 	FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 	const float MinDistance = 50.f;
 
-	// Get all items in the world
+	//Get all items in the world
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundActors);
 
-	// Handle overlap resolution for existing nearby items
+	//Handle overlap resolution for existing nearby items
 	for (AActor* Actor : FoundActors)
 	{
 		AItemActor* OtherItem = Cast<AItemActor>(Actor);
@@ -1210,12 +1213,12 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 		FVector OtherLoc = OtherItem->GetActorLocation();
 		if (FVector::Dist(OtherLoc, SpawnLoc) < MinDistance)
 		{
-			bool bMoved = false;
+			bool Moved = false;
 
 			// Try circular spreading from original location
-			for (int32 Radius = 50; Radius <= 300; Radius += 50)
+			for (int Radius = 50; Radius <= 300; Radius += 50)
 			{
-				for (int32 Angle = 0; Angle < 360; Angle += 45)
+				for (int Angle = 0; Angle < 360; Angle += 45)
 				{
 					const float Radians = FMath::DegreesToRadians(Angle);
 					FVector Offset = FVector(FMath::Cos(Radians), FMath::Sin(Radians), 0.f) * Radius;
@@ -1235,14 +1238,14 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 					if (!bTooClose)
 					{
 						OtherItem->SetActorLocation(NewLoc);
-						bMoved = true;
+						Moved = true;
 						break;
 					}
 				}
-				if (bMoved) break;
+				if (Moved) break;
 			}
 
-			if (!bMoved)
+			if (!Moved)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Could not reposition item: %s"), *OtherItem->GetName());
 			}
@@ -1276,7 +1279,7 @@ void ARelicRunnersCharacter::Server_PickupItem_Implementation(AItemActor* Target
 
 void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType)
 {
-	if (ItemType == "Sword" || ItemType == "Shield")
+	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff" || ItemType == "Offhand")
 	{
 		if (UStaticMeshComponent* TargetMesh = GetStaticMeshComponentByItemType(ItemType))
 		{
@@ -1301,7 +1304,7 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UItemObject* Item)
 	const FString& ItemType = Item->ItemData.ItemType;
 	const FString MeshPath = GetMeshPathByItemType(ItemType);
 
-	if (ItemType == "Sword" || ItemType == "Shield")
+	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow")
 	{
 		if (UStaticMesh* LoadedMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath))
 		{
@@ -1369,7 +1372,7 @@ USkeletalMeshComponent* ARelicRunnersCharacter::GetSkeletalMeshComponentByItemTy
 
 UStaticMeshComponent* ARelicRunnersCharacter::GetStaticMeshComponentByItemType(const FString& ItemType)
 {
-	if (ItemType == "Sword") return MainhandItemMesh;
-	if (ItemType == "Shield") return OffhandItemMesh;
+	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow") return MainhandItemMesh;
+	if (ItemType == "Offhand") return OffhandItemMesh;
 	return nullptr;
 }

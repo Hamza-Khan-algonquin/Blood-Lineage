@@ -15,6 +15,8 @@
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
+#include "RelicRunners/Menu/SaveFileListData.h"
+#include "RelicRunners/Menu/SaveFilePopupWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include <RelicRunners/AbilitySystem/AbilityPointCounter.h>
 
@@ -28,8 +30,13 @@ void URelicRunnersGameInstance::Init()
     {
         SessionInterface = OnlineSubsystem;
     }
+
+    //Keybinds
     Keys = NewObject<UKeybinds>(this);
     DefaultKeys = NewObject<UKeybinds>(this);
+
+    //Savefiles
+    InitializeSaveSlots();
 }
 
 void URelicRunnersGameInstance::ResetToDefaults()
@@ -92,6 +99,31 @@ void URelicRunnersGameInstance::ApplyKeybindings()
 
     Subsystem->AddMappingContext(MappingContext, 0);
 }
+
+USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)
+{
+    if (!Outer)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CreateItemFromData called with null Outer!"));
+        return nullptr;
+    }
+
+    USaveFileListData* Save = NewObject<USaveFileListData>(Outer);
+    Save->SetSaveData(SaveData);
+    return Save;
+}
+
+void URelicRunnersGameInstance::InitializeSaveSlots()
+{
+    if (HasInitializedSlots) return; 
+    HasInitializedSlots = true;
+
+    //Create starting data
+    USaveFileListData* FirstSlot = NewObject<USaveFileListData>();
+    FirstSlot->IsEmptySlot = true;
+    SaveSlots.Add(FirstSlot);
+}
+
 
 void URelicRunnersGameInstance::Shutdown()
 {

@@ -13,6 +13,9 @@ class RELICRUNNERS_API UModeSelectionWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	void NativeConstruct() override;
+	void HighlightSelectedSlot(class USaveFileListWidget* NewSelection);
+	UPROPERTY(BlueprintReadWrite)
+	class USaveFileListWidget* CurrentSelectedSlot = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* HostButton = nullptr;
 
@@ -24,30 +27,24 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* TutorialButton = nullptr;
-
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UTileView* SaveFiles;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* CreditsButton = nullptr;
-
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UEditableTextBox* NameTextBox = nullptr;
-
-
-	//UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	//class UTextBlock* SavefileName0 = nullptr;
-
-	//UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	//class UTextBlock* SavefileName1 = nullptr;
-
-	//UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	//class UTextBlock* SavefileName2 = nullptr;
-
-	//UFUNCTION(BlueprintCallable)
-	//void SetSaveFileName(int index, FString Name);
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UButton* ExitButton = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<class USaveFilePopupWidget> SaveFilePopupClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Save System")
+	TSubclassOf<class UEditSaveFilePopupWidget> EditPopupClass;
 
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 
 	void ResetUI();
+	UFUNCTION(BlueprintCallable)
+	void OpenSaveFilePopupWidget(class USaveFileListWidget* TargetSlot);
 
+	void PromptCreateSaveFile();
 protected:
 	UFUNCTION()
 	void HostButtonClicked();
@@ -60,12 +57,11 @@ protected:
 	void TutorialButtonClicked();
 	UFUNCTION()
 	void UpgradesButtonClicked();
-
+	UFUNCTION()
+	void ExitButtonClicked();
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
 
-	UFUNCTION()
-	void OnPlayerNameTextChanged(const FText& Text);
 
 	int32 MaxCharacterLimit;
 };

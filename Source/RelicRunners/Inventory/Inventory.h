@@ -32,8 +32,11 @@ public:
 	struct FSlotUIComponents
 	{
 		class UButton* Button;
+		class UBorder* Border;
 		class UImage* Image;
+		class UImage* ItemFrame;
 		class UTextBlock* LevelText;
+		class UBorder* LevelBorder;
 	};
 
 	//Properties
@@ -64,6 +67,8 @@ public:
 	float ForgeChance1;
 	float ForgeChance2;
 	float ForgeChance3;
+	FTimerHandle ForgeResultTimer;
+	void ClearForgeResult();
 
 	//Functions
 	virtual void NativeConstruct() override;
@@ -108,8 +113,6 @@ public:
 	UFUNCTION()
 	void MainhandSlotClicked();
 	UFUNCTION()
-	void OffhandlotClicked();
-	UFUNCTION()
 	void SortingTypeClicked();
 	UFUNCTION()
 	void OnFuseButtonPressed();
@@ -151,6 +154,34 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_ForgeItem2;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameHelmet;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameUpper;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameLower;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameNecklace;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameArms;
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrameMainhand;
+
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* ItemFrame;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* ItemFrame_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* ItemFrame_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_ForgeItem1;
@@ -160,6 +191,26 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_ForgeItemResult;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelHelmet;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelUpper;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelLower;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelNecklace;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelArms;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LevelMainhand;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Level_2;
 
 	UPROPERTY(meta = (BindWidget))
 	class UThrobber* Throbber1;
@@ -211,7 +262,17 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_Mainhand;
 	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Offhand;
+	class UBorder* B_Helmet1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Upper1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Lower1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Necklace1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Arms1;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Mainhand1;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_SortingType;
 	UPROPERTY(meta = (BindWidget))
@@ -229,8 +290,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_LevelMainhand;
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_LevelOffhand;
-	UPROPERTY(meta = (BindWidget))
 	class UImage* I_PlayerPreview;
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_Helmet;
@@ -244,8 +303,6 @@ public:
 	class UImage* I_Arms;
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_Mainhand;
-	UPROPERTY(meta = (BindWidget))
-	class UImage* I_Offhand;
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* EquippedCanvas;
 	

@@ -35,6 +35,7 @@ public:
     bool IsPressed = false;
     bool IsDragging = false;
     float PressedTime = 0.0f;
+    float HoveredTime = 0.0f;
     UPROPERTY()
     class UInventory* ParentInventory;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tooltip")
@@ -46,9 +47,16 @@ public:
     UPROPERTY(meta = (BindWidget))
     class UBorder* B_Item;
     UPROPERTY(meta = (BindWidget))
+    class UBorder* B_NewItem;
+    UPROPERTY(meta = (BindWidget))
     class UBorder* B_Color;
     UPROPERTY(meta = (BindWidget))
     class UImage* I_Item;
+    UPROPERTY(meta = (BindWidget))
+    class UImage* ItemFrame;
+    UPROPERTY(meta = (BindWidget))
+    class UBorder* B_Level;
+
     UPROPERTY()
     class UItemObject* Item;
 

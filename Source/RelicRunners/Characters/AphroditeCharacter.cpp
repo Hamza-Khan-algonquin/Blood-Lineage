@@ -4,7 +4,10 @@
 #include "AphroditeCharacter.h"
 #include "RelicRunners/AbilitySystem/AbilityPointCounter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
-
+#include <RelicRunners/Item/ItemStats.h>
+#include "RelicRunners/Inventory/InventoryComponent.h"
+#include "RelicRunners/Inventory/Inventory.h"
+#include <RelicRunners/Classes/ClassInfo.h>
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
@@ -20,6 +23,23 @@ void AAphroditeCharacter::BeginPlay()
     UtilityCooldown = 5.0f;
     UltimateCooldown = 10.0f;
 
+    //Starting Weapon
+    UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, "Staff", "Common", ItemMeshData), InventoryComponent);
+    InventoryComponent->AddItem(Item);
+    Server_EquipItemByID(Item->ItemData.UniqueID);
+
+    //Starting Stats
+    if (ClassInfo)
+    {
+        FClassData Stats = ClassInfo->GetStats("Aphrodite");
+        SetPlayerStartingHealth(Stats.Health);
+        PlayerMaxHealth = Stats.Health;
+        PlayerHealth = Stats.Health;
+        SetPlayerStartingArmor(Stats.Armor);
+        SetPlayerStartingStrength(Stats.Strength);
+        SetPlayerStartingDexterity(Stats.Dexterity);
+        SetPlayerStartingIntelligence(Stats.Intelligence);
+    }
 }
 
 // Called when player takes control of this character
@@ -98,6 +118,19 @@ void AAphroditeCharacter::GiveUltimateAbilities()
 		// start ability cooldown
         //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
     }
+}
+
+void AAphroditeCharacter::OnLevelUp()
+{
+    Super::OnLevelUp();
+
+    UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Staff");
+    Item->ItemData.Level++;
+    Item->ItemData.Dexterity += FMath::RandRange(0, 1);
+    Item->ItemData.Strength += FMath::RandRange(0, 1);
+    Item->ItemData.Intelligence += FMath::RandRange(2, 5);
+    Inventory->RefreshEquippedUI();
+    InventoryComponent->UpdateTotalEquippedStats(this);
 }
 
 

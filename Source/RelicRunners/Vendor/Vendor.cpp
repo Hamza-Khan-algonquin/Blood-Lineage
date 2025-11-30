@@ -1,6 +1,7 @@
 #include "Vendor.h"
 
 #include "Components/CapsuleComponent.h"
+#include "Components/CanvasPanel.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
@@ -93,8 +94,11 @@ void AVendor::Interact_Implementation(ARelicRunnersCharacter* Char)
 {
 	if (!Char) return;
 
-	Char->InventoryUI();
 	LinkedInventoryWidget = Char->GetInventory();
+	if (!LinkedInventoryWidget->IsVisible() || LinkedInventoryWidget->VendorCanvas->IsVisible())
+	{
+		Char->InventoryUI();
+	}
 	LinkedInventoryWidget->ToggleVendorUI(true);
 	LinkedInventoryWidget->DisplaySelectedVendorItems(Stock, this);
 }

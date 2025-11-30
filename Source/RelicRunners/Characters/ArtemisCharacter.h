@@ -19,6 +19,9 @@ public:
     virtual void PossessedBy(AController* NewController) override;
     virtual void OnRep_PlayerState() override;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    class UClassInfo* ClassInfo;
+
 protected:
     virtual void BeginPlay() override;
     
@@ -26,4 +29,5 @@ protected:
     virtual void GiveDefenceAbilities() override;
     virtual void GiveUtilityAbilities() override;
     virtual void GiveUltimateAbilities() override;
+    virtual void OnLevelUp() override;
 };

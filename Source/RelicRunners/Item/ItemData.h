@@ -119,6 +119,8 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetItemData(const FItemData& NewData) { ItemData = NewData; }
 
+    bool IsNewItem = false;
+
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual bool IsSupportedForNetworking() const override { return true; }
 };

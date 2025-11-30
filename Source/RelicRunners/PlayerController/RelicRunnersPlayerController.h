@@ -110,9 +110,6 @@ public:
 	class ARelicRunnersCharacter* GetPossessedPawn() { return PossessedPawn; }
 
 	UFUNCTION(Server, Reliable)
-	void Server_SetPlayerName(const FString& NewName);
-
-	UFUNCTION(Server, Reliable)
 	void Server_SetSelectedClass(FName NewClass);
 
 	virtual void OnRep_Pawn() override;
@@ -120,6 +117,8 @@ public:
 	virtual void AcknowledgePossession(APawn* Pawn) override;
 
 	virtual void OnUnPossess() override;
+	UFUNCTION()
+	void TryUpdateLobbyUI(int Attempt);
 
 	UFUNCTION()
 	void SetupPreviewRenderTarget(APlayerPreview* Preview);
@@ -153,6 +152,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_RequestStartGame();
 
+	UFUNCTION(Server, Reliable)
+	void Server_SendPlayerInfo(const FString& PlayerName, const FName& SelectedClass);
+
 	UFUNCTION(Client, Reliable)
 	void Client_LeaveSession();
 
@@ -182,10 +184,12 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientTravelToGame();
 
-	// Begin Actor interface
+	UFUNCTION(Client, Reliable)
+	void Client_SendPlayerInfo();
 protected:
 	ARelicRunnersPlayerController();
 	virtual void BeginPlay() override;
+
 
 	void InitializePawnDependentSystems();
 

@@ -304,7 +304,7 @@ void AEnemyCharacterAI::InitializeStartingEquipment()
 	if (!InventoryComponent) return;
 
 	TArray<FString> StartingItems = {
-		"Sword", "Shield", "Helmet", "Upper", "Lower",
+		"Mainhand", "Helmet", "Upper", "Lower",
 		"Necklace", "Arms",
 	};
 
@@ -326,7 +326,7 @@ void AEnemyCharacterAI::InitializeStartingEquipment()
 
 void AEnemyCharacterAI::UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType)
 {
-	if (ItemType == "Sword" || ItemType == "Shield")
+	if (ItemType == "Mainhand" || ItemType == "Offhand")
 	{
 		if (UStaticMeshComponent* TargetMesh = GetStaticMeshComponentByItemType(ItemType))
 		{
@@ -351,7 +351,7 @@ void AEnemyCharacterAI::UpdateItemVisuals(UItemObject* Item)
 	const FString& ItemType = Item->ItemData.ItemType;
 	const FString MeshPath = GetMeshPathByItemType(ItemType);
 
-	if (ItemType == "Sword" || ItemType == "Shield")
+	if (ItemType == "Mainhand" || ItemType == "Offhand")
 	{
 		if (UStaticMesh* LoadedMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath))
 		{
@@ -460,8 +460,8 @@ USkeletalMeshComponent* AEnemyCharacterAI::GetSkeletalMeshComponentByItemType(co
 
 UStaticMeshComponent* AEnemyCharacterAI::GetStaticMeshComponentByItemType(const FString& ItemType)
 {
-	if (ItemType == "Sword") return MainhandItemMesh;
-	if (ItemType == "Shield") return OffhandItemMesh;
+	if (ItemType == "Mainhand") return MainhandItemMesh;
+	if (ItemType == "Offhand") return OffhandItemMesh;
 	return nullptr;
 }
 
@@ -538,12 +538,12 @@ void AEnemyCharacterAI::SetReplicatedMeshByItemType(UObject* MeshAsset, const FS
 		ReplicatedNecklaceMesh = Cast<USkeletalMesh>(MeshAsset);
 		OnRep_NecklaceMesh();
 	}
-	else if (ItemType == "Sword" || ItemType == "Mainhand")
+	else if (ItemType == "Mainhand")
 	{
 		ReplicatedMainhandMesh = Cast<UStaticMesh>(MeshAsset);
 		OnRep_MainhandMesh();
 	}
-	else if (ItemType == "Shield" || ItemType == "Offhand")
+	else if (ItemType == "Offhand")
 	{
 		ReplicatedOffhandMesh = Cast<UStaticMesh>(MeshAsset);
 		OnRep_OffhandMesh();

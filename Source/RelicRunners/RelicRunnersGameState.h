@@ -19,7 +19,7 @@ enum class EObjectiveType : uint8
 	CaptureTheFlag = 1 << 0,
 	DefeatAllEnemies = 1 << 1,
 	MoveThePayload = 1 << 2,
-	DefendTheCrystal = 1 << 3,
+	Survival = 1 << 3,
 };
 ENUM_CLASS_FLAGS(EObjectiveType);
 
@@ -68,7 +68,17 @@ public:
 	UFUNCTION()
 	void OnRep_EnemyObjectivesChange();
 
-	bool PayloadHadBeenDelivered = false;
+	UPROPERTY(ReplicatedUsing = OnRep_PayloadObjectivesChange)
+	int RemainingPayloads = 0;
+
+	UFUNCTION()
+	void OnRep_PayloadObjectivesChange();
+
+	UPROPERTY(ReplicatedUsing = OnRep_SurvivalObjectivesChange)
+	int RemainingSurvivalZones = 0;
+
+	UFUNCTION()
+	void OnRep_SurvivalObjectivesChange();
 
 	UPROPERTY(BlueprintAssignable)
 	FOnObjectiveActionCompleted OnObjectiveActionCompleted;

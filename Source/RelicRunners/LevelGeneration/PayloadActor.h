@@ -35,7 +35,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void Initialize(class USplineComponent* newSpline, float newSpeed);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Initialize(class USplineComponent* newSpline, float newSpeed);
 
 	UFUNCTION()
 	void OnTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -43,12 +44,23 @@ public:
 	UFUNCTION()
 	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-private:
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnTriggerChange(AActor* OtherActor, bool OnOverlapBegin);
+
 	UPROPERTY(Replicated)
 	float Distance;
 
+	UPROPERTY(Replicated, EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000"))
+	float Acceleration;
+
+	UPROPERTY(Replicated, EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000"))
+	float Deceleration;
+
 	UPROPERTY(Replicated)
 	float MaxSpeed;
+
+	UPROPERTY(Replicated)
+	float TargetSpeed;
 
 	UPROPERTY(Replicated)
 	float CurrentSpeed;
@@ -58,4 +70,7 @@ private:
 
 	UPROPERTY(Replicated)
 	bool HasReachedDestination;
+
+	UPROPERTY(Replicated)
+	TArray<AActor*> CollidingActors;
 };

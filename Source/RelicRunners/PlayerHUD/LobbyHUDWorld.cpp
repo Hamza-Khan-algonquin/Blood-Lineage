@@ -13,6 +13,7 @@ void ULobbyHUDWorld::NativeConstruct()
     if (OwningPreview && OwningPreview->LinkedPlayerState)
     {
         ARelicRunnersPlayerState* PS = OwningPreview->LinkedPlayerState;
+        PS->OnSelectedClassChanged.RemoveAll(this);
         PS->OnSelectedClassChanged.AddUObject(this, &ULobbyHUDWorld::UpdatePlayerClassDisplay);
         UpdatePlayerClassDisplay(PS->SelectedClass);
     }
@@ -29,8 +30,7 @@ void ULobbyHUDWorld::UpdatePlayerClassDisplay(FName NewClass)
 
     if (I_Class)
     {
-        FString TexturePath = FString::Printf(TEXT("/Game/Blueprints/Menu/Icon_%s.Icon_%s"),
-            *NewClass.ToString(), *NewClass.ToString());
+        FString TexturePath = FString::Printf(TEXT("/Game/ThirdPerson/Icons/Icon_%s.Icon_%s"), *NewClass.ToString(), *NewClass.ToString());
 
         UTexture2D* ClassIcon = LoadObject<UTexture2D>(nullptr, *TexturePath);
         if (ClassIcon)

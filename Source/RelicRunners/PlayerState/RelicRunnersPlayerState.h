@@ -28,31 +28,28 @@ class RELICRUNNERS_API ARelicRunnersPlayerState : public APlayerState, public IA
 {
     GENERATED_BODY()
 public:
+    //Functions
     ARelicRunnersPlayerState();
-
-    UPROPERTY(ReplicatedUsing = OnRep_SelectedClass)
-    FName SelectedClass;
-
+    ~ARelicRunnersPlayerState();
     UFUNCTION()
     void OnRep_SelectedClass();
 
+    //Properties
+    UPROPERTY(ReplicatedUsing = OnRep_SelectedClass)
+    FName SelectedClass;
 
-    ~ARelicRunnersPlayerState();
-
+    //Getters and Setters
+    UAttributeSet* GetAttributeSet() const { return AttributeSet; }
     void SetSelectedClass(FName NewClass);
-
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-    DECLARE_MULTICAST_DELEGATE_OneParam(FOnSelectedClassChanged, FName);
-
-    FOnSelectedClassChanged OnSelectedClassChanged;
-
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-
-    UAttributeSet* GetAttributeSet() const { return AttributeSet; }
+    //Delegate
+    DECLARE_MULTICAST_DELEGATE_OneParam(FOnSelectedClassChanged, FName);
+    FOnSelectedClassChanged OnSelectedClassChanged;
 
 protected:
+
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
     TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;

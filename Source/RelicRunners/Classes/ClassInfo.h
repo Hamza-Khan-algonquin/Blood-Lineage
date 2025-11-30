@@ -17,4 +17,5 @@ public:
 	TMap<FName, struct FClassData> Classes;
 
 	struct FClassData GetMaxStats() const;
+	struct FClassData GetStats(FString ClassName) const;
 };

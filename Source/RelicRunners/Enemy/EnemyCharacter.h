@@ -71,18 +71,22 @@ protected:
 
 	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
 	//The Chance the enemy has to drop an item on death from 0.0 to 1.0
-	float ChanceToDrpopItem = 1.0f;
+	float ChanceToDropItem = 0.2f;
 
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
 	EEnemyType TypeOfEnemy;
 	UPROPERTY(Category = "Enemy|Component", VisibleAnywhere, Replicated, NoClear, meta = (DisplayThumbnail = true))
 	UWidgetComponent* EnemyHUDWorld;
+	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
+	TSubclassOf<class AItemActor> ItemActorClass;
+
 
 	//UPROPERTY(BlueprintAssignable)
 	//FEnemyCharacterDied OnDied;
 
 	//interface implementation variable
 	bool IsActive = true;
+
 
 public:
 	// Sets default values for this character's properties

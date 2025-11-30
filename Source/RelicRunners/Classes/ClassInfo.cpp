@@ -12,9 +12,9 @@ FClassData UClassInfo::GetMaxStats() const
 	MaxValues.Strength = 0.f;
 	MaxValues.Intelligence = 0.f;
 
-	for (const auto& Pair : Classes)
+	for (const auto& Class : Classes)
 	{
-		const FClassData& Info = Pair.Value;
+		const FClassData& Info = Class.Value;
 
 		MaxValues.Health = FMath::Max(MaxValues.Health, Info.Health);
 		MaxValues.Armor = FMath::Max(MaxValues.Armor, Info.Armor);
@@ -24,4 +24,16 @@ FClassData UClassInfo::GetMaxStats() const
 	}
 
 	return MaxValues;
+}
+
+FClassData UClassInfo::GetStats(FString ClassName) const
+{
+	const FClassData* Found = Classes.Find(*ClassName);
+
+	if (Found)
+	{
+		return *Found;
+	}
+
+	return FClassData();
 }

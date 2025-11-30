@@ -41,7 +41,7 @@ AItemActor::AItemActor()
     TooltipWidgetComponent->SetupAttachment(RootComponent);
     TooltipWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
     TooltipWidgetComponent->SetDrawAtDesiredSize(true);
-    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 75.f));
+    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 0));
     TooltipWidgetComponent->SetRelativeScale3D(FVector(0.1f));
     TooltipWidgetComponent->CastShadow = false;
 
@@ -66,9 +66,9 @@ void AItemActor::InitializeTooltipWidget()
 
     TooltipWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
     TooltipWidgetComponent->SetDrawAtDesiredSize(true);
-    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 75.f));
+    TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 0));
     TooltipWidgetComponent->SetRelativeScale3D(FVector(0.1f));
-    TooltipWidgetComponent->SetPivot(FVector2D(0.5f, 0.f));
+    TooltipWidgetComponent->SetPivot(FVector2D(0.5f, 1.f));
     TooltipWidgetComponent->CastShadow = false;
 }
 
@@ -157,7 +157,7 @@ void AItemActor::SetupVisuals()
 
     static const TMap<FString, FVector> ItemScaleMap = {
         { "Lower", FVector(1.50f) }, { "Upper", FVector(1.75f) },
-        { "Shield", FVector(0.4f) }, { "Sword", FVector(2.0f) }, 
+        { "Mainhand", FVector(2.0f) }, 
         { "Helmet", FVector(3.0f) }, { "Arms", FVector(2.5f) }, 
         { "Necklace", FVector(3.25f) },
     };
@@ -230,7 +230,9 @@ void AItemActor::HandlePickup(ARelicRunnersCharacter* Char)
 
     if (UInventoryComponent* InventoryComponent = Char->GetInventoryComponent())
     {
-        InventoryComponent->AddItem(ItemStats::CreateItemFromData(ItemData, InventoryComponent));
+        UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+        Item->IsNewItem = true;
+        InventoryComponent->AddItem(Item);
         Destroy();
     }
 }
