@@ -43,7 +43,7 @@ public:
 	void ResetUI();
 	UFUNCTION(BlueprintCallable)
 	void OpenSaveFilePopupWidget(class USaveFileListWidget* TargetSlot);
-
+	UFUNCTION(BlueprintCallable)
 	void PromptCreateSaveFile();
 protected:
 	UFUNCTION()

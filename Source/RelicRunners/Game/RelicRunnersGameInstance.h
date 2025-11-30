@@ -79,7 +79,7 @@ public:
     UPROPERTY()
     TArray<class USaveFileListData*> SaveSlots;
     UFUNCTION(BlueprintCallable)
-    void AddSaveSlot(USaveFileListData* NewSave) { SaveSlots.Add(NewSave); }
+    void AddSaveSlot(USaveFileListData* NewSave, UModeSelectionWidget* ParentWidget) {NewSave->IsEmptySlot = false, NewSave->SetParentWidget(ParentWidget); SaveSlots.Add(NewSave); }
     UFUNCTION(BlueprintCallable)
     TArray<class USaveFileListData*> GetSaveSlots() { return SaveSlots; }
     bool HasInitializedSlots = false;
