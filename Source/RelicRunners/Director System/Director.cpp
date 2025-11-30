@@ -19,7 +19,7 @@ void ADirector::BeginPlay()
 {
 	Super::BeginPlay();
 	//make sure we are the server
-	if (GetLocalRole() == ROLE_Authority)
+	if (HasAuthority())
 	{
 		//sort enemies by their weights for the weight sums algorithm used when picking who to spawn
 		DefaultSpawningCards.Sort([](const USpawnCard& A, const USpawnCard& B)
@@ -123,7 +123,7 @@ void ADirector::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	
 	//make sure we are on the server
-	if (GetLocalRole() == ROLE_Authority)
+	if (HasAuthority())
 	{
 		//check to see if it is time for a spawn check
 		if (SpawnTimer <= 0)

@@ -8,9 +8,10 @@
 
 
 
-/*
+/* to do list
 * Look into switching this to a UWorldSubsystem at a later date. Doing it his way for now because I know who to do it this way so it will be faster to make.
 * add timer functionality to set actors inactive after a certain amount of time
+* add a method to preload certain amount of actors into the pool 
 */ 
 UCLASS()
 class RELICRUNNERS_API AObjectPoolManager : public AActor
@@ -35,7 +36,7 @@ public:
 	void SetActorActive(AActor* actor, bool activeState = true, float lifeSpan = -1);
 
 	void AddActor( AActor* actorToAdd,  TSubclassOf<AActor> actorType);
-	AActor* CreateActor( TSubclassOf<AActor> actorType);
+	
 	//If life span is set to -1 it will stay active indefinitely
 	AActor* GetActor( TSubclassOf<AActor> actorType, float lifeSpan = -1);
 	UFUNCTION()
@@ -49,7 +50,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	AActor* CreateActor(TSubclassOf<AActor> actorType);
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

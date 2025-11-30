@@ -4,6 +4,7 @@
 #include "SoldierController.h"
 #include <NavigationSystem.h>
 #include <Perception/AIPerceptionComponent.h>
+#include <BehaviorTree/BehaviorTreeComponent.h>
 
 ASoldierController::ASoldierController()
 {
@@ -79,6 +80,46 @@ void ASoldierController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	if (StartingBehaviorTree)
+	{
+		RunBehaviorTree(StartingBehaviorTree);
+	}
+}
+
+bool ASoldierController::GetIsActive()
+{
+	return IsActive;
+}
+
+bool ASoldierController::GetShouldTick()
+{
+	return false;
+}
+
+void ASoldierController::SetIsActive(bool newIsActive)
+{
+	if (IsActive == newIsActive)
+	{
+		return;
+	}
+
+	IsActive = newIsActive;
+	IPoolActorInterface::SetIsActive(newIsActive);
+
+	if (!IsActive)
+	{
+		//reset variables
+		IsInCombat = false;
+		OriginPatrolZone = FVector::ZeroVector;
+		CurrentPatrolCenter = FVector::ZeroVector;
+		
+		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+
+		if (behaviorComp)
+		{
+			behaviorComp->StopTree(EBTStopMode::Safe);
+		}
+	}
+	else if (StartingBehaviorTree)
 	{
 		RunBehaviorTree(StartingBehaviorTree);
 	}

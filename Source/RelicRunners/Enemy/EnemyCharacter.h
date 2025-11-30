@@ -88,8 +88,10 @@ protected:
 	
 
 	//interface implementation variable
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite, Replicated)
 	bool IsActive = true;
-
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite, Replicated)
+	bool SetControllerActiveStatus = true;
 
 public:
 	// Sets default values for this character's properties
@@ -152,6 +154,9 @@ public:
 	//Setter for the current level
 	void SetEnemyLevel(const int& newLevel) { Level = newLevel; }
 
+	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Reset enemy variables.", ShortToolTip = "Hi."))
+	void ResetEnemy();
+
 	void AddEnemyToDirector();
 
 	
@@ -189,6 +194,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+//Interface Implementation
 public:
 	//IPoolActorInterface implementation
 	virtual bool GetIsActive() override;

@@ -59,6 +59,7 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AEnemyCharacter, EnemyHUDWorld);
 	DOREPLIFETIME(AEnemyCharacter, EnemyResource);
 	DOREPLIFETIME(AEnemyCharacter, EnemyMaxResource);
+	DOREPLIFETIME(AEnemyCharacter, IsActive);
 }
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -118,12 +119,15 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 		}
 		
 		OnDied.Broadcast(this);
+		OnDied.Clear();
+		OnDestroyed.Clear();
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
+			ResetEnemy();
 		}
 		else
 		{
@@ -331,6 +335,12 @@ void AEnemyCharacter::SetMaxHealth(const float& newHealth)
 	CurrentHealth = FMath::Min(CurrentHealth, MaxHealth);
 }
 
+void AEnemyCharacter::ResetEnemy()
+{
+	CurrentHealth = MaxHealth;
+	RemainingStunTime = 0.f;
+}
+
 void AEnemyCharacter::AddEnemyToDirector()
 {
 	ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(this->GetWorld(), ADirector::StaticClass()));
@@ -363,11 +373,16 @@ bool AEnemyCharacter::GetShouldTick()
 
 void AEnemyCharacter::SetIsActive(bool newIsActive)
 {
+	if (IsActive == newIsActive)
+	{
+		return;
+	}
+
 	IsActive = newIsActive;
 	IPoolActorInterface::SetIsActive(newIsActive);
 
-	if (GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	if (SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
-		Cast<IPoolActorInterface>(GetController())->SetIsActive(newIsActive);
+		AObjectPoolManager::GetInstance(this)->SetActorActive(GetController(), newIsActive);
 	}
 }
