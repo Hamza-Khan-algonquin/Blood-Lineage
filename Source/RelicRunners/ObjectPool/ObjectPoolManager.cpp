@@ -160,7 +160,7 @@ void AObjectPoolManager::RemoveActor(AActor* actorToRemove)
 
 void AObjectPoolManager::PreLoadPool(TSubclassOf<AActor> actorType, int numberOfElements)
 {
-	PooledObjects[actorType].Reserve(numberOfElements);
+	PooledObjects.FindOrAdd(actorType).Reserve(numberOfElements);
 
 	for (int i = 0; i < numberOfElements; i++)
 	{
