@@ -104,12 +104,17 @@ void ADirector::SpawnCheck()
 		//cast the actor as spawn points
 		ASpawnPoint* point = static_cast<ASpawnPoint*>(spawnPoints[i]);
 
-		for (APawn* player : Players)
+		for (int j = 0; j < Players.Num(); j++)
 		{
-			if (!player) continue;
+			if (!Players[j])
+			{
+				Players.RemoveAt(j);
+				j--;
+				continue;
+			}
 
 			//check to see if the player is close enough and the spawn point is not at max capacity
-			if (FVector::Dist2D(player->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
+			if (FVector::Dist2D(Players[j]->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
 			{
 				point->SpawnEnemies();
 			}
