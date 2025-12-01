@@ -79,6 +79,14 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 		}
 	}
 	
+	if (lifeSpan > 0.0f)
+	{
+		FTimerHandle handler;
+		FTimerDelegate delegate;
+
+		delegate.BindUFunction(this, "SetActorActive", actor, !activeState);
+		GetWorld()->GetTimerManager().SetTimer(handler, delegate, lifeSpan, false);
+	}
 }
 
 void AObjectPoolManager::AddActor(AActor* actorToAdd, TSubclassOf<AActor> actorType)
