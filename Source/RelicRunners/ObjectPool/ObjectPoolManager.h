@@ -33,19 +33,27 @@ public:
 	static AObjectPoolManager* GetInstance(const UObject* WorldContext);
 
 	//If life span is set to -1 it will stay active indefinitely
+	UFUNCTION(BlueprintCallable)
 	void SetActorActive(AActor* actor, bool activeState = true, float lifeSpan = -1);
 
+	UFUNCTION(BlueprintCallable)
 	void AddActor( AActor* actorToAdd,  TSubclassOf<AActor> actorType);
 	
 	//If life span is set to -1 it will stay active indefinitely
+	UFUNCTION(BlueprintCallable)
 	AActor* GetActor( TSubclassOf<AActor> actorType, float lifeSpan = -1);
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void RemoveActor(AActor* actorToRemove);
+	UFUNCTION(BlueprintCallable)
+	void PreLoadPool(TSubclassOf<AActor> actorType, int numberOfElements);
 
 	//neither of these should ever need to be called but their here just incase
+	UFUNCTION(BlueprintCallable)
 	void CleanUpPool( TSubclassOf<AActor> actorType);
+	UFUNCTION(BlueprintCallable)
 	void CleanUpPools();
-
+	
+	UFUNCTION(BlueprintCallable)
 	bool IsActorClassPooled(TSubclassOf<AActor> actorType);
 protected:
 	// Called when the game starts or when spawned

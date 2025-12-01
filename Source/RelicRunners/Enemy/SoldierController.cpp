@@ -2,9 +2,10 @@
 
 
 #include "SoldierController.h"
-#include <NavigationSystem.h>
-#include <Perception/AIPerceptionComponent.h>
-#include <BehaviorTree/BehaviorTreeComponent.h>
+#include "NavigationSystem.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 ASoldierController::ASoldierController()
 {
@@ -92,7 +93,7 @@ bool ASoldierController::GetIsActive()
 
 bool ASoldierController::GetShouldTick()
 {
-	return false;
+	return true;
 }
 
 void ASoldierController::SetIsActive(bool newIsActive)
@@ -104,15 +105,14 @@ void ASoldierController::SetIsActive(bool newIsActive)
 
 	IsActive = newIsActive;
 	IPoolActorInterface::SetIsActive(newIsActive);
-
+	UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
 	if (!IsActive)
 	{
 		//reset variables
 		IsInCombat = false;
 		OriginPatrolZone = FVector::ZeroVector;
 		CurrentPatrolCenter = FVector::ZeroVector;
-		
-		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+		//ClearFocus(EAIFocusPriority::Gameplay);
 
 		if (behaviorComp)
 		{

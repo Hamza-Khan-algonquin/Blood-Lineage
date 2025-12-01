@@ -3,6 +3,7 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
 // Sets default values
 ADirector::ADirector() 
@@ -29,6 +30,13 @@ void ADirector::BeginPlay()
 
 		//reseting some varialbes
 		SpawnTimer = 0;
+
+		AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+
+		for (int i = 0; i < DefaultSpawningCards.Num(); i++)
+		{
+			pool->PreLoadPool(DefaultSpawningCards[i]->EnemyClass, 10);
+		}
 	}
 	//if we are not the server make sure we don't tick
 	else if (GetLocalRole() == ROLE_AutonomousProxy)

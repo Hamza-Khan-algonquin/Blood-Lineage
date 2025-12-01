@@ -97,6 +97,13 @@ void ASpawnPoint::SpawnEnemies()
 			CurrentWaves++;
 		}
 
+		AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+
+		if (!pool)
+		{
+			return;
+		}
+
 		//PickableCards copies SpawningCards or DefaultSpawningCards that way we can remove cards from the pool we have to pick from without losing them on the next call
 		if (SpawningCards.Num() > 0)
 		{
@@ -180,9 +187,16 @@ void ASpawnPoint::SpawnEnemies()
 
 				//APawn* newEnemy = static_cast<APawn*>(GetWorld()->SpawnActor<APawn>(PickableCards[pickedEnemyIndex]->EnemyClass, GetRandomPosition(), FRotator::ZeroRotator, SpawnParams));
 
-				APawn* newEnemy = Cast<APawn>(AObjectPoolManager::GetInstance(this)->GetActor(PickableCards[pickedEnemyIndex]->EnemyClass));
-				newEnemy->SetActorLocation(GetRandomPosition());
-				newEnemy->GetRootComponent()->UpdateOverlaps();
+				
+				APawn* newEnemy = Cast<APawn>(pool->GetActor(PickableCards[pickedEnemyIndex]->EnemyClass));
+
+				FVector origin;
+				FVector bounds;
+				newEnemy->GetActorBounds(true, origin, bounds);
+
+				//newEnemy->SetActorLocation(GetRandomPosition() + FVector(0,0, bounds.Z * 2));
+				//newEnemy->SetActorLocation(GetRandomPosition(), true);
+				newEnemy->SetActorLocation(GetRandomPosition() + FVector(0, 0, bounds.Z));
 
 				//spawning the enemy and adding it to the array
 				if (newEnemy)

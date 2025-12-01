@@ -14,6 +14,7 @@
 #include "Components/CapsuleComponent.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
+
 // Sets default values
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
 {
@@ -381,8 +382,10 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	IsActive = newIsActive;
 	IPoolActorInterface::SetIsActive(newIsActive);
 
-	if (SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+
+	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
-		AObjectPoolManager::GetInstance(this)->SetActorActive(GetController(), newIsActive);
+		pool->SetActorActive(GetController(), newIsActive);
 	}
 }

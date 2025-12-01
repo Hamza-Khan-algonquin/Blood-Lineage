@@ -31,8 +31,6 @@ AObjectPoolManager* AObjectPoolManager::GetInstance(const UObject* WorldContext)
 		return Instance.Get();
 	}
 
-	
-
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(world, AObjectPoolManager::StaticClass(), FoundActors);
 
@@ -137,8 +135,7 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 		}
 	}
 
-	AActor* newActor = CreateActor(actorType);
-	return newActor;
+	return CreateActor(actorType);
 }
 
 //if this does not work try using actor->IsA(loop through all keys and see if any match)
@@ -158,6 +155,21 @@ void AObjectPoolManager::RemoveActor(AActor* actorToRemove)
 			{
 				return pointer.Get() == actorToRemove;
 			});
+	}
+}
+
+void AObjectPoolManager::PreLoadPool(TSubclassOf<AActor> actorType, int numberOfElements)
+{
+	PooledObjects[actorType].Reserve(numberOfElements);
+
+	for (int i = 0; i < numberOfElements; i++)
+	{
+		AActor* newActor = CreateActor(actorType);
+
+		if (newActor)
+		{
+			SetActorActive(newActor, false);
+		}
 	}
 }
 
