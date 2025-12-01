@@ -476,6 +476,7 @@ void UInventory::OnEquippedSlotClick(UItemObject* EquippedItem)
 
             //(Hide Equip, Show Unequip, Show Sell, Show Buy) for equipped items
             Popup->ConfigureButtons(false, true, false, false);
+            Popup->SetForgeButtonVisibility(false);
 
             FVector2D ScreenPosition;
             UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
