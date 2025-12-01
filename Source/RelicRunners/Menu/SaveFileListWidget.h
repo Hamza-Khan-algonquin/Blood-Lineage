@@ -23,9 +23,11 @@ public:
 	void OnSaveFileButtonClicked();
 	UFUNCTION(BlueprintCallable)
 	void OnEditButtonClicked();
+	UFUNCTION(BlueprintCallable)
 	void SetSelected(bool bSelected);
 	void ResetBorderVisibility();
 	void FinalizeEdit(const FString& PlayerName);
+	UFUNCTION(BlueprintCallable)
 	void FinalizeSaveCreation(const FString& PlayerName);
 	void SpawnEmptySlot();
 	void RefreshVisual();
