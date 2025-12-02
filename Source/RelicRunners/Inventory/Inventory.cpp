@@ -68,7 +68,48 @@ void UInventory::NativeConstruct()
     if (VendorCanvas) VendorCanvas->SetVisibility(ESlateVisibility::Collapsed);
     if (VendorSlots) VendorSlots->ClearListItems();
     if (FuseButton) FuseButton->OnClicked.AddDynamic(this, &UInventory::OnFuseButtonPressed);
+    if (B_ForgeItem1) B_ForgeItem1->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItem1Clicked");
+    if (B_ForgeItem2) B_ForgeItem2->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItem2Clicked");
+    if (B_ForgeItemResult) B_ForgeItemResult->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItemResultClicked");
 }
+
+FEventReply UInventory::OnForgeItem1Clicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent)
+{
+    if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && ForgeItemLeft)
+    {
+        CreateItemOptionsPopup(ForgeItemLeft, FItemOptionsUIConfig::ForgeItem());
+        return UWidgetBlueprintLibrary::Handled();
+    }
+
+    return UWidgetBlueprintLibrary::Unhandled();
+}
+
+FEventReply UInventory::OnForgeItem2Clicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent)
+{
+    FEventReply Reply;
+
+    if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && ForgeItemRight)
+    {
+        CreateItemOptionsPopup(ForgeItemRight, FItemOptionsUIConfig::ForgeItem());
+        return UWidgetBlueprintLibrary::Handled();
+    }
+
+    return UWidgetBlueprintLibrary::Unhandled();
+}
+
+FEventReply UInventory::OnForgeItemResultClicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent)
+{
+    FEventReply Reply;
+
+    if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && ForgeItemResult)
+    {
+        CreateItemOptionsPopup(ForgeItemResult, FItemOptionsUIConfig::ForgeResultItem());
+        return UWidgetBlueprintLibrary::Handled();
+    }
+
+    return UWidgetBlueprintLibrary::Unhandled();
+}
+
 
 void UInventory::ToggleVendorUI(bool value)
 {
@@ -85,13 +126,16 @@ void UInventory::ToggleVendorUI(bool value)
             InventoryComponent->AddItem(ForgeItemLeft);
             ForgeItemLeft = nullptr;
         }
-
         if (ForgeItemRight)
         {
             InventoryComponent->AddItem(ForgeItemRight);
             ForgeItemRight = nullptr;
         }
-        ForgeItemResult = nullptr;
+        if (ForgeItemResult)
+        {
+            InventoryComponent->AddItem(ForgeItemResult);
+            ForgeItemResult = nullptr;
+        }
         SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
         SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, nullptr);
         SetForgeTooltip(I_ForgeItem1, B_ForgeItem1, nullptr);
@@ -336,6 +380,18 @@ UInventory* UInventory::Get(UObject* Context)
 
 void UInventory::EquipItem(UItemObject* Item)
 {
+    if (Item->IsNewItem)
+    {
+        Item->IsNewItem = false;
+    }
+
+    if (ForgeItemResult == Item)
+    {
+        InventoryComponent->AddItem(ForgeItemResult);
+        ForgeItemResult = nullptr;
+        UpdateForgeUI();
+    }
+
     if (OwningCharacter && Item)
     {
         OwningCharacter->Server_EquipItemByID(Item->ItemData.UniqueID);
@@ -383,6 +439,31 @@ void UInventory::SellItem(UItemObject* Item)
     }
 }
 
+void UInventory::RemoveForgeItem(UItemObject* ItemToRemove)
+{
+    if (!ItemToRemove) return;
+
+    //Add item back to inventory
+    InventoryComponent->AddItem(ItemToRemove);
+
+    //Check which forge slot it belongs to
+    if (ForgeItemLeft == ItemToRemove)
+    {
+        ForgeItemLeft = nullptr;
+    }
+    else if (ForgeItemRight == ItemToRemove)
+    {
+        ForgeItemRight = nullptr;
+    }
+    else if (ForgeItemResult == ItemToRemove)
+    {
+        ForgeItemResult = nullptr;
+    }
+
+    UpdateForgeUI();
+}
+
+
 void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 {
     Super::NativeTick(MyGeometry, DeltaTime);
@@ -398,6 +479,24 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
             ToggleVendorUI(false);
         }
     }
+}
+
+FReply UInventory::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
+    {
+        FEventReply EventReply = UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton);
+        return EventReply.NativeReply;
+    }
+
+    return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
+
+FReply UInventory::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
+
+    return FReply::Handled();
 }
 
 FReply UInventory::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -468,20 +567,22 @@ void UInventory::OnEquippedSlotClick(UItemObject* EquippedItem)
     UInventoryItemOptions::CloseAnyOpenPopup();
     if (EquippedItem)
     {
-        UInventoryItemOptions* Popup = CreateWidget<UInventoryItemOptions>(GetWorld(), InventoryItemOptionsClass);
-        if (Popup)
-        {
-            Popup->AddToViewport();
-            Popup->Setup(EquippedItem);
+        CreateItemOptionsPopup(EquippedItem, FItemOptionsUIConfig::EquippedItem());
+    }
+}
 
-            //(Hide Equip, Show Unequip, Show Sell, Show Buy) for equipped items
-            Popup->ConfigureButtons(false, true, false, false);
-            Popup->SetForgeButtonVisibility(false);
+void UInventory::CreateItemOptionsPopup(UItemObject* Item, const FItemOptionsUIConfig& Config)
+{
+    UInventoryItemOptions* Popup = CreateWidget<UInventoryItemOptions>(GetWorld(), InventoryItemOptionsClass);
+    if (Popup)
+    {
+        Popup->AddToViewport();
+        Popup->Setup(Item);
+        Popup->ApplyConfig(Config);
 
-            FVector2D ScreenPosition;
-            UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
-            Popup->SetPositionInViewport(ScreenPosition, false);
-        }
+        FVector2D ScreenPosition;
+        UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
+        Popup->SetPositionInViewport(ScreenPosition, false);
     }
 }
 
@@ -510,7 +611,7 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
         EquippedLocal.Y <= EquippedSize.Y;
 
     //Inventory Items Location
-    FGeometry InventoryGeometry = InventorySlots->GetCachedGeometry();
+    FGeometry InventoryGeometry = InventoryBox->GetCachedGeometry();
     const FVector2D InventoryLocal = InventoryGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
     const FVector2D InventorySize = InventoryGeometry.GetLocalSize();
     const bool InsideInventory =
@@ -555,6 +656,10 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     {
         BuyItem(DraggedItem);
     }
+    else if (InsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    {
+        return true;
+    }
     else
     {
         DropItem(DraggedItem);
@@ -568,6 +673,12 @@ void UInventory::ForgeItem(UItemObject* Item)
     if (!VendorCanvas->IsVisible()) return;
     if (Item->GetRarity() == "Relic") return;
 
+    if (ForgeItemResult)
+    {
+        InventoryComponent->AddItem(ForgeItemResult);
+        ForgeItemResult = nullptr;
+        SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
+    }
     if (!ForgeItemLeft)
     {
         ForgeItemLeft = Item;
@@ -580,8 +691,7 @@ void UInventory::ForgeItem(UItemObject* Item)
         SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, ForgeItemRight);
         InventoryComponent->RemoveItemByID(Item->ItemData.UniqueID);
     }
-    ForgeItemResult = nullptr;
-    SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
+
     UpdateForgeUI();
 }
 
@@ -630,10 +740,7 @@ void UInventory::OnFuseButtonPressed()
     ForgeItemRight = nullptr;
 
     NewItem->IsNewItem = true;
-    InventoryComponent->AddItem(NewItem);
     ForgeItemResult = NewItem;
-    //Clear the forge result after 2 seconds
-    GetWorld()->GetTimerManager().SetTimer(ForgeResultTimer,this,&UInventory::ClearForgeResult,2.f,false);
 
     UpdateForgeUI();
 
@@ -641,23 +748,23 @@ void UInventory::OnFuseButtonPressed()
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[NewRarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Diminished"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Brittled"))));
     }
     if (NewRarity == Rarity2)
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[NewRarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Unaltered"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Tempered"))));
     }
     if (NewRarity == Rarity3)
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[NewRarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Refined"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Fortified"))));
     }
 
     TB_Odds1->SetVisibility(ESlateVisibility::Visible);
-    TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s item added to Inventory"), *NewRarity)));
+    TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s item!"), *NewRarity)));
     TB_Odds1->SetColorAndOpacity(ItemStats::GetRarityDataMap()[NewRarity].Color);
 
     SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, ForgeItemResult);
@@ -670,16 +777,6 @@ void UInventory::OnFuseButtonPressed()
     }
 }
 
-void UInventory::ClearForgeResult()
-{
-    ForgeItemResult = nullptr;
-
-    SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
-
-    UpdateForgeUI();
-}
-
-
 FString UInventory::RollForgeRarity(const FString R1, float C1, const FString R2, float C2, const FString R3, float C3)
 {
     float Roll = FMath::FRandRange(0.f, 100.f);
@@ -688,7 +785,6 @@ FString UInventory::RollForgeRarity(const FString R1, float C1, const FString R2
     if (Roll <= C1 + C2) return R2;
     return R3;
 }
-
 
 void UInventory::UpdateForgeOdds(const FString& LeftRarity, const FString& RightRarity)
 {

@@ -189,7 +189,7 @@ void UInventorySlotsEntry::OnEntryClicked()
     UInventoryItemOptions::CloseAnyOpenPopup();
     UInventorySortingOptions::CloseAnyOpenPopup();
 
-    if (!InventoryItemOptionsClass || !Item) return;
+    if (!Item) return;
     
     //Determining if vendor is active and which tileview its part of.
     bool VendorActive = false;
@@ -203,33 +203,19 @@ void UInventorySlotsEntry::OnEntryClicked()
 
     UTileView* TileView = Cast<UTileView>(GetOwningListView());
 
-    UInventoryItemOptions* Popup = CreateWidget<UInventoryItemOptions>(GetWorld(), InventoryItemOptionsClass);
-    if (Popup)
+    if (VendorActive)
     {
-        Popup->AddToViewport();
-        Popup->Setup(Item);
-
-        if (VendorActive)
+        if (TileView->GetName() == "InventorySlots")
         {
-            if (TileView->GetName() == "InventorySlots")
-            {
-                Popup->ConfigureButtons(true, false, true, false);
-                Popup->SetForgeButtonVisibility(true);
-            }
-            else if (TileView->GetName() == "VendorSlots")
-            {
-                Popup->ConfigureButtons(false, false, false, true);
-                Popup->SetForgeButtonVisibility(false);
-            }
+            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItemWithForge());
         }
-        else
+        else if (TileView->GetName() == "VendorSlots")
         {
-            Popup->ConfigureButtons(true, false, false, false);
-            Popup->SetForgeButtonVisibility(false);
+            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::VendorItem());
         }
-
-        FVector2D ScreenPosition;
-        UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
-        Popup->SetPositionInViewport(ScreenPosition, false);
+    }
+    else
+    {
+        ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItem());
     }
 }

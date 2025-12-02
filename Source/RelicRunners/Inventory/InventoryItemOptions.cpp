@@ -52,6 +52,10 @@ void UInventoryItemOptions::NativeConstruct()
     {
         ForgeButton->OnClicked.AddDynamic(this, &UInventoryItemOptions::OnForgeClicked);
     }
+    if (RemoveButton)
+    {
+        RemoveButton->OnClicked.AddDynamic(this, &UInventoryItemOptions::OnRemoveClicked);
+    }
 }
 
 void UInventoryItemOptions::Setup(UItemObject* InItem)
@@ -95,46 +99,75 @@ void UInventoryItemOptions::NativeTick(const FGeometry& MyGeometry, float InDelt
     }
 }
 
-void UInventoryItemOptions::ConfigureButtons(bool ShowEquip, bool ShowUnequip, bool ShowSell, bool ShowBuy)
+void UInventoryItemOptions::ApplyConfig(const FItemOptionsUIConfig& Config)
+{
+    SetEquipButtonVisibility(Config.ShowEquip);
+    SetUnequipButtonVisibility(Config.ShowUnequip);
+    SetDropButtonVisibility(Config.ShowDrop);
+    SetSellButtonVisibility(Config.ShowSell);
+    SetBuyButtonVisibility(Config.ShowBuy);
+    SetForgeButtonVisibility(Config.ShowForge);
+    SetRemoveButtonVisibility(Config.ShowRemove);
+}
+
+static ESlateVisibility BoolToVisibility(bool b)
+{
+    return b ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+}
+
+void UInventoryItemOptions::SetEquipButtonVisibility(bool Visible)
 {
     if (EquipButton)
     {
-        EquipButton->SetVisibility(ShowEquip ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    }
-
-    if (UnequipButton)
-    {
-        UnequipButton->SetVisibility(ShowUnequip ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    }
-
-    if (DropButton)
-    {
-        if (ShowEquip || ShowUnequip)
-        {
-            DropButton->SetVisibility(ESlateVisibility::Visible);
-        }
-        else
-        {
-            DropButton->SetVisibility(ESlateVisibility::Collapsed);
-        }
-    }
-
-    if (SellButton)
-    {
-        SellButton->SetVisibility(ShowSell ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-    }
-
-    if (BuyButton)
-    {
-        BuyButton->SetVisibility(ShowBuy ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+        EquipButton->SetVisibility(BoolToVisibility(Visible));
     }
 }
 
-void UInventoryItemOptions::SetForgeButtonVisibility(bool value)
+void UInventoryItemOptions::SetUnequipButtonVisibility(bool Visible)
+{
+    if (UnequipButton)
+    {
+        UnequipButton->SetVisibility(BoolToVisibility(Visible));
+    }
+}
+
+void UInventoryItemOptions::SetDropButtonVisibility(bool Visible)
+{
+    if (DropButton)
+    {
+        DropButton->SetVisibility(BoolToVisibility(Visible));
+    }
+}
+
+void UInventoryItemOptions::SetSellButtonVisibility(bool Visible)
+{
+    if (SellButton)
+    {
+        SellButton->SetVisibility(BoolToVisibility(Visible));
+    }
+}
+
+void UInventoryItemOptions::SetBuyButtonVisibility(bool Visible)
+{
+    if (BuyButton)
+    {
+        BuyButton->SetVisibility(BoolToVisibility(Visible));
+    }
+}
+
+void UInventoryItemOptions::SetForgeButtonVisibility(bool Visible)
 {
     if (ForgeButton)
     {
-        ForgeButton->SetVisibility(value ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+        ForgeButton->SetVisibility(BoolToVisibility(Visible));
+    }
+}
+
+void UInventoryItemOptions::SetRemoveButtonVisibility(bool Visible)
+{
+    if (RemoveButton)
+    {
+        RemoveButton->SetVisibility(BoolToVisibility(Visible));
     }
 }
 
@@ -217,6 +250,15 @@ void UInventoryItemOptions::OnForgeClicked()
     if (UInventory* Inventory = UInventory::Get(this))
     {
         Inventory->ForgeItem(Item);
+        RemoveFromParent();
+    }
+}
+
+void UInventoryItemOptions::OnRemoveClicked()
+{
+    if (UInventory* Inventory = UInventory::Get(this))
+    {
+        Inventory->RemoveForgeItem(Item);
         RemoveFromParent();
     }
 }
