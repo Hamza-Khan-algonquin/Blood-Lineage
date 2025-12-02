@@ -203,6 +203,12 @@ public:
 	UFUNCTION()
 	FEventReply  OnForgeItemResultClicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
 
+	void ClearForgeItemLeft();
+
+	void ClearForgeItemRight();
+
+	void ClearForgeItemResult();
+
 	//UI Elements
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTileView* InventorySlots;

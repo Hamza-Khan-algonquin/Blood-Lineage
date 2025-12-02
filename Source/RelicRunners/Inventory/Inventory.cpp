@@ -110,6 +110,33 @@ FEventReply UInventory::OnForgeItemResultClicked(FGeometry MyGeometry, const FPo
     return UWidgetBlueprintLibrary::Unhandled();
 }
 
+void UInventory::ClearForgeItemLeft()
+{
+    if (ForgeItemLeft)
+    {
+        InventoryComponent->AddItem(ForgeItemLeft);
+        ForgeItemLeft = nullptr;
+        SetForgeTooltip(I_ForgeItem1, B_ForgeItem1, nullptr);
+    }
+}
+void UInventory::ClearForgeItemRight()
+{
+    if (ForgeItemRight)
+    {
+        InventoryComponent->AddItem(ForgeItemRight);
+        ForgeItemRight = nullptr;
+        SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, nullptr);
+    }
+}
+void UInventory::ClearForgeItemResult()
+{
+    if (ForgeItemResult)
+    {
+        InventoryComponent->AddItem(ForgeItemResult);
+        ForgeItemResult = nullptr;
+        SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
+    }
+}
 
 void UInventory::ToggleVendorUI(bool value)
 {
@@ -121,24 +148,11 @@ void UInventory::ToggleVendorUI(bool value)
         ShopCanvas->SetVisibility(ESlateVisibility::Collapsed);
         VendorSlots->ClearListItems();
         CurrentVendor = nullptr;
-        if (ForgeItemLeft)
-        {
-            InventoryComponent->AddItem(ForgeItemLeft);
-            ForgeItemLeft = nullptr;
-        }
-        if (ForgeItemRight)
-        {
-            InventoryComponent->AddItem(ForgeItemRight);
-            ForgeItemRight = nullptr;
-        }
-        if (ForgeItemResult)
-        {
-            InventoryComponent->AddItem(ForgeItemResult);
-            ForgeItemResult = nullptr;
-        }
-        SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
-        SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, nullptr);
-        SetForgeTooltip(I_ForgeItem1, B_ForgeItem1, nullptr);
+
+        ClearForgeItemLeft();
+        ClearForgeItemRight();
+        ClearForgeItemResult();
+
         if (ForgeCompleted) StopAnimation(ForgeCompleted);
         UpdateForgeUI();
     }
@@ -380,15 +394,11 @@ UInventory* UInventory::Get(UObject* Context)
 
 void UInventory::EquipItem(UItemObject* Item)
 {
-    if (Item->IsNewItem)
-    {
-        Item->IsNewItem = false;
-    }
+    if (Item->IsNewItem) Item->IsNewItem = false;
 
     if (ForgeItemResult == Item)
     {
-        InventoryComponent->AddItem(ForgeItemResult);
-        ForgeItemResult = nullptr;
+        ClearForgeItemResult();
         UpdateForgeUI();
     }
 
@@ -443,21 +453,18 @@ void UInventory::RemoveForgeItem(UItemObject* ItemToRemove)
 {
     if (!ItemToRemove) return;
 
-    //Add item back to inventory
-    InventoryComponent->AddItem(ItemToRemove);
-
     //Check which forge slot it belongs to
     if (ForgeItemLeft == ItemToRemove)
     {
-        ForgeItemLeft = nullptr;
+        ClearForgeItemLeft();
     }
     else if (ForgeItemRight == ItemToRemove)
     {
-        ForgeItemRight = nullptr;
+        ClearForgeItemRight();
     }
     else if (ForgeItemResult == ItemToRemove)
     {
-        ForgeItemResult = nullptr;
+        ClearForgeItemResult();
     }
 
     UpdateForgeUI();
@@ -673,12 +680,8 @@ void UInventory::ForgeItem(UItemObject* Item)
     if (!VendorCanvas->IsVisible()) return;
     if (Item->GetRarity() == "Relic") return;
 
-    if (ForgeItemResult)
-    {
-        InventoryComponent->AddItem(ForgeItemResult);
-        ForgeItemResult = nullptr;
-        SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, nullptr);
-    }
+    ClearForgeItemResult();
+
     if (!ForgeItemLeft)
     {
         ForgeItemLeft = Item;
