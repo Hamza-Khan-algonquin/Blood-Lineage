@@ -111,10 +111,7 @@ void UInventoryComponent::SetSortingMethod(EInventorySorting NewMethod)
 
 void UInventoryComponent::SortInventoryByCurrentMethod()
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
-    {
-        return;
-    }
+    if (!GetOwner() || !GetOwner()->HasAuthority()) return;
 
     HandleSortingNow();
     OnInventoryChanged.Broadcast();
@@ -210,7 +207,7 @@ void UInventoryComponent::EquipItem(UItemObject* Item)
     if (!Item) return;
 
     const FString Slot = Item->ItemData.ItemType;
-    bool bFound = false;
+    bool Found = false;
     
     for (FEquippedItemEntry& Entry : EquippedItems)
     {
@@ -221,20 +218,20 @@ void UInventoryComponent::EquipItem(UItemObject* Item)
                 AddItem(Entry.Item);
             }
             Entry.Item = Item;
-            bFound = true;
+            Found = true;
             break;
         }
     }
 
-    if (!bFound)
+    if (!Found)
     {
         EquippedItems.Add(FEquippedItemEntry(Slot, Item));
     }
 
     int Index = InventoryItems.IndexOfByPredicate([&](const UItemObject* OtherItem)
-        {
-            return OtherItem && OtherItem->ItemData.UniqueID == Item->ItemData.UniqueID;
-        });
+    {
+        return OtherItem && OtherItem->ItemData.UniqueID == Item->ItemData.UniqueID;
+    });
 
     if (Index != INDEX_NONE)
     {
@@ -395,7 +392,6 @@ void UInventoryComponent::RemoveItemByID(FGuid ItemID)
         }
     }
 }
-
 
 FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
 {

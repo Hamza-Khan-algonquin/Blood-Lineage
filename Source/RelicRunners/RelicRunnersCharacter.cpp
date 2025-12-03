@@ -41,6 +41,7 @@
 #include "Inventory/InventoryToolTip.h"
 #include "Inventory/InventoryItemOptions.h"
 #include "Inventory/InventorySortingOptions.h"
+#include "Inventory/InventoryDragOperation.h"
 #include "Item/ItemStats.h"
 #include "Item/ItemActor.h"
 #include "RelicRunners/Vendor/Vendor.h"
@@ -942,6 +943,7 @@ void ARelicRunnersCharacter::InventoryUI()
 	if (!Inventory) return;
 	RemoveOtherUI("Inventory", Cast<APlayerController>(Controller));
 	ToggleUI(Inventory);
+	FSlateApplication::Get().CancelDragDrop();
 	Inventory->ToggleVendorUI(false);
 }
 
