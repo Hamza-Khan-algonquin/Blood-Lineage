@@ -128,6 +128,9 @@ void AArtemisCharacter::OnLevelUp()
 	Item->ItemData.Strength += FMath::RandRange(1, 3);
 	Item->ItemData.Intelligence += FMath::RandRange(0, 1);
 	Item->ItemData.Dexterity += FMath::RandRange(1, 5);
-	Inventory->RefreshEquippedUI();
+	if (Inventory)
+	{
+		Inventory->RefreshEquippedUI();
+	}
 	InventoryComponent->UpdateTotalEquippedStats(this);
 }

@@ -129,7 +129,10 @@ void AAphroditeCharacter::OnLevelUp()
     Item->ItemData.Dexterity += FMath::RandRange(0, 1);
     Item->ItemData.Strength += FMath::RandRange(0, 1);
     Item->ItemData.Intelligence += FMath::RandRange(2, 5);
-    Inventory->RefreshEquippedUI();
+    if (Inventory)
+    {
+        Inventory->RefreshEquippedUI();
+    }
     InventoryComponent->UpdateTotalEquippedStats(this);
 }
 
