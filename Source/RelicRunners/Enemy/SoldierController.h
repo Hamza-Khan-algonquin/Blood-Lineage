@@ -45,7 +45,10 @@ protected:
 	UBehaviorTree* StartingBehaviorTree;
 
 	//object pooling variables
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool IsActive;
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	FTimerHandle LifeSpanTimerHandle;
 
 public:
 	//The default constructor
@@ -83,4 +86,5 @@ public:
 	virtual bool GetIsActive() override;
 	virtual bool GetShouldTick() override;
 	virtual void SetIsActive(bool newIsActive) override;
+	virtual FTimerHandle& GetLifeSpanTimerHandle() override;
 };

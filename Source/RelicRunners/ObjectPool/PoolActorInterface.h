@@ -23,4 +23,5 @@ public:
 	virtual bool GetIsActive() = 0;
 	virtual bool GetShouldTick() = 0;
 	virtual void SetIsActive(bool newIsActive);
+	virtual FTimerHandle& GetLifeSpanTimerHandle() = 0;
 };

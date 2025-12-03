@@ -124,3 +124,8 @@ void ASoldierController::SetIsActive(bool newIsActive)
 		RunBehaviorTree(StartingBehaviorTree);
 	}
 }
+
+FTimerHandle& ASoldierController::GetLifeSpanTimerHandle()
+{
+	return LifeSpanTimerHandle;
+}

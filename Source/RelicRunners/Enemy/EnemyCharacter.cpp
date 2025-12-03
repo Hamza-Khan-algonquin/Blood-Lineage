@@ -60,7 +60,6 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AEnemyCharacter, EnemyHUDWorld);
 	DOREPLIFETIME(AEnemyCharacter, EnemyResource);
 	DOREPLIFETIME(AEnemyCharacter, EnemyMaxResource);
-	DOREPLIFETIME(AEnemyCharacter, IsActive);
 }
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -394,4 +393,9 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	{
 		pool->SetActorActive(GetController(), newIsActive);
 	}
+}
+
+FTimerHandle& AEnemyCharacter::GetLifeSpanTimerHandle()
+{
+	return LifeSpanTimerHandle;
 }

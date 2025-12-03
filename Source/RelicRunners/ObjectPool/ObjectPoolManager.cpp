@@ -54,6 +54,7 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 	}
 
 	TSubclassOf<AActor> actorType = actor->GetClass();
+	FTimerHandle* handler = nullptr;
 
 	if (actorType->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
@@ -61,6 +62,8 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 		if (poolActor)
 		{
 			poolActor->SetIsActive(activeState);
+			handler = &poolActor->GetLifeSpanTimerHandle();
+			GetWorld()->GetTimerManager().ClearTimer(*handler);
 		}
 	}
 	else
@@ -81,11 +84,16 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 	
 	if (lifeSpan > 0.0f)
 	{
-		FTimerHandle handler;
+		FTimerHandle backUp;
 		FTimerDelegate delegate;
 
+		if (handler == nullptr)
+		{
+			handler = &backUp;
+		}
+
 		delegate.BindUFunction(this, "SetActorActive", actor, !activeState, -1.f);
-		GetWorld()->GetTimerManager().SetTimer(handler, delegate, lifeSpan, false);
+		GetWorld()->GetTimerManager().SetTimer(*handler, delegate, lifeSpan, false);
 	}
 }
 

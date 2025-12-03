@@ -92,10 +92,12 @@ protected:
 	
 
 	//interface implementation variable
-	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite, Replicated)
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool IsActive = true;
-	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite, Replicated)
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool SetControllerActiveStatus = true;
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	FTimerHandle LifeSpanTimerHandle;
 
 public:
 	// Sets default values for this character's properties
@@ -204,4 +206,5 @@ public:
 	virtual bool GetIsActive() override;
 	virtual bool GetShouldTick() override;
 	virtual void SetIsActive(bool newIsActive) override;
+	virtual FTimerHandle& GetLifeSpanTimerHandle() override;
 };
