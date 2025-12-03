@@ -14,7 +14,7 @@ class RELICRUNNERS_API UEditSaveFilePopupWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     class USaveFileListWidget* TargetSlot;
     UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
     class UEditableTextBox* NameTextBox = nullptr;
@@ -33,7 +33,7 @@ public:
     void OnConfirmClicked();
     virtual void NativeConstruct() override;
 
-    UFUNCTION()
+    UFUNCTION(BlueprintCallable)
     void OnDeleteClicked();
 
     UFUNCTION()
