@@ -186,14 +186,13 @@ void ASpawnPoint::SpawnEnemies()
 
 
 				//APawn* newEnemy = static_cast<APawn*>(GetWorld()->SpawnActor<APawn>(PickableCards[pickedEnemyIndex]->EnemyClass, GetRandomPosition(), FRotator::ZeroRotator, SpawnParams));
-
 				
 				APawn* newEnemy = Cast<APawn>(pool->GetActor(PickableCards[pickedEnemyIndex]->EnemyClass));
 
 				FVector origin;
 				FVector bounds;
 				newEnemy->GetActorBounds(true, origin, bounds);
-
+				 
 				//newEnemy->SetActorLocation(GetRandomPosition() + FVector(0,0, bounds.Z * 2));
 				//newEnemy->SetActorLocation(GetRandomPosition(), true);
 				newEnemy->SetActorLocation(GetRandomPosition() + FVector(0, 0, bounds.Z));
@@ -205,7 +204,7 @@ void ASpawnPoint::SpawnEnemies()
 
 					if (AEnemyCharacter* newEnemyCharacter = Cast<AEnemyCharacter>(newEnemy))
 					{
-						newEnemyCharacter->OnDied.AddDynamic(this, &ASpawnPoint::RemoveEnemy);
+						newEnemyCharacter->OnDeactivated.AddDynamic(this, &ASpawnPoint::RemoveEnemy);
 					}
 
 					SpawnedEnemies.Add(newEnemy);
@@ -228,9 +227,19 @@ void ASpawnPoint::RemoveEnemy(AActor* enemy)
 	//cast the actor point as a enemy then check to make sure it when through before destroying it
 	APawn* enemyPtr = static_cast<APawn*>(enemy);
 
-	if (enemyPtr)
+	if (!enemyPtr)
 	{
-		SpawnedEnemies.Remove(enemyPtr);
+		return;
+	}
+
+	SpawnedEnemies.Remove(enemyPtr);
+
+	AEnemyCharacter* enemyCharacterPtr = Cast<AEnemyCharacter>(enemyPtr);
+
+	if (enemyCharacterPtr)
+	{
+		enemyCharacterPtr->OnDestroyed.RemoveDynamic(this, &ASpawnPoint::RemoveEnemy);
+		enemyCharacterPtr->OnDeactivated.RemoveDynamic(this, &ASpawnPoint::RemoveEnemy);
 	}
 }
 

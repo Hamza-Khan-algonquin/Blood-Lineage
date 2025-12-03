@@ -21,6 +21,7 @@ To Do:
 
 //same delegate signature as AActor's OnDestroyed but for enemies
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDied, AEnemyCharacter, OnDied, AActor*, DiedActor);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDeactivated, AEnemyCharacter, OnDeactivated, AActor*, DeactivatedActor);
 
 class UWidgetComponent;
 
@@ -45,6 +46,9 @@ public:
 	//Delegate that is called when the enemy dies
 	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
 	FEnemyCharacterDied OnDied;
+
+	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
+	FEnemyCharacterDeactivated OnDeactivated;
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

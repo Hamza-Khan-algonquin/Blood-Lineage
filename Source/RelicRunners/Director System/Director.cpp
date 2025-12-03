@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
+#include "RelicRunners/Enemy/EnemyCharacter.h"
 
 // Sets default values
 ADirector::ADirector() 
@@ -50,9 +51,19 @@ void ADirector::RemoveEnemy(AActor* enemy)
 	//cast the actor point as a APawn then check to make sure it when through before destroying it
 	APawn* enemyPtr = static_cast<APawn*>(enemy);
 
-	if (enemyPtr)
+	if (!enemyPtr)
 	{
-		EnemiesInWorld.Remove(enemyPtr);
+		return;
+	}
+
+	EnemiesInWorld.Remove(enemyPtr);
+
+	AEnemyCharacter* enemyCharacterPtr = Cast<AEnemyCharacter>(enemyPtr);
+
+	if (enemyCharacterPtr)
+	{
+		enemyCharacterPtr->OnDestroyed.RemoveDynamic(this, &ADirector::RemoveEnemy);
+		enemyCharacterPtr->OnDeactivated.RemoveDynamic(this, &ADirector::RemoveEnemy);
 	}
 }
 

@@ -120,15 +120,14 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 		}
 		
 		OnDied.Broadcast(this);
-		OnDied.Clear();
-		OnDestroyed.Clear();
+		//OnDied.Clear();
+		//OnDestroyed.Clear();
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
-			ResetEnemy();
 		}
 		else
 		{
@@ -351,7 +350,8 @@ void AEnemyCharacter::AddEnemyToDirector()
 		//add the enemy to the director
 		Director->AddEnemy(this);
 		//add the remove enemy method to the OnDestroyed delegate/ on die
-		this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
+		//this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
+		this->OnDeactivated.AddDynamic(Director, &ADirector::RemoveEnemy);
 		this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
 	}
 #if WITH_EDITOR || UE_BUILD_TEST
@@ -381,6 +381,12 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 
 	IsActive = newIsActive;
 	IPoolActorInterface::SetIsActive(newIsActive);
+
+	if (!newIsActive)
+	{
+		OnDeactivated.Broadcast(this);
+		ResetEnemy();
+	}
 
 	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 

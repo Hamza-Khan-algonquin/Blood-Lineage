@@ -84,7 +84,7 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 		FTimerHandle handler;
 		FTimerDelegate delegate;
 
-		delegate.BindUFunction(this, "SetActorActive", actor, !activeState);
+		delegate.BindUFunction(this, "SetActorActive", actor, !activeState, -1.f);
 		GetWorld()->GetTimerManager().SetTimer(handler, delegate, lifeSpan, false);
 	}
 }
@@ -130,6 +130,8 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 		return nullptr;
 	}
 
+	AActor* returnActor = nullptr;
+
 	if (PooledObjects.Contains(actorType))
 	{
 		bool isInterface = actorType->ImplementsInterface(UPoolActorInterface::StaticClass());
@@ -137,13 +139,19 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 		{
 			if (pointer.IsValid() && ((isInterface && !Cast<IPoolActorInterface>(pointer.Get())->GetIsActive()) || (!isInterface && pointer->IsHidden())))
 			{
-				SetActorActive(pointer.Get(), true, lifeSpan);
-				return pointer.Get();
+				returnActor = pointer.Get();
 			}
 		}
 	}
 
-	return CreateActor(actorType);
+	if (!returnActor)
+	{
+		returnActor = CreateActor(actorType);
+	}
+
+	SetActorActive(returnActor, true, lifeSpan);
+
+	return returnActor;
 }
 
 //if this does not work try using actor->IsA(loop through all keys and see if any match)
