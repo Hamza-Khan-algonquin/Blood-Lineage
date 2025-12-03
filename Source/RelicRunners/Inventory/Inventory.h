@@ -143,19 +143,13 @@ public:
 	float ForgeChance3;
 
 	//Functions
-	virtual void NativeConstruct() override;
 	void ToggleVendorUI(bool value);
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, AVendor* Vendor);
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
 	FString RollForgeRarity(const FString R1, float C1, const FString R2, float C2, const FString R3, float C3);
 	void UpdateForgeOdds(const FString& LeftRarity, const FString& RightRarity);
 	void UpdateForgeUI();
-	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	FSlotUIComponents GetUIComponentsForItemType(const FString& ItemType);
 	void UpdateButtonWithTooltip(class UItemObject* Item, const FString& itemType, class UInventoryToolTip* ToolTip, const FLinearColor& Color);
 	void SetInventoryComponent(UInventoryComponent* NewComponent);
@@ -168,6 +162,9 @@ public:
 	void SellItem(class UItemObject* Item);
 	void OnEquippedSlotClick(class UItemObject* EquippedItem);
 	void CreateItemOptionsPopup(UItemObject* Item, const struct FItemOptionsUIConfig& Config);
+	void ClearForgeItemLeft();
+	void ClearForgeItemRight();
+	void ClearForgeItemResult();
 	UFUNCTION()
 	void RefreshInventoryUI();
 	UFUNCTION()
@@ -202,12 +199,6 @@ public:
 
 	UFUNCTION()
 	FEventReply  OnForgeItemResultClicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
-
-	void ClearForgeItemLeft();
-
-	void ClearForgeItemRight();
-
-	void ClearForgeItemResult();
 
 	//UI Elements
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -402,7 +393,12 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* EquippedCanvas;
 	
-private:
-
+protected:
+	virtual void NativeConstruct() override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	
 };

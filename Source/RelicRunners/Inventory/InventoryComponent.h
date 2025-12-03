@@ -29,11 +29,16 @@ struct FEquippedStatsSummary
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly) int TotalHealth = 0;
-    UPROPERTY(BlueprintReadOnly) int TotalArmor = 0;
-    UPROPERTY(BlueprintReadOnly) int TotalDexterity = 0;
-    UPROPERTY(BlueprintReadOnly) int TotalStrength = 0;
-    UPROPERTY(BlueprintReadOnly) int TotalIntelligence = 0;
+    UPROPERTY(BlueprintReadOnly) 
+    int TotalHealth = 0;
+    UPROPERTY(BlueprintReadOnly) 
+    int TotalArmor = 0;
+    UPROPERTY(BlueprintReadOnly) 
+    int TotalDexterity = 0;
+    UPROPERTY(BlueprintReadOnly) 
+    int TotalStrength = 0;
+    UPROPERTY(BlueprintReadOnly) 
+    int TotalIntelligence = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -71,8 +76,6 @@ public:
     void RemoveItemByID(FGuid ItemID);
     UFUNCTION(BlueprintCallable)
     void AddItem(UItemObject* Item);
-    UFUNCTION(BlueprintCallable)
-    void RemoveItem(UItemObject* Item);
     void SortInventoryByCurrentMethod();
     UFUNCTION(BlueprintCallable)
     void SwapItems(UItemObject* ItemA, UItemObject* ItemB);

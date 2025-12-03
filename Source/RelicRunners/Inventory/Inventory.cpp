@@ -651,19 +651,19 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     {
         EquipItem(DraggedItem);
     }
-    else if (InsideForge && VendorCanvas->IsVisible() && CurrentDragOperation->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideForge && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
         ForgeItem(DraggedItem);
     }
-    else if (InsideShop && VendorCanvas->IsVisible() && CurrentDragOperation->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideShop && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
         SellItem(DraggedItem);
     }
-    else if (InsideInventory && CurrentDragOperation->FromWhere == UInventoryDragOperation::Locations::Shop)
+    else if (InsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Shop)
     {
         BuyItem(DraggedItem);
     }
-    else if (InsideInventory && CurrentDragOperation->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
         return true;
     }

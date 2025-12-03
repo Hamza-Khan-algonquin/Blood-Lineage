@@ -70,23 +70,6 @@ void UInventoryComponent::AddItem(UItemObject* Item)
     OnInventoryChanged.Broadcast();
 }
 
-void UInventoryComponent::RemoveItem(UItemObject* Item)
-{
-    if (!Item) return;
-
-    for (int i = 0; i < InventoryItems.Num(); i++)
-    {
-        if (InventoryItems[i] && InventoryItems[i]->ItemData.UniqueID == Item->ItemData.UniqueID)
-        {
-            InventoryItems.RemoveAt(i);
-            SortInventoryByCurrentMethod();
-            OnInventoryChanged.Broadcast();
-            return;
-        }
-    }
-}
-
-
 void UInventoryComponent::OnRep_SortingMethod()
 {
     HandleSortingNow();
