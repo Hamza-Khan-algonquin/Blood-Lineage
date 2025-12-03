@@ -423,6 +423,8 @@ void ARelicRunnersCharacter::OnLevelUp()
 			NewLevelUpHUD->AddToViewport();
 		}
 	}
+
+	if (Inventory) Inventory->RefreshEquippedUI();
 }
 
 float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
