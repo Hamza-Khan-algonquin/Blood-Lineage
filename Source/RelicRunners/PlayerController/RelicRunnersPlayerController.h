@@ -218,9 +218,5 @@ protected:
 	void HealthPotion();
 	void BasicAttack();
 
-	// End Actor interface
-
 	class ARelicRunnersCharacter* PossessedPawn;
-
-
 };

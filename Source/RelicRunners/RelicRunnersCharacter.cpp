@@ -373,9 +373,14 @@ void ARelicRunnersCharacter::AddExperience(int Amount)
 	PlayerXP += Amount;
 	if (PlayerXP >= PlayerXPToLevel)
 	{
-		OnLevelUp();
+		Client_OnLevelUp();
 	}
 	UpdateHUD();
+}
+
+void ARelicRunnersCharacter::Client_OnLevelUp_Implementation()
+{ 
+	OnLevelUp();
 }
 
 void ARelicRunnersCharacter::OnLevelUp()
