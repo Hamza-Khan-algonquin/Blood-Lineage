@@ -40,7 +40,6 @@ ARelicRunnersGameMode::ARelicRunnersGameMode()
 		UE_LOG(LogTemp, Warning, TEXT("[GameMode] Assigned PlayerPreviewClass from constructor."));
 	}
 
-
     bUseSeamlessTravel = true;
     bReplicates = true;
 }

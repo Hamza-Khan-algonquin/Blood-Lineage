@@ -46,6 +46,7 @@
 #include "RelicRunners/Vendor/Vendor.h"
 #include "Interact/InteractInterface.h"
 #include "Menu/PauseMenu.h"
+#include "Menu/LoadingScreen.h"
 #include "AbilitySystem/AbilityPointCounter.h"
 #include "AbilitySystem/AbilitySelection.h"
 #include "AbilitySystem/HealthPotion.h"
@@ -192,6 +193,14 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	SetReplicateMovement(true);
 
 	Tags.Add("Player");
+
+	static ConstructorHelpers::FClassFinder<ULoadingScreen> BP_LoadingScreen(TEXT("/Game/Blueprints/Menu/BP_LoadingScreen"));
+
+	if (BP_LoadingScreen.Class)
+	{
+		LoadingScreenClass = BP_LoadingScreen.Class;
+		UE_LOG(LogTemp, Warning, TEXT("Character Assigned Loading Screen"));
+	}
 
 }
 
@@ -624,7 +633,37 @@ void ARelicRunnersCharacter::InitLocalUI()
 		}
 	}
 
+	// === Loading Screen ===
+	if (!LoadingScreen && LoadingScreenClass)
+	{
+		FInputModeUIOnly InputMode;
+		PC->SetInputMode(InputMode);
+
+		LoadingScreen = CreateWidget<ULoadingScreen>(PC, LoadingScreenClass);
+
+		FTimerHandle LoadingScreenTimer;
+
+		if (LoadingScreen)
+		{
+			LoadingScreen->AddToViewport();
+			//LoadingScreen->SetVisibility(ESlateVisibility::Visible);
+			//LoadingScreen->SetIsEnabled(true);
+			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersCharacter::HideLoadingScreen, 10.0f, false);
+		}
+	}
+
 	TryBindInventoryDelegates();
+}
+
+void ARelicRunnersCharacter::HideLoadingScreen()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return;
+
+	FInputModeGameOnly InputMode;
+	PC->SetInputMode(InputMode);
+
+	LoadingScreen->RemoveFromParent();
 }
 
 void ARelicRunnersCharacter::SpawnStarterItems()
