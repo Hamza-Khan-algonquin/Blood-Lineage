@@ -144,12 +144,30 @@ void USettingsWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
 {
 	MainParentMenu = InParentMenu;
 	PauseParentMenu = nullptr;
+	if (MainParentMenu)
+	{
+		if (TB_BackButton)
+		{
+			TB_BackButton->SetText(FText::FromString("Main Menu"));
+		}
+		MainParentMenu->ShowModeSelectionWidget();
+		return;
+	}
 }
 
 void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 {
 	MainParentMenu = nullptr;
 	PauseParentMenu = InParentMenu;
+	if (PauseParentMenu)
+	{
+		if (TB_BackButton)
+		{
+			TB_BackButton->SetText(FText::FromString("Return"));
+		}
+		
+		return;
+	}
 }
 
 void USettingsWidget::HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType)
@@ -176,21 +194,11 @@ void USettingsWidget::BackButtonClicked()
 {
 	if (MainParentMenu)
 	{
-		if (TB_BackButton)
-		{
-			TB_BackButton->SetText(FText::FromString("Main Menu"));
-		}
 		MainParentMenu->ShowModeSelectionWidget();
-		return;
 	}
 	if (PauseParentMenu)
 	{
-		if (TB_BackButton)
-		{
-			TB_BackButton->SetText(FText::FromString("Return"));
-		}
 		PauseParentMenu->ShowPauseMenu();
-		return;
 	}
 }
 
