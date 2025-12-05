@@ -158,6 +158,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	//Inventory
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 	InventoryComponent->SetIsReplicated(true);
+
 	PlayerNumInventorySlots = 20;
 	//Health
 	PlayerStartingMaxHealth = 100;
@@ -691,7 +692,6 @@ void ARelicRunnersCharacter::TraceForInteractables()
 		bool bShouldShow = bWithinDistance && bFacingItem;
 		IInteractInterface::Execute_ShowTooltip(Item, bShouldShow);
 	}
-
 }
 
 void ARelicRunnersCharacter::UpdatePlayerHUDWorldFacing()
@@ -886,10 +886,10 @@ void ARelicRunnersCharacter::Interact()
 			{
 				if (APlayerController* PC = Cast<APlayerController>(GetController()))
 				{
-					ARelicRunnersPlayerController* MyPC = Cast<ARelicRunnersPlayerController>(PC);
-					if (MyPC)
+					ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+					if (RPC)
 					{
-						MyPC->Server_RequestPickup(Item);
+						RPC->Server_RequestPickup(Item);
 					}
 				}
 			}
@@ -897,10 +897,10 @@ void ARelicRunnersCharacter::Interact()
 			{
 				if (APlayerController* PC = Cast<APlayerController>(GetController()))
 				{
-					ARelicRunnersPlayerController* MyPC = Cast<ARelicRunnersPlayerController>(PC);
-					if (MyPC)
+					ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+					if (RPC)
 					{
-						MyPC->Server_RequestFlagActivation(Flag);
+						RPC->Server_RequestFlagActivation(Flag);
 					}
 				}
 

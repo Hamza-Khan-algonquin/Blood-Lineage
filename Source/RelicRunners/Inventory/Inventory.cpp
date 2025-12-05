@@ -334,18 +334,6 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
     InventoryComponent->OnStatsChanged.AddDynamic(this, &UInventory::OnEquippedStatsUpdated);
 
     UE_LOG(LogTemp, Log, TEXT("[UI] InventoryComponent successfully bound to delegates."));
-
-    APlayerController* PC = GetOwningPlayer();
-    PC = GetOwningPlayer();
-    if (PC)
-    {
-        APawn* Pawn = PC->GetPawn();
-        OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
-        if (OwningCharacter)
-        {
-            LocalInventory = OwningCharacter->GetInventoryComponent();
-        }
-    }
     
     InventoryComponent->SetSortingMethod(EInventorySorting::SortByNewest);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());

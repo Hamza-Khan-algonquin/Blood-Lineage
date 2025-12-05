@@ -126,8 +126,6 @@ public:
 	class UInventorySortingOptions* InventorySortingOptions = nullptr;
 	UPROPERTY()
 	class ARelicRunnersCharacter* OwningCharacter;
-	UPROPERTY()
-	class UInventoryComponent* LocalInventory;
 	class AVendor* CurrentVendor;
 	UPROPERTY()
 	class UItemObject* ForgeItemLeft = nullptr;
@@ -141,7 +139,7 @@ public:
 	float ForgeChance1;
 	float ForgeChance2;
 	float ForgeChance3;
-
+	 
 	//Functions
 	void ToggleVendorUI(bool value);
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, AVendor* Vendor);
