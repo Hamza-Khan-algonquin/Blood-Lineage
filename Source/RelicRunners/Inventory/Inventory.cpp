@@ -335,6 +335,14 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
 
     UE_LOG(LogTemp, Log, TEXT("[UI] InventoryComponent successfully bound to delegates."));
     
+    APlayerController* PC = GetOwningPlayer();
+    PC = GetOwningPlayer();
+    if (PC)
+    {
+        APawn* Pawn = PC->GetPawn();
+        OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
+    }
+
     InventoryComponent->SetSortingMethod(EInventorySorting::SortByNewest);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());
 }
