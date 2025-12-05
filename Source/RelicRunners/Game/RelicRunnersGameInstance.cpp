@@ -96,7 +96,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
 
         MappingContext->MapKey(FoundAction, Binding.Bind);
 
-        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> key %s"), *Binding.Name, *Binding.ReadableBind);
+        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> %s"), *Binding.Name, *Binding.ReadableBind);
     }
 
     Subsystem->AddMappingContext(MappingContext, 0);
@@ -125,7 +125,6 @@ void URelicRunnersGameInstance::InitializeSaveSlots()
     FirstSlot->IsEmptySlot = true;
     SaveSlots.Add(FirstSlot);
 }
-
 
 void URelicRunnersGameInstance::Shutdown()
 {
