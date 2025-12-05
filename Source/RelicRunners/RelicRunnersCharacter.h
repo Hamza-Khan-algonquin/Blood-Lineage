@@ -334,6 +334,11 @@ protected:
 	class UAbilitySelection* AbilitySelection;
 
 	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ULoadingScreen> LoadingScreenClass;
+	UPROPERTY(BlueprintReadWrite)
+	class ULoadingScreen* LoadingScreen;
+
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ULevelUpHUD> LevelUpHUDClass;
 	UPROPERTY()
 	class ULevelUpHUD* LevelUpHUD;
@@ -429,6 +434,9 @@ protected:
 	//Setup
 	virtual void BeginPlay();
 	void InitLocalUI();
+
+	UFUNCTION()
+	void HideLoadingScreen();
 
 	void SpawnStarterItems();
 
