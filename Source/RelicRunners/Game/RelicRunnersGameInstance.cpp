@@ -17,6 +17,7 @@
 #include <EnhancedInputSubsystems.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
+#include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include <RelicRunners/AbilitySystem/AbilityPointCounter.h>
@@ -95,7 +96,11 @@ void URelicRunnersGameInstance::ApplyKeybindings()
 
         MappingContext->MapKey(FoundAction, Binding.Bind);
 
+
         UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> key %s"), *Binding.Name, *Binding.Bind.ToString());
+
+        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> %s"), *Binding.Name, *Binding.ReadableBind);
+
     }
 
     Subsystem->AddMappingContext(MappingContext, 0);
@@ -124,7 +129,6 @@ void URelicRunnersGameInstance::InitializeSaveSlots()
     FirstSlot->IsEmptySlot = true;
     SaveSlots.Add(FirstSlot);
 }
-
 
 void URelicRunnersGameInstance::Shutdown()
 {
