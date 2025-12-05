@@ -33,10 +33,15 @@ public:
 	UPROPERTY()
 	class USettingsWidget* SettingsWidget;
 
+	UPROPERTY()
+	class UPauseMenuWidget* PauseParentMenu;
+
 protected:
 	virtual void NativeConstruct() override;
 
 public:
+	void SetParentMenu(class UPauseMenuWidget* InParentMenu);
+
 	UFUNCTION()
 	void OnResumeButtonClicked();
 

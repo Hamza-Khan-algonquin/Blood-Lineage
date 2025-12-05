@@ -94,7 +94,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
 
         MappingContext->MapKey(FoundAction, Binding.Bind);
 
-        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> key %s"), *Binding.Name, *Binding.ReadableBind);
+        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> key %s"), *Binding.Name, *Binding.Bind.ToString());
     }
 
     Subsystem->AddMappingContext(MappingContext, 0);

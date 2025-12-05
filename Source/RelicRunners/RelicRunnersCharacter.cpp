@@ -46,6 +46,7 @@
 #include "RelicRunners/Vendor/Vendor.h"
 #include "Interact/InteractInterface.h"
 #include "Menu/PauseMenu.h"
+#include "Menu/PauseMenuWidget.h"
 #include "AbilitySystem/AbilityPointCounter.h"
 #include "AbilitySystem/AbilitySelection.h"
 #include "AbilitySystem/HealthPotion.h"
@@ -447,6 +448,11 @@ void ARelicRunnersCharacter::Die()
 	PlayerHealth = PlayerMaxHealth;
 }
 
+bool ARelicRunnersCharacter::IsPauseMenuVisible()
+{
+	return PauseMenuWidget->GetVisibility() != ESlateVisibility::Hidden;
+}
+
 bool ARelicRunnersCharacter::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool WroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
@@ -608,6 +614,18 @@ void ARelicRunnersCharacter::InitLocalUI()
 			PauseMenu->AddToViewport();
 			PauseMenu->SetVisibility(ESlateVisibility::Hidden);
 			PauseMenu->SetIsEnabled(false);
+		}
+	}
+
+	// === Fixed Pause Widget ===
+	if (!PauseMenuWidget && PauseMenuWidgetClass)
+	{
+		PauseMenuWidget = CreateWidget<UPauseMenuWidget>(PC, PauseMenuWidgetClass);
+		if (PauseMenuWidget)
+		{
+			PauseMenuWidget->AddToViewport();
+			PauseMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+			PauseMenuWidget->SetIsEnabled(false);
 		}
 	}
 	// === Ability Selection HUD Widget ===
@@ -935,6 +953,13 @@ void ARelicRunnersCharacter::ToggleUI(UUserWidget* UIWidget)
 		UInventoryItemOptions::CloseAnyOpenPopup();
 		UInventorySortingOptions::CloseAnyOpenPopup();
 	}
+
+	if (UIWidget == PauseMenuWidget)
+	{
+		UPauseMenuWidget* pauseMenu = Cast<UPauseMenuWidget>(UIWidget);
+
+		pauseMenu->ShowPauseMenu();
+	}
 }
 
 void ARelicRunnersCharacter::InventoryUI()
@@ -947,9 +972,13 @@ void ARelicRunnersCharacter::InventoryUI()
 
 void ARelicRunnersCharacter::PauseUI()
 {
-	if (!PauseMenu) return;
+	//if (!PauseMenu) return;
+	//RemoveOtherUI("Pause", Cast<APlayerController>(Controller));
+	//ToggleUI(PauseMenu);
+
+	if (!PauseMenuWidget) return;
 	RemoveOtherUI("Pause", Cast<APlayerController>(Controller));
-	ToggleUI(PauseMenu);
+	ToggleUI(PauseMenuWidget);
 }
 
 void ARelicRunnersCharacter::AbilitySystemUI()
@@ -981,6 +1010,7 @@ void ARelicRunnersCharacter::RemoveOtherUI(FString UI, APlayerController* player
 	if (UI != "Ability") HideUI(AbilitySelection, playerController);
 	if (UI != "Inventory") HideUI(Inventory, playerController, true);
 	if (UI != "Pause") HideUI(PauseMenu, playerController);
+	if (UI != "Pause") HideUI(PauseMenuWidget, playerController);
 }
 
 void ARelicRunnersCharacter::DamageAbility()

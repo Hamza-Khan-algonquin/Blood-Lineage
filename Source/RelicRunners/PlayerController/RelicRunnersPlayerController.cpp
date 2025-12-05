@@ -433,6 +433,7 @@ void ARelicRunnersPlayerController::InitializePawnDependentSystems()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
 		{
 			Subsystem->AddMappingContext(InputMappingContext, 0);
+			Subsystem->AddMappingContext(GamepadInputMappingContext, 0);
 			UE_LOG(LogTemp, Log, TEXT("Pawn init: Added input mapping context"));
 		}
 	}

@@ -36,6 +36,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default Values")
 	class UBoxComponent* TriggerBox;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default Values")
+	class UTextRenderComponent* TextComponent;
 
 private:
 	UPROPERTY(Replicated)

@@ -8,6 +8,7 @@
 #include "MainMenuWidget.h"
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include "RelicRunners/Menu/SettingsWidget.h"
+#include "PauseMenuWidget.h"
 
 void UPauseMenu::NativeConstruct()
 {
@@ -34,6 +35,11 @@ void UPauseMenu::NativeConstruct()
     }
 }
 
+void UPauseMenu::SetParentMenu(UPauseMenuWidget* InParentMenu)
+{
+    PauseParentMenu = InParentMenu;
+}
+
 void UPauseMenu::OnResumeButtonClicked()
 {
     ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(GetOwningPlayerPawn());
@@ -50,7 +56,10 @@ void UPauseMenu::OnRecallButtonClicked()
 
 void UPauseMenu::OnSettingsButtonClicked()
 {
-
+    if (PauseParentMenu)
+    {
+        PauseParentMenu->ShowSettingsMenu();
+    }
 }
 
 void UPauseMenu::OnQuitButtonClicked()

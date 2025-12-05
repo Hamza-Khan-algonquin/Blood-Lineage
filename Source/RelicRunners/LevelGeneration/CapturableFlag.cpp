@@ -4,6 +4,7 @@
 #include "CapturableFlag.h"
 #include "Components/SceneComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include <Net/UnrealNetwork.h>
@@ -11,7 +12,8 @@
 // Sets default values
 ACapturableFlag::ACapturableFlag():
 	Origin(nullptr),
-	TriggerBox(nullptr)
+	TriggerBox(nullptr),
+	TextComponent(nullptr)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -24,6 +26,11 @@ ACapturableFlag::ACapturableFlag():
 	TriggerBox->SetCollisionProfileName("BlockAll");
 	TriggerBox->SetGenerateOverlapEvents(true);
 	TriggerBox->SetupAttachment(Origin);
+
+	TextComponent = CreateDefaultSubobject<UTextRenderComponent>("TextComponent");
+	TextComponent->SetupAttachment(Origin);
+	TextComponent->SetText(FText::FromString("Press E to Interact"));
+
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -76,6 +83,8 @@ void ACapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 
 	//Disable further interactions
 	isActive = true;
+
+	TextComponent->SetText(FText::FromString("Complete!"));
 
 	FString text = HasAuthority() ? "Server: " : "Client: ";
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));

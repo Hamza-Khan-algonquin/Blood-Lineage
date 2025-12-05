@@ -600,7 +600,7 @@ void ALevelGenerator::FindStartToEndPath(int startingIndex, int targetIndex, int
 
 			if (implementSpline && bValueHasChanged && EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::MoveThePayload))
 			{
-				DeliverySpline->AddSplinePoint(FVector((TileScale * currentX * 4) + TileScale, (TileScale * currentY * 4) + TileScale, TileScale), ESplineCoordinateSpace::World);
+				DeliverySpline->AddSplinePoint(FVector((TileScale * currentX * 4) + TileScale, (TileScale * currentY * 4) + TileScale, 0.0f), ESplineCoordinateSpace::World);
 				bValueHasChanged = false;
 			}
 		}

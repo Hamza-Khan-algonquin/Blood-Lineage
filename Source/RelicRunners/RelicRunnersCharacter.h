@@ -284,6 +284,9 @@ public:
 
 	void Die();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsPauseMenuVisible();
+
 protected:
 
 	//Other Classes
@@ -297,6 +300,11 @@ protected:
 	TSubclassOf<class UPauseMenu> PauseMenuClass;
 	UPROPERTY()
 	class UPauseMenu* PauseMenu;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UPauseMenuWidget> PauseMenuWidgetClass;
+	UPROPERTY()
+	class UPauseMenuWidget* PauseMenuWidget;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UPlayerHUD> PlayerHUDClass;
