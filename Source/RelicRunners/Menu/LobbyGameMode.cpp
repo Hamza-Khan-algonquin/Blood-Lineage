@@ -37,13 +37,15 @@ void ALobbyGameMode::BeginPlay()
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
-
     if (!HasAuthority() || !NewPlayer || !LobbyPreviewClass) return;
 
     PlayersInLobby.Add(NewPlayer);
 
     int Index = PlayersInLobby.Num() - 1;
     if (!LobbySpawnPositions.IsValidIndex(Index)) return;
+
+    ARelicRunnersPlayerState* RPS = NewPlayer->GetPlayerState<ARelicRunnersPlayerState>();
+    if (!RPS) return;
 
     FActorSpawnParameters Params;
     Params.Owner = NewPlayer;
@@ -53,19 +55,13 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
         LobbyPreviewClass,
         LobbySpawnPositions[Index],
         FRotator::ZeroRotator,
-        Params);
+        Params
+    );
 
     if (!SpawnedPreview) return;
 
-    if (ARelicRunnersPlayerState* RPS = NewPlayer->GetPlayerState<ARelicRunnersPlayerState>())
-    {
-        SpawnedPreview->SetupFromPlayerState(RPS);
-        LobbyPreviews.Add(NewPlayer, SpawnedPreview);
-    }
-    else
-    {
-        SpawnedPreview->Destroy();
-    }
+    SpawnedPreview->SetupFromPlayerState(RPS);
+    LobbyPreviews.Add(RPS, SpawnedPreview);
 
     if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(NewPlayer))
     {
@@ -82,18 +78,33 @@ void ALobbyGameMode::Logout(AController* Exiting)
     APlayerController* ExitingPC = Cast<APlayerController>(Exiting);
     if (!ExitingPC) return;
 
-    //Remove from lobby array
     PlayersInLobby.Remove(ExitingPC);
 
-    //Destroy their preview actor if exists
+    ARelicRunnersPlayerState* RPS = ExitingPC->GetPlayerState<ARelicRunnersPlayerState>();
+    if (!RPS) return;
+
+    //Remove their preview
     ALobbyPreview* Preview = nullptr;
-    if (LobbyPreviews.RemoveAndCopyValue(ExitingPC, Preview))
+    if (LobbyPreviews.RemoveAndCopyValue(RPS, Preview))
     {
         if (HasAuthority() && Preview)
         {
             Preview->Destroy();
         }
     }
+
+    UpdateSetup();
+}
+
+void ALobbyGameMode::OnPlayerStateUpdated(ARelicRunnersPlayerState* RPS)
+{
+    if (!RPS) return;
+
+    if (ALobbyPreview* Preview = LobbyPreviews.FindRef(RPS))
+    {
+        Preview->SetupFromPlayerState(RPS);
+    }
+
     UpdateSetup();
 }
 

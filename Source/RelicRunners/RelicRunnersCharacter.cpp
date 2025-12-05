@@ -41,6 +41,7 @@
 #include "Inventory/InventoryToolTip.h"
 #include "Inventory/InventoryItemOptions.h"
 #include "Inventory/InventorySortingOptions.h"
+#include "Inventory/InventoryDragOperation.h"
 #include "Item/ItemStats.h"
 #include "Item/ItemActor.h"
 #include "RelicRunners/Vendor/Vendor.h"
@@ -158,6 +159,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	//Inventory
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 	InventoryComponent->SetIsReplicated(true);
+
 	PlayerNumInventorySlots = 20;
 	//Health
 	PlayerStartingMaxHealth = 100;
@@ -373,9 +375,14 @@ void ARelicRunnersCharacter::AddExperience(int Amount)
 	PlayerXP += Amount;
 	if (PlayerXP >= PlayerXPToLevel)
 	{
-		OnLevelUp();
+		Client_OnLevelUp();
 	}
 	UpdateHUD();
+}
+
+void ARelicRunnersCharacter::Client_OnLevelUp_Implementation()
+{ 
+	OnLevelUp();
 }
 
 void ARelicRunnersCharacter::OnLevelUp()
@@ -423,6 +430,8 @@ void ARelicRunnersCharacter::OnLevelUp()
 			NewLevelUpHUD->AddToViewport();
 		}
 	}
+
+	if (Inventory) Inventory->RefreshEquippedUI();
 }
 
 float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -701,7 +710,6 @@ void ARelicRunnersCharacter::TraceForInteractables()
 		bool bShouldShow = bWithinDistance && bFacingItem;
 		IInteractInterface::Execute_ShowTooltip(Item, bShouldShow);
 	}
-
 }
 
 void ARelicRunnersCharacter::UpdatePlayerHUDWorldFacing()
@@ -896,10 +904,10 @@ void ARelicRunnersCharacter::Interact()
 			{
 				if (APlayerController* PC = Cast<APlayerController>(GetController()))
 				{
-					ARelicRunnersPlayerController* MyPC = Cast<ARelicRunnersPlayerController>(PC);
-					if (MyPC)
+					ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+					if (RPC)
 					{
-						MyPC->Server_RequestPickup(Item);
+						RPC->Server_RequestPickup(Item);
 					}
 				}
 			}
@@ -907,10 +915,10 @@ void ARelicRunnersCharacter::Interact()
 			{
 				if (APlayerController* PC = Cast<APlayerController>(GetController()))
 				{
-					ARelicRunnersPlayerController* MyPC = Cast<ARelicRunnersPlayerController>(PC);
-					if (MyPC)
+					ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+					if (RPC)
 					{
-						MyPC->Server_RequestFlagActivation(Flag);
+						RPC->Server_RequestFlagActivation(Flag);
 					}
 				}
 
@@ -967,6 +975,7 @@ void ARelicRunnersCharacter::InventoryUI()
 	if (!Inventory) return;
 	RemoveOtherUI("Inventory", Cast<APlayerController>(Controller));
 	ToggleUI(Inventory);
+	FSlateApplication::Get().CancelDragDrop();
 	Inventory->ToggleVendorUI(false);
 }
 

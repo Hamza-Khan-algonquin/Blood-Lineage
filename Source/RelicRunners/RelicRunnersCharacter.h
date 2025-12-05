@@ -280,6 +280,9 @@ public:
 
 	virtual void OnLevelUp();
 
+	UFUNCTION(Client, Reliable)
+	void Client_OnLevelUp();
+
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	void Die();

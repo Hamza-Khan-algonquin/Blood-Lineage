@@ -34,7 +34,6 @@ public:
 
 	//Functions
 	void Setup(struct FItemData& ItemData, const FLinearColor& RarityColor);
-	void Setup(struct FItemData& ItemData, const FLinearColor& RarityColor, struct FItemData& ItemDataEquipped);
 	void Setup(class UItemObject* HoveredItem, const FLinearColor& HoveredColor, class UItemObject* EquippedItem);
 
 	//UI Elements

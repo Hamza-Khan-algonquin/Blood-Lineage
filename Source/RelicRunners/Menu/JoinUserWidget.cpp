@@ -111,7 +111,7 @@ void UJoinUserWidget::OnNemesisClicked() { SetSelectedClass("Nemesis"); }
 void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
 	FLinearColor Gold(1.f, 0.5f, 0, 1.f);
-	FLinearColor Cyan(0.f, 1.f, 1.f, 1.f);
+	FLinearColor Cyan(0.074f, 0.25f, 0.434f, 1.f);
 	FLinearColor DarkCyan(0, 0.021f, 0.02f, 1.f);
 	FLinearColor DarkGold(0.3f, 0.15, 0, 1.f);
 	FLinearColor Black(0,0,0,1);

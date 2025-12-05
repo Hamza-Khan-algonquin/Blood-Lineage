@@ -57,9 +57,20 @@ void USaveFileListWidget::Setup(USaveFileListData* InData)
         TB_NumUpgrades->SetVisibility(ESlateVisibility::Visible);
         TB_NumUpgrades->SetText(FText::FromString(FString::FromInt(SaveFileData->GetNumUpgrades())));
         TB_CreateNew->SetText(FText::FromString(""));
-        TB_TimePlayed->SetText(FText::FromString(FString::FromInt(SaveFileData->GetTimePlayed())));
         B_Upgrades->SetVisibility(ESlateVisibility::Visible);
         B_Edit->SetVisibility(ESlateVisibility::Visible);
+
+        int TotalSeconds = SaveFileData->GetTimePlayed();
+
+        int Hours = TotalSeconds / 3600;
+        int Minutes = (TotalSeconds % 3600) / 60;
+        int Seconds = TotalSeconds % 60;
+
+        //Format as HH:MM:SS
+        FString FormattedTime = FString::Printf(TEXT("%02dh %02dm %02ds"), Hours, Minutes, Seconds);
+
+        TB_TimePlayed->SetText(FText::FromString(FormattedTime));
+
     }
 }
 
@@ -95,8 +106,7 @@ void USaveFileListWidget::SetSelected(bool bSelected)
 
 void USaveFileListWidget::OnEditButtonClicked()
 {
-    if (!ParentWidget || !SaveFileData || SaveFileData->IsEmptySlot)
-        return;
+    if (!ParentWidget || !SaveFileData || SaveFileData->IsEmptySlot) return;
 
     if (ParentWidget->EditPopupClass)
     {

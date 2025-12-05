@@ -17,8 +17,8 @@ public:
     ALobbyGameMode();
     virtual void PostLogin(APlayerController* NewPlayer) override;
     virtual void Logout(AController* Exiting) override;
+    void OnPlayerStateUpdated(class ARelicRunnersPlayerState* RPS);
     virtual void BeginPlay() override;
-    void RefreshPreviewForPlayer(class ARelicRunnersPlayerState* RPS);
 protected:
     // Where to put players in lobby (pillars etc.)
     UPROPERTY(EditDefaultsOnly, Category = "Lobby")
@@ -32,7 +32,7 @@ private:
     TArray<APlayerController*> PlayersInLobby;
 
     UPROPERTY()
-    TMap<APlayerController*, ALobbyPreview*> LobbyPreviews;
+    TMap<ARelicRunnersPlayerState*, ALobbyPreview*> LobbyPreviews;
 
     void UpdateSetup();
 };

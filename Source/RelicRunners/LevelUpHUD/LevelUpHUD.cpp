@@ -28,7 +28,7 @@ void ULevelUpHUD::NativeConstruct()
 		PlayAnimation(Fade);
 	}
 
-	// Auto-remove after 4 seconds
+	//Auto-remove after 4 seconds
 	FTimerHandle RemoveHandle;
 	GetWorld()->GetTimerManager().SetTimer(RemoveHandle, this, &ULevelUpHUD::RemoveFromParent, 4.0f, false);
 

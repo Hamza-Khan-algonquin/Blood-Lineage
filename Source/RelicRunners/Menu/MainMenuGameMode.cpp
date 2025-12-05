@@ -5,7 +5,6 @@
 #include "JoinUserWidget.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include "RelicRunners/PlayerPreview/LobbyPreview.h"
-#include "RelicRunners/Game/RelicRunnersLobbyGameState.h"
 
 AMainMenuGameMode::AMainMenuGameMode()
 {

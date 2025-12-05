@@ -20,6 +20,80 @@
 #include "Blueprint/UserWidget.h"
 #include "Inventory.generated.h"
 
+USTRUCT(BlueprintType)
+struct FItemOptionsUIConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	bool ShowEquip = false;
+
+	UPROPERTY()
+	bool ShowUnequip = false;
+
+	UPROPERTY()
+	bool ShowDrop = false;
+
+	UPROPERTY()
+	bool ShowSell = false;
+
+	UPROPERTY()
+	bool ShowBuy = false;
+
+	UPROPERTY()
+	bool ShowForge = false;
+
+	UPROPERTY()
+	bool ShowRemove = false;
+
+	static FItemOptionsUIConfig EquippedItem()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowUnequip = true;
+		Config.ShowDrop = true;
+		return Config;
+	}
+ 
+	static FItemOptionsUIConfig InventoryItem()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowEquip = true;
+		Config.ShowDrop = true;
+		return Config;
+	}
+
+	static FItemOptionsUIConfig InventoryItemWithForge()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowEquip = true;
+		Config.ShowDrop = true;
+		Config.ShowForge = true;
+		return Config;
+	}
+
+	static FItemOptionsUIConfig ForgeItem()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowRemove = true;
+		return Config;
+	}
+
+	static FItemOptionsUIConfig ForgeResultItem()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowEquip = true;
+		Config.ShowRemove = true;
+		return Config;
+	}
+
+	static FItemOptionsUIConfig VendorItem()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowBuy = true;
+		return Config;
+	}
+};
+
 enum class EInventorySorting : uint8;
 
 UCLASS()
@@ -52,8 +126,6 @@ public:
 	class UInventorySortingOptions* InventorySortingOptions = nullptr;
 	UPROPERTY()
 	class ARelicRunnersCharacter* OwningCharacter;
-	UPROPERTY()
-	class UInventoryComponent* LocalInventory;
 	class AVendor* CurrentVendor;
 	UPROPERTY()
 	class UItemObject* ForgeItemLeft = nullptr;
@@ -67,20 +139,15 @@ public:
 	float ForgeChance1;
 	float ForgeChance2;
 	float ForgeChance3;
-	FTimerHandle ForgeResultTimer;
-	void ClearForgeResult();
-
+	 
 	//Functions
-	virtual void NativeConstruct() override;
 	void ToggleVendorUI(bool value);
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, AVendor* Vendor);
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
 	FString RollForgeRarity(const FString R1, float C1, const FString R2, float C2, const FString R3, float C3);
 	void UpdateForgeOdds(const FString& LeftRarity, const FString& RightRarity);
 	void UpdateForgeUI();
-	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	FSlotUIComponents GetUIComponentsForItemType(const FString& ItemType);
 	void UpdateButtonWithTooltip(class UItemObject* Item, const FString& itemType, class UInventoryToolTip* ToolTip, const FLinearColor& Color);
 	void SetInventoryComponent(UInventoryComponent* NewComponent);
@@ -92,6 +159,10 @@ public:
 	void BuyItem(class UItemObject* Item);
 	void SellItem(class UItemObject* Item);
 	void OnEquippedSlotClick(class UItemObject* EquippedItem);
+	void CreateItemOptionsPopup(UItemObject* Item, const struct FItemOptionsUIConfig& Config);
+	void ClearForgeItemLeft();
+	void ClearForgeItemRight();
+	void ClearForgeItemResult();
 	UFUNCTION()
 	void RefreshInventoryUI();
 	UFUNCTION()
@@ -116,6 +187,16 @@ public:
 	void SortingTypeClicked();
 	UFUNCTION()
 	void OnFuseButtonPressed();
+	UFUNCTION()
+	void RemoveForgeItem(class UItemObject* ItemToRemove);
+	UFUNCTION()
+	FEventReply  OnForgeItem1Clicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
+
+	UFUNCTION()
+	FEventReply  OnForgeItem2Clicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
+
+	UFUNCTION()
+	FEventReply  OnForgeItemResultClicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
 
 	//UI Elements
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -128,12 +209,16 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* VendorCanvas;
 
+	UPROPERTY(meta = (BindWidget))
+	class UCanvasPanel* ShopCanvas;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	class UWidgetAnimation* ForgeCompleted;
 
 	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* ForgeBox;
-
+	UPROPERTY(meta = (BindWidget))
+	class UHorizontalBox* InventoryBox;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* FuseButton;
 
@@ -306,7 +391,12 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* EquippedCanvas;
 	
-private:
-
+protected:
+	virtual void NativeConstruct() override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	
 };

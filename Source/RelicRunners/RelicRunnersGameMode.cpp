@@ -52,8 +52,10 @@ void ARelicRunnersGameMode::PostLogin(APlayerController* NewPlayer)
     static int32 PlayerIndex = 1;
     if (ARelicRunnersPlayerState* PS = NewPlayer->GetPlayerState<ARelicRunnersPlayerState>())
     {
-        PS->SetPlayerName("Player" + FString::FromInt(PlayerIndex++));
-
+        if (PS->GetPlayerName().IsEmpty())
+        {
+            PS->SetPlayerName(FString::Printf(TEXT("Player%d"), PlayerIndex++));
+        }
     }
 
     // Skip the host player (listen servers own controller)
@@ -98,13 +100,12 @@ void ARelicRunnersGameMode::PostSeamlessTravel()
         APlayerController* PC = It->Get();
         if (!PC) continue;
 
-        // Make sure the player has a pawn
+        //Make sure the player has a pawn
         if (!PC->GetPawn())
         {
             RestartPlayer(PC);
         }
 
-        // Optional: reset name if needed
         if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
         {
             if (PS->GetPlayerName().IsEmpty())
@@ -141,7 +142,6 @@ void ARelicRunnersGameMode::PostSeamlessTravel()
         }
     }
 }
-
 
 APawn* ARelicRunnersGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
 {

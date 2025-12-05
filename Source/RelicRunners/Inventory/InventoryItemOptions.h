@@ -31,7 +31,27 @@ public:
     //Functions
     UFUNCTION(BlueprintCallable, Category = "Item Options")
     void Setup(class UItemObject* InItem);
-    void ConfigureButtons(bool ShowEquip, bool ShowUnequip, bool ShowSell, bool ShowBuy);
+    UFUNCTION()
+    void SetEquipButtonVisibility(bool Visible);
+
+    UFUNCTION()
+    void SetUnequipButtonVisibility(bool Visible);
+
+    UFUNCTION()
+    void SetDropButtonVisibility(bool Visible);
+
+    UFUNCTION()
+    void SetSellButtonVisibility(bool Visible);
+
+    UFUNCTION()
+    void SetBuyButtonVisibility(bool Visible);
+
+    UFUNCTION()
+    void SetForgeButtonVisibility(bool Visible);
+
+    UFUNCTION()
+    void SetRemoveButtonVisibility(bool Visible);
+
     void ClosePopup();
     static void CloseAnyOpenPopup();
     UFUNCTION()
@@ -44,7 +64,11 @@ public:
     void OnBuyClicked();
     UFUNCTION()
     void OnSellClicked();
-
+    UFUNCTION()
+    void OnForgeClicked();
+    UFUNCTION()
+    void OnRemoveClicked();
+    void ApplyConfig(const struct FItemOptionsUIConfig& Config);
 protected:
 
     virtual void NativeConstruct() override;
@@ -66,7 +90,10 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UButton* SellButton;
-
+    UPROPERTY(meta = (BindWidget))
+    class UButton* ForgeButton;
+    UPROPERTY(meta = (BindWidget))
+    class UButton* RemoveButton;
 private:
 
     //Properties

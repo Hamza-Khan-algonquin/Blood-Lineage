@@ -122,15 +122,13 @@ void AAphroditeCharacter::GiveUltimateAbilities()
 
 void AAphroditeCharacter::OnLevelUp()
 {
-    Super::OnLevelUp();
-
     UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Staff");
     Item->ItemData.Level++;
     Item->ItemData.Dexterity += FMath::RandRange(0, 1);
     Item->ItemData.Strength += FMath::RandRange(0, 1);
     Item->ItemData.Intelligence += FMath::RandRange(2, 5);
-    Inventory->RefreshEquippedUI();
-    InventoryComponent->UpdateTotalEquippedStats(this);
+
+    Super::OnLevelUp();
 }
 
 

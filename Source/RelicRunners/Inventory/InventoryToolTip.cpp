@@ -198,7 +198,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
                 
                 if (Stat.ComparisonTextValue != nullptr)
                 {
-                    Stat.ComparisonTextValue->SetText(FText::FromString("--"));
+                    Stat.ComparisonTextValue->SetText(FText::FromString("<>"));
                     Stat.ComparisonTextValue->SetColorAndOpacity(FLinearColor(1,0.5f,0,1));
                 }
             }

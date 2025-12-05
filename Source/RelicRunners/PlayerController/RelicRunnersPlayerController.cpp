@@ -227,7 +227,7 @@ void ARelicRunnersPlayerController::Client_UpdateLobbyUI_Implementation()
 
 void ARelicRunnersPlayerController::TryUpdateLobbyUI(int Attempt)
 {
-	int MaxAttempts = 5;
+	int MaxAttempts = 4;
 	if (Attempt >= MaxAttempts) return;
 
 	if (LobbyWidget)
@@ -236,7 +236,7 @@ void ARelicRunnersPlayerController::TryUpdateLobbyUI(int Attempt)
 	}
 
 	FTimerHandle RetryHandle;
-	GetWorld()->GetTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateUObject(this, &ARelicRunnersPlayerController::TryUpdateLobbyUI, Attempt + 1), 0.2f, false);
+	GetWorld()->GetTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateUObject(this, &ARelicRunnersPlayerController::TryUpdateLobbyUI, Attempt + 1), 0.3f, false);
 }
 
 void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview)
@@ -362,18 +362,10 @@ void ARelicRunnersPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!IsLocalController())
-	{
-		UE_LOG(LogTemp, Log, TEXT("BeginPlay: Not a local controller - skipping UI setup"));
-		return;
-	}
+	if (!IsLocalController()) return;
 
 	UWorld* World = GetWorld();
-	if (!World)
-	{
-		UE_LOG(LogTemp, Error, TEXT("BeginPlay: GetWorld() returned null"));
-		return;
-	}
+	if (!World) return;
 
 	const FString MapName = World->GetMapName();
 	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
@@ -395,6 +387,8 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		FTimerHandle DelayHandle;
 		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 0.2f, false);
+
+		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
 }
 
@@ -402,7 +396,7 @@ void ARelicRunnersPlayerController::Server_SendPlayerInfo_Implementation(const F
 {
 	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
 	{
-		PS->SelectedClass = SelectedClass;
+		PS->SetSelectedClass(SelectedClass); 
 		PS->SetPlayerName(PlayerName);
 		PS->ForceNetUpdate();
 	}

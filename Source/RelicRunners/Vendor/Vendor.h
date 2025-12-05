@@ -53,6 +53,6 @@ protected:
 	UPROPERTY()
 	class UInventory* LinkedInventoryWidget;
 
-	UPROPERTY(Transient)
+	UPROPERTY()
 	UItemMeshData* ItemMeshData = nullptr;
 };
