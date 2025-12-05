@@ -4,6 +4,7 @@
 #include "ObjectPoolManager.h"
 #include "PoolActorInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 TWeakObjectPtr<AObjectPoolManager> AObjectPoolManager::Instance = nullptr;
 
@@ -12,20 +13,26 @@ AObjectPoolManager::AObjectPoolManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
+	bReplicates = false;
 }
 
 AObjectPoolManager* AObjectPoolManager::GetInstance(const UObject* WorldContext)
 {
+	UWorld* world = WorldContext->GetWorld();
+
+	if (!world->IsNetMode(NM_DedicatedServer) && !world->IsNetMode(NM_ListenServer))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager::GetInstance called on client! This should only be called on the server!"));
+		return nullptr;
+	}
+
 	if (Instance.IsValid())
 	{
 		return Instance.Get();
 	}
 
-	UWorld* World = WorldContext->GetWorld();
-
 	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(World, AObjectPoolManager::StaticClass(), FoundActors);
+	UGameplayStatics::GetAllActorsOfClass(world, AObjectPoolManager::StaticClass(), FoundActors);
 
 	if (FoundActors.Num() > 0)
 	{
@@ -33,14 +40,21 @@ AObjectPoolManager* AObjectPoolManager::GetInstance(const UObject* WorldContext)
 		return Instance.Get();
 	}
 
-	Instance = Cast<AObjectPoolManager>(World->SpawnActor(AObjectPoolManager::StaticClass()));
+	Instance = Cast<AObjectPoolManager>(world->SpawnActor(AObjectPoolManager::StaticClass()));
 
 	return Instance.Get();
 }
 
 void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float lifeSpan)
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager SetActorActive called on client! This should only be called on the server!"));
+		return;
+	}
+
 	TSubclassOf<AActor> actorType = actor->GetClass();
+	FTimerHandle* handler = nullptr;
 
 	if (actorType->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
@@ -48,6 +62,8 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 		if (poolActor)
 		{
 			poolActor->SetIsActive(activeState);
+			handler = &poolActor->GetLifeSpanTimerHandle();
+			GetWorld()->GetTimerManager().ClearTimer(*handler);
 		}
 	}
 	else
@@ -66,10 +82,29 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 		}
 	}
 	
+	if (lifeSpan > 0.0f)
+	{
+		FTimerHandle backUp;
+		FTimerDelegate delegate;
+
+		if (handler == nullptr)
+		{
+			handler = &backUp;
+		}
+
+		delegate.BindUFunction(this, "SetActorActive", actor, !activeState, -1.f);
+		GetWorld()->GetTimerManager().SetTimer(*handler, delegate, lifeSpan, false);
+	}
 }
 
 void AObjectPoolManager::AddActor(AActor* actorToAdd, TSubclassOf<AActor> actorType)
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager AddActor called on client! This should only be called on the server!"));
+		return;
+	}
+
 	PooledObjects.FindOrAdd(actorType).Add(actorToAdd);
 
 	if (!actorType->ImplementsInterface(UPoolActorInterface::StaticClass()) && !PooledObjectsShouldTick.Contains(actorType))
@@ -97,6 +132,14 @@ AActor* AObjectPoolManager::CreateActor(TSubclassOf<AActor> actorType)
 
 AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSpan)
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager GetActor called on client! This should only be called on the server!"));
+		return nullptr;
+	}
+
+	AActor* returnActor = nullptr;
+
 	if (PooledObjects.Contains(actorType))
 	{
 		bool isInterface = actorType->ImplementsInterface(UPoolActorInterface::StaticClass());
@@ -104,19 +147,30 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 		{
 			if (pointer.IsValid() && ((isInterface && !Cast<IPoolActorInterface>(pointer.Get())->GetIsActive()) || (!isInterface && pointer->IsHidden())))
 			{
-				SetActorActive(pointer.Get(), true, lifeSpan);
-				return pointer.Get();
+				returnActor = pointer.Get();
 			}
 		}
 	}
 
-	AActor* newActor = CreateActor(actorType);
-	return newActor;
+	if (!returnActor)
+	{
+		returnActor = CreateActor(actorType);
+	}
+
+	SetActorActive(returnActor, true, lifeSpan);
+
+	return returnActor;
 }
 
 //if this does not work try using actor->IsA(loop through all keys and see if any match)
 void AObjectPoolManager::RemoveActor(AActor* actorToRemove)
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager RemoveActor called on client! This should only be called on the server!"));
+		return;
+	}
+
 	TSubclassOf<AActor> actorType = actorToRemove->GetClass();
 
 	if (PooledObjects.Contains(actorType))
@@ -128,8 +182,35 @@ void AObjectPoolManager::RemoveActor(AActor* actorToRemove)
 	}
 }
 
+void AObjectPoolManager::PreLoadPool(TSubclassOf<AActor> actorType, int numberOfElements)
+{
+	PooledObjects.FindOrAdd(actorType).Reserve(numberOfElements);
+
+	for (int i = 0; i < numberOfElements; i++)
+	{
+		AActor* newActor = CreateActor(actorType);
+
+		if (newActor)
+		{
+			SetActorActive(newActor, false);
+		}
+	}
+}
+
 void AObjectPoolManager::CleanUpPool(TSubclassOf<AActor> actorType)
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager RemoveActor called on client! This should only be called on the server!"));
+		return;
+	}
+
+	if (!PooledObjects.Contains(actorType))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ObjectPoolManager CleanUpPool called on non existent pool of type %s"), *actorType->GetName());
+		return;
+	}
+
 	PooledObjects[actorType].RemoveAll([](const TWeakObjectPtr<AActor>& pointer)
 		{
 			return !pointer.IsValid();
@@ -138,6 +219,12 @@ void AObjectPoolManager::CleanUpPool(TSubclassOf<AActor> actorType)
 
 void AObjectPoolManager::CleanUpPools()
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager CleanUpPools called on client! This should only be called on the server!"));
+		return;
+	}
+
 	for (TMap<TSubclassOf<AActor>, TArray<TWeakObjectPtr<AActor>>>::TIterator it = PooledObjects.CreateIterator(); it; ++it)
 	{
 		CleanUpPool(it.Key());
@@ -152,6 +239,11 @@ bool AObjectPoolManager::IsActorClassPooled(TSubclassOf<AActor> actorType)
 // Called when the game starts or when spawned
 void AObjectPoolManager::BeginPlay()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	Super::BeginPlay();
 	
 	if (Instance.IsValid())

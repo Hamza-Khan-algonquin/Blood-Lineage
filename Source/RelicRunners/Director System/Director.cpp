@@ -3,6 +3,8 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
+#include "RelicRunners/Enemy/EnemyCharacter.h"
 
 // Sets default values
 ADirector::ADirector() 
@@ -19,7 +21,7 @@ void ADirector::BeginPlay()
 {
 	Super::BeginPlay();
 	//make sure we are the server
-	if (GetLocalRole() == ROLE_Authority)
+	if (HasAuthority())
 	{
 		//sort enemies by their weights for the weight sums algorithm used when picking who to spawn
 		DefaultSpawningCards.Sort([](const USpawnCard& A, const USpawnCard& B)
@@ -29,6 +31,13 @@ void ADirector::BeginPlay()
 
 		//reseting some varialbes
 		SpawnTimer = 0;
+
+		AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+
+		for (int i = 0; i < DefaultSpawningCards.Num(); i++)
+		{
+			pool->PreLoadPool(DefaultSpawningCards[i]->EnemyClass, 10);
+		}
 	}
 	//if we are not the server make sure we don't tick
 	else if (GetLocalRole() == ROLE_AutonomousProxy)
@@ -42,9 +51,19 @@ void ADirector::RemoveEnemy(AActor* enemy)
 	//cast the actor point as a APawn then check to make sure it when through before destroying it
 	APawn* enemyPtr = static_cast<APawn*>(enemy);
 
-	if (enemyPtr)
+	if (!enemyPtr)
 	{
-		EnemiesInWorld.Remove(enemyPtr);
+		return;
+	}
+
+	EnemiesInWorld.Remove(enemyPtr);
+
+	AEnemyCharacter* enemyCharacterPtr = Cast<AEnemyCharacter>(enemyPtr);
+
+	if (enemyCharacterPtr)
+	{
+		enemyCharacterPtr->OnDestroyed.RemoveDynamic(this, &ADirector::RemoveEnemy);
+		enemyCharacterPtr->OnDeactivated.RemoveDynamic(this, &ADirector::RemoveEnemy);
 	}
 }
 
@@ -104,12 +123,17 @@ void ADirector::SpawnCheck()
 		//cast the actor as spawn points
 		ASpawnPoint* point = static_cast<ASpawnPoint*>(spawnPoints[i]);
 
-		for (APawn* player : Players)
+		for (int j = 0; j < Players.Num(); j++)
 		{
-			if (!player) continue;
+			if (!Players[j])
+			{
+				Players.RemoveAt(j);
+				j--;
+				continue;
+			}
 
 			//check to see if the player is close enough and the spawn point is not at max capacity
-			if (FVector::Dist2D(player->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
+			if (FVector::Dist2D(Players[j]->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
 			{
 				point->SpawnEnemies();
 			}
@@ -123,7 +147,7 @@ void ADirector::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	
 	//make sure we are on the server
-	if (GetLocalRole() == ROLE_Authority)
+	if (HasAuthority())
 	{
 		//check to see if it is time for a spawn check
 		if (SpawnTimer <= 0)

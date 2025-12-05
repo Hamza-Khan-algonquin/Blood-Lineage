@@ -1,6 +1,8 @@
 #include "SpawnPoint.h"
 #include <Kismet/GameplayStatics.h>
 #include "Director.h"
+#include "RelicRunners/Enemy/EnemyCharacter.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
 // Sets default values
 ASpawnPoint::ASpawnPoint()
@@ -15,7 +17,6 @@ ASpawnPoint::ASpawnPoint()
 		DepthToCheckFrom = 100;
 		PrimaryActorTick.bCanEverTick = false;
 	}
-
 }
 
 bool ASpawnPoint::IsAtMaxCapacity()
@@ -82,120 +83,142 @@ FVector ASpawnPoint::GetRandomPosition()
 
 void ASpawnPoint::SpawnEnemies()
 {
-	if (GetLocalRole() == ROLE_Authority)
+	if (GetLocalRole() != ROLE_Authority)
 	{
-		if ((SpawnedEnemies.Num() == 0 && !FinishedAllWaves()) || CurrentAllowance > 0)
+		return;
+	}
+
+	if ((SpawnedEnemies.Num() == 0 && !FinishedAllWaves()) || CurrentAllowance > 0)
+	{
+		//if we have used up all our allowance for this wave then reset it and move to the next wave
+		if (CurrentAllowance <= 0)
 		{
-			//if we have used up all our allowance for this wave then reset it and move to the next wave
-			if (CurrentAllowance <= 0)
+			CurrentAllowance = SpawnAllowance;
+			CurrentWaves++;
+		}
+
+		AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+
+		if (!pool)
+		{
+			return;
+		}
+
+		//PickableCards copies SpawningCards or DefaultSpawningCards that way we can remove cards from the pool we have to pick from without losing them on the next call
+		if (SpawningCards.Num() > 0)
+		{
+			PickableCards = SpawningCards;
+		}
+		else
+		{
+			PickableCards = Director->GetDefaultSpawnCards();
+		}
+
+		//loop through until their is no more allowance for spawning enemies
+		while (CurrentAllowance > 0)
+		{
+			if (IsAtMaxCapacity())
 			{
-				CurrentAllowance = SpawnAllowance;
-				CurrentWaves++;
+				return;
 			}
 
-			//PickableCards copies SpawningCards or DefaultSpawningCards that way we can remove cards from the pool we have to pick from without losing them on the next call
-			if (SpawningCards.Num() > 0)
-			{
-				PickableCards = SpawningCards;
-			}
-			else
-			{
-				PickableCards = Director->GetDefaultSpawnCards();
-			}
+			//set up local variables
+			int pickedEnemyIndex = -1;
+			bool pickedSuccessful = false;
 
-			//loop through until their is no more allowance for spawning enemies
-			while (CurrentAllowance > 0)
+			//loop until we have pick a enemy to spawn
+			while (!pickedSuccessful)
 			{
-				if (IsAtMaxCapacity())
+				//If their are not more cards to pick from then leave the method because we can't spawn any more enemies
+				if (PickableCards.Num() <= 0)
 				{
+					CurrentAllowance = 0;
 					return;
 				}
 
-				//set up local variables
-				int pickedEnemyIndex = -1;
-				bool pickedSuccessful = false;
+				float sumOfWeights = 0;
 
-				//loop until we have pick a enemy to spawn
-				while (!pickedSuccessful)
+				//add up all the weights of the enemies to find the max weight
+				for (int i = 0; i < PickableCards.Num(); i++)
 				{
-					//If their are not more cards to pick from then leave the method because we can't spawn any more enemies
-					if (PickableCards.Num() <= 0)
+					sumOfWeights += PickableCards[i]->SpawnWeight;
+				}
+
+				//pick a random weight 
+				float randomValue = FMath::FRandRange(0, sumOfWeights);
+
+				//loop through and check the weight if the random is less then the weight that our enemy if not subtract the weight from random
+				for (int i = 0; i < PickableCards.Num(); i++)
+				{
+					if (randomValue < PickableCards[i]->SpawnWeight)
 					{
-						CurrentAllowance = 0;
-						return;
-					}
-
-					float sumOfWeights = 0;
-
-					//add up all the weights of the enemies to find the max weight
-					for (int i = 0; i < PickableCards.Num(); i++)
-					{
-						sumOfWeights += PickableCards[i]->SpawnWeight;
-					}
-
-					//pick a random weight 
-					float randomValue = FMath::FRandRange(0, sumOfWeights);
-
-					//loop through and check the weight if the random is less then the weight that our enemy if not subtract the weight from random
-					for (int i = 0; i < PickableCards.Num(); i++)
-					{
-						if (randomValue < PickableCards[i]->SpawnWeight)
+						//check to make sure it in the budget for spawning
+						if (CurrentAllowance >= PickableCards[i]->SpawnCost)
 						{
-							//check to make sure it in the budget for spawning
-							if (CurrentAllowance >= PickableCards[i]->SpawnCost)
-							{
-								pickedEnemyIndex = i;
-								CurrentAllowance -= PickableCards[i]->SpawnCost;
-								pickedSuccessful = true;
-								break;
-							}
-							//if not remove it from the pool
-							else
-							{
-								PickableCards.RemoveAt(i);
-								break;
-							}
-
+							pickedEnemyIndex = i;
+							CurrentAllowance -= PickableCards[i]->SpawnCost;
+							pickedSuccessful = true;
+							break;
+						}
+						//if not remove it from the pool
+						else
+						{
+							PickableCards.RemoveAt(i);
+							break;
 						}
 
-						randomValue -= PickableCards[i]->SpawnWeight;
 					}
+
+					randomValue -= PickableCards[i]->SpawnWeight;
 				}
+			}
 
-				if (CurrentAllowance < 0)
+			if (CurrentAllowance < 0)
+			{
+				CurrentAllowance = 0;
+			}
+
+			for (int i = 0; i < 10; i++)
+			{
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+
+
+				//APawn* newEnemy = static_cast<APawn*>(GetWorld()->SpawnActor<APawn>(PickableCards[pickedEnemyIndex]->EnemyClass, GetRandomPosition(), FRotator::ZeroRotator, SpawnParams));
+				
+				APawn* newEnemy = Cast<APawn>(pool->GetActor(PickableCards[pickedEnemyIndex]->EnemyClass));
+
+				FVector origin;
+				FVector bounds;
+				newEnemy->GetActorBounds(true, origin, bounds);
+				 
+				//newEnemy->SetActorLocation(GetRandomPosition() + FVector(0,0, bounds.Z * 2));
+				//newEnemy->SetActorLocation(GetRandomPosition(), true);
+				newEnemy->SetActorLocation(GetRandomPosition() + FVector(0, 0, bounds.Z));
+
+				//spawning the enemy and adding it to the array
+				if (newEnemy)
 				{
-					CurrentAllowance = 0;
-				}
+					newEnemy->OnDestroyed.AddDynamic(this, &ASpawnPoint::RemoveEnemy);
 
-				for (int i = 0; i < 10; i++)
-				{
-					FActorSpawnParameters SpawnParams;
-					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-					APawn* newEnemy = static_cast<APawn*>(GetWorld()->SpawnActor<APawn>(PickableCards[pickedEnemyIndex]->EnemyClass, GetRandomPosition(), FRotator::ZeroRotator, SpawnParams));
-
-					//spawning the enemy and adding it to the array
-					if (newEnemy)
+					if (AEnemyCharacter* newEnemyCharacter = Cast<AEnemyCharacter>(newEnemy))
 					{
-						newEnemy->OnDestroyed.AddDynamic(this, &ASpawnPoint::RemoveEnemy);
-						SpawnedEnemies.Add(newEnemy);
-						break;
+						newEnemyCharacter->OnDeactivated.AddDynamic(this, &ASpawnPoint::RemoveEnemy);
 					}
-					else
-					{
-						//CurrentAllowance += PickableCards[pickedEnemyIndex]->SpawnCost;
-						continue;
-					}
+
+					SpawnedEnemies.Add(newEnemy);
+					break;
 				}
 			}
 		}
+	}
 		
-		if(FinishedAllWaves())
-		{
-			//Justin added this
-			OnEnemyWavesComplete.Broadcast();
-			//End Justin section
-		}
+	if(FinishedAllWaves())
+	{
+		//Justin added this
+		OnEnemyWavesComplete.Broadcast();
+		//End Justin section
 	}
 }
 
@@ -204,9 +227,19 @@ void ASpawnPoint::RemoveEnemy(AActor* enemy)
 	//cast the actor point as a enemy then check to make sure it when through before destroying it
 	APawn* enemyPtr = static_cast<APawn*>(enemy);
 
-	if (enemyPtr)
+	if (!enemyPtr)
 	{
-		SpawnedEnemies.Remove(enemyPtr);
+		return;
+	}
+
+	SpawnedEnemies.Remove(enemyPtr);
+
+	AEnemyCharacter* enemyCharacterPtr = Cast<AEnemyCharacter>(enemyPtr);
+
+	if (enemyCharacterPtr)
+	{
+		enemyCharacterPtr->OnDestroyed.RemoveDynamic(this, &ASpawnPoint::RemoveEnemy);
+		enemyCharacterPtr->OnDeactivated.RemoveDynamic(this, &ASpawnPoint::RemoveEnemy);
 	}
 }
 

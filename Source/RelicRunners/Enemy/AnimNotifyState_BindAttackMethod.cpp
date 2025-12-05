@@ -1,20 +1,36 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AnimNotifyState_BindAttackMethod.h"
-#include "Components/PrimitiveComponent.h"
 
 void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Notify Begin Attack"));
+#if WITH_EDITOR
+	if (CallEditorDebugMessages)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Notify Begin Attack"));
+	}
+#endif
 
+	//check for no nullptr
 	Owner = MeshComp->GetOwner();
-
 	if (!Owner)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Owner not set"));
 		return;
 	}
 
+	if (!TargetClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Target Class Not Set"));
+		return;
+	}
+	else if (!Owner->IsA(TargetClass))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Class and owner do not match"));
+		return;
+	}
+
+	//get the collider and check it
 	TArray<UPrimitiveComponent*> colliders; 
 	Owner->GetComponents<UPrimitiveComponent>(colliders);
 	
@@ -26,7 +42,16 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 		return;
 	}
 
-	UPrimitiveComponent* collider = Cast<UPrimitiveComponent>(objProp->GetObjectPropertyValue_InContainer(Owner));
+	//not this can cause a error, if this does happen make sure to let me Thomas know and send me the error message and the breakpoint. This should be fixed though
+	UObject* uncastedCollider = objProp->GetObjectPropertyValue_InContainer(Owner);
+
+	if (!uncastedCollider)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Problem finding the collider"));
+		return;
+	}
+
+	UPrimitiveComponent* collider = Cast<UPrimitiveComponent>(uncastedCollider);
 
 	if (!collider)
 	{
@@ -35,15 +60,54 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 	}
 
 	colliderComp = collider;
-	onOverlapDelegate.BindUFunction(Owner, FName(*AttackMethodName));
-	
-	if (collider->OnComponentBeginOverlap.Contains(onOverlapDelegate))
+
+	//check to make sure their is overlap events
+	if (!collider->GetGenerateOverlapEvents())
 	{
-		collider->OnComponentBeginOverlap.Remove(onOverlapDelegate);
+		collider->SetGenerateOverlapEvents(true);
 	}
 
-	collider->OnComponentBeginOverlap.Add(onOverlapDelegate);
-	collider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	if (ModifiyCollider)
+	{
+		collider->SetCollisionEnabled(BeginCollisionType);
+	}
+
+	if (collider->GetCollisionEnabled() == ECollisionEnabled::NoCollision)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Collision enable tpye is set to no collision, nothing will happen because of it"));
+	}
+
+	//bind the attack method
+	onOverlapDelegate.BindUFunction(this, FName(TEXT("OnComponentBeginOverlapSignature")));
+	if (!collider->OnComponentBeginOverlap.Contains(onOverlapDelegate))
+	{
+		collider->OnComponentBeginOverlap.Add(onOverlapDelegate);
+		//collider->OnComponentBeginOverlap.Remove(onOverlapDelegate);
+	}
+
+	//collider->OnComponentBeginOverlap.Add(onOverlapDelegate);
+
+	//check for already overlapping actors
+	TArray<UPrimitiveComponent*> otherColliders;
+	collider->GetOverlappingComponents(otherColliders);
+
+	if (otherColliders.Num() <= 0)
+	{
+		return;
+	}
+
+	for (UPrimitiveComponent* otherCollider : otherColliders)
+	{
+		if (!otherCollider)
+		{
+			continue;
+		}
+
+		FHitResult blank;
+
+		//the -1 is the part of a skelton mesh that was hit we can figure that out because of GetOverlappingComponents so just set it to -1
+		OnComponentBeginOverlapSignature(collider, otherCollider->GetOwner(), otherCollider, -1, false, blank);
+	}
 }
 
 void UAnimNotifyState_BindAttackMethod::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
@@ -58,8 +122,18 @@ void UAnimNotifyState_BindAttackMethod::NotifyEnd(USkeletalMeshComponent* MeshCo
 		return;
 	}
 
+	if (DisableOverlapEvents)
+	{
+		colliderComp->SetGenerateOverlapEvents(false);
+	}
+
+	if (ModifiyCollider)
+	{
+		colliderComp->SetCollisionEnabled(EndCollisionType);
+	}
+
 	colliderComp->OnComponentBeginOverlap.Remove(onOverlapDelegate);
-	colliderComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AlreadyHitActors.Empty();
 }
 
 #if WITH_EDITOR
@@ -84,9 +158,6 @@ void UAnimNotifyState_BindAttackMethod::PostEditChangeProperty(FPropertyChangedE
 		for (TFieldIterator<FObjectProperty> itProp = TFieldIterator<FObjectProperty >(TargetClass); itProp; ++itProp)
 		{
 			FObjectProperty* prop = *itProp;
-
-			//prop->
-			
 
 			if (prop->PropertyClass->IsChildOf(UPrimitiveComponent::StaticClass()))
 			{
@@ -120,4 +191,35 @@ TArray<FString> UAnimNotifyState_BindAttackMethod::GetPropertyOptions() const
 
 void UAnimNotifyState_BindAttackMethod::OnComponentBeginOverlapSignature(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (Owner && OtherActor != Owner && !AlreadyHitActors.Contains(OtherActor))
+	{
+		UFunction* attackFunction = TargetClass->FindFunctionByName(*AttackMethodName);
+
+		if (!attackFunction)
+		{
+			return;
+		}
+
+		//have to use a struct to pass in the parameters as on does not just simply call the function within a UFunction 
+		struct AttackArguments
+		{
+			UPrimitiveComponent* OverlappedComponent;
+			AActor* OtherActor;
+			UPrimitiveComponent* OtherComp;
+			int32 OtherBodyIndex;
+			bool bFromSweep;
+			FHitResult SweepResult;
+		};
+
+		AttackArguments argument;
+		argument.OverlappedComponent = OverlappedComponent;
+		argument.OtherActor = OtherActor;
+		argument.OtherComp = OtherComp;
+		argument.OtherBodyIndex = OtherBodyIndex;
+		argument.bFromSweep = bFromSweep;
+		argument.SweepResult = SweepResult;
+
+		Owner->ProcessEvent(attackFunction, &argument);
+		AlreadyHitActors.Add(OtherActor);
+	}
 }

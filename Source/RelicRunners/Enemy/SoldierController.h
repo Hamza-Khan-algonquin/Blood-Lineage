@@ -11,13 +11,14 @@ Contributors:
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "RelicRunners/ObjectPool/PoolActorInterface.h"
 #include "SoldierController.generated.h"
 
 class UAIPerceptionComponent;
-
+class UBehaviorTree;
 
 UCLASS()
-class RELICRUNNERS_API ASoldierController : public AAIController
+class RELICRUNNERS_API ASoldierController : public AAIController, public IPoolActorInterface
 {
 	GENERATED_BODY()
 
@@ -41,7 +42,14 @@ protected:
 
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadOnly)
 	//The Behavoir tree to use on being play
-	class UBehaviorTree* StartingBehaviorTree;
+	UBehaviorTree* StartingBehaviorTree;
+
+	//object pooling variables
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	bool IsActive;
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	FTimerHandle LifeSpanTimerHandle;
+
 public:
 	//The default constructor
 	ASoldierController();
@@ -71,4 +79,12 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
+
+//Interface Implementation
+public:
+	//IPoolActorInterface implementation
+	virtual bool GetIsActive() override;
+	virtual bool GetShouldTick() override;
+	virtual void SetIsActive(bool newIsActive) override;
+	virtual FTimerHandle& GetLifeSpanTimerHandle() override;
 };

@@ -20,7 +20,8 @@ To Do:
 */
 
 //same delegate signature as AActor's OnDestroyed but for enemies
-//DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDied, AEnemyCharacter, OnDied, AActor*, DiedActor);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDied, AEnemyCharacter, OnDied, AActor*, DiedActor);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDeactivated, AEnemyCharacter, OnDeactivated, AActor*, DeactivatedActor);
 
 class UWidgetComponent;
 
@@ -40,7 +41,14 @@ UCLASS(Blueprintable, Abstract)
 class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
 {
 	GENERATED_BODY()
+public:
 
+	//Delegate that is called when the enemy dies
+	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
+	FEnemyCharacterDied OnDied;
+
+	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
+	FEnemyCharacterDeactivated OnDeactivated;
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -81,12 +89,15 @@ protected:
 	TSubclassOf<class AItemActor> ItemActorClass;
 
 
-	//UPROPERTY(BlueprintAssignable)
-	//FEnemyCharacterDied OnDied;
+	
 
 	//interface implementation variable
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool IsActive = true;
-
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	bool SetControllerActiveStatus = true;
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	FTimerHandle LifeSpanTimerHandle;
 
 public:
 	// Sets default values for this character's properties
@@ -149,6 +160,9 @@ public:
 	//Setter for the current level
 	void SetEnemyLevel(const int& newLevel) { Level = newLevel; }
 
+	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Reset enemy variables.", ShortToolTip = "Hi."))
+	void ResetEnemy();
+
 	void AddEnemyToDirector();
 
 	
@@ -186,9 +200,11 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+//Interface Implementation
 public:
 	//IPoolActorInterface implementation
 	virtual bool GetIsActive() override;
 	virtual bool GetShouldTick() override;
 	virtual void SetIsActive(bool newIsActive) override;
+	virtual FTimerHandle& GetLifeSpanTimerHandle() override;
 };

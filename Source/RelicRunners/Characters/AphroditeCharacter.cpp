@@ -129,6 +129,7 @@ void AAphroditeCharacter::OnLevelUp()
     Item->ItemData.Intelligence += FMath::RandRange(2, 5);
 
     Super::OnLevelUp();
+
 }
 
 
