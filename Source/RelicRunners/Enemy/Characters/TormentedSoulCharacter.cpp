@@ -9,7 +9,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "SoldierController.h"
+#include "RelicRunners/Enemy/Controllers/SoldierController.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 
 ATormentedSoulCharacter::ATormentedSoulCharacter() : Super()

@@ -2,7 +2,7 @@
 #include "GameFramework/Character.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "RelicRunners/Enemy/EnemyCharacter.h"
+//#include "RelicRunners/Enemy/EnemyCharacter.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -91,10 +91,10 @@ void UEarthquakeAbility::ApplyDamageAndStun()
             HitChar->LaunchCharacter(Knockback, true, true);
 
             
-            if (auto Enemy = Cast<AEnemyCharacter>(HitChar))
+            /*if (auto Enemy = Cast<AEnemyCharacter>(HitChar))
             {
                 Enemy->ReduceStunTime(StunDuration);
-            }
+            }*/
         }
     }
     DrawDebugCone(World, Origin, Forward, Radius, FMath::DegreesToRadians(ConeAngle / 2.f), FMath::DegreesToRadians(ConeAngle / 2.f), 32, FColor::Orange, false, StunDuration + 0.1f);

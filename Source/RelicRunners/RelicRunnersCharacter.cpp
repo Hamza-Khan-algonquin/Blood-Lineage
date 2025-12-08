@@ -58,8 +58,8 @@
 #include "Engine/Engine.h"
 #include "Game/RelicRunnersGameInstance.h"
 #include "Director System/Director.h"
-#include "Enemy/EnemyCharacter.h"
-#include "Enemy/EnemyCharacterAI.h"
+#include "Enemy/Characters/EnemyCharacter.h"
+#include "Enemy/Characters/EnemyCharacterAI.h"
 
 #include "LevelGeneration/CapturableFlag.h"
 
@@ -823,7 +823,7 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 
 	for (const FHitResult& Hit : Hits)
 	{
-		//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 12, FColor::Red, false, 1.0f);
+		//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 12, FColor::Red, false, 1.0f);EnemyCharacterAI
 		if (AActor* HitActor = Hit.GetActor())
 		{
 			if (!AlreadyHitActors.Contains(HitActor))

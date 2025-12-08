@@ -12,6 +12,7 @@ Contributors:
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "RelicRunners/ObjectPool/PoolActorInterface.h"
+#include "RelicRunners/Enemy/EnemyData.h"
 #include "EnemyCharacter.generated.h"
 
 /*
@@ -19,22 +20,7 @@ To Do:
 	- Add a method that run a animation both on client and server that work like play montage in blueprints
 */
 
-//same delegate signature as AActor's OnDestroyed but for enemies
-DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDied, AEnemyCharacter, OnDied, AActor*, DiedActor);
-DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FEnemyCharacterDeactivated, AEnemyCharacter, OnDeactivated, AActor*, DeactivatedActor);
-
 class UWidgetComponent;
-
-UENUM(BlueprintType)
-//enum for the different types of enemies
-enum class EEnemyType : uint8
-{
-	LIGHT = 0		UMETA(DisplayName = "light"),
-	MEDIUM = 1		UMETA(DisplayName = "medium"),
-	BOSS = 2        UMETA(DisplayName = "boss"),
-	UNKNOWN = 3		UMETA(DisplayName = "unknown")
-};
-
 class UAnimMontage;
 
 UCLASS(Blueprintable, Abstract)

@@ -7,7 +7,7 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "RelicRunners/Director System/Director.h"
-#include "TormentedSoulCharacter.h"
+#include "GameFramework/Character.h"
 
 ASoldierController::ASoldierController()
 {

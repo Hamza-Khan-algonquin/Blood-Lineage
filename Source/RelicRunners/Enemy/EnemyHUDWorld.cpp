@@ -15,8 +15,8 @@
  ************************************************************************************/
 
 #include "EnemyHUDWorld.h"
-#include "EnemyCharacterAI.h"
-#include "EnemyCharacter.h"
+#include "Characters/EnemyCharacterAI.h"
+#include "Characters/EnemyCharacter.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 

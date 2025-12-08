@@ -4,8 +4,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
-#include "RelicRunners/Enemy/EnemyCharacter.h"
-#include "RelicRunners/Enemy/SoldierController.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include "RelicRunners/Enemy/Controllers/SoldierController.h"
 
 TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
 

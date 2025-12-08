@@ -20,7 +20,7 @@
 #include "InventorySortingOptions.h"
 #include "RelicRunners/Item/ItemData.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
-#include "RelicRunners/Enemy/EnemyCharacterAI.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Engine/ActorChannel.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>

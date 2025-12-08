@@ -1,7 +1,7 @@
 #include "SpawnPoint.h"
 #include <Kismet/GameplayStatics.h>
 #include "Director.h"
-#include "RelicRunners/Enemy/EnemyCharacter.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
 // Sets default values

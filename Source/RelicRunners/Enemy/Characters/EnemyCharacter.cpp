@@ -9,7 +9,7 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "Components/WidgetComponent.h"
 #include <Net/UnrealNetwork.h>
-#include "EnemyHUDWorld.h"
+#include "RelicRunners/Enemy/EnemyHUDWorld.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include "Components/CapsuleComponent.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
