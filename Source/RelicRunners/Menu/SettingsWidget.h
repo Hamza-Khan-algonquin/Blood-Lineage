@@ -22,10 +22,17 @@ public:
 
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
+	void SetParentMenu(class UPauseMenuWidget* InParentMenu);
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UTextBlock* TB_BackButton = nullptr;
+
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* BackButton = nullptr;
 	UPROPERTY()
-	class UMainMenuWidget* ParentMenu;
+	class UMainMenuWidget* MainParentMenu;
+	UPROPERTY()
+	class UPauseMenuWidget* PauseParentMenu;
 
 	UPROPERTY(meta = (BindWidget))
 
@@ -53,6 +60,12 @@ public:
 	void OnRestoreDefaultsClicked();
 
 	void InitializeDefaultKeybindings();
+
+	UPROPERTY(meta = (BindWidget))
+	class UComboBoxString* ResolutionDropDown;
+
+	UFUNCTION()
+	void HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType);
 
 protected:
 	UFUNCTION()

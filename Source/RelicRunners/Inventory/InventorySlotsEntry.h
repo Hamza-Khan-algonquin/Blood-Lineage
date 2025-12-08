@@ -30,6 +30,7 @@ public:
     //Functions
     UFUNCTION()
     void OnEntryClicked();
+    void ToggleGoldPriceBorder(bool value);
 
     //Properties
     bool IsPressed = false;
@@ -45,9 +46,13 @@ public:
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* TB_Level;
     UPROPERTY(meta = (BindWidget))
+    class UTextBlock* TB_GoldPrice;
+    UPROPERTY(meta = (BindWidget))
     class UBorder* B_Item;
     UPROPERTY(meta = (BindWidget))
     class UBorder* B_NewItem;
+    UPROPERTY(meta = (BindWidget))
+    class UBorder* B_GoldPrice;
     UPROPERTY(meta = (BindWidget))
     class UBorder* B_Color;
     UPROPERTY(meta = (BindWidget))

@@ -62,8 +62,10 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     ItemFrame->SetBrushTintColor(ItemFrameColor);
     I_Item->SetBrushFromTexture(Item->ItemData.Icon);
 
+    TB_GoldPrice->SetText(FText::FromString(FString::FromInt(Item->ItemData.Gold)));
+
     if(Item->IsNewItem) B_NewItem->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-    else B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+    else B_NewItem->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 FReply UInventorySlotsEntry::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -162,11 +164,23 @@ void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
     if (Item->IsNewItem && HoveredTimeOnLeave >= 0.25f)
     {
         Item->IsNewItem = false;
-        B_NewItem->SetVisibility(ESlateVisibility::Hidden);
+        B_NewItem->SetVisibility(ESlateVisibility::Collapsed);
         if (ParentInventory && ParentInventory->InventoryComponent)
         {
             ParentInventory->InventoryComponent->SortInventoryByCurrentMethod();
         }
+    }
+}
+
+void UInventorySlotsEntry::ToggleGoldPriceBorder(bool value)
+{
+    if (value)
+    {
+        B_GoldPrice->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+    }
+    else
+    {
+        B_GoldPrice->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -175,7 +189,7 @@ void UInventorySlotsEntry::OnEntryClicked()
     UInventoryItemOptions::CloseAnyOpenPopup();
     UInventorySortingOptions::CloseAnyOpenPopup();
 
-    if (!InventoryItemOptionsClass || !Item) return;
+    if (!Item) return;
     
     //Determining if vendor is active and which tileview its part of.
     bool VendorActive = false;
@@ -189,30 +203,19 @@ void UInventorySlotsEntry::OnEntryClicked()
 
     UTileView* TileView = Cast<UTileView>(GetOwningListView());
 
-    UInventoryItemOptions* Popup = CreateWidget<UInventoryItemOptions>(GetWorld(), InventoryItemOptionsClass);
-    if (Popup)
+    if (VendorActive)
     {
-        Popup->AddToViewport();
-        Popup->Setup(Item);
-
-        if (VendorActive)
+        if (TileView->GetName() == "InventorySlots")
         {
-            if (TileView->GetName() == "InventorySlots")
-            {
-                Popup->ConfigureButtons(true, false, true, false);
-            }
-            else if (TileView->GetName() == "VendorSlots")
-            {
-                Popup->ConfigureButtons(false, false, false, true);
-            }
+            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItemWithForge());
         }
-        else
+        else if (TileView->GetName() == "VendorSlots")
         {
-            Popup->ConfigureButtons(true, false, false, false);
+            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::VendorItem());
         }
-
-        FVector2D ScreenPosition;
-        UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
-        Popup->SetPositionInViewport(ScreenPosition, false);
+    }
+    else
+    {
+        ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItem());
     }
 }

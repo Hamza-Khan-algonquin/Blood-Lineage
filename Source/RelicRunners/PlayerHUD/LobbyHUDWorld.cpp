@@ -10,13 +10,31 @@ void ULobbyHUDWorld::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (OwningPreview && OwningPreview->LinkedPlayerState)
+    if (OwningPreview)
     {
-        ARelicRunnersPlayerState* PS = OwningPreview->LinkedPlayerState;
-        PS->OnSelectedClassChanged.RemoveAll(this);
-        PS->OnSelectedClassChanged.AddUObject(this, &ULobbyHUDWorld::UpdatePlayerClassDisplay);
-        UpdatePlayerClassDisplay(PS->SelectedClass);
+        //If PlayerState already exist
+        if (OwningPreview->LinkedPlayerState)
+        {
+            BindToPlayerState();
+        }
+        else
+        {
+            //Wait for OnRep
+            OwningPreview->OnPlayerStateReady.AddUObject(this, &ULobbyHUDWorld::BindToPlayerState);
+        }
     }
+}
+
+void ULobbyHUDWorld::BindToPlayerState()
+{
+    if (!OwningPreview || !OwningPreview->LinkedPlayerState) return;
+
+    ARelicRunnersPlayerState* PS = OwningPreview->LinkedPlayerState;
+
+    PS->OnSelectedClassChanged.RemoveAll(this);
+    PS->OnSelectedClassChanged.AddUObject(this, &ULobbyHUDWorld::UpdatePlayerClassDisplay);
+
+    UpdatePlayerClassDisplay(PS->SelectedClass);
 }
 
 void ULobbyHUDWorld::UpdatePlayerClassDisplay(FName NewClass)

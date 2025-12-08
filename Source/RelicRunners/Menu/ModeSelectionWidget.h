@@ -13,6 +13,7 @@ class RELICRUNNERS_API UModeSelectionWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	void NativeConstruct() override;
+	UFUNCTION(BlueprintCallable)
 	void HighlightSelectedSlot(class USaveFileListWidget* NewSelection);
 	UPROPERTY(BlueprintReadWrite)
 	class USaveFileListWidget* CurrentSelectedSlot = nullptr;
@@ -43,7 +44,7 @@ public:
 	void ResetUI();
 	UFUNCTION(BlueprintCallable)
 	void OpenSaveFilePopupWidget(class USaveFileListWidget* TargetSlot);
-
+	UFUNCTION(BlueprintCallable)
 	void PromptCreateSaveFile();
 protected:
 	UFUNCTION()

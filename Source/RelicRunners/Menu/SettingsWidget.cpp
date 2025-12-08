@@ -5,6 +5,7 @@
 #include "MainMenuWidget.h"
 #include "Components/Button.h"
 #include "Components/TileView.h"
+#include "Components/TextBlock.h"
 #include "KeybindingsListData.h"
 #include <EnhancedInputSubsystems.h>
 #include "Keybinds.h"
@@ -12,6 +13,8 @@
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include <Kismet/GameplayStatics.h>
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
+#include "Components/ComboBoxString.h"
+#include "PauseMenuWidget.h"
 
 void USettingsWidget::NativeConstruct()
 {
@@ -25,6 +28,11 @@ void USettingsWidget::NativeConstruct()
 	if (B_RestoreDefaults)
 	{
 		B_RestoreDefaults->OnClicked.AddDynamic(this, &USettingsWidget::OnRestoreDefaultsClicked);
+	}
+
+	if (ResolutionDropDown)
+	{
+		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleSelectionChanged);
 	}
 
 	InitializeDefaultKeybindings();
@@ -134,14 +142,63 @@ void USettingsWidget::UpdateBinds()
 
 void USettingsWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
 {
-	ParentMenu = InParentMenu;
+	MainParentMenu = InParentMenu;
+	PauseParentMenu = nullptr;
+	if (MainParentMenu)
+	{
+		if (TB_BackButton)
+		{
+			TB_BackButton->SetText(FText::FromString("Main Menu"));
+		}
+		MainParentMenu->ShowModeSelectionWidget();
+		return;
+	}
+}
+
+void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
+{
+	MainParentMenu = nullptr;
+	PauseParentMenu = InParentMenu;
+	if (PauseParentMenu)
+	{
+		if (TB_BackButton)
+		{
+			TB_BackButton->SetText(FText::FromString("Return"));
+		}
+		
+		return;
+	}
+}
+
+void USettingsWidget::HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (Item == "1280x720")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 1080x720."));
+	}
+	else if (Item == "1920x1080")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 1920x1080."));
+	}
+	else if (Item == "2560x1440")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 2560x1440."));
+	}
+	else if (Item == "3840x2160")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 3840x2160."));
+	}
 }
 
 void USettingsWidget::BackButtonClicked()
 {
-	if (ParentMenu)
+	if (MainParentMenu)
 	{
-		ParentMenu->ShowModeSelectionWidget();
+		MainParentMenu->ShowModeSelectionWidget();
+	}
+	if (PauseParentMenu)
+	{
+		PauseParentMenu->ShowPauseMenu();
 	}
 }
 

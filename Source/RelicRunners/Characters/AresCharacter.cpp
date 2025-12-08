@@ -177,8 +177,6 @@ void AAresCharacter::GiveUltimateAbilities()
 
 void AAresCharacter::OnLevelUp()
 {
-	Super::OnLevelUp();
-
 	UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Greatsword");
 	Item->ItemData.Level++;
 	Item->ItemData.Health += FMath::RandRange(1, 5);
@@ -186,12 +184,8 @@ void AAresCharacter::OnLevelUp()
 	Item->ItemData.Strength += FMath::RandRange(0, 1);
 	Item->ItemData.Intelligence += FMath::RandRange(0, 1);
 	Item->ItemData.Dexterity += FMath::RandRange(0, 1);
-	if (Inventory)
-	{
-		Inventory->RefreshEquippedUI();
-	}
-	
-	InventoryComponent->UpdateTotalEquippedStats(this);
+
+	Super::OnLevelUp();
 }
 
 

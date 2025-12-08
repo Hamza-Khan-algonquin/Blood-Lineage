@@ -42,11 +42,15 @@ ARelicRunnersPlayerState::~ARelicRunnersPlayerState()
 
 void ARelicRunnersPlayerState::SetSelectedClass(FName NewClass)
 {
-    if (HasAuthority())
+    if (!HasAuthority()) return;
+
+    SelectedClass = NewClass;
+    OnSelectedClassChanged.Broadcast(SelectedClass);
+    ForceNetUpdate();
+
+    if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
     {
-        SelectedClass = NewClass;
-        OnSelectedClassChanged.Broadcast(SelectedClass);
-        ForceNetUpdate();
+        GM->OnPlayerStateUpdated(this);
     }
 }
 

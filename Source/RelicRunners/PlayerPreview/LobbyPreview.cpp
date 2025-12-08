@@ -27,14 +27,7 @@ ALobbyPreview::ALobbyPreview()
     }
 
     MeshComp->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-    MeshComp->SetComponentTickEnabled(true);
-    MeshComp->bPauseAnims = false;
-    MeshComp->bNoSkeletonUpdate = false;
-    MeshComp->bEnableUpdateRateOptimizations = false;
-    MeshComp->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
-    MeshComp->bOnlyAllowAutonomousTickPose = false;
-
-    MeshComp->SetIsReplicated(false);
+    MeshComp->SetIsReplicated(true);
 
     UpperMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("UpperMesh"));
     UpperMesh->SetupAttachment(MeshComp);
@@ -98,7 +91,11 @@ void ALobbyPreview::Tick(float DeltaTime)
 void ALobbyPreview::SetupFromPlayerState(ARelicRunnersPlayerState* PS)
 {
     LinkedPlayerState = PS;
-    OnRep_LinkedPlayerState();
+
+    if (HasAuthority())
+    {
+        OnRep_LinkedPlayerState();
+    }
 }
 
 void ALobbyPreview::OnRep_LinkedPlayerState()
@@ -108,6 +105,7 @@ void ALobbyPreview::OnRep_LinkedPlayerState()
         LinkedPlayerState->OnSelectedClassChanged.RemoveAll(this);
         LinkedPlayerState->OnSelectedClassChanged.AddUObject(this, &ALobbyPreview::OnPlayerClassChanged);
         OnPlayerClassChanged(LinkedPlayerState->SelectedClass);
+        OnPlayerStateReady.Broadcast();
     }
 }
 

@@ -12,8 +12,6 @@
 #include "RelicRunners/RelicRunnersGameState.h"
 /*
 TODO:
-Teleport every player to the starting point when the level starts
-Setup Lava spawning
 */
 
 ALevelGenerator::ALevelGenerator() :
@@ -602,7 +600,7 @@ void ALevelGenerator::FindStartToEndPath(int startingIndex, int targetIndex, int
 
 			if (implementSpline && bValueHasChanged && EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::MoveThePayload))
 			{
-				DeliverySpline->AddSplinePoint(FVector((TileScale * currentX * 4) + TileScale, (TileScale * currentY * 4) + TileScale, TileScale), ESplineCoordinateSpace::World);
+				DeliverySpline->AddSplinePoint(FVector((TileScale * currentX * 4) + TileScale, (TileScale * currentY * 4) + TileScale, 0.0f), ESplineCoordinateSpace::World);
 				bValueHasChanged = false;
 			}
 		}
@@ -1066,7 +1064,7 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 	int index = x + (y * width);
 
 	float yaw = FloorValuesArray[index].obstacleYaw;
-	FVector posOffset = FVector((TileScale * x * 4) + TileScale, (TileScale * y * 4) + TileScale, TileScale);
+	FVector posOffset = FVector((TileScale * x * 4) + TileScale, (TileScale * y * 4) + TileScale, 0.0f);
 
 	switch (FloorValuesArray[index].FloorObstacle)
 	{
@@ -1229,29 +1227,30 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 			}
 		}
 		break;
+	case EFloorObstacle::None:
+		if (PackedActorWallArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn) && FloorValuesArray[index].IsFullTile)
+		{
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 0.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 90.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 180.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
+			}
+		}
+		break;
 	default:
 		break;
 	}
-	if (PackedActorWallArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
-	{
-		if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
-		{
-			APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 0.0f, 0.0f));
-		}
-		if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
-		{
-			APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 90.0f, 0.0f));
-		}
-		if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
-		{
-			APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 180.0f, 0.0f));
-		}
-		if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
-		{
-			APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
-		}
-	}
-
 }
 
 void ALevelGenerator::Server_SpawnFloorObstaclesByColour_Implementation(int x, int y, int width, FColor colour)

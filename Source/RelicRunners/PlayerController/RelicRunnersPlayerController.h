@@ -33,6 +33,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputMappingContext* InputMappingContext;
 
+	/** Input Mapping Context to be used for player gamepad input */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* GamepadInputMappingContext;
+
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* JumpAction;
@@ -218,9 +222,5 @@ protected:
 	void HealthPotion();
 	void BasicAttack();
 
-	// End Actor interface
-
 	class ARelicRunnersCharacter* PossessedPawn;
-
-
 };

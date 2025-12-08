@@ -47,6 +47,9 @@ public:
     static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int NumUpgrades, FGuid UniqueID);
 
 	UFUNCTION(BlueprintCallable)
+	void SetParentWidget(UModeSelectionWidget* TheParentWidget) { ParentWidget = TheParentWidget; }
+
+	UFUNCTION(BlueprintCallable)
 	void SetSaveData(FSaveData data) { SaveData = data; }
 
 	UPROPERTY(BlueprintReadWrite)

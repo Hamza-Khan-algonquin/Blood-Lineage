@@ -141,17 +141,12 @@ void ANemesisCharacter::GiveUltimateAbilities()
 
 void ANemesisCharacter::OnLevelUp()
 {
-    Super::OnLevelUp();
-
     UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Sword");
     Item->ItemData.Level++;
     Item->ItemData.Strength += FMath::RandRange(1, 5);
     Item->ItemData.Intelligence += FMath::RandRange(0, 1);
     Item->ItemData.Dexterity += FMath::RandRange(1, 3);
-    if (Inventory)
-    {
-        Inventory->RefreshEquippedUI();
-    }
-    InventoryComponent->UpdateTotalEquippedStats(this);
+
+    Super::OnLevelUp();
 }
 

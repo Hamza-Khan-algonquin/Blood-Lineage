@@ -280,9 +280,15 @@ public:
 
 	virtual void OnLevelUp();
 
+	UFUNCTION(Client, Reliable)
+	void Client_OnLevelUp();
+
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	void Die();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsPauseMenuVisible();
 
 protected:
 
@@ -297,6 +303,11 @@ protected:
 	TSubclassOf<class UPauseMenu> PauseMenuClass;
 	UPROPERTY()
 	class UPauseMenu* PauseMenu;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UPauseMenuWidget> PauseMenuWidgetClass;
+	UPROPERTY()
+	class UPauseMenuWidget* PauseMenuWidget;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UPlayerHUD> PlayerHUDClass;
@@ -321,6 +332,11 @@ protected:
 
 	UPROPERTY()
 	class UAbilitySelection* AbilitySelection;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ULoadingScreen> LoadingScreenClass;
+	UPROPERTY(BlueprintReadWrite)
+	class ULoadingScreen* LoadingScreen;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ULevelUpHUD> LevelUpHUDClass;
@@ -418,6 +434,9 @@ protected:
 	//Setup
 	virtual void BeginPlay();
 	void InitLocalUI();
+
+	UFUNCTION()
+	void HideLoadingScreen();
 
 	void SpawnStarterItems();
 
