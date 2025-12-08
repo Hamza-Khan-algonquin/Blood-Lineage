@@ -6,6 +6,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "RelicRunners/Director System/Director.h"
 
 ASoldierController::ASoldierController()
 {
@@ -15,6 +16,11 @@ ASoldierController::ASoldierController()
 	OriginPatrolZone = FVector::ZeroVector;
 	CurrentPatrolCenter = FVector::ZeroVector;
 	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
+
+	for (EAILOD lod : TEnumRange<EAILOD>())
+	{
+		DistanceOfLOD.Add(lod, 10);
+	}
 }
 
 void ASoldierController::Tick(float DeltaTime)
@@ -61,6 +67,75 @@ FVector ASoldierController::GetRandomPatrolPoint()
 #endif
 
 	return FVector::ZeroVector;
+}
+
+void ASoldierController::LODCheck()
+{
+	TArray<APawn*> players;
+	APawn* pawn = GetPawn();
+
+	if (ADirector* dir = ADirector::GetInstance(this))
+	{
+		players = dir->GetPlayers();
+	}
+	else
+	{
+		return;
+	}
+
+	float closeDistance = FVector::Dist(players[0]->GetActorLocation(), pawn->GetActorLocation());
+
+	for (int i = 1; i < players.Num(); i++)
+	{
+		float newDistance = FVector::Dist(players[i]->GetActorLocation(), pawn->GetActorLocation());
+
+		if (closeDistance > newDistance)
+		{
+			closeDistance = newDistance;
+		}
+	}
+	
+	if (closeDistance <= DistanceOfLOD[EAILOD::L1])
+	{
+		RunBehaviorTree(StartingBehaviorTree);
+		CurrentLOD = EAILOD::L1;
+	}
+	else if (closeDistance <= DistanceOfLOD[EAILOD::L2])
+	{
+		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+		if (behaviorComp)
+		{
+			behaviorComp->StopTree(EBTStopMode::Safe);
+		}
+		CurrentLOD = EAILOD::L2;
+	}
+	else if (closeDistance <= DistanceOfLOD[EAILOD::L3])
+	{
+		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+		if (behaviorComp)
+		{
+			behaviorComp->StopTree(EBTStopMode::Safe);
+		}
+		CurrentLOD = EAILOD::L3;
+	}
+	else if (closeDistance <= DistanceOfLOD[EAILOD::L4])
+	{
+		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+		if (behaviorComp)
+		{
+			behaviorComp->StopTree(EBTStopMode::Safe);
+		}
+		CurrentLOD = EAILOD::L4;
+	}
+	else
+	{
+		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+		if (behaviorComp)
+		{
+			behaviorComp->StopTree(EBTStopMode::Safe);
+		}
+		CurrentLOD = EAILOD::L5;
+	}
 }
 
 void ASoldierController::BeginPlay()
@@ -119,7 +194,7 @@ void ASoldierController::SetIsActive(bool newIsActive)
 			behaviorComp->StopTree(EBTStopMode::Safe);
 		}
 	}
-	else if (StartingBehaviorTree)
+	else if (StartingBehaviorTree && CurrentLOD == EAILOD::L1)
 	{
 		RunBehaviorTree(StartingBehaviorTree);
 	}

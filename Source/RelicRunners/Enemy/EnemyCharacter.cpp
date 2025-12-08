@@ -40,7 +40,7 @@ AEnemyCharacter::AEnemyCharacter() : ACharacter()
 	EnemyHUDWorld->CastShadow = false;
 
 	//tick moment :O
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	//Setting up networking for the actor
 	bReplicates = true;
 	SetReplicateMovement(true);
@@ -368,7 +368,7 @@ bool AEnemyCharacter::GetIsActive()
 
 bool AEnemyCharacter::GetShouldTick()
 {
-	return true;
+	return false;
 }
 
 void AEnemyCharacter::SetIsActive(bool newIsActive)

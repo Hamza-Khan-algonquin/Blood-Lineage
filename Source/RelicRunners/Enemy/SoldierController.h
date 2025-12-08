@@ -1,11 +1,15 @@
 /***************************************************************************************
 Class Name:  ASoldierController
 Description: A controller class that is meant to be used as the base class for any npc that will fight in the game
-Date Last Changed:        2025/11/21
+Date Last Changed:        2025/12/07
 Author:      Thomas Johnson
 Contributors:
 	Description Of Contributions:
 ****************************************************************************************/
+
+/* to do list
+* Make LOD a interface
+*/
 
 #pragma once
 
@@ -13,6 +17,19 @@ Contributors:
 #include "AIController.h"
 #include "RelicRunners/ObjectPool/PoolActorInterface.h"
 #include "SoldierController.generated.h"
+
+//The level of detail the controller should be using
+UENUM(BlueprintType)
+enum class EAILOD : uint8
+{
+	L1 = 0		UMETA(DisplayName = "level 1"),
+	L2 = 1		UMETA(DisplayName = "level 2"),
+	L3 = 2      UMETA(DisplayName = "level 3"),
+	L4 = 3      UMETA(DisplayName = "level 4"),
+	L5 = 4      UMETA(DisplayName = "level 5"),
+	Count UMETA(Hidden)
+};
+ENUM_RANGE_BY_COUNT(EAILOD, EAILOD::Count);
 
 class UAIPerceptionComponent;
 class UBehaviorTree;
@@ -27,6 +44,10 @@ public:
 	//The preception component that handles detecting targets for the soldier, like the player for the enemies
 	UAIPerceptionComponent* AIPerceptionComp;
 protected:
+	UPROPERTY(Category = "Enemy", VisibleAnywhere, BlueprintReadOnly)
+	EAILOD CurrentLOD;
+	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, meta = (ToolTip = "Will use LOD if distance between ai and player is less than or equal to number"))
+	TMap<EAILOD, float> DistanceOfLOD;
 	UPROPERTY(Category = "Enemy", VisibleAnywhere, BlueprintReadWrite)
 	//A bool that keep track of whether the soldier 
 	bool IsInCombat;
@@ -43,6 +64,8 @@ protected:
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadOnly)
 	//The Behavoir tree to use on being play
 	UBehaviorTree* StartingBehaviorTree;
+
+	
 
 	//object pooling variables
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
@@ -75,6 +98,9 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the patrol zone origin.", ShortToolTip = "Getter for the patrol zone origin."))
 	//Getter for the patrol zone origin
 	void SetOriginPatrolZone(const FVector &NewCenter) { OriginPatrolZone = NewCenter; }
+
+	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the patrol zone origin.", ShortToolTip = "Getter for the patrol zone origin."))
+	void LODCheck();
 
 protected:
 	virtual void BeginPlay() override;

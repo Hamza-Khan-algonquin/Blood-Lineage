@@ -6,6 +6,11 @@ Author:      Thomas Johnson
 Contributors:
 	Description Of Contributions:
 ****************************************************************************************/
+
+/***************************************************************************************
+To do:
+	-Update stuff to weak pointer as director does not own enemies
+****************************************************************************************/
 #pragma once
 
 #include "CoreMinimal.h"
@@ -21,6 +26,9 @@ class RELICRUNNERS_API ADirector : public AActor
 	GENERATED_BODY()
 
 protected:
+	static TWeakObjectPtr<ADirector> Instance;
+
+
 	//The max distance away a spawn point can be to be used
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Stats", meta = (AllowPrivateAccess = "true", ToolTip = "The max distance away a spawn point can be to be used"))
 	float MaxSpawnPointActivisionDistance;
@@ -45,6 +53,8 @@ protected:
 	TArray<APawn*> EnemiesInWorld;
 	
 public:	
+	static ADirector* GetInstance(const UObject* WorldContext);
+
 	//A Method that will remove a provided enemy from EnemiesInWorld. It is meant to be called only by APawn when a OnDestroy event happens
 	UFUNCTION(meta = ( ToolTip = "A Method that will remove a provided enemy from EnemiesInWorld. It is meant to be called only by APawn when a OnDestroy event happens", ShortToolTip = "Removes the provided enemy from EnemiesInWorld"))
 	void RemoveEnemy(AActor* enemy);
@@ -63,6 +73,8 @@ public:
 	UFUNCTION(meta = (ToolTip = "A method to add a player to the list of players the director knows of", ShortToolTip = "Add the players"))
 	void AddPlayer(APawn* newPlayer);
 
+	FTimerHandle LODTimerHandle;
+
 public:
 	// Sets default values for this actor's properties
 	ADirector();
@@ -73,6 +85,8 @@ protected:
 
 	//A method to try and spawn enemies on near by spawnPoints
 	void SpawnCheck();
+
+	void UpdateEnemiesLOD();
 
 public:	
 	// Called every frame

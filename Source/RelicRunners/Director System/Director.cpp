@@ -5,6 +5,9 @@
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/Enemy/EnemyCharacter.h"
+#include "RelicRunners/Enemy/SoldierController.h"
+
+TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
 
 // Sets default values
 ADirector::ADirector() 
@@ -23,6 +26,11 @@ void ADirector::BeginPlay()
 	//make sure we are the server
 	if (HasAuthority())
 	{
+		if (!Instance.IsValid())
+		{
+			Instance = this;
+		}
+
 		//sort enemies by their weights for the weight sums algorithm used when picking who to spawn
 		DefaultSpawningCards.Sort([](const USpawnCard& A, const USpawnCard& B)
 			{
@@ -34,9 +42,9 @@ void ADirector::BeginPlay()
 
 		AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-		for (int i = 0; i < DefaultSpawningCards.Num(); i++)
+		if (HasAuthority())
 		{
-			//pool->PreLoadPool(DefaultSpawningCards[i]->EnemyClass, 10);
+			GetWorldTimerManager().SetTimer(LODTimerHandle, this, &ADirector::UpdateEnemiesLOD, 0.5f, true);
 		}
 	}
 	//if we are not the server make sure we don't tick
@@ -44,6 +52,29 @@ void ADirector::BeginPlay()
 	{
 		PrimaryActorTick.bCanEverTick = false;
 	}
+}
+
+ADirector* ADirector::GetInstance(const UObject* WorldContext)
+{
+	UWorld* world = WorldContext->GetWorld();
+
+	if (Instance.IsValid())
+	{
+		return Instance.Get();
+	}
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(world, ADirector::StaticClass(), FoundActors);
+
+	if (FoundActors.Num() > 0)
+	{
+		Instance = Cast<ADirector>(FoundActors[0]);
+		return Instance.Get();
+	}
+
+	Instance = Cast<ADirector>(world->SpawnActor(ADirector::StaticClass()));
+
+	return Instance.Get();
 }
 
 void ADirector::RemoveEnemy(AActor* enemy)
@@ -137,6 +168,24 @@ void ADirector::SpawnCheck()
 			{
 				point->SpawnEnemies();
 			}
+		}
+	}
+}
+
+void ADirector::UpdateEnemiesLOD()
+{
+	for (APawn* enemy : EnemiesInWorld)
+	{
+		AController* contr = enemy->GetController();
+
+		if (!contr)
+		{
+			continue;
+		}
+
+		if (ASoldierController* soldierContr = Cast<ASoldierController>(contr))
+		{
+			soldierContr->LODCheck();
 		}
 	}
 }

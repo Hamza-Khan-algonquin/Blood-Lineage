@@ -11,8 +11,9 @@
 /* to do list
 * Look into switching this to a UWorldSubsystem at a later date. Doing it his way for now because I know who to do it this way so it will be faster to make.
 * add timer functionality to set actors inactive after a certain amount of time
-* add a method to preload certain amount of actors into the pool 
+* add two seprate arrays, one for active and one for not active 
 */ 
+
 UCLASS()
 class RELICRUNNERS_API AObjectPoolManager : public AActor
 {
