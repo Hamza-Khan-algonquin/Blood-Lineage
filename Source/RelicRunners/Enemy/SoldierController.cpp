@@ -7,6 +7,7 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "RelicRunners/Director System/Director.h"
+#include "TormentedSoulCharacter.h"
 
 ASoldierController::ASoldierController()
 {
@@ -99,34 +100,26 @@ void ASoldierController::LODCheck()
 	{
 		RunBehaviorTree(StartingBehaviorTree);
 		CurrentLOD = EAILOD::L1;
-	}
-	else if (closeDistance <= DistanceOfLOD[EAILOD::L2])
-	{
-		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
-		if (behaviorComp)
+
+		if (AIPerceptionComp)
 		{
-			behaviorComp->StopTree(EBTStopMode::Safe);
+			AIPerceptionComp->Activate();
 		}
+	}
+	/*else if (closeDistance <= DistanceOfLOD[EAILOD::L2])
+	{
+		
+
 		CurrentLOD = EAILOD::L2;
 	}
 	else if (closeDistance <= DistanceOfLOD[EAILOD::L3])
 	{
-		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
-		if (behaviorComp)
-		{
-			behaviorComp->StopTree(EBTStopMode::Safe);
-		}
 		CurrentLOD = EAILOD::L3;
 	}
 	else if (closeDistance <= DistanceOfLOD[EAILOD::L4])
 	{
-		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
-		if (behaviorComp)
-		{
-			behaviorComp->StopTree(EBTStopMode::Safe);
-		}
 		CurrentLOD = EAILOD::L4;
-	}
+	}*/
 	else
 	{
 		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
@@ -134,6 +127,33 @@ void ASoldierController::LODCheck()
 		{
 			behaviorComp->StopTree(EBTStopMode::Safe);
 		}
+
+		if (AIPerceptionComp)
+		{
+			AIPerceptionComp->Deactivate();
+		}
+
+		SetActorTickEnabled(false);
+		pawn->SetActorTickEnabled(false);
+		pawn->PrimaryActorTick.bCanEverTick = false;
+
+		for (UActorComponent* comp : pawn->GetComponents())
+		{
+			comp->PrimaryComponentTick.bCanEverTick = false;
+			comp->SetComponentTickEnabled(false);
+		}
+
+		StopMovement();
+
+		if (USkeletalMeshComponent* skel = Cast<ACharacter>(pawn)->GetMesh())
+		{
+			skel->GlobalAnimRateScale = 0.f;
+			skel->bPauseAnims = true;
+			skel->SetComponentTickEnabled(false);
+			skel->SetSimulatePhysics(false);
+			skel->SetVisibility(false, true);
+		}
+
 		CurrentLOD = EAILOD::L5;
 	}
 }
