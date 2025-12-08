@@ -36,7 +36,7 @@ void ADirector::BeginPlay()
 
 		for (int i = 0; i < DefaultSpawningCards.Num(); i++)
 		{
-			pool->PreLoadPool(DefaultSpawningCards[i]->EnemyClass, 10);
+			//pool->PreLoadPool(DefaultSpawningCards[i]->EnemyClass, 10);
 		}
 	}
 	//if we are not the server make sure we don't tick
