@@ -104,7 +104,7 @@ UTextureRenderTarget2D* APlayerPreview::CreateRenderTarget()
 	// Create and assign a unique render target
 	UTextureRenderTarget2D* NewRenderTarget = NewObject<UTextureRenderTarget2D>();
 	NewRenderTarget->RenderTargetFormat = RTF_RGBA16f;
-	NewRenderTarget->InitAutoFormat(800, 800);
+	NewRenderTarget->InitAutoFormat(300, 500);
 	NewRenderTarget->ClearColor = FLinearColor(0, 0, 0, 0); 
 	NewRenderTarget->bAutoGenerateMips = false;
 	NewRenderTarget->UpdateResourceImmediate(true);

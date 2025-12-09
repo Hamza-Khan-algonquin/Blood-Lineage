@@ -45,7 +45,8 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
     TB_RarityTooltip->SetColorAndOpacity(FLinearColor::White);
 
     TB_ItemTypeTooltip->SetText(FText::FromString(HoveredItem->GetItemType()));
-    B_ItemType->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f, 1.0f));
+    FLinearColor BorderColor = FLinearColor(0.165f, 0.13f, 0.082f, 1.0f);
+    B_ItemType->SetBrushColor(BorderColor);
 
     TB_LevelTooltip->SetText(FText::FromString(FString::FromInt(HoveredItem->GetLevel())));
     TB_LevelTooltip->SetColorAndOpacity(FLinearColor::White);
@@ -61,7 +62,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
         TB_RarityTooltip_1->SetColorAndOpacity(FLinearColor::White);
 
         TB_ItemTypeTooltip_1->SetText(FText::FromString(EquippedItem->GetItemType()));
-        B_ItemType_1->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f, 1.0f));
+        B_ItemType_1->SetBrushColor(BorderColor);
         B_LevelEquip->SetVisibility(ESlateVisibility::Visible);
         B_Level1->SetBrushColor(EquippedColor);
         TB_LevelTooltip_1->SetText(FText::FromString(FString::FromInt(EquippedItem->GetLevel())));
@@ -91,15 +92,16 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
         UHorizontalBox* EquippedBox;
         UBorder* EquippedBorder;
         UTextBlock* ComparisonTextValue;
+        UBorder* ComparisonBorder;
     };
 
     TArray<FStatInfo> Stats = {
-        { HoveredItem->ItemData.Health,       "HP",   TB_HealthValue,      TB_HealthTooltip,       HB_Health,       B_Health,       TB_HealthTooltip_1,       TB_HealthValue_1,         HB_Health_1,       B_Health_1,               TB_HealthValue_2},
-        { HoveredItem->ItemData.Armor,        "DEF",  TB_ArmorValue,       TB_ArmorTooltip,        HB_Armor,        B_Armor,        TB_ArmorTooltip_1,        TB_ArmorValue_1,          HB_Armor_1,        B_Armor_1,                TB_ArmorValue_2},
-        { HoveredItem->ItemData.Dexterity,    "DEX",  TB_DexterityValue,   TB_DexterityTooltip,    HB_Dexterity,    B_Dexterity,    TB_DexterityTooltip_1,    TB_DexterityValue_1,      HB_Dexterity_1,    B_Dexterity_1,        TB_DexterityValue_2},
-        { HoveredItem->ItemData.Strength,     "STR",  TB_StrengthValue,    TB_StrengthTooltip,     HB_Strength,     B_Strength,     TB_StrengthTooltip_1,     TB_StrengthValue_1,       HB_Strength_1,     B_Strength_1,          TB_StrengthValue_2},
-        { HoveredItem->ItemData.Intelligence, "INT",  TB_IntelligenceValue,TB_IntelligenceTooltip, HB_Intelligence, B_Intelligence, TB_IntelligenceTooltip_1, TB_IntelligenceValue_1,   HB_Intelligence_1, B_Intelligence_1,  TB_IntelligenceValue_2},
-        { HoveredItem->ItemData.Gold,         "Gold", nullptr,             TB_GoldTooltip,         HB_Gold,         B_Gold,         TB_GoldTooltip_1,         nullptr,                  HB_Gold_1,         B_Gold_1,                  nullptr}
+        { HoveredItem->ItemData.Health,       "HP",   TB_HealthValue,      TB_HealthTooltip,       HB_Health,       B_Health,       TB_HealthTooltip_1,       TB_HealthValue_1,         HB_Health_1,       B_Health_1,               TB_HealthValue_2,      B_Health_2},
+        { HoveredItem->ItemData.Armor,        "DEF",  TB_ArmorValue,       TB_ArmorTooltip,        HB_Armor,        B_Armor,        TB_ArmorTooltip_1,        TB_ArmorValue_1,          HB_Armor_1,        B_Armor_1,                TB_ArmorValue_2,       B_Armor_2},
+        { HoveredItem->ItemData.Dexterity,    "DEX",  TB_DexterityValue,   TB_DexterityTooltip,    HB_Dexterity,    B_Dexterity,    TB_DexterityTooltip_1,    TB_DexterityValue_1,      HB_Dexterity_1,    B_Dexterity_1,        TB_DexterityValue_2,       B_Dexterity_2},
+        { HoveredItem->ItemData.Strength,     "STR",  TB_StrengthValue,    TB_StrengthTooltip,     HB_Strength,     B_Strength,     TB_StrengthTooltip_1,     TB_StrengthValue_1,       HB_Strength_1,     B_Strength_1,          TB_StrengthValue_2,       B_Strength_2},
+        { HoveredItem->ItemData.Intelligence, "INT",  TB_IntelligenceValue,TB_IntelligenceTooltip, HB_Intelligence, B_Intelligence, TB_IntelligenceTooltip_1, TB_IntelligenceValue_1,   HB_Intelligence_1, B_Intelligence_1,  TB_IntelligenceValue_2,       B_Intelligence_2},
+        { HoveredItem->ItemData.Gold,         "Gold", nullptr,             TB_GoldTooltip,         HB_Gold,         B_Gold,         TB_GoldTooltip_1,         nullptr,                  HB_Gold_1,         B_Gold_1,                         nullptr,       nullptr}
     };
 
     B_Equipped->SetVisibility(HasEquipped ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
@@ -122,13 +124,13 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
             Stat.HoveredBorder->SetVisibility(ESlateVisibility::Visible);
             Stat.HoveredText->SetText(FText::FromString(Stat.Label));
             Stat.HoveredText->SetColorAndOpacity(FLinearColor::White);
-            Stat.HoveredBorder->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f, 1));
+            Stat.HoveredBorder->SetBrushColor(BorderColor);
 
             if (Stat.Label == "Gold")
             {
                 Stat.HoveredText->SetText(FText::FromString(FString::FromInt(Stat.Value)));
                 Stat.HoveredText->SetColorAndOpacity(FLinearColor(1, 1, 0.3, 1));
-                Stat.HoveredBorder->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f, 1));
+                Stat.HoveredBorder->SetBrushColor(BorderColor);
 
                 if (HoveredItem->ItemData.ItemType == "Greatsword"
                     || HoveredItem->ItemData.ItemType == "Sword"
@@ -171,20 +173,21 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
                 }
                 Stat.EquippedText->SetText(FText::FromString(Stat.Label));
                 Stat.EquippedText->SetColorAndOpacity(FLinearColor::White);
-                Stat.EquippedBorder->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f, 1));
+                Stat.EquippedBorder->SetBrushColor(BorderColor);
 
                 if (Stat.Label == "Gold")
                 {
                     Stat.EquippedText->SetText(FText::FromString(FString::FromInt(EquippedValue)));
                     Stat.EquippedText->SetColorAndOpacity(FLinearColor(1,1,0.3,1));
-                    Stat.EquippedBorder->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f, 1));
+                    Stat.EquippedBorder->SetBrushColor(BorderColor);
                 }
             }
 
             // Comparison display
+            B_Comparison->SetVisibility(ESlateVisibility::Visible);
+            if(Stat.ComparisonBorder) Stat.ComparisonBorder->SetVisibility(ESlateVisibility::Visible);
             if (Diff != 0)
             {
-                
                 const bool bPositive = Diff > 0;
                 FLinearColor DiffColor = bPositive ? FLinearColor::Green : FLinearColor::Red;
                 if (Stat.ComparisonTextValue != nullptr)
@@ -198,15 +201,20 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
                 
                 if (Stat.ComparisonTextValue != nullptr)
                 {
-                    Stat.ComparisonTextValue->SetText(FText::FromString("<>"));
+                    Stat.ComparisonTextValue->SetText(FText::FromString("~"));
                     Stat.ComparisonTextValue->SetColorAndOpacity(FLinearColor(1,0.5f,0,1));
                 }
+            }
+            else
+            {
+                Stat.ComparisonBorder->SetVisibility(ESlateVisibility::Collapsed);
             }
         }
         else
         {
-            // No equipped item: collapse equipped
+            //No equipped item: collapse equipped
             Stat.EquippedBox->SetVisibility(ESlateVisibility::Collapsed);
+            B_Comparison->SetVisibility(ESlateVisibility::Collapsed);
         }
     }
 }

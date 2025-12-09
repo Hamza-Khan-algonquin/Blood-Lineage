@@ -222,6 +222,24 @@ public:
 	class UBorder* B_Intelligence_1;
 
 	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Comparison;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Health_2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Armor_2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Dexterity_2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Strength_2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Intelligence_2;
+
+	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_FromWhere_1;
 
 	UPROPERTY(meta = (BindWidget))
