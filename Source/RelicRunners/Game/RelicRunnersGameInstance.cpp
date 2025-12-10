@@ -225,7 +225,7 @@ void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
     if (TSharedPtr<IOnlineSession> Session = SessionInterface.Pin())
     {
         //Search parameters
-        int NumResults = 10;
+        int NumResults = 20;
         SessionSearch = MakeShareable(new FOnlineSessionSearch());
         SessionSearch->MaxSearchResults = NumResults;
         SessionSearch->bIsLanQuery = false;
@@ -287,7 +287,7 @@ void URelicRunnersGameInstance::LeaveSession(bool bQueueHost)
             Sess->OnDestroySessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnDestroySessionComplete);
             Sess->DestroySession(NAME_GameSession);
 
-            // Clear local state so it won't reuse stale info
+            //Clear local state so it won't reuse stale info
             PendingJoinIndex = -1;
             SessionSearch.Reset();
         }

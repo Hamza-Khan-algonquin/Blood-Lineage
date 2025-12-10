@@ -426,20 +426,21 @@ void URelicRunnersGameInstance::StartSessionGame()
     FOnlineSessionSettings* CurrentSettings = Sess->GetSessionSettings(NAME_GameSession);
     if (CurrentSettings)
     {
-        CurrentSettings->Set(SETTING_MAPNAME, FString(TEXT("Game")), EOnlineDataAdvertisementType::ViaOnlineService);
+        FString GameTitle = FString::Printf(TEXT("%s's Game"), *PlayerName);
+        CurrentSettings->Set(SETTING_MAPNAME, GameTitle, EOnlineDataAdvertisementType::ViaOnlineService);
         Sess->UpdateSession(NAME_GameSession, *CurrentSettings, true);
     }
 
-    // Tell all clients to prepare for travel
+    //Tell all clients to prepare for travel
     for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
     {
         ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(*Iterator);
-        if (PC && !PC->IsLocalController()) // skip host
+        if (PC && !PC->IsLocalController()) //skip host
         {
             PC->ClientTravelToGame();
         }
     }
 
-    // For host
+    //For host
     World->SeamlessTravel(TravelURL);
 }

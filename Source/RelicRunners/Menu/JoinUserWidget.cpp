@@ -27,26 +27,6 @@ void UJoinUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (SessionTileView)
-	{
-		SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
-	}
-
-	if (BackButton)
-	{
-		BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
-	}
-
-	if (FindGames)
-	{
-		FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
-	}
-
-	if (JoinButton)
-	{
-		JoinButton->OnClicked.AddDynamic(this, &UJoinUserWidget::JoinGameButtonClicked);
-	}
-
 	if (StartButton)
 	{
 		if (const UWorld* World = GetWorld())
@@ -58,27 +38,14 @@ void UJoinUserWidget::NativeConstruct()
 
 		StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
 	}
-
-	if (AresButton)
-	{
-		AresButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAresClicked);
-	}
-
-	if (ArtemisButton)
-	{
-		ArtemisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnArtemisClicked);
-	}
-
-	if (AphroditeButton)
-	{
-		AphroditeButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAphroditeClicked);
-	}
-
-	if (NemesisButton)
-	{
-		NemesisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnNemesisClicked);
-	}
-
+	if (FindGames) FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
+	if (SessionTileView) SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
+	if (BackButton) BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
+	if (JoinButton) JoinButton->OnClicked.AddDynamic(this, &UJoinUserWidget::JoinGameButtonClicked);
+	if (AresButton) AresButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAresClicked);
+	if (ArtemisButton) ArtemisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnArtemisClicked);
+	if (AphroditeButton) AphroditeButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAphroditeClicked);
+	if (NemesisButton) NemesisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnNemesisClicked);
 	SetSelectedClass("Ares");
 }
 
@@ -237,53 +204,6 @@ void UJoinUserWidget::FindGamesButtonClicked()
 	SearchForLanGames();
 }
 
-void UJoinUserWidget::UpdateFindGamesButtonVisibility()
-{
-	if (!FindGames || !SessionTileView || !SessionsBorder || !JoinBorder)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] UI references not ready yet."));
-		return;
-	}
-
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] World not valid."));
-		return;
-	}
-
-	AGameStateBase* GS = World->GetGameState();
-	if (!GS)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] No GameState yet"));
-		return;
-	}
-
-	const int32 NumPlayers = GS->PlayerArray.Num();
-	if (NumPlayers == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] PlayerArray empty"));
-		return;
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("[UpdateFindGamesButtonVisibility] NumPlayers: %d"), NumPlayers);
-
-	const bool Alone = (NumPlayers <= 1);
-
-	if (FindGames)
-	{
-		FindGames->SetVisibility(Alone ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-		FindGames->SetIsEnabled(Alone);
-	}
-
-	if (NumPlayers > 1)
-	{
-		if (SessionTileView) SessionTileView->ClearListItems();
-		if (SessionsBorder) SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
-		if (JoinBorder) JoinBorder->SetVisibility(ESlateVisibility::Collapsed);
-	}
-}
-
 void UJoinUserWidget::JoinGameButtonClicked()
 {
 	if (LastSelectedItem && SessionTileView)
@@ -348,7 +268,6 @@ void UJoinUserWidget::SearchForLanGames()
 			FindGames->SetIsEnabled(false);
 			SessionTileView->ClearListItems();
 			SessionTileView->RequestRefresh();
-			SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
 			GameInstance->FindGames(this);
 			if (RefreshProgress)
 			{
@@ -372,7 +291,7 @@ void UJoinUserWidget::ShowJoinButton(bool IsEnabled)
 		else
 		{
 			JoinButton->SetIsEnabled(false);
-			JoinButton->SetVisibility(ESlateVisibility::Hidden);
+			JoinButton->SetVisibility(ESlateVisibility::Collapsed);
 			JoinBorder->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
@@ -396,14 +315,6 @@ void UJoinUserWidget::OnFindSessionsComplete(FString Str, int PlayerCount)
 		if (USessionListItemWidget* Entry = Cast<USessionListItemWidget>(SessionTileView->GetEntryWidgetFromItem(NewSessionItem)))
 		{
 			Entry->OnSessionClicked.BindUObject(this, &UJoinUserWidget::HandleSessionClicked);
-		}
-		if (SessionTileView->GetNumItems() == 0)
-		{
-			SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
-		}
-		else
-		{
-			SessionsBorder->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 

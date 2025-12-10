@@ -222,21 +222,7 @@ void ARelicRunnersPlayerController::OnUnPossess()
 
 void ARelicRunnersPlayerController::Client_UpdateLobbyUI_Implementation()
 {
-	TryUpdateLobbyUI(0);
-}
-
-void ARelicRunnersPlayerController::TryUpdateLobbyUI(int Attempt)
-{
-	int MaxAttempts = 4;
-	if (Attempt >= MaxAttempts) return;
-
-	if (LobbyWidget)
-	{
-		LobbyWidget->UpdateFindGamesButtonVisibility();
-	}
-
-	FTimerHandle RetryHandle;
-	GetWorld()->GetTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateUObject(this, &ARelicRunnersPlayerController::TryUpdateLobbyUI, Attempt + 1), 0.3f, false);
+	//Was used to clear search button from UI
 }
 
 void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview)

@@ -978,7 +978,7 @@ void UInventory::UpdateForgeUI()
         // Clear icon
         FSlateBrush ClearBrush;
         ClearBrush.SetResourceObject(nullptr);
-        ClearBrush.ImageSize = FVector2D(75.f, 75.f);
+        ClearBrush.ImageSize = FVector2D(100.f, 100.f);
         ClearBrush.TintColor = FSlateColor(FLinearColor(1, 1, 1, 0));
         I_ForgeItemResult->SetBrush(ClearBrush);
         B_Level_2->SetVisibility(ESlateVisibility::Hidden);
@@ -988,7 +988,7 @@ void UInventory::UpdateForgeUI()
     {
         FSlateBrush ResultBrush;
         ResultBrush.SetResourceObject(ForgeItemResult->ItemData.Icon);
-        ResultBrush.ImageSize = FVector2D(75.f, 75.f);
+        ResultBrush.ImageSize = FVector2D(100.f, 100.f);
         ResultBrush.TintColor = FSlateColor(FLinearColor::White);
         I_ForgeItemResult->SetBrush(ResultBrush);
         TB_ForgeItemResultLevel->SetText(FText::AsNumber(ForgeItemResult->ItemData.Level));
