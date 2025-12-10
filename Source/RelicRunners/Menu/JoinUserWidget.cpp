@@ -378,7 +378,7 @@ void UJoinUserWidget::ShowJoinButton(bool IsEnabled)
 	}
 }
 
-void UJoinUserWidget::OnFindSessionsComplete(FString Str)
+void UJoinUserWidget::OnFindSessionsComplete(FString Str, int PlayerCount)
 {
 	if (!IsValid(this) || !SessionTileView) return;
 
@@ -386,6 +386,7 @@ void UJoinUserWidget::OnFindSessionsComplete(FString Str)
 	if (NewSessionItem)
 	{
 		NewSessionItem->SessionName = Str;
+		NewSessionItem->SessionPlayerCount = PlayerCount;
 	}
 
 	if (SessionTileView)

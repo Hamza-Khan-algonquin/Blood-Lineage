@@ -378,11 +378,8 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		SetupMainMenuView();
 	}
-	else
-	{
-		InitializePawnDependentSystems();
-	}
 
+	InitializePawnDependentSystems();
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
 		FTimerHandle DelayHandle;
@@ -432,7 +429,7 @@ void ARelicRunnersPlayerController::InitializePawnDependentSystems()
 		}
 	}
 
-	// Inventory binding
+	//Inventory binding
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(TimerHandle, [this]()
 		{

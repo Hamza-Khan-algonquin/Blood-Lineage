@@ -196,7 +196,8 @@ void URelicRunnersGameInstance::CreateNewSession()
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.bAllowJoinViaPresence = true;
         SessionSettings.bAllowJoinInProgress = true;
-        SessionSettings.Set(SETTING_MAPNAME, FString(TEXT("Lobby")), EOnlineDataAdvertisementType::ViaOnlineService);
+        FString LobbyTitle = FString::Printf(TEXT("%s's Lobby"), *PlayerName);
+        SessionSettings.Set(SETTING_MAPNAME, LobbyTitle, EOnlineDataAdvertisementType::ViaOnlineService);
 
         Sess->OnCreateSessionCompleteDelegates.RemoveAll(this);
         Sess->OnCreateSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnCreateSessionComplete);
@@ -250,10 +251,10 @@ void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
                     ? *R.Session.SessionSettings.Settings.Find("MAPNAME")->Data.ToString()
                     : TEXT("Unknown Map");
 
-                int32 MaxPlayers = R.Session.SessionSettings.NumPublicConnections;
-                int32 CurrentPlayers = MaxPlayers - R.Session.NumOpenPublicConnections;
+                int MaxPlayers = R.Session.SessionSettings.NumPublicConnections;
+                int CurrentPlayers = MaxPlayers - R.Session.NumOpenPublicConnections;
 
-                TextRenderWidget->OnFindSessionsComplete(MapName + " " + FString::FromInt(CurrentPlayers) + " | " + FString::FromInt(MaxPlayers));
+                TextRenderWidget->OnFindSessionsComplete(MapName, CurrentPlayers);
             }
         }
         else
@@ -425,20 +426,21 @@ void URelicRunnersGameInstance::StartSessionGame()
     FOnlineSessionSettings* CurrentSettings = Sess->GetSessionSettings(NAME_GameSession);
     if (CurrentSettings)
     {
-        CurrentSettings->Set(SETTING_MAPNAME, FString(TEXT("Game")), EOnlineDataAdvertisementType::ViaOnlineService);
+        FString GameTitle = FString::Printf(TEXT("%s's Game"), *PlayerName);
+        CurrentSettings->Set(SETTING_MAPNAME, GameTitle, EOnlineDataAdvertisementType::ViaOnlineService);
         Sess->UpdateSession(NAME_GameSession, *CurrentSettings, true);
     }
 
-    // Tell all clients to prepare for travel
+    //Tell all clients to prepare for travel
     for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
     {
         ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(*Iterator);
-        if (PC && !PC->IsLocalController()) // skip host
+        if (PC && !PC->IsLocalController()) //skip host
         {
             PC->ClientTravelToGame();
         }
     }
 
-    // For host
+    //For host
     World->SeamlessTravel(TravelURL);
 }

@@ -27,7 +27,8 @@ public:
 
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* SessionNameText;
-
+    UPROPERTY(meta = (BindWidget))
+    class UTextBlock* SessionPlayerCount;
     // Assign session data
     void Setup(class USessionListItemData* InData);
 

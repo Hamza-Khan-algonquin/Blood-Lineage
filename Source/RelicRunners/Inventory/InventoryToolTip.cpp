@@ -46,6 +46,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
 
     TB_ItemTypeTooltip->SetText(FText::FromString(HoveredItem->GetItemType()));
     FLinearColor BorderColor = FLinearColor(0.165f, 0.13f, 0.082f, 1.0f);
+    FLinearColor GoldBorderColor = FLinearColor(1, 1, 0.301f, 1.0f);
     B_ItemType->SetBrushColor(BorderColor);
 
     TB_LevelTooltip->SetText(FText::FromString(FString::FromInt(HoveredItem->GetLevel())));
@@ -130,7 +131,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
             {
                 Stat.HoveredText->SetText(FText::FromString(FString::FromInt(Stat.Value)));
                 Stat.HoveredText->SetColorAndOpacity(FLinearColor(1, 1, 0.3, 1));
-                Stat.HoveredBorder->SetBrushColor(BorderColor);
+                Stat.HoveredBorder->SetBrushColor(GoldBorderColor);
 
                 if (HoveredItem->ItemData.ItemType == "Greatsword"
                     || HoveredItem->ItemData.ItemType == "Sword"
@@ -179,7 +180,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
                 {
                     Stat.EquippedText->SetText(FText::FromString(FString::FromInt(EquippedValue)));
                     Stat.EquippedText->SetColorAndOpacity(FLinearColor(1,1,0.3,1));
-                    Stat.EquippedBorder->SetBrushColor(BorderColor);
+                    Stat.EquippedBorder->SetBrushColor(GoldBorderColor);
                 }
             }
 

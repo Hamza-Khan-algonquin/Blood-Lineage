@@ -172,7 +172,7 @@ protected:
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
 public:
-	void OnFindSessionsComplete(FString Str);
+	void OnFindSessionsComplete(FString Str, int PlayerCount);
 
 	void EnableRefresh();
 

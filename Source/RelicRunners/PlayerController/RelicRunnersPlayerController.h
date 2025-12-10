@@ -200,14 +200,9 @@ protected:
 	virtual void SetupInputComponent() override;
 
 	void MoveForward(const struct FInputActionValue& Value);
-
 	void MoveBackward(const struct FInputActionValue& Value);
-
 	void MoveLeft(const struct FInputActionValue& Value);
-
 	void MoveRight(const struct FInputActionValue& Value);
-
-	void Run(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 	void Interact();
 	void Jump(const struct FInputActionValue& Value);
