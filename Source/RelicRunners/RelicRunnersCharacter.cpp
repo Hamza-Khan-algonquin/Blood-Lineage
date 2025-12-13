@@ -415,6 +415,15 @@ void ARelicRunnersCharacter::Server_AddExperience_Implementation(int Amount)
 	AddExperience(Amount);
 }
 
+void ARelicRunnersCharacter::OnRep_PlayerLevel(int OldLevel)
+{
+	if (PlayerLevel > OldLevel)
+	{
+		//Show UI Popup
+		Client_OnLevelUp();
+	}
+}
+
 void ARelicRunnersCharacter::OnLevelUp()
 {
 	PlayerXP -= PlayerXPToLevel;
@@ -449,8 +458,12 @@ void ARelicRunnersCharacter::OnLevelUp()
 
 	InventoryComponent->UpdateTotalEquippedStats(this);
 
-	//UI popup
-	Client_OnLevelUp();
+	//Listen server only
+	if (IsLocallyControlled())
+	{
+		//Show UI Popup
+		Client_OnLevelUp();
+	}
 }
 
 float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

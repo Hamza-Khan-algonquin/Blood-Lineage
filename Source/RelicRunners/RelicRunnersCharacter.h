@@ -354,6 +354,8 @@ protected:
 	void OnRep_AbilityHUD();
 	UFUNCTION()
 	void OnRep_PlayerGold();
+	UFUNCTION()
+	void OnRep_PlayerLevel(int OldLevel);
 
 	//Stats
 	UPROPERTY()
@@ -370,7 +372,7 @@ protected:
 	int PlayerXP;
 	UPROPERTY(ReplicatedUsing = OnRep_ExperienceHUD)
 	int PlayerXPToLevel;
-	UPROPERTY(ReplicatedUsing = OnRep_ExperienceHUD)
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerLevel)
 	int PlayerLevel;
 	UPROPERTY(ReplicatedUsing = OnRep_AbilityHUD)
 	int PlayerAbilityPoints;
