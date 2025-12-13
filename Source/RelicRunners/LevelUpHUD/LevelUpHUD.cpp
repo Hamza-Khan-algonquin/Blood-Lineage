@@ -46,7 +46,6 @@ void ULevelUpHUD::EvaluatePlayerLevel()
 
 		TB_Level->SetText(FText::FromString(FString::Printf(TEXT(" %d"), OwningCharacter->GetPlayerLevel())));
 	}
-	
 }
 
 

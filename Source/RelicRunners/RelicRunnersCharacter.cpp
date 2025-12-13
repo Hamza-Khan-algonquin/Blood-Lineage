@@ -49,9 +49,7 @@
 #include "Menu/PauseMenu.h"
 #include "Menu/PauseMenuWidget.h"
 #include "Menu/LoadingScreen.h"
-#include "AbilitySystem/AbilityPointCounter.h"
 #include "AbilitySystem/AbilitySelection.h"
-#include "AbilitySystem/HealthPotion.h"
 #include "Item/ItemData.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/LocalPlayer.h"
@@ -60,7 +58,6 @@
 #include "Director System/Director.h"
 #include "Enemy/EnemyCharacter.h"
 #include "Enemy/EnemyCharacterAI.h"
-
 #include "LevelGeneration/CapturableFlag.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -373,25 +370,49 @@ void ARelicRunnersCharacter::SetReplicatedMeshByItemType(UObject* MeshAsset, con
 	}
 }
 
-void ARelicRunnersCharacter::OnRep_HUD()
-{
-	UpdateHUD();
-}
-
-
 void ARelicRunnersCharacter::AddExperience(int Amount)
 {
-	PlayerXP += Amount;
-	if (PlayerXP >= PlayerXPToLevel)
+	if (!HasAuthority())
 	{
-		Client_OnLevelUp();
+		Server_AddExperience(Amount);
+		return;
 	}
-	UpdateHUD();
+
+	PlayerXP += Amount;
+
+	while (PlayerXP >= PlayerXPToLevel)
+	{
+		OnLevelUp();
+	}
+
+	//Server Update HUD
+	if (PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDXP(PlayerLevel, PlayerXP, PlayerXPToLevel);
+		PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
+	}
 }
 
 void ARelicRunnersCharacter::Client_OnLevelUp_Implementation()
-{ 
-	OnLevelUp();
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return;
+
+	if (LevelUpHUDClass)
+	{
+		ULevelUpHUD* NewLevelUpHUD = CreateWidget<ULevelUpHUD>(PC, LevelUpHUDClass);
+		if (NewLevelUpHUD)
+		{
+			NewLevelUpHUD->AddToViewport();
+		}
+	}
+
+	if (Inventory) Inventory->RefreshEquippedUI();
+}
+
+void ARelicRunnersCharacter::Server_AddExperience_Implementation(int Amount)
+{
+	AddExperience(Amount);
 }
 
 void ARelicRunnersCharacter::OnLevelUp()
@@ -410,11 +431,11 @@ void ARelicRunnersCharacter::OnLevelUp()
 
 	//current health / max health
 	PlayerMaxHealth++;
-	PlayerHealth++;
+	PlayerHealth = PlayerMaxHealth;
 
 	//current resource / max resource
 	PlayerMaxResource++;
-	PlayerResource++;
+	PlayerResource = PlayerMaxResource;
 
 	//current stats
 	PlayerArmor++;
@@ -428,23 +449,14 @@ void ARelicRunnersCharacter::OnLevelUp()
 
 	InventoryComponent->UpdateTotalEquippedStats(this);
 
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC) return;
-
-	if (LevelUpHUDClass)
-	{
-		ULevelUpHUD* NewLevelUpHUD = CreateWidget<ULevelUpHUD>(PC, LevelUpHUDClass);
-		if (NewLevelUpHUD)
-		{
-			NewLevelUpHUD->AddToViewport();
-		}
-	}
-
-	if (Inventory) Inventory->RefreshEquippedUI();
+	//UI popup
+	Client_OnLevelUp();
 }
 
 float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (!HasAuthority()) return 0.0f;
+
 	float actualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
 	PlayerHealth -= actualDamage;
@@ -455,7 +467,10 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 		Die();
 	}
 
-	UpdateHUD();
+	if (PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
+	}
 
 	return actualDamage;
 }
@@ -486,10 +501,33 @@ bool ARelicRunnersCharacter::ReplicateSubobjects(UActorChannel* Channel, FOutBun
 void ARelicRunnersCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-	Super::OnRep_PlayerState();
 
 	InitLocalUI();
-	UpdateHUD();
+
+	OnRep_HealthHUD();
+	OnRep_ResourceHUD();
+	OnRep_ExperienceHUD();
+	OnRep_AbilityHUD();
+}
+
+void ARelicRunnersCharacter::OnRep_HealthHUD()
+{
+	if (PlayerHUD) PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
+}
+
+void ARelicRunnersCharacter::OnRep_ResourceHUD()
+{
+	if (PlayerHUD) PlayerHUD->UpdateHUDResource(PlayerResource, PlayerMaxResource);
+}
+
+void ARelicRunnersCharacter::OnRep_ExperienceHUD()
+{
+	if (PlayerHUD) PlayerHUD->UpdateHUDXP(PlayerLevel, PlayerXP, PlayerXPToLevel);
+}
+
+void ARelicRunnersCharacter::OnRep_AbilityHUD()
+{
+	if (PlayerHUD) PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
 }
 
 void ARelicRunnersCharacter::OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType)
@@ -590,26 +628,10 @@ void ARelicRunnersCharacter::InitLocalUI()
 		if (PlayerHUD)
 		{
 			PlayerHUD->AddToViewport();
-		}
-	}
-	// === Ability Points Widget ===
-	if (!AbilityPointCounter && AbilityPointCounterClass)
-	{
-		AbilityPointCounter = CreateWidget<UAbilityPointCounter>(PC, AbilityPointCounterClass);
-		if (AbilityPointCounter)
-		{
-			AbilityPointCounter->AddToViewport();
-			AbilityPointCounter->SetVisibility(ESlateVisibility::Visible);
-		}
-	}
-	// === Health Potion Widget ===
-	if (!HealthPotion && HealthPotionClass)
-	{
-		HealthPotion = CreateWidget<UHealthPotion>(PC, HealthPotionClass);
-		if (HealthPotion)
-		{
-			HealthPotion->AddToViewport();
-			HealthPotion->SetVisibility(ESlateVisibility::Visible);
+			PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
+			PlayerHUD->UpdateHUDResource(PlayerResource, PlayerMaxResource);
+			PlayerHUD->UpdateHUDXP(PlayerLevel, PlayerXP, PlayerXPToLevel);
+			PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
 		}
 	}
 	// === Inventory Widget ===
@@ -718,7 +740,6 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 	if (GetActorLocation().Z <= -100.0f)
 	{
 		Die();
-		UpdateHUD();
 	}
 }
 
@@ -748,6 +769,15 @@ void ARelicRunnersCharacter::TraceForInteractables()
 
 		bool bShouldShow = bWithinDistance && bFacingItem;
 		IInteractInterface::Execute_ShowTooltip(Item, bShouldShow);
+	}
+}
+
+void ARelicRunnersCharacter::SetPlayerMaxHealth(int value)
+{
+	PlayerMaxHealth = value;
+	if (HasAuthority() && PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
 	}
 }
 
@@ -788,7 +818,12 @@ void ARelicRunnersCharacter::PassiveHealthRegen()
 	{
 		PlayerHealth = PlayerMaxHealth;
 	}
-	UpdateHUD();
+
+	//Server Update HUD
+	if (HasAuthority() && PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
+	}
 }
 
 void ARelicRunnersCharacter::Client_UpdateEquippedStats_Implementation(const FEquippedStatsSummary& NewStats)
@@ -823,7 +858,6 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 
 	for (const FHitResult& Hit : Hits)
 	{
-		//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 12, FColor::Red, false, 1.0f);
 		if (AActor* HitActor = Hit.GetActor())
 		{
 			if (!AlreadyHitActors.Contains(HitActor))
@@ -842,9 +876,6 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 			}
 		}
 	}
-
-	//DrawDebugLine(GetWorld(), Start, End, FColor::Cyan, false, 0.1f, 0, 2.0f);
-
 }
 
 void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
@@ -923,18 +954,16 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 
 void ARelicRunnersCharacter::Interact()
 {
-	//FVector Start = FollowCamera->GetComponentLocation();
 	FVector Start = GetActorLocation();
-	FVector End = Start + (FollowCamera->GetForwardVector() * 500.f); // Match TraceForInteractables
+	FVector End = Start + (FollowCamera->GetForwardVector() * 1000.f); // Match TraceForInteractables
 
 	FHitResult Hit;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	DrawDebugSphere(GetWorld(), End, 40.f, 12, FColor::Orange, false, 0.1f);
-	if (GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(40.f), Params))
+	if (GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
 	{
-		DrawDebugSphere(GetWorld(), Hit.Location, 40.f, 12, FColor::Orange, false, 0.1f);
+		DrawDebugSphere(GetWorld(), Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && HitActor->Implements<UInteractInterface>())
 		{
@@ -1103,57 +1132,65 @@ void ARelicRunnersCharacter::GiveUltimateAbilities()
 
 void ARelicRunnersCharacter::HealthPotions()
 {
-	if (HealthPotion)
+	if (PlayerHUD)
 	{
 		int OldHealth = PlayerHealth;
 		int OldPotionCount = HealthPotionCount;
 
-		HealthPotion->OnHealthPotionClicked(PlayerHealth, PlayerMaxHealth, HealthPotionCount, HealthGranted);
+		PlayerHUD->OnHealthPotionClicked(PlayerHealth, PlayerMaxHealth, HealthPotionCount, HealthGranted);
 
 		if (PlayerHealth != OldHealth || HealthPotionCount != OldPotionCount)
 		{
 			Server_UseHealthPotion(PlayerHealth, HealthPotionCount);
 		}
 
-		UpdateHUD();
+		//Server Update HUD
+		if (HasAuthority())
+		{
+			PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
+		}
 	}
 }
 
 void ARelicRunnersCharacter::Server_UseHealthPotion_Implementation(int NewHealth, int NewPotionCount)
 {
+	if (!HasAuthority()) return;
 
-	if (!HasAuthority())
-		return;
-
-	PlayerHealth = FMath::Clamp(NewHealth, 0, PlayerMaxHealth);
+	PlayerHealth = (FMath::Clamp(NewHealth, 0, PlayerMaxHealth));
 	HealthPotionCount = FMath::Max(NewPotionCount, 0);
 
-	UpdateHUD();
+	//Server Update HUD
+	if (PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
+	}
 }
 
 
 void ARelicRunnersCharacter::Server_SpendAbilityPoints_Implementation()
 {
-	if (!HasAuthority())
-		return;
-
+	if (!HasAuthority()) return;
+	 
 	if (PlayerAbilityPoints > 0)
 	{
 		PlayerAbilityPoints--;
 
 		Client_OnAbilityPointsUpdated(PlayerAbilityPoints);
+	}
 
-		UpdateHUD();
+	//Server Update HUD
+	if (PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
 	}
 }
 
 void ARelicRunnersCharacter::Client_OnAbilityPointsUpdated_Implementation(int32 NewAbilityPoints)
 {
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	if (!PlayerController)
-		return;
+	if (!PlayerController) return;
 
-	// Update UI locally on the client
+	//Update UI locally on the client
 	if (NewAbilityPoints == 0 && AbilitySelection)
 	{
 		AbilitySelection->SetVisibility(ESlateVisibility::Hidden);
@@ -1161,12 +1198,6 @@ void ARelicRunnersCharacter::Client_OnAbilityPointsUpdated_Implementation(int32 
 		PlayerController->SetInputMode(FInputModeGameOnly());
 		PlayerController->SetShowMouseCursor(false);
 	}
-}
-
-void ARelicRunnersCharacter::Server_SetMaxHealth_Implementation(int health)
-{
-	PlayerMaxHealth = health;
-	UpdateHUD();
 }
 
 void ARelicRunnersCharacter::AddGold(int Value)
@@ -1404,32 +1435,6 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UItemObject* Item)
 			}
 		}
 	}
-}
-
-void ARelicRunnersCharacter::UpdateHUD()
-{
-	if (PlayerHUD)
-	{
-		PlayerHUD->UpdateHUD(
-			PlayerHealth,
-			PlayerMaxHealth,
-			PlayerResource,
-			PlayerMaxResource,
-			PlayerLevel,
-			PlayerXP,
-			PlayerXPToLevel
-		);
-	}
-
-	if (AbilityPointCounter)
-	{
-		AbilityPointCounter->UpdateHUD(PlayerAbilityPoints);
-	}
-}
-
-void ARelicRunnersCharacter::Multicast_UpdateHUD_Implementation()
-{
-	UpdateHUD();
 }
 
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)

@@ -144,8 +144,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_Intelligence = nullptr;
 
-	UFUNCTION()
-	void UpdateFindGamesButtonVisibility();
 protected:
 	UFUNCTION()
 	void BackButtonClicked();

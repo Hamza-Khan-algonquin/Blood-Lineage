@@ -299,7 +299,7 @@ void UInventoryComponent::UpdateTotalEquippedStats(ARelicRunnersCharacter* Char)
 
     if (Char->HasAuthority())
     {
-        Char->Server_SetMaxHealth(Stats.TotalHealth);
+        Char->SetPlayerMaxHealth(Stats.TotalHealth);
         Char->Client_UpdateEquippedStats(Stats);
     }
 

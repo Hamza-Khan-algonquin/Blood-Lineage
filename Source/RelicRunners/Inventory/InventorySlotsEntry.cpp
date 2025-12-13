@@ -54,7 +54,7 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     TB_Level->SetText(FText::FromString(FString::FromInt(Item->GetLevel())));
     TB_Level->SetColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f, 1));
 
-    // Set border color by rarity
+    //Set border color by rarity
     FLinearColor ItemFrameColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
     B_Item->SetBrushColor(ItemFrameColor);
     B_Color->SetBrushColor(ItemFrameColor);
@@ -136,7 +136,7 @@ void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const
 
     FLinearColor RarityColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
 
-    // Find equipped item of same type
+    //Find equipped item of same type
     ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetWorld()->GetFirstPlayerController());
     UItemObject* EquippedItem = nullptr;
     if (PC && PC->GetPossessedPawn())

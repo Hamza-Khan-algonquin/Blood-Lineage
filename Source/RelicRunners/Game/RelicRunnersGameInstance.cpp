@@ -20,7 +20,6 @@
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
-#include <RelicRunners/AbilitySystem/AbilityPointCounter.h>
 
 void URelicRunnersGameInstance::Init()
 {

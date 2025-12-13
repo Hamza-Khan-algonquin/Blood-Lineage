@@ -38,13 +38,6 @@ public:
 
 	//UI Elements
 	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Level;
-	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_Level1;
-	UPROPERTY(meta = (BindWidget))
-	class UBorder* B_LevelEquip;
-
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_LevelTooltip;
 
 	UPROPERTY(meta = (BindWidget))

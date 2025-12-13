@@ -2,7 +2,6 @@
 
 
 #include "AphroditeCharacter.h"
-#include "RelicRunners/AbilitySystem/AbilityPointCounter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "RelicRunners/Inventory/InventoryComponent.h"
@@ -34,7 +33,7 @@ void AAphroditeCharacter::BeginPlay()
         FClassData Stats = ClassInfo->GetStats("Aphrodite");
         SetPlayerStartingHealth(Stats.Health);
         PlayerMaxHealth = Stats.Health;
-        PlayerHealth = Stats.Health;
+        PlayerHealth = PlayerMaxHealth;
         SetPlayerStartingArmor(Stats.Armor);
         SetPlayerStartingStrength(Stats.Strength);
         SetPlayerStartingDexterity(Stats.Dexterity);

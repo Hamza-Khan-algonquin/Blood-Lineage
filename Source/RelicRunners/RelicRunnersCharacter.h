@@ -104,8 +104,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_UnequipItemByID(FGuid ID);
 	UFUNCTION(Server, Reliable)
-	void Server_SetMaxHealth(int health);
-	UFUNCTION(Server, Reliable)
 	void Server_DropItem(const struct FItemData& ItemData);
 	UFUNCTION(Server, Reliable)
 	void Server_PickupItem(AItemActor* TargetItem);
@@ -160,6 +158,7 @@ public:
 	int GetPlayerXP() { return PlayerXP; }
 	int GetPlayerXPToLevel() { return PlayerXPToLevel; }
 	int GetPlayerAbilityPoints() { return PlayerAbilityPoints; }
+	void SetPlayerMaxHealth(int value);
 
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	void SetPlayerStartingArmor(int StartingArmor) { PlayerStartingArmor =  StartingArmor; }
@@ -225,7 +224,6 @@ public:
 	void UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType);
 	UFUNCTION(BlueprintCallable)
 	void UpdateItemVisuals(class UItemObject* Item);
-	void UpdateHUD();
 
 	//Helper functions
 	FString GetMeshPathByItemType(const FString& ItemType);
@@ -278,6 +276,9 @@ public:
 
 	void AddExperience(int Amount);
 
+	UFUNCTION(Server, Reliable)
+	void Server_AddExperience(int Amount);
+
 	virtual void OnLevelUp();
 
 	UFUNCTION(Client, Reliable)
@@ -315,19 +316,6 @@ protected:
 	class UPlayerHUD* PlayerHUD;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UAbilityPointCounter> AbilityPointCounterClass;
-
-	UPROPERTY()
-	class UAbilityPointCounter* AbilityPointCounter;
-
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UHealthPotion> HealthPotionClass;
-
-	UPROPERTY()
-	class UHealthPotion* HealthPotion;
-
-	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UAbilitySelection> AbilitySelectionClass;
 
 	UPROPERTY()
@@ -353,35 +341,38 @@ protected:
 
 	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_UpdateHUD();
-
 	virtual void OnRep_PlayerState() override;
 
 	//Replication
 	UFUNCTION()
-	void OnRep_HUD();
+	void OnRep_HealthHUD();
+	UFUNCTION()
+	void OnRep_ResourceHUD();
+	UFUNCTION()
+	void OnRep_ExperienceHUD();
+	UFUNCTION()
+	void OnRep_AbilityHUD();
 	UFUNCTION()
 	void OnRep_PlayerGold();
 
 	//Stats
 	UPROPERTY()
 	int PlayerNumInventorySlots;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_HealthHUD)
 	int PlayerHealth;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_HealthHUD)
 	int PlayerMaxHealth;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_ResourceHUD)
 	int PlayerResource;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_ResourceHUD)
 	int PlayerMaxResource;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_ExperienceHUD)
 	int PlayerXP;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_ExperienceHUD)
 	int PlayerXPToLevel;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_ExperienceHUD)
 	int PlayerLevel;
-	UPROPERTY(ReplicatedUsing = OnRep_HUD)
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityHUD)
 	int PlayerAbilityPoints;
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerGold, BlueprintReadOnly, Category = "Player")
 	int PlayerGold;

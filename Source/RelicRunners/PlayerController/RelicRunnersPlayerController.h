@@ -121,8 +121,6 @@ public:
 	virtual void AcknowledgePossession(APawn* Pawn) override;
 
 	virtual void OnUnPossess() override;
-	UFUNCTION()
-	void TryUpdateLobbyUI(int Attempt);
 
 	UFUNCTION()
 	void SetupPreviewRenderTarget(APlayerPreview* Preview);

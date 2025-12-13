@@ -34,6 +34,8 @@ public:
 
 	void UpdateHUD(float CurrentHealth, float MaxHealth, float CurrentResource, float MaxResource, int CurrentLevel, float CurrentXP, float XPToLevel);
 
+	void UpdateHUDAbilityPoints(int AbilityPoints);
+
 	void UpdateHUDHealth(float CurrentHealth, float MaxHealth);
 
 	void UpdateHUDResource(float CurrentResource, float MaxResource);
@@ -52,7 +54,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Level;
 
-
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* ExperienceBar;
 
@@ -61,4 +62,62 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* ResourceBar;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_DamageCooldown;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_DefenceCooldown;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_UtilityCooldown;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_UltimateCooldown;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_DamageAbility;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_DefenceAbility;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_UtilityAbility;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_UltimateAbility;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TB_AbilityPoints;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_HealthPotion;
+
+	FTimerHandle DamageCooldownHandle;
+	FTimerHandle DefenceCooldownHandle;
+	FTimerHandle UtilityCooldownHandle;
+	FTimerHandle UltimateCooldownHandle;
+
+	float DamageRemainingTime = 0.f;
+	float DefenceRemainingTime = 0.f;
+	float UtilityRemainingTime = 0.f;
+	float UltimateRemainingTime = 0.f;
+
+	void UpdateBindText();
+
+	void RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime);
+
+	UFUNCTION(BlueprintCallable)
+	void StartDamageCooldown(float CooldownTime);
+
+	UFUNCTION(BlueprintCallable)
+	void StartDefenceCooldown(float CooldownTime);
+
+	UFUNCTION(BlueprintCallable)
+	void StartUtilityCooldown(float CooldownTime);
+
+	UFUNCTION(BlueprintCallable)
+	void StartUltimateCooldown(float CooldownTime);
+
+	void OnHealthPotionClicked(int& PlayerHealth, int MaxHealth, int& HealthPotionAmount, float HealthPercent);
 };
