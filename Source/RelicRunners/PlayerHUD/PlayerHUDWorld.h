@@ -49,6 +49,9 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* ExperienceBar;
 
+	UPROPERTY(meta = (BindWidget))
+	class URadialSlider* ExperienceSlider;
+
 protected:
 
 	UPROPERTY()

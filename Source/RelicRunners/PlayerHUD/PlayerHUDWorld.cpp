@@ -17,6 +17,7 @@
 #include "PlayerHUDWorld.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
+#include "Components/RadialSlider.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -61,7 +62,8 @@ void UPlayerHUDWorld::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (ExperienceBar)
 	{
 		float XPPercent = (RequiredXP > 0) ? (float)CurrentXP / (float)RequiredXP : 0.f;
-		ExperienceBar->SetPercent(XPPercent);
+		//ExperienceBar->SetPercent(XPPercent);
+		ExperienceSlider->SetValue(XPPercent);
 	}
 
 	if (TB_Name)
