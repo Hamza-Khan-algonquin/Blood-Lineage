@@ -44,7 +44,7 @@ void ULevelUpHUD::EvaluatePlayerLevel()
 		APawn* Pawn = PC->GetPawn();
 		OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
 
-		TB_Level->SetText(FText::FromString(FString::Printf(TEXT(" %d"), OwningCharacter->GetPlayerLevel())));
+		TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), OwningCharacter->GetPlayerLevel())));
 	}
 }
 
