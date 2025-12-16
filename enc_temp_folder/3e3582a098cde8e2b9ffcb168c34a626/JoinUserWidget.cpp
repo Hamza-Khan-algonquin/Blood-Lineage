@@ -119,30 +119,67 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 		TooltipName = FText::FromString("Health");
 		TooltipValue = FText::AsNumber(Info.Health);
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
+
+		Descriptions.Add(FText::FromString("Maximum health pool."));
 	}
 	else if (HoveredBorder == B_Defence)
 	{
-		TooltipName = FText::FromString("Armor");
+		TooltipName = FText::FromString("Defence");
 		TooltipValue = FText::AsNumber(Info.Armor);
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
+
+		float Percentage = ItemStats::GetDefencePerc(Info.Armor);
+		FText FormatString = FText::FromString("Damage taken reduced by {0}%.");
+		FText FormattedDescription = FText::Format(FormatString,FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
 	}
 	else if (HoveredBorder == B_Strength)
 	{
 		TooltipName = FText::FromString("Strength");
 		TooltipValue = FText::AsNumber(Info.Strength);
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
+
+		float Percentage = ItemStats::GetStrengthPerc(Info.Strength);
+		FText FormatString = FText::FromString("Attack and ability damage +{0}%.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
 	}
 	else if (HoveredBorder == B_Agility)
 	{
-		TooltipName = FText::FromString("Dexterity");
+		TooltipName = FText::FromString("Agility");
 		TooltipValue = FText::AsNumber(Info.Dexterity);
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
+
+		float Percentage = ItemStats::GetCritPerc(Info.Dexterity);
+		FText FormatString = FText::FromString("Critical strike chance increased by {0}%.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+
+		float PercentageDamage = ItemStats::GetCritDmgPerc(Info.Dexterity);
+		FormatString = FText::FromString("Critical strikes deal {1}x damage.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(PercentageDamage));
+		Descriptions.Add(FormattedDescription);
+
+		Percentage = ItemStats::GetSpeedPerc(Info.Dexterity);
+		FormatString = FText::FromString("Movement speed increased by {0}%.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
 	}
 	else if (HoveredBorder == B_Intelligence)
 	{
 		TooltipName = FText::FromString("Intelligence");
 		TooltipValue = FText::AsNumber(Info.Intelligence);
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
+
+		int Num = ItemStats::GetManaPoolIncrease(Info.Intelligence);
+		FText FormatString = FText::FromString("Maximum mana pool increased by {0}.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
+		Descriptions.Add(FormattedDescription);
+
+		float Percentage = ItemStats::GetAbilityCostPerc(Info.Intelligence);
+		FormatString = FText::FromString("Reduces all ability costs by {0}%.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
 	}
 	else if (HoveredBorder == B_Ability1)
 	{

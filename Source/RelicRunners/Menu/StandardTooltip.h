@@ -37,8 +37,26 @@ protected:
 	class UTextBlock* TB_Description2;
 
 	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Description3;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Description4;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Description5;
+
+	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Description1;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Description2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Description3;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Description4;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Description5;
 };

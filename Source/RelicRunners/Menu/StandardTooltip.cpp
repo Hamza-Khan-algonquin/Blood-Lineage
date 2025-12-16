@@ -29,6 +29,21 @@ void UStandardTooltip::NativeConstruct()
 	{
 		B_Description2->SetVisibility(ESlateVisibility::Collapsed);
 	}
+
+	if (B_Description3)
+	{
+		B_Description3->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (B_Description4)
+	{
+		B_Description4->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (B_Description5)
+	{
+		B_Description5->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 
@@ -75,6 +90,48 @@ void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArra
 		if (B_Description2)
 		{
 			B_Description2->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+	}
+
+	//Description 3
+	if (NewDescriptions.Num() > 2)
+	{
+		if (TB_Description3)
+		{
+			TB_Description3->SetText(NewDescriptions[2]);
+		}
+
+		if (B_Description3)
+		{
+			B_Description3->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+	}
+
+	//Description 4
+	if (NewDescriptions.Num() > 3)
+	{
+		if (TB_Description4)
+		{
+			TB_Description4->SetText(NewDescriptions[3]);
+		}
+
+		if (B_Description4)
+		{
+			B_Description4->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+	}
+
+	//Description 5
+	if (NewDescriptions.Num() > 4)
+	{
+		if (TB_Description5)
+		{
+			TB_Description5->SetText(NewDescriptions[4]);
+		}
+
+		if (B_Description5)
+		{
+			B_Description5->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}
 }

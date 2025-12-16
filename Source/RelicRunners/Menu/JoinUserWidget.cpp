@@ -120,7 +120,7 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 		TooltipValue = FText::AsNumber(Info.Health);
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
 
-		Descriptions.Add(FText::FromString("Increases your maximum health pool."));
+		Descriptions.Add(FText::FromString("Maximum health pool."));
 	}
 	else if (HoveredBorder == B_Defence)
 	{
@@ -129,7 +129,7 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
 
 		float Percentage = ItemStats::GetDefencePerc(Info.Armor);
-		FText FormatString = FText::FromString("All damage taken reduced by {0}%.");
+		FText FormatString = FText::FromString("Damage taken reduced by {0}%.");
 		FText FormattedDescription = FText::Format(FormatString,FText::AsNumber(Percentage));
 		Descriptions.Add(FormattedDescription);
 	}
@@ -140,7 +140,7 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
 
 		float Percentage = ItemStats::GetStrengthPerc(Info.Strength);
-		FText FormatString = FText::FromString("Increases base attack and ability damage {0}%.");
+		FText FormatString = FText::FromString("Attack and ability damage +{0}%.");
 		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
 		Descriptions.Add(FormattedDescription);
 	}
@@ -151,13 +151,17 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
 
 		float Percentage = ItemStats::GetCritPerc(Info.Dexterity);
+		FText FormatString = FText::FromString("Critical strike chance increased by {0}%.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+
 		float PercentageDamage = ItemStats::GetCritDmgPerc(Info.Dexterity);
-		FText FormatString = FText::FromString("Increases critical chance by {0}% and critical damage by {1}x.");
-		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage), FText::AsNumber(PercentageDamage));
+		FormatString = FText::FromString("Critical strikes deal {0}x damage.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(PercentageDamage));
 		Descriptions.Add(FormattedDescription);
 
 		Percentage = ItemStats::GetSpeedPerc(Info.Dexterity);
-		FormatString = FText::FromString("Increases movement speed by {0}%.");
+		FormatString = FText::FromString("Movement speed increased by {0}%.");
 		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
 		Descriptions.Add(FormattedDescription);
 	}
@@ -168,7 +172,7 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 		StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
 
 		int Num = ItemStats::GetManaPoolIncrease(Info.Intelligence);
-		FText FormatString = FText::FromString("Increases maximum mana pool by {0}.");
+		FText FormatString = FText::FromString("Maximum mana pool increased by {0}.");
 		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
 		Descriptions.Add(FormattedDescription);
 
@@ -250,21 +254,20 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
 	CurrentClass = ClassKey;
 	FLinearColor Gold(1.f, 0.5f, 0, 1.f);
-	FLinearColor Cyan(0.074f, 0.25f, 0.434f, 1.f);
-	FLinearColor DarkCyan(0, 0.021f, 0.02f, 1.f);
-	FLinearColor DarkGold(0.3f, 0.15, 0, 1.f);
+	FLinearColor Cyan(0, 0.35, 0.25, 1.f);
+	FLinearColor Silver(0.5, 0.5, 0.5, 1.f);
 	FLinearColor Black(0,0,0,1);
 	FLinearColor White(1, 1, 1, 1);
 
-	//Reset all buttons to cyan
+	//Reset all buttons
 	SetButtonColor(AresButton, Cyan);
 	SetButtonColor(ArtemisButton, Cyan);
 	SetButtonColor(AphroditeButton, Cyan);
 	SetButtonColor(NemesisButton, Cyan);
-	SetBorderColor(B_Ares, DarkCyan);
-	SetBorderColor(B_Artemis, DarkCyan);
-	SetBorderColor(B_Aphrodite, DarkCyan);
-	SetBorderColor(B_Nemesis, DarkCyan);
+	SetBorderColor(B_Ares, Silver);
+	SetBorderColor(B_Artemis, Silver);
+	SetBorderColor(B_Aphrodite, Silver);
+	SetBorderColor(B_Nemesis, Silver);
 	SetImageColor(I_Ares, White);
 	SetImageColor(I_Artemis, White);
 	SetImageColor(I_Aphrodite, White);
@@ -274,25 +277,25 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	if (ClassKey == "Ares")
 	{
 		SetButtonColor(AresButton, Gold);
-		SetBorderColor(B_Ares, DarkGold);
+		SetBorderColor(B_Ares, Black);
 		SetImageColor(I_Ares, Black);
 	}
 	else if (ClassKey == "Artemis")
 	{
 		SetButtonColor(ArtemisButton, Gold);
-		SetBorderColor(B_Artemis, DarkGold);
+		SetBorderColor(B_Artemis, Black);
 		SetImageColor(I_Artemis, Black);
 	}
 	else if (ClassKey == "Aphrodite")
 	{
 		SetButtonColor(AphroditeButton, Gold);
-		SetBorderColor(B_Aphrodite, DarkGold);
+		SetBorderColor(B_Aphrodite, Black);
 		SetImageColor(I_Aphrodite, Black);
 	}
 	else if (ClassKey == "Nemesis")
 	{
 		SetButtonColor(NemesisButton, Gold);
-		SetBorderColor(B_Nemesis, DarkGold);
+		SetBorderColor(B_Nemesis, Black);
 		SetImageColor(I_Nemesis, Black);
 	}
 
