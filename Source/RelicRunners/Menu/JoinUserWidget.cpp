@@ -22,6 +22,8 @@
 #include "RelicRunners/Classes/ClassInfo.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
+#include "StandardTooltip.h"
+#include <RelicRunners/Item/ItemStats.h>
 
 void UJoinUserWidget::NativeConstruct()
 {
@@ -38,6 +40,7 @@ void UJoinUserWidget::NativeConstruct()
 
 		StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
 	}
+
 	if (FindGames) FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
 	if (SessionTileView) SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
 	if (BackButton) BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
@@ -47,6 +50,174 @@ void UJoinUserWidget::NativeConstruct()
 	if (AphroditeButton) AphroditeButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAphroditeClicked);
 	if (NemesisButton) NemesisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnNemesisClicked);
 	SetSelectedClass("Ares");
+}
+
+FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+
+	FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
+
+	TArray<UBorder*> Borders = { B_Health, B_Defence, B_Strength, B_Agility, B_Intelligence,
+								 B_Ability1, B_Ability2, B_Ability3, B_Ability4 };
+
+	UBorder* HoveredBorder = nullptr;
+	for (UBorder* Border : Borders)
+	{
+		if (!Border) continue;
+
+		FGeometry BorderGeom = Border->GetCachedGeometry();
+		if (BorderGeom.IsUnderLocation(CursorPos))
+		{
+			HoveredBorder = Border;
+			break;
+		}
+	}
+
+	if (HoveredBorder != CurrentHoveredBorder)
+	{
+
+		if (StandardTooltip && CurrentHoveredBorder)
+		{
+			StandardTooltip->RemoveFromParent();
+			StandardTooltip = nullptr;
+		}
+
+		CurrentHoveredBorder = HoveredBorder;
+
+		if (CurrentHoveredBorder)
+		{
+			ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
+		}
+	}
+
+	return FReply::Handled();
+}
+
+void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
+{
+	if (!StandardTooltipClass || !ClassDataAsset) return;
+
+	const FClassData& Info = ClassDataAsset->Classes[CurrentClass];
+	if (!HoveredBorder) return;
+
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	if (!StandardTooltip)
+	{
+		StandardTooltip = CreateWidget<UStandardTooltip>(PC, StandardTooltipClass);
+		StandardTooltip->AddToViewport();
+	}
+
+	FText TooltipName = FText::GetEmpty();
+	FText TooltipValue = FText::GetEmpty();
+	TArray<FText> Descriptions;
+
+	if (HoveredBorder == B_Health)
+	{
+		TooltipName = FText::FromString("Health");
+		TooltipValue = FText::AsNumber(Info.Health);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
+
+		Descriptions.Add(FText::FromString("Increases your maximum health pool."));
+	}
+	else if (HoveredBorder == B_Defence)
+	{
+		TooltipName = FText::FromString("Defence");
+		TooltipValue = FText::AsNumber(Info.Armor);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
+
+		float Percentage = ItemStats::GetDefencePerc(Info.Armor);
+		FText FormatString = FText::FromString("All damage taken reduced by {0}%.");
+		FText FormattedDescription = FText::Format(FormatString,FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Strength)
+	{
+		TooltipName = FText::FromString("Strength");
+		TooltipValue = FText::AsNumber(Info.Strength);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
+
+		float Percentage = ItemStats::GetStrengthPerc(Info.Strength);
+		FText FormatString = FText::FromString("Increases base attack and ability damage {0}%.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Agility)
+	{
+		TooltipName = FText::FromString("Agility");
+		TooltipValue = FText::AsNumber(Info.Dexterity);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
+
+		float Percentage = ItemStats::GetCritPerc(Info.Dexterity);
+		float PercentageDamage = ItemStats::GetCritDmgPerc(Info.Dexterity);
+		FText FormatString = FText::FromString("Increases critical chance by {0}% and critical damage by {1}x.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage), FText::AsNumber(PercentageDamage));
+		Descriptions.Add(FormattedDescription);
+
+		Percentage = ItemStats::GetSpeedPerc(Info.Dexterity);
+		FormatString = FText::FromString("Increases movement speed by {0}%.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Intelligence)
+	{
+		TooltipName = FText::FromString("Intelligence");
+		TooltipValue = FText::AsNumber(Info.Intelligence);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
+
+		int Num = ItemStats::GetManaPoolIncrease(Info.Intelligence);
+		FText FormatString = FText::FromString("Increases maximum mana pool by {0}.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
+		Descriptions.Add(FormattedDescription);
+
+		float Percentage = ItemStats::GetAbilityCostPerc(Info.Intelligence);
+		FormatString = FText::FromString("Reduces all ability costs by {0}%.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Ability1)
+	{
+		TooltipName = FText::FromString(Info.Ability1);
+		Descriptions.Add(FText::FromString(Info.Ability1Description1));
+	}
+	else if (HoveredBorder == B_Ability2)
+	{
+		TooltipName = FText::FromString(Info.Ability2);
+		Descriptions.Add(FText::FromString(Info.Ability2Description1));
+	}
+	else if (HoveredBorder == B_Ability3)
+	{
+		TooltipName = FText::FromString(Info.Ability3);
+		Descriptions.Add(FText::FromString(Info.Ability3Description1));
+	}
+	else if (HoveredBorder == B_Ability4)
+	{
+		TooltipName = FText::FromString(Info.Ability4);
+		Descriptions.Add(FText::FromString(Info.Ability4Description1));
+	}
+
+	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
+
+	const FVector2D Offset(20.0f, 0);
+	ViewportPosition += Offset;
+
+	StandardTooltip->Setup(TooltipName, TooltipValue, Descriptions);
+	StandardTooltip->SetPositionInViewport(ViewportPosition, false);
+}
+
+void UJoinUserWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+
+	if (StandardTooltip)
+	{
+		StandardTooltip->RemoveFromParent();
+		StandardTooltip = nullptr;
+	}
+
+	CurrentHoveredBorder = nullptr;
 }
 
 void UJoinUserWidget::SetButtonColor(UButton* Button, const FLinearColor& Color)
@@ -77,6 +248,7 @@ void UJoinUserWidget::OnNemesisClicked() { SetSelectedClass("Nemesis"); }
 
 void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
+	CurrentClass = ClassKey;
 	FLinearColor Gold(1.f, 0.5f, 0, 1.f);
 	FLinearColor Cyan(0.074f, 0.25f, 0.434f, 1.f);
 	FLinearColor DarkCyan(0, 0.021f, 0.02f, 1.f);
