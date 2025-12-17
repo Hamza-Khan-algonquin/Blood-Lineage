@@ -29,18 +29,7 @@ void UJoinUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (StartButton)
-	{
-		if (const UWorld* World = GetWorld())
-		{
-			//Only show for the listen server / host
-			bool bIsHost = World->GetAuthGameMode() != nullptr;
-			StartButton->SetVisibility(bIsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-		}
-
-		StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
-	}
-
+	if (StartButton) StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
 	if (FindGames) FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
 	if (SessionTileView) SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
 	if (BackButton) BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
@@ -50,6 +39,28 @@ void UJoinUserWidget::NativeConstruct()
 	if (AphroditeButton) AphroditeButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAphroditeClicked);
 	if (NemesisButton) NemesisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnNemesisClicked);
 	SetSelectedClass("Ares");
+
+	if (const UWorld* World = GetWorld())
+	{
+		//If not host then collapse these elements
+		bool IsHost = World->GetAuthGameMode() != nullptr;
+		StartButton->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_Start->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+
+	DifficultyMap.Add("Boar", { BoarBorder, B_Boar, B_BoarSection });
+	DifficultyMap.Add("Bull", { BullBorder, B_Bull, B_BullSection });
+	DifficultyMap.Add("Lion", { LionBorder, B_Lion, B_LionSection });
+	DifficultyMap.Add("Hydra", { HydraBorder, B_Hydra, B_HydraSection });
+	DifficultyMap.Add("Cerberus", { CerberusBorder, B_Cerberus, B_CerberusSection });
+
+	if (B_Boar)     B_Boar->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Boar);
+	if (B_Bull)     B_Bull->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Bull);
+	if (B_Lion)     B_Lion->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Lion);
+	if (B_Hydra)    B_Hydra->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Hydra);
+	if (B_Cerberus) B_Cerberus->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Cerberus);
+
+	SetSelectedDifficulty("Boar");
 }
 
 FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -245,6 +256,94 @@ void UJoinUserWidget::SetImageColor(UImage* Image, const FLinearColor& Color)
 	Image->SetColorAndOpacity(Color);
 }
 
+void UJoinUserWidget::SetBorderBrushColor(UBorder* Border, const FLinearColor& Color)
+{
+	if (Border)
+	{
+		Border->SetBrushColor(Color);
+	}
+}
+
+void UJoinUserWidget::SetButtonTint(UButton* Button, const FLinearColor& Color)
+{
+	if (!Button) return;
+
+	FButtonStyle Style = Button->GetStyle();
+	Style.Normal.TintColor = FSlateColor(Color);
+	Style.Hovered.TintColor = FSlateColor(Color);
+	Style.Pressed.TintColor = FSlateColor(Color);
+	Button->SetStyle(Style);
+}
+
+void UJoinUserWidget::SetButtonOutlineColor(UButton* Button, const FLinearColor& Color)
+{
+	if (!Button) return;
+
+	FButtonStyle Style = Button->GetStyle();
+
+	Style.Normal.OutlineSettings.Color = Color;
+	Style.Hovered.OutlineSettings.Color = Color;
+	Style.Pressed.OutlineSettings.Color = Color;
+	Style.Disabled.OutlineSettings.Color = Color;
+
+	Button->SetStyle(Style);
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Boar()
+{
+	SetSelectedDifficulty("Boar");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Bull()
+{
+	SetSelectedDifficulty("Bull");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Lion()
+{
+	SetSelectedDifficulty("Lion");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Hydra()
+{
+	SetSelectedDifficulty("Hydra");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Cerberus()
+{
+	SetSelectedDifficulty("Cerberus");
+}
+
+void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
+{
+	CurrentDifficulty = DifficultyKey;
+
+	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
+	const FLinearColor Black(0.f, 0.f, 0.f, 1.f);
+	const FLinearColor SectionBrush_Unselected(0.292f, 0.23f, 0.145f, 1.f);
+	const FLinearColor SectionOutline_Unselected(0.429f, 0.338f, 0.214f, 1.f);
+	const FLinearColor OuterBrush_Unselected(0.062f, 0.049f, 0.031f, 1.f);
+	const FLinearColor ButtonTint_Unselected(1.f, 1.f, 1.f, 0.6f);
+
+	//Reset
+	for (auto& Pair : DifficultyMap)
+	{
+		const FDifficultyWidgets& Widgets = Pair.Value;
+		if (!Widgets.Button || !Widgets.OuterBorder || !Widgets.SectionBorder) continue;
+
+		SetBorderColor(Widgets.SectionBorder, SectionOutline_Unselected);
+		SetBorderBrushColor(Widgets.SectionBorder, SectionBrush_Unselected);
+		SetButtonTint(Widgets.Button, ButtonTint_Unselected);
+	}
+
+	if (FDifficultyWidgets* Selected = DifficultyMap.Find(DifficultyKey))
+	{
+		SetBorderColor(Selected->SectionBorder, Gold);
+		SetButtonTint(Selected->Button, Gold);
+	}
+}
+
+
 void UJoinUserWidget::OnAresClicked() { SetSelectedClass("Ares"); }
 void UJoinUserWidget::OnArtemisClicked() { SetSelectedClass("Artemis"); }
 void UJoinUserWidget::OnAphroditeClicked() { SetSelectedClass("Aphrodite"); }
@@ -254,7 +353,7 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
 	CurrentClass = ClassKey;
 	FLinearColor Gold(1.f, 0.5f, 0, 1.f);
-	FLinearColor Cyan(0, 0.35, 0.25, 1.f);
+	FLinearColor Cyan(0, 1, 0.714, 1.f);
 	FLinearColor Silver(0.5, 0.5, 0.5, 1.f);
 	FLinearColor Black(0,0,0,1);
 	FLinearColor White(1, 1, 1, 1);
@@ -264,10 +363,10 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	SetButtonColor(ArtemisButton, Cyan);
 	SetButtonColor(AphroditeButton, Cyan);
 	SetButtonColor(NemesisButton, Cyan);
-	SetBorderColor(B_Ares, Silver);
-	SetBorderColor(B_Artemis, Silver);
-	SetBorderColor(B_Aphrodite, Silver);
-	SetBorderColor(B_Nemesis, Silver);
+	SetBorderColor(B_Ares, Black);
+	SetBorderColor(B_Artemis, Black);
+	SetBorderColor(B_Aphrodite, Black);
+	SetBorderColor(B_Nemesis, Black);
 	SetImageColor(I_Ares, White);
 	SetImageColor(I_Artemis, White);
 	SetImageColor(I_Aphrodite, White);
@@ -395,8 +494,7 @@ void UJoinUserWidget::JoinGameButtonClicked()
 void UJoinUserWidget::StartGameButtonClicked()
 {
 	APlayerController* PC = GetOwningPlayer();
-	if (!PC)
-		return;
+	if (!PC) return;
 
 	if (PC->HasAuthority())
 	{
@@ -466,8 +564,8 @@ void UJoinUserWidget::ShowJoinButton(bool IsEnabled)
 		else
 		{
 			JoinButton->SetIsEnabled(false);
-			JoinButton->SetVisibility(ESlateVisibility::Collapsed);
-			JoinBorder->SetVisibility(ESlateVisibility::Collapsed);
+			JoinButton->SetVisibility(ESlateVisibility::Hidden);
+			JoinBorder->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }

@@ -240,26 +240,40 @@ void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
 
 void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-    if (TextRenderWidget.IsValid())
+    if (!TextRenderWidget.IsValid())
+        return;
+
+    bool AddedAnyResults = false;
+
+    if (bWasSuccessful && SessionSearch.IsValid())
     {
-        if (bWasSuccessful && SessionSearch.IsValid() && SessionSearch->SearchResults.Num() > 0)
-        {
-            for (const FOnlineSessionSearchResult& R : SessionSearch->SearchResults)
-            {
-                FString MapName = R.Session.SessionSettings.Settings.Contains("MAPNAME")
-                    ? *R.Session.SessionSettings.Settings.Find("MAPNAME")->Data.ToString()
-                    : TEXT("Unknown Map");
+        TSharedPtr<IOnlineSession> Session = SessionInterface.Pin();
+        if (!Session.IsValid()) return;
 
-                int MaxPlayers = R.Session.SessionSettings.NumPublicConnections;
-                int CurrentPlayers = MaxPlayers - R.Session.NumOpenPublicConnections;
+        FNamedOnlineSession* LocalSession = Session->GetNamedSession(NAME_GameSession);
 
-                TextRenderWidget->OnFindSessionsComplete(MapName, CurrentPlayers);
-            }
-        }
-        else
+        for (const FOnlineSessionSearchResult& R : SessionSearch->SearchResults)
         {
-            TextRenderWidget->EnableRefresh();
+            //Skip the current session
+            if (LocalSession && R.Session.GetSessionIdStr() == LocalSession->GetSessionIdStr()) continue;
+
+            AddedAnyResults = true;
+
+            FString MapName = R.Session.SessionSettings.Settings.Contains("MAPNAME")
+                ? *R.Session.SessionSettings.Settings.Find("MAPNAME")->Data.ToString()
+                : TEXT("Unknown Map");
+
+            int MaxPlayers = R.Session.SessionSettings.NumPublicConnections;
+            int CurrentPlayers = MaxPlayers - R.Session.NumOpenPublicConnections;
+
+            TextRenderWidget->OnFindSessionsComplete(MapName, CurrentPlayers);
         }
+    }
+
+    //If nothing was added
+    if (!AddedAnyResults)
+    {
+        TextRenderWidget->EnableRefresh();
     }
 
     //Unbind delegate
@@ -268,6 +282,7 @@ void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         Sess->OnFindSessionsCompleteDelegates.RemoveAll(this);
     }
 }
+
 
 void URelicRunnersGameInstance::LeaveSession(bool bQueueHost)
 {

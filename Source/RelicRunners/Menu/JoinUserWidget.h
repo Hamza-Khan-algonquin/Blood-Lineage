@@ -27,6 +27,21 @@ struct FStandardTooltipData
 	FLinearColor IconColor = FLinearColor::White;
 };
 
+USTRUCT()
+struct FDifficultyWidgets
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	class UBorder* OuterBorder = nullptr;
+
+	UPROPERTY()
+	class UButton* Button = nullptr;
+
+	UPROPERTY()
+	class UBorder* SectionBorder = nullptr;   
+};
+
 
 class FOnlineSessionSearchResult;
 
@@ -42,11 +57,40 @@ public:
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 	class UBorder* CurrentHoveredBorder;
 
+	UPROPERTY()
+	TMap<FName, FDifficultyWidgets> DifficultyMap;
+
+	UPROPERTY(BlueprintReadOnly)
+	FName CurrentDifficulty;
+
+	UFUNCTION()
+	void OnDifficultyClicked_Boar();
+
+	UFUNCTION()
+	void OnDifficultyClicked_Bull();
+
+	UFUNCTION()
+	void OnDifficultyClicked_Lion();
+
+	UFUNCTION()
+	void OnDifficultyClicked_Hydra();
+
+	UFUNCTION()
+	void OnDifficultyClicked_Cerberus();
+
 	void SetButtonColor(class UButton* Button, const FLinearColor& Color);
 
 	void SetBorderColor(class UBorder* Border, const FLinearColor& Color);
 
 	void SetImageColor(class UImage* Image, const FLinearColor& Color);
+
+	void SetBorderBrushColor(UBorder* Border, const FLinearColor& Color);
+
+	void SetButtonTint(UButton* Button, const FLinearColor& Color);
+
+	void SetButtonOutlineColor(UButton* Button, const FLinearColor& Color);
+
+	void SetSelectedDifficulty(FName DifficultyKey);
 
 	UFUNCTION()
 	void OnAresClicked();
@@ -61,6 +105,55 @@ public:
 
 	void SetSelectedClass(FName ClassKey);
 	void HandleEntryGenerated(UUserWidget& EntryWidget);
+
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* BoarBorder;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_Boar;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_BoarSection;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* BullBorder;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_Bull;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_BullSection;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* LionBorder;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_Lion;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LionSection;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* HydraBorder;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_Hydra;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_HydraSection;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* CerberusBorder;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_Cerberus;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_CerberusSection;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Start = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_Ability1 = nullptr;
