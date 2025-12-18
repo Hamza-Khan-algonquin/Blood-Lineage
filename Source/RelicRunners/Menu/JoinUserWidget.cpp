@@ -46,6 +46,14 @@ void UJoinUserWidget::NativeConstruct()
 		bool IsHost = World->GetAuthGameMode() != nullptr;
 		StartButton->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		B_Start->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_BoarSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_BullSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_LionSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_HydraSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_CerberusSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+
+		//Client Only
+		B_CurrentSection->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 
 	DifficultyMap.Add("Boar", { BoarBorder, B_Boar, B_BoarSection });

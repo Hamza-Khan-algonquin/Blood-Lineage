@@ -206,35 +206,35 @@ public:
 
     static float GetSpeedPerc(int Value)
     {
-        float Percent = Value / 7;
+        float Percent = Value / 4.8;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritPerc(int Value)
     {
-        float Percent = Value / 6;
+        float Percent = Value / 2.3;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritDmgPerc(int Value)
     {
-        float Percent = 1.5;
+        float Percent = 1.5 + (Value / 100);
 
         return RoundToDecimal(Percent, 1);
     }
 
     static int GetManaPoolIncrease(int Value)
     {
-        int Integer = Value / 2.4;
+        int Integer = Value / 2.1;
 
         return Integer;
     }
 
     static float GetAbilityCostPerc(int Value)
     {
-        float Percent = Value / 3;
+        float Percent = Value / 2.7;
 
         return RoundToDecimal(Percent, 1);
     }

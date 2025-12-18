@@ -106,6 +106,8 @@ public:
 	void SetSelectedClass(FName ClassKey);
 	void HandleEntryGenerated(UUserWidget& EntryWidget);
 
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_CurrentSection;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* BoarBorder;
