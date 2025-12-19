@@ -768,10 +768,8 @@ void ARelicRunnersCharacter::TraceForInteractables()
 	for (TActorIterator<AItemActor> It(GetWorld()); It; ++It)
 	{
 		AItemActor* Item = *It;
-		if (!Item || !Item->Implements<UInteractInterface>())
-		{
-			continue;
-		}
+
+		if (!Item || !Item->Implements<UInteractInterface>()) continue;
 
 		FVector ToItem = Item->GetActorLocation() - PlayerLocation;
 		float Distance = ToItem.Size();
@@ -782,6 +780,22 @@ void ARelicRunnersCharacter::TraceForInteractables()
 		bool bShouldShow = bWithinDistance && bFacingItem;
 		IInteractInterface::Execute_ShowTooltip(Item, bShouldShow);
 	}
+
+	/*for (TActorIterator<AVendor> It(GetWorld()); It; ++It)
+	{
+		AVendor* Vendor = *It;
+
+		if (!Vendor || !Vendor->Implements<UInteractInterface>()) continue;
+
+		FVector ToVendor = Vendor->GetActorLocation() - PlayerLocation;
+		float Distance = ToVendor.Size();
+
+		bool bWithinDistance = Distance <= MaxDistance;
+		bool bFacingItem = FVector::DotProduct(PlayerForward, ToVendor.GetSafeNormal()) > MinFacingDot;
+
+		bool bShouldShow = bWithinDistance && bFacingItem;
+		IInteractInterface::Execute_ShowTooltip(Vendor, bShouldShow);
+	}*/
 }
 
 void ARelicRunnersCharacter::SetPlayerMaxHealth(int value)
