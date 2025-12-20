@@ -25,6 +25,8 @@ public:
 	UFUNCTION()
 	void OnRep_LinkedPlayerState();
 
+	void ApplyPlayerState();
+
 	void OnPlayerClassChanged(FName NewClass);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
