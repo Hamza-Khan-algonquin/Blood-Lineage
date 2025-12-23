@@ -124,7 +124,7 @@ public:
         }
         else if (WeaponTypes.Contains(ItemData.ItemType))
         {
-
+            //Currently only generated in character class files
         }
         else if (MixedTypes.Contains(ItemData.ItemType))
         {
@@ -147,6 +147,96 @@ public:
         }
 
         return ItemData;
+    }
+
+    static UTexture2D* LoadIcon(const FString& IconName)
+    {
+        FString Path = FString::Printf(TEXT("Texture2D'/Game/ThirdPerson/Icons/%s.%s'"), *IconName, *IconName);
+
+        UTexture2D* LoadedTexture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *Path));
+
+        if (!LoadedTexture)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Failed to load icon texture at path: %s"), *Path);
+        }
+
+        return LoadedTexture;
+    }
+
+    static FLinearColor GetIconColor(FString StatName)
+    {
+        FLinearColor Color;
+
+        //Basic Stats
+        if (StatName == "Health") Color = FLinearColor(1, 0, 0.02f, 1);
+        if (StatName == "Defence") Color = FLinearColor(0, 1, 0.026f, 1);
+        if (StatName == "Strength") Color = FLinearColor(0.46f, 0, 1, 1);
+        if (StatName == "Agility") Color = FLinearColor(1, 0.855f, 0, 1);
+        if (StatName == "Intelligence") Color = FLinearColor(0, 0.723f, 1, 1);
+
+        //Meta Stats
+        if (StatName == "Luck") Color = FLinearColor(0, 0.35f, 0.237f, 1);
+
+        //Enemy Stats
+        if (StatName == "EnemyHealth") Color = FLinearColor(0.776f, 0.061f, 0, 1);
+        if (StatName == "EnemyDamage") Color = FLinearColor(1, 1, 1, 1);
+
+        return Color;
+    }
+
+    static float RoundToDecimal(float Value, int Decimals)
+    {
+        float Multiplier = FMath::Pow(10.0f, Decimals); 
+        return FMath::RoundToFloat(Value * Multiplier) / Multiplier;
+    }
+
+    static float GetDefencePerc(int Value)
+    {
+        float Percent = Value / 2.5;
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static float GetStrengthPerc(int Value)
+    {
+        float Percent = Value / 1.75;
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static float GetSpeedPerc(int Value)
+    {
+        float Percent = Value / 4.8;
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static float GetCritPerc(int Value)
+    {
+        float Percent = Value / 2.3;
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static float GetCritDmgPerc(int Value)
+    {
+        float Percent = 1.5 + (Value / 100);
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static int GetManaPoolIncrease(int Value)
+    {
+        int Integer = Value / 2.1;
+
+        return Integer;
+    }
+
+    static float GetAbilityCostPerc(int Value)
+    {
+        float Percent = Value / 2.7;
+
+        return RoundToDecimal(Percent, 1);
     }
 
     static FItemData CreateRandomItemData(UItemMeshData* MeshData)

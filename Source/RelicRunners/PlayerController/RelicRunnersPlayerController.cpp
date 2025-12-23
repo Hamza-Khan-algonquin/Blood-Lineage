@@ -17,28 +17,49 @@
 #include "RelicRunnersPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
-#include "RelicRunners/RelicRunnersCharacter.h"
-#include "RelicRunners/Inventory/Inventory.h"
 #include "InputActionValue.h"
-#include "RelicRunners/Item/ItemActor.h"
-#include "RelicRunners/LevelGeneration/CapturableFlag.h"
 #include "Net/UnrealNetwork.h"
-#include "RelicRunners/PlayerPreview/PlayerPreview.h"
+#include "Kismet/GameplayStatics.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
+
+#include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
-#include "RelicRunners/Inventory/InventoryComponent.h"
-#include "RelicRunners/AbilitySystem/AbilitySelection.h"
-#include <RelicRunners/Item/ItemStats.h>
-#include <Kismet/GameplayStatics.h>
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+
+#include "RelicRunners/LevelGeneration/CapturableFlag.h"
+
+#include "RelicRunners/Item/ItemActor.h"
+#include "RelicRunners/Item/ItemStats.h"
+
+#include "RelicRunners/PlayerPreview/PlayerPreview.h"
+
+#include "RelicRunners/Inventory/InventoryComponent.h"
+#include "RelicRunners/Inventory/InventoryItemOptions.h"
+#include "RelicRunners/Inventory/InventorySortingOptions.h"
+#include "RelicRunners/Inventory/Inventory.h"
+#include "RelicRunners/Vendor/Vendor.h"
+
+#include "RelicRunners/AbilitySystem/AbilitySelection.h"
+
 #include "RelicRunners/Menu/MainMenuWidget.h"
 #include "RelicRunners/Menu/JoinUserWidget.h"
 #include "RelicRunners/Menu/Keybinds.h"
+#include "RelicRunners/Menu/PauseMenu.h"
+#include "RelicRunners/Menu/PauseMenuWidget.h"
+#include "RelicRunners/Menu/LoadingScreen.h"
+#include "RelicRunners/PlayerHUD/PlayerHUD.h"
+#include "RelicRunners/LevelUpHUD/LevelUpHUD.h"
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
+	static ConstructorHelpers::FClassFinder<ULoadingScreen> BP_LoadingScreen(TEXT("/Game/Blueprints/Menu/BP_LoadingScreen"));
 
+	if (BP_LoadingScreen.Class)
+	{
+		LoadingScreenClass = BP_LoadingScreen.Class;
+		UE_LOG(LogTemp, Warning, TEXT("Character Assigned Loading Screen"));
+	}
 }
 
 void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -49,21 +70,36 @@ void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeP
 	DOREPLIFETIME(ARelicRunnersPlayerController, LobbyPreviewInstance);
 }
 
+void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
+{
+	//This runs on server
+	Super::OnPossess(aPawn);
+
+	PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
+
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		if (!PS->HasReceivedStarterItems)
+		{
+			PS->GiveStarterItems();
+		}
+
+		UpdateCharacterVisuals();
+	}
+}
+
 void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 {
 	Super::AcknowledgePossession(aPawn);
 
 	if (IsLocalController())
 	{
-		UE_LOG(LogTemp, Log, TEXT("AcknowledgePossession: %s"), *GetNameSafe(aPawn));
+		PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
+		RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+
+		InitLocalUI();
+		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 	}
-}
-
-void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
-{
-	Super::OnPossess(aPawn);
-
-	PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 }
 
 void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
@@ -79,12 +115,6 @@ void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 	}
 }
 
-void ARelicRunnersPlayerController::ClientTravelToGame_Implementation()
-{
-	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	GI->ClientTravelToSession(0, NAME_GameSession);
-}
-
 void ARelicRunnersPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
@@ -98,18 +128,142 @@ void ARelicRunnersPlayerController::OnRep_Pawn()
 
 void ARelicRunnersPlayerController::OnRep_PlayerPreview()
 {
-	if (IsLocalController())
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerPreview. Instance Valid: %s"), PlayerPreviewInstance ? *PlayerPreviewInstance->GetName() : TEXT("FALSE"));
+	if (PlayerPreviewInstance)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerPreviewInstance: Preview instance replicated"));
+		UE_LOG(LogTemp, Warning, TEXT("Client: Preview Actor Received! Setting up UI..."));
+
+		TrySetupPreviewRenderTarget();
+	}
+}
+
+void ARelicRunnersPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+}
+
+
+void ARelicRunnersPlayerController::PostSeamlessTravel()
+{
+	Super::PostSeamlessTravel();
+
+	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+}
+
+void ARelicRunnersPlayerController::SyncUI()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent())
+	{
+		RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+		return;
+	}
+
+	if (IsLocalController() && !PlayerPreviewInstance && PlayerPreviewClass)
+	{
+		int UniqueID = RelicPlayerState->GetPlayerId();
+		FVector SpawnLoc = FVector(-50000.0f - (UniqueID * 10000.0f), -50000.0f, -2000.0f);
+
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		PlayerPreviewInstance = GetWorld()->SpawnActor<APlayerPreview>(PlayerPreviewClass, SpawnLoc, FRotator(0, 180, 0), Params);
 
 		if (PlayerPreviewInstance)
 		{
-			SetupPreviewRenderTarget(PlayerPreviewInstance);
+			UE_LOG(LogTemp, Warning, TEXT("Local Client: Spawned Preview Actor at %s"), *SpawnLoc.ToString());
+			TrySetupPreviewRenderTarget();
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerPreviewInstance: Still null"));
-		}
+	}
+	if (PlayerPreviewInstance)
+	{
+		//Ensures ui and meshes are refreshed
+		UpdatePreviewWithEquippedItems();
+		UpdateCharacterVisuals(); 
+
+		Inventory->RefreshEquippedUI();
+		RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
+		UpdateHUDAll();
+
+		GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
+		UE_LOG(LogTemp, Warning, TEXT("Local Client Sync Complete: Actor spawned and Gear equipped."));
+	}
+}
+
+void ARelicRunnersPlayerController::TryBindUI()
+{
+	if (!RelicPlayerState) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+
+	if (RelicPlayerState && RelicPlayerState->GetInventoryComponent() && Inventory && PlayerHUD)
+	{
+		UInventoryComponent* Inv = RelicPlayerState->GetInventoryComponent();
+		Inventory->SetInventoryComponent(Inv);
+
+		Inv->OnEquipmentChanged.RemoveDynamic(this, &ARelicRunnersPlayerController::UpdateCharacterVisuals);
+		Inv->OnEquipmentChanged.AddDynamic(this, &ARelicRunnersPlayerController::UpdateCharacterVisuals);
+
+		Inv->OnEquipmentChanged.RemoveDynamic(this, &ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems);
+		Inv->OnEquipmentChanged.AddDynamic(this, &ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems);
+
+		Inventory->RefreshEquippedUI();
+		Inv->UpdateTotalEquippedStats(GetPawn());
+		UpdateHUDAll();
+
+		UE_LOG(LogTemp, Warning, TEXT("[UI] Post-Travel: Forced manual UI refresh."));
+		GetWorldTimerManager().ClearTimer(UIInitialSyncTimerHandle);
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(UIInitialSyncTimerHandle, this, &ARelicRunnersPlayerController::TryBindUI, 0.1f, true);
+	}
+}
+
+
+void ARelicRunnersPlayerController::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
+{
+	if (IsLocalController() && PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDHealth(CurrentHealth, MaxHealth);
+	}
+}
+
+void ARelicRunnersPlayerController::UpdateHUDResource(float CurrentResource, float MaxResource)
+{
+	if (IsLocalController() && PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDResource(CurrentResource, MaxResource);
+	}
+}
+
+void ARelicRunnersPlayerController::UpdateHUDXP(int Level, float CurrentXP, float MaxXP)
+{
+	if (IsLocalController() && PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDXP(Level, CurrentXP, MaxXP);
+	}
+}
+
+void ARelicRunnersPlayerController::UpdateHUDAbilityPoints(int Points)
+{
+	if (IsLocalController() && PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDAbilityPoints(Points);
+	}
+}
+
+void ARelicRunnersPlayerController::UpdateHUDAll()
+{
+	if (!IsLocalController() || !PlayerHUD || !RelicPlayerState) return;
+
+	PlayerHUD->UpdateHUDHealth(RelicPlayerState->GetPlayerHealth(), RelicPlayerState->GetPlayerMaxHealth());
+	PlayerHUD->UpdateHUDResource(RelicPlayerState->GetPlayerResource(), RelicPlayerState->GetPlayerMaxResource());
+	PlayerHUD->UpdateHUDXP(RelicPlayerState->GetPlayerLevel(), RelicPlayerState->GetPlayerXP(), RelicPlayerState->GetPlayerXPToLevel());
+	PlayerHUD->UpdateHUDAbilityPoints(RelicPlayerState->GetPlayerAbilityPoints());
+	
+	if (Inventory)
+	{
+		Inventory->RefreshInventoryUI();
 	}
 }
 
@@ -147,6 +301,37 @@ void ARelicRunnersPlayerController::Client_LeaveSession_Implementation()
 	}
 }
 
+void ARelicRunnersPlayerController::HandleLevelUpVisuals()
+{
+	if (!IsLocalController()) return;
+
+	if (LevelUpHUDClass)
+	{
+		ULevelUpHUD* LevelUpWidget = CreateWidget<ULevelUpHUD>(this, LevelUpHUDClass);
+		if (LevelUpWidget)
+		{
+			LevelUpWidget->AddToViewport();
+		}
+	}
+
+	if (Inventory) Inventory->RefreshEquippedUI();
+}
+
+void ARelicRunnersPlayerController::Client_UpdateVendorUI_Implementation(AVendor* Vendor)
+{
+	if (Inventory && Vendor) Inventory->DisplaySelectedVendorItems(Vendor->GetStock(), Vendor);
+}
+
+void ARelicRunnersPlayerController::UpdateCharacterVisuals()
+{
+	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
+
+	if (!Char || !RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+	const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
+	Char->SyncEquippedVisuals(EquippedEntries);
+}
+
 void ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems()
 {
 	if (!PlayerPreviewInstance || !GetPawn()) return;
@@ -157,7 +342,8 @@ void ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems()
 	//Clear all visuals on preview first
 	PlayerPreviewInstance->ClearAllPreviewMeshes();
 
-	const TArray<FEquippedItemEntry>& EquippedEntries = Char->GetInventoryComponent()->EquippedItems;
+	if(!RelicPlayerState) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+	const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
 
 	for (const FEquippedItemEntry& Entry : EquippedEntries)
 	{
@@ -199,44 +385,17 @@ void ARelicRunnersPlayerController::UpdatePreviewItemVisual(UObject* MeshAsset, 
 
 void ARelicRunnersPlayerController::Server_RequestPickup_Implementation(AItemActor* Item)
 {
-	if (Item)
-	{
-		Item->HandlePickup(Cast<ARelicRunnersCharacter>(GetPawn()));
-	}
+	if (Item) Item->HandlePickup(Cast<ARelicRunnersCharacter>(GetPawn()));
 }
 
 void ARelicRunnersPlayerController::Server_RequestFlagActivation_Implementation(ACapturableFlag* Flag)
 {
-	if (Flag)
-	{
-		Flag->HandleInteracted(Cast<ARelicRunnersCharacter>(GetPawn()));
-	}
+	if (Flag) Flag->HandleInteracted(Cast<ARelicRunnersCharacter>(GetPawn()));
 }
 
 void ARelicRunnersPlayerController::OnUnPossess()
 {
-	APawn* MyPawn = Cast<APawn>(GetOwner());
-
 	Super::OnUnPossess();
-}
-
-void ARelicRunnersPlayerController::Client_UpdateLobbyUI_Implementation()
-{
-	TryUpdateLobbyUI(0);
-}
-
-void ARelicRunnersPlayerController::TryUpdateLobbyUI(int Attempt)
-{
-	int MaxAttempts = 4;
-	if (Attempt >= MaxAttempts) return;
-
-	if (LobbyWidget)
-	{
-		LobbyWidget->UpdateFindGamesButtonVisibility();
-	}
-
-	FTimerHandle RetryHandle;
-	GetWorld()->GetTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateUObject(this, &ARelicRunnersPlayerController::TryUpdateLobbyUI, Attempt + 1), 0.3f, false);
 }
 
 void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview)
@@ -254,8 +413,8 @@ void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Pre
 		return;
 	}
 
-	// If inventory isn't ready, try again shortly
-	if (!Char->Inventory)
+	//If inventory isn't ready, try again shortly
+	if (!Inventory)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SetupPreviewRenderTarget] Inventory is null. Retrying in 0.2s..."));
 
@@ -267,11 +426,11 @@ void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Pre
 		return;
 	}
 
-	// Assign the render target image to the inventory UI
+	//Assign the render target image to the inventory UI
 	UTextureRenderTarget2D* RenderTarget = Preview->CreateRenderTarget();
 	if (RenderTarget)
 	{
-		Char->Inventory->SetPreviewActorImage(RenderTarget);
+		Inventory->SetPreviewActorImage(RenderTarget);
 		UE_LOG(LogTemp, Warning, TEXT("[SetupPreviewRenderTarget] Applied render target to UI."));
 	}
 	else
@@ -282,17 +441,199 @@ void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Pre
 
 void ARelicRunnersPlayerController::TrySetupPreviewRenderTarget()
 {
-	if (!IsLocalController())
-		return;
+	if (!IsLocalController()) return;
 
-	if (!PlayerPreviewInstance)
+	if (!PlayerPreviewInstance || !Inventory)
 	{
-		// Retry in a moment if not replicated yet
-		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::TrySetupPreviewRenderTarget);
+		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::TrySetupPreviewRenderTarget);
 		return;
 	}
 
 	SetupPreviewRenderTarget(PlayerPreviewInstance);
+}
+
+void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
+{
+	if (!UIWidget) return;
+
+	bool IsVisible = UIWidget->IsVisible();
+	ESlateVisibility Visibility = IsVisible ? ESlateVisibility::Hidden : ESlateVisibility::Visible;
+	bool Enable = !IsVisible;
+
+	UIWidget->SetVisibility(Visibility);
+	UIWidget->SetIsEnabled(Enable);
+	if (Enable)
+	{
+		FInputModeGameAndUI InputMode;
+		SetInputMode(InputMode);
+	}
+	else
+	{
+		FInputModeGameOnly InputMode;
+		SetInputMode(InputMode);
+	}
+	SetShowMouseCursor(Enable);
+
+	if (UIWidget == Inventory)
+	{
+		UInventoryItemOptions::CloseAnyOpenPopup();
+		UInventorySortingOptions::CloseAnyOpenPopup();
+	}
+
+	if (UIWidget == PauseMenuWidget)
+	{
+		UPauseMenuWidget* pauseMenu = Cast<UPauseMenuWidget>(UIWidget);
+
+		pauseMenu->ShowPauseMenu();
+	}
+}
+
+void ARelicRunnersPlayerController::InventoryUI()
+{
+	if (!Inventory) return;
+	RemoveOtherUI("Inventory");
+	ToggleUI(Inventory);
+	FSlateApplication::Get().CancelDragDrop();
+	Inventory->ToggleVendorUI(false);
+}
+
+void ARelicRunnersPlayerController::PauseUI()
+{
+	//if (!PauseMenu) return;
+	//RemoveOtherUI("Pause");
+	//ToggleUI(PauseMenu);
+
+	if (!PauseMenuWidget) return;
+	RemoveOtherUI("Pause");
+	ToggleUI(PauseMenuWidget);
+}
+
+void ARelicRunnersPlayerController::AbilitySystemUI()
+{
+	if (!AbilitySelection || !RelicPlayerState || RelicPlayerState->GetPlayerAbilityPoints() < 1)
+	{
+		return;
+	}
+
+	RemoveOtherUI("Ability");
+	ToggleUI(AbilitySelection);
+}
+
+void ARelicRunnersPlayerController::LoadingScreenUI()
+{
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
+
+	LoadingScreen->RemoveFromParent();
+}
+
+void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget, bool bClosePopups = false)
+{
+	if (UIWidget->IsVisible())
+	{
+		UIWidget->SetVisibility(ESlateVisibility::Hidden);
+		UIWidget->SetIsEnabled(false);
+		SetInputMode(FInputModeGameOnly());
+		SetShowMouseCursor(false);
+
+		if (bClosePopups && UIWidget == Inventory)
+		{
+			UInventoryItemOptions::CloseAnyOpenPopup();
+			UInventorySortingOptions::CloseAnyOpenPopup();
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::RemoveOtherUI(FString UI)
+{
+	if (UI != "Ability") HideUI(AbilitySelection);
+	if (UI != "Inventory") HideUI(Inventory, true);
+	if (UI != "Pause") HideUI(PauseMenu);
+	if (UI != "Pause") HideUI(PauseMenuWidget);
+}
+
+void ARelicRunnersPlayerController::InitLocalUI()
+{
+	if (!PlayerHUD && PlayerHUDClass)
+	{
+		PlayerHUD = CreateWidget<UPlayerHUD>(this, PlayerHUDClass);
+		if (PlayerHUD)
+		{
+			PlayerHUD->AddToViewport();
+		}
+	}
+
+	if (!Inventory && InventoryClass)
+	{
+		Inventory = CreateWidget<UInventory>(this, InventoryClass);
+		if (Inventory)
+		{
+			Inventory->AddToViewport();
+			Inventory->SetVisibility(ESlateVisibility::Hidden);
+			Inventory->SetIsEnabled(false);
+		}
+	}
+
+	if (!PauseMenu && PauseMenuClass)
+	{
+		PauseMenu = CreateWidget<UPauseMenu>(this, PauseMenuClass);
+		if (PauseMenu)
+		{
+			PauseMenu->AddToViewport();
+			PauseMenu->SetVisibility(ESlateVisibility::Hidden);
+			PauseMenu->SetIsEnabled(false);
+		}
+	}
+
+	if (!PauseMenuWidget && PauseMenuWidgetClass)
+	{
+		PauseMenuWidget = CreateWidget<UPauseMenuWidget>(this, PauseMenuWidgetClass);
+		if (PauseMenuWidget)
+		{
+			PauseMenuWidget->AddToViewport();
+			PauseMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+			PauseMenuWidget->SetIsEnabled(false);
+		}
+	}
+
+	if (!AbilitySelection && AbilitySelectionClass)
+	{
+		{
+			AbilitySelection = CreateWidget<UAbilitySelection>(this, AbilitySelectionClass);
+			if (AbilitySelection)
+			{
+				AbilitySelection->AddToViewport();
+				AbilitySelection->SetVisibility(ESlateVisibility::Hidden);
+				AbilitySelection->SetIsEnabled(false);
+			}
+		}
+	}
+
+	if (!LoadingScreen && LoadingScreenClass)
+	{
+		FInputModeUIOnly InputMode;
+		SetInputMode(InputMode);
+
+		LoadingScreen = CreateWidget<ULoadingScreen>(this, LoadingScreenClass);
+
+		FTimerHandle LoadingScreenTimer;
+
+		if (LoadingScreen)
+		{
+			LoadingScreen->AddToViewport();
+			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 10.0f, false);
+		}
+	}
+
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		FTimerHandle DelayHandle;
+		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 0.2f, false);
+
+		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
+	}
+
+	TryBindUI();
 }
 
 void ARelicRunnersPlayerController::SetupLobbyView()
@@ -370,25 +711,13 @@ void ARelicRunnersPlayerController::BeginPlay()
 	const FString MapName = World->GetMapName();
 	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
 
-	if (World && MapName.Contains(TEXT("Lobby")))
+	if (MapName.Contains(TEXT("Lobby")))
 	{
 		SetupLobbyView();
 	}
-	else if (World && MapName.Contains(TEXT("MainMenu")))
+	else if (MapName.Contains(TEXT("MainMenu")))
 	{
 		SetupMainMenuView();
-	}
-	else
-	{
-		InitializePawnDependentSystems();
-	}
-
-	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
-	{
-		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 0.2f, false);
-
-		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
 }
 
@@ -418,33 +747,6 @@ void ARelicRunnersPlayerController::Client_SendPlayerInfo_Implementation()
 	{
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
-}
-
-void ARelicRunnersPlayerController::InitializePawnDependentSystems()
-{
-	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
-		{
-			Subsystem->AddMappingContext(InputMappingContext, 0);
-			Subsystem->AddMappingContext(GamepadInputMappingContext, 0);
-			UE_LOG(LogTemp, Log, TEXT("Pawn init: Added input mapping context"));
-		}
-	}
-
-	// Inventory binding
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, [this]()
-		{
-			if (ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn()))
-			{
-				if (UInventoryComponent* Inv = Char->GetInventoryComponent())
-				{
-					Inv->OnEquipmentChanged.AddUniqueDynamic(this, &ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems);
-					UE_LOG(LogTemp, Log, TEXT("Pawn init: Bound inventory OnEquipmentChanged"));
-				}
-			}
-		}, 0.5f, false);
 }
 
 void ARelicRunnersPlayerController::SetupInputComponent()
@@ -542,30 +844,6 @@ void ARelicRunnersPlayerController::Interact()
 	if (PossessedPawn)
 	{
 		PossessedPawn->Interact();
-	}
-}
-
-void ARelicRunnersPlayerController::InventoryUI()
-{
-	if (PossessedPawn)
-	{
-		PossessedPawn->InventoryUI();
-	}
-}
-
-void ARelicRunnersPlayerController::PauseUI()
-{
-	if (PossessedPawn)
-	{
-		PossessedPawn->PauseUI();
-	}
-}
-
-void ARelicRunnersPlayerController::AbilitySystemUI()
-{
-	if (PossessedPawn)
-	{
-		PossessedPawn->AbilitySystemUI();
 	}
 }
 

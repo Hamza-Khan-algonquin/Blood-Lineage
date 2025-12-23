@@ -6,6 +6,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
 #include "Components/TileView.h"
+#include "Components/Image.h"
 #include "ModeSelectionWidget.h"
 #include "SaveFileListData.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -93,14 +94,17 @@ void USaveFileListWidget::OnSaveFileButtonClicked()
 
 void USaveFileListWidget::SetSelected(bool bSelected)
 {
+    FLinearColor DelectedColor = FLinearColor(0.062f, 0.049f, 0.031f, 1);
     TB_Name->SetColorAndOpacity(bSelected ? FLinearColor(1,0.5,0,1) : FLinearColor::White);
     TB_TimePlayed->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
-    B_SaveFile->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : FLinearColor(0, 0.021f, 0.02f, 1));
-    B_Upgrades->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : FLinearColor(0, 0.021f, 0.02f, 1));
-    B_Edit->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : FLinearColor(0, 0.021f, 0.02f, 1));
-    SaveFileButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(0, 1, 1, 1));
-    EditButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(0, 1, 1, 1));
-    Upgrades->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(0, 1, 1, 1));
+    TB_NumUpgrades->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
+    EditIcon->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
+    B_SaveFile->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
+    B_Upgrades->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
+    B_Edit->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
+    SaveFileButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(1, 1, 1, 1));
+    EditButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(1, 1, 1, 1));
+    Upgrades->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(1, 1, 1, 1));
 }
 
 

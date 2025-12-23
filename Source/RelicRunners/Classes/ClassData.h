@@ -22,13 +22,25 @@ public:
 	FString Ability1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString Ability1Description1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FString Ability2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString Ability2Description1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FString Ability3;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString Ability3Description1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FString Ability4;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString Ability4Description1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Health = 0.f;

@@ -17,10 +17,14 @@
 #include "PlayerHUD.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include <Kismet/GameplayStatics.h>
+#include <RelicRunners/Menu/Keybinds.h>
 
 void UPlayerHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
+	UpdateBindText();
 }
 
 void UPlayerHUD::UpdateHUD(float CurrentHealth, float MaxHealth, float CurrentResource, float MaxResource, int CurrentLevel, float CurrentXP, float XPToLevel)
@@ -41,19 +45,17 @@ void UPlayerHUD::UpdateHUD(float CurrentHealth, float MaxHealth, float CurrentRe
 
 	TB_Health->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth))));
 	TB_Resource->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentResource), FMath::RoundToInt(MaxResource))));
-	TB_Level->SetText(FText::FromString(FString::Printf(TEXT("Level %d"), CurrentLevel)));
+	TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentLevel)));
 	TB_Experience->SetText(FText::FromString(FString::Printf(TEXT("%d / %d XP"), FMath::RoundToInt(CurrentXP), FMath::RoundToInt(XPToLevel))));
-	
+}
+
+void UPlayerHUD::UpdateHUDAbilityPoints(int AbilityPoints)
+{
+	TB_AbilityPoints->SetText(FText::FromString(FString::Printf(TEXT("%d"), AbilityPoints)));
 }
 
 void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 {
-	if (!HealthBar || !TB_Health)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("HUD component not initialized properly"));
-		return;
-	}
-
 	float HealthPercent = MaxHealth > 0 ? CurrentHealth / MaxHealth : 0.f;
 
 	HealthBar->SetPercent(HealthPercent);
@@ -62,12 +64,6 @@ void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 
 void UPlayerHUD::UpdateHUDResource(float CurrentResource, float MaxResource)
 {
-	if (!ResourceBar || !TB_Resource)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("HUD component not initialized properly"));
-		return;
-	}
-
 	float ResourcePercent = MaxResource > 0 ? CurrentResource / MaxResource : 0.f;
 
 	ResourceBar->SetPercent(ResourcePercent);
@@ -76,15 +72,106 @@ void UPlayerHUD::UpdateHUDResource(float CurrentResource, float MaxResource)
 
 void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
 {
-	if (!ExperienceBar || !TB_Level || !TB_Experience)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("HUD component not initialized properly"));
-		return;
-	}
-
 	float ExperiencePercent = XPToLevel > 0 ? CurrentXP / XPToLevel : 0.f;
-	ExperienceBar->SetPercent(ExperiencePercent);
-	TB_Level->SetText(FText::FromString(FString::Printf(TEXT("Level %d"), CurrentLevel)));
-	TB_Experience->SetText(FText::FromString(FString::Printf(TEXT("%d / %d XP"), FMath::RoundToInt(CurrentXP), FMath::RoundToInt(XPToLevel))));
 
+	ExperienceBar->SetPercent(ExperiencePercent);
+	TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentLevel)));
+	TB_Experience->SetText(FText::FromString(FString::Printf(TEXT("%d / %d XP"), FMath::RoundToInt(CurrentXP), FMath::RoundToInt(XPToLevel))));
+}
+
+void UPlayerHUD::OnHealthPotionClicked(int& PlayerHealth, int MaxHealth, int& HealthPotionAmount, float HealthPercent)
+{
+	// use potion if player has one and isn’t at full health
+	if (HealthPotionAmount > 0 && PlayerHealth < MaxHealth)
+	{
+		// Heal player by a percentage of max health
+		int HealthToGrant = FMath::RoundToInt(MaxHealth * HealthPercent);
+		PlayerHealth += HealthToGrant;
+		HealthPotionAmount--;
+
+		// if the player’s health exceeds max health, set it to max health
+		if (PlayerHealth > MaxHealth)
+		{
+			PlayerHealth = MaxHealth;
+		}
+
+		// Update potion count UI
+		if (TB_HealthPotion)
+		{
+			TB_HealthPotion->SetText(FText::AsNumber(HealthPotionAmount));
+		}
+	}
+}
+
+void UPlayerHUD::UpdateBindText()
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(UGameplayStatics::GetGameInstance(World));
+	if (!GI || !GI->Keys) return;
+
+	FString DamageKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Damage Ability")));
+	FString UtilityKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Utility Ability")));
+	FString DefenceKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Defence Ability")));
+	FString UltimateKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Ultimate Ability")));
+
+	if (TB_DamageAbility)
+		TB_DamageAbility->SetText(FText::FromString(DamageKey));
+
+	if (TB_UtilityAbility)
+		TB_UtilityAbility->SetText(FText::FromString(UtilityKey));
+
+	if (TB_DefenceAbility)
+		TB_DefenceAbility->SetText(FText::FromString(DefenceKey));
+
+	if (TB_UltimateAbility)
+		TB_UltimateAbility->SetText(FText::FromString(UltimateKey));
+}
+
+void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
+{
+	if (!CooldownText || CooldownTime <= 0.f) return;
+
+	if (RemainingTime > 0.f)
+		return;
+
+	RemainingTime = CooldownTime;
+	CooldownText->SetText(FText::AsNumber(FMath::CeilToInt(RemainingTime)));
+
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, CooldownText, &RemainingTime, &TimerHandle]()
+		{
+			RemainingTime -= 1.0f;
+
+			if (RemainingTime <= 0.f)
+			{
+				CooldownText->SetText(FText::FromString(TEXT("")));
+				GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+			}
+			else
+			{
+				CooldownText->SetText(FText::AsNumber(FMath::CeilToInt(RemainingTime)));
+			}
+		}, 1.0f, true
+	);
+}
+void UPlayerHUD::StartDamageCooldown(float CooldownTime)
+{
+	RunCooldown(TB_DamageCooldown, DamageRemainingTime, DamageCooldownHandle, CooldownTime);
+}
+
+void UPlayerHUD::StartDefenceCooldown(float CooldownTime)
+{
+	RunCooldown(TB_DefenceCooldown, DefenceRemainingTime, DefenceCooldownHandle, CooldownTime);
+}
+
+void UPlayerHUD::StartUtilityCooldown(float CooldownTime)
+{
+	RunCooldown(TB_UtilityCooldown, UtilityRemainingTime, UtilityCooldownHandle, CooldownTime);
+}
+
+void UPlayerHUD::StartUltimateCooldown(float CooldownTime)
+{
+	RunCooldown(TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
 }

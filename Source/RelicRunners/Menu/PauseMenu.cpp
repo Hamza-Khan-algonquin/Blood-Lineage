@@ -42,10 +42,9 @@ void UPauseMenu::SetParentMenu(UPauseMenuWidget* InParentMenu)
 
 void UPauseMenu::OnResumeButtonClicked()
 {
-    ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(GetOwningPlayerPawn());
-    if (Character)
+    if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetOwningPlayer()))
     {
-        Character->PauseUI();
+        PC->PauseUI();
     }
 }
 

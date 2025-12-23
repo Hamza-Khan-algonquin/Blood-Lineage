@@ -29,6 +29,7 @@ void USessionListItemWidget::Setup(USessionListItemData* InData)
     if (SessionNameText && StoredSessionData)
     {
         SessionNameText->SetText(FText::FromString(StoredSessionData->SessionName));
+        SessionPlayerCount->SetText(FText::FromString(FString::FromInt(StoredSessionData->SessionPlayerCount)));
     }
 }
 
@@ -47,10 +48,12 @@ void USessionListItemWidget::SetSelected(bool bInSelected)
         if (bInSelected)
         {
             SessionNameText->SetColorAndOpacity(FSlateColor(FLinearColor(1, 0.5f, 0, 1)));
+            SessionPlayerCount->SetColorAndOpacity(FSlateColor(FLinearColor(1, 0.5f, 0, 1)));
         }
         else
         {
             SessionNameText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+            SessionPlayerCount->SetColorAndOpacity(FSlateColor(FLinearColor::White));
         }
     }
 }

@@ -53,6 +53,8 @@ void AObjectPoolManager::SetActorActive(AActor* actor, bool activeState, float l
 		return;
 	}
 
+	if (!actor) return;
+
 	TSubclassOf<AActor> actorType = actor->GetClass();
 	FTimerHandle* handler = nullptr;
 

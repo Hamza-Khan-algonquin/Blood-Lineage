@@ -15,5 +15,7 @@ class RELICRUNNERS_API USessionListItemData : public UObject
 public:
 	UPROPERTY(BlueprintReadWrite)
 	FString SessionName;
+	UPROPERTY(BlueprintReadWrite)
+	int SessionPlayerCount;
 };
 

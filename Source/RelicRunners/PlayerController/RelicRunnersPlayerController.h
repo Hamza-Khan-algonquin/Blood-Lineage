@@ -27,194 +27,131 @@ UCLASS()
 class RELICRUNNERS_API ARelicRunnersPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-protected:
-
-	/** Input Mapping Context to be used for player input */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* InputMappingContext;
-
-	/** Input Mapping Context to be used for player gamepad input */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* GamepadInputMappingContext;
-
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* JumpAction;
-
-	/** Move Forward Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* MoveForwardAction;
-
-	/** Move Backward Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* MoveBackwardAction;
-
-	/** Move Left Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* MoveLeftAction;
-
-	/** Move Right Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* MoveRightAction;
-
-
-	/** Interact Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* InteractAction;
-
-	/** Inventory Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* InventoryAction;
-
-	/** Pause Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* PauseAction;
-
-	/** AbilitySelection Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* AbilitySelectionAction;
-
-	/** Look Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
-
-	/** Basic attack Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* BasicAttackAction;
-
-	/** Damage Ability Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* DamageAbilityAction;
-
-	/** Defence Ability Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* DefenceAbilityAction;
-
-	/** Utility Ability Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* UtilityAbilityAction;
-
-	/** Ultimate Ability Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* UltimateAbilityAction;
-
-	/** Health Potion Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* HealthPotionAction;
 
 public:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void OnPossess(APawn* aPawn) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Input")
-	UInputMappingContext* GetInputMappingContext() const { return InputMappingContext; }
-
-	virtual void ClientRestart_Implementation(APawn* NewPawn) override;
-
-	class ARelicRunnersCharacter* GetPossessedPawn() { return PossessedPawn; }
-
+	//Functions
+	void UpdateHUDHealth(float CurrentHealth, float MaxHealth);
+	void UpdateHUDResource(float CurrentResource, float MaxResource);
+	void UpdateHUDXP(int Level, float CurrentXP, float MaxXP);
+	void UpdateHUDAbilityPoints(int Points);
+	void UpdateHUDAll();
+	void InventoryUI();
+	void PauseUI();
+	void HideUI(UUserWidget* UIWidget, bool bClosePopups);
+	void HandleLevelUpVisuals();
+	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
+	UFUNCTION()
+	void UpdateCharacterVisuals();
+	UFUNCTION()
+	void SyncUI();
+	UFUNCTION()
+	void TryBindUI();
+	UFUNCTION()
+	void OnRep_LobbyPreview();
+	UFUNCTION()
+	void OnRep_PlayerPreview();
 	UFUNCTION(Server, Reliable)
 	void Server_SetSelectedClass(FName NewClass);
-
-	virtual void OnRep_Pawn() override;
-
-	virtual void AcknowledgePossession(APawn* Pawn) override;
-
-	virtual void OnUnPossess() override;
+	UFUNCTION(Server, Reliable)
+	void Server_RequestStartGame();
+	UFUNCTION(Server, Reliable)
+	void Server_SendPlayerInfo(const FString& PlayerName, const FName& SelectedClass);
+	UFUNCTION(Server, Reliable)
+	void Server_RequestFlagActivation(class ACapturableFlag* Flag);
+	UFUNCTION(Server, Reliable)
+	void Server_RequestPickup(class AItemActor* Item);
+	UFUNCTION(Client, Reliable)
+	void Client_SetupLobby();
+	UFUNCTION(Client, Reliable)
+	void Client_SendPlayerInfo();
+	UFUNCTION(Client, Reliable)
+	void Client_LeaveSession();
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateVendorUI(class AVendor* Vendor);
 	UFUNCTION()
-	void TryUpdateLobbyUI(int Attempt);
-
+	void UpdatePreviewWithEquippedItems();
+	UFUNCTION()
+	void SetupLobbyView();
+	UFUNCTION()
+	void SetupMainMenuView();
+	UFUNCTION()
+	void TrySetupPreviewRenderTarget();
 	UFUNCTION()
 	void SetupPreviewRenderTarget(APlayerPreview* Preview);
 
-	UFUNCTION()
-	void TrySetupPreviewRenderTarget();
+	//Getters
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	UInputMappingContext* GetInputMappingContext() const { return InputMappingContext; }
+	class UInventory* GetInventory() { return Inventory; };
+	class ARelicRunnersCharacter* GetPossessedPawn() { return PossessedPawn; }
 
-	UFUNCTION()
-	void SetupLobbyView();
+	//Stored Classes
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UPauseMenu> PauseMenuClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UPauseMenuWidget> PauseMenuWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class ULoadingScreen> LoadingScreenClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class ULevelUpHUD> LevelUpHUDClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UJoinUserWidget> LobbyWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UAbilitySelection> AbilitySelectionClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UPlayerHUD> PlayerHUDClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UMainMenuWidget> MainMenuWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UInventory> InventoryClass;
+	UPROPERTY(EditDefaultsOnly, Category = "Preview")
+	TSubclassOf<class APlayerPreview> PlayerPreviewClass;
 
-	void SetupMainMenuView();
 
-	UFUNCTION(Server, Reliable)
-	void Server_RequestPickup(class AItemActor* Item);
-
-	UFUNCTION(Server, Reliable)
-	void Server_RequestFlagActivation(class ACapturableFlag* Flag);
-
+	//Properties
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UPauseMenu* PauseMenu;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UPauseMenuWidget* PauseMenuWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UPlayerHUD* PlayerHUD;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UAbilitySelection* AbilitySelection;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class ULoadingScreen* LoadingScreen;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class ULevelUpHUD* LevelUpHUD;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UJoinUserWidget* LobbyWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UMainMenuWidget* MainMenuWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UInventory* Inventory;
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
-
-	UFUNCTION()
-	void OnRep_PlayerPreview();
-
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)
 	class ALobbyPreview* LobbyPreviewInstance;
+	FTimerHandle UIInitialSyncTimerHandle;
+	FTimerHandle SyncDataTimerHandle;
 
-	UFUNCTION()
-	void OnRep_LobbyPreview();
-
-	UFUNCTION(Server, Reliable)
-	void Server_RequestStartGame();
-
-	UFUNCTION(Server, Reliable)
-	void Server_SendPlayerInfo(const FString& PlayerName, const FName& SelectedClass);
-
-	UFUNCTION(Client, Reliable)
-	void Client_LeaveSession();
-
-	UFUNCTION()
-	void UpdatePreviewWithEquippedItems();
-
-	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<class UJoinUserWidget> LobbyWidgetClass = nullptr;
-
-	UPROPERTY()
-	class UJoinUserWidget* LobbyWidget = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<class UMainMenuWidget> MainMenuWidgetClass = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	class UMainMenuWidget* MainMenuWidget = nullptr;
-
-	UFUNCTION(Client, Reliable)
-	void Client_SetupLobby();
-
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateLobbyUI();
-
-	UFUNCTION(Client, Reliable)
-	void ClientTravelToGame();
-
-	UFUNCTION(Client, Reliable)
-	void Client_SendPlayerInfo();
 protected:
+
+	//Basic Functions
 	ARelicRunnersPlayerController();
-	virtual void BeginPlay() override;
-
-
-	void InitializePawnDependentSystems();
-
-	virtual void SetupInputComponent() override;
-
 	void MoveForward(const struct FInputActionValue& Value);
-
 	void MoveBackward(const struct FInputActionValue& Value);
-
 	void MoveLeft(const struct FInputActionValue& Value);
-
 	void MoveRight(const struct FInputActionValue& Value);
-
-	void Run(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 	void Interact();
 	void Jump(const struct FInputActionValue& Value);
 	void StopJumping(const struct FInputActionValue& Value);
-	void InventoryUI();
-	void PauseUI();
+	void InitLocalUI();
+	void ToggleUI(UUserWidget* UIWidget);
 	void AbilitySystemUI();
+	void LoadingScreenUI();
+	void RemoveOtherUI(FString UI);
 	void DamageAbility();
 	void DefenceAbility();
 	void UtilityAbility();
@@ -222,5 +159,58 @@ protected:
 	void HealthPotion();
 	void BasicAttack();
 
+	//Virtual Functions
+	virtual void BeginPlay() override;
+	virtual void OnRep_Pawn() override;
+	virtual void OnRep_PlayerState() override;
+	virtual void AcknowledgePossession(APawn* Pawn) override;
+	virtual void OnUnPossess() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void OnPossess(APawn* aPawn) override;
+	virtual void ClientRestart_Implementation(APawn* NewPawn) override;
+	virtual void SetupInputComponent() override;
+	virtual void PostSeamlessTravel() override;
+
+	//Properties
 	class ARelicRunnersCharacter* PossessedPawn;
+	UPROPERTY(BlueprintReadOnly, Category = "Player")
+	class ARelicRunnersPlayerState* RelicPlayerState;
+
+	//Input
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* InputMappingContext;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* GamepadInputMappingContext;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* JumpAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* MoveForwardAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* MoveBackwardAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* MoveLeftAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* MoveRightAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InteractAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InventoryAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* PauseAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* AbilitySelectionAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* LookAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* BasicAttackAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* DamageAbilityAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* DefenceAbilityAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* UtilityAbilityAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* UltimateAbilityAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* HealthPotionAction;
 };

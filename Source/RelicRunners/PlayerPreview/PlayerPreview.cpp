@@ -23,7 +23,6 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <Kismet/GameplayStatics.h>
 
-// Sets default values
 APlayerPreview::APlayerPreview()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -64,8 +63,9 @@ APlayerPreview::APlayerPreview()
 	OffhandItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("OffhandMesh"));
 	OffhandItemMesh->SetupAttachment(BodyMesh, TEXT("OffhandSocket"));
 
-	bReplicates = true;
-	SetReplicateMovement(true);
+	bReplicates = false;
+	bAlwaysRelevant = false;
+	SetReplicateMovement(false);
 	SetActorHiddenInGame(false);
 }
 
@@ -74,7 +74,6 @@ void APlayerPreview::BeginPlay()
 	Super::BeginPlay();
 }
 
-// Called every frame
 void APlayerPreview::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -87,24 +86,24 @@ void APlayerPreview::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void APlayerPreview::ClearAllPreviewMeshes()
 {
-	// Skeletal meshes (armor, accessories)
+	//Skeletal meshes (armor, accessories)
 	UpperMesh->SetSkeletalMesh(nullptr);
 	LowerMesh->SetSkeletalMesh(nullptr);
 	ArmsMesh->SetSkeletalMesh(nullptr);
 	HelmetMesh->SetSkeletalMesh(nullptr);
 	NecklaceMesh->SetSkeletalMesh(nullptr);
 
-	// Static meshes (weapons)
+	//Static meshes (weapons)
 	MainhandItemMesh->SetStaticMesh(nullptr);
 	OffhandItemMesh->SetStaticMesh(nullptr);
 }
 
 UTextureRenderTarget2D* APlayerPreview::CreateRenderTarget()
 {
-	// Create and assign a unique render target
+	//Create and assign a unique render target
 	UTextureRenderTarget2D* NewRenderTarget = NewObject<UTextureRenderTarget2D>();
 	NewRenderTarget->RenderTargetFormat = RTF_RGBA16f;
-	NewRenderTarget->InitAutoFormat(800, 800);
+	NewRenderTarget->InitAutoFormat(300, 500);
 	NewRenderTarget->ClearColor = FLinearColor(0, 0, 0, 0); 
 	NewRenderTarget->bAutoGenerateMips = false;
 	NewRenderTarget->UpdateResourceImmediate(true);

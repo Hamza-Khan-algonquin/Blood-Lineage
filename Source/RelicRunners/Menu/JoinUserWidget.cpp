@@ -22,64 +22,225 @@
 #include "RelicRunners/Classes/ClassInfo.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
+#include "StandardTooltip.h"
+#include <RelicRunners/Item/ItemStats.h>
 
 void UJoinUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (SessionTileView)
+	if (StartButton) StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
+	if (FindGames) FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
+	if (SessionTileView) SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
+	if (BackButton) BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
+	if (JoinButton) JoinButton->OnClicked.AddDynamic(this, &UJoinUserWidget::JoinGameButtonClicked);
+	if (AresButton) AresButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAresClicked);
+	if (ArtemisButton) ArtemisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnArtemisClicked);
+	if (AphroditeButton) AphroditeButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAphroditeClicked);
+	if (NemesisButton) NemesisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnNemesisClicked);
+	SetSelectedClass("Ares");
+
+	if (const UWorld* World = GetWorld())
 	{
-		SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
+		//If not host then collapse these elements
+		bool IsHost = World->GetAuthGameMode() != nullptr;
+		StartButton->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_Start->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_BoarSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_BullSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_LionSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_HydraSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		B_CerberusSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+
+		//Client Only
+		B_CurrentSection->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 
-	if (BackButton)
-	{
-		BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
-	}
+	DifficultyMap.Add("Boar", { BoarBorder, B_Boar, B_BoarSection });
+	DifficultyMap.Add("Bull", { BullBorder, B_Bull, B_BullSection });
+	DifficultyMap.Add("Lion", { LionBorder, B_Lion, B_LionSection });
+	DifficultyMap.Add("Hydra", { HydraBorder, B_Hydra, B_HydraSection });
+	DifficultyMap.Add("Cerberus", { CerberusBorder, B_Cerberus, B_CerberusSection });
 
-	if (FindGames)
-	{
-		FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
-	}
+	if (B_Boar)     B_Boar->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Boar);
+	if (B_Bull)     B_Bull->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Bull);
+	if (B_Lion)     B_Lion->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Lion);
+	if (B_Hydra)    B_Hydra->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Hydra);
+	if (B_Cerberus) B_Cerberus->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Cerberus);
 
-	if (JoinButton)
-	{
-		JoinButton->OnClicked.AddDynamic(this, &UJoinUserWidget::JoinGameButtonClicked);
-	}
+	SetSelectedDifficulty("Boar");
+}
 
-	if (StartButton)
+FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+
+	FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
+
+	TArray<UBorder*> Borders = { B_Health, B_Defence, B_Strength, B_Agility, B_Intelligence,
+								 B_Ability1, B_Ability2, B_Ability3, B_Ability4 };
+
+	UBorder* HoveredBorder = nullptr;
+	for (UBorder* Border : Borders)
 	{
-		if (const UWorld* World = GetWorld())
+		if (!Border) continue;
+
+		FGeometry BorderGeom = Border->GetCachedGeometry();
+		if (BorderGeom.IsUnderLocation(CursorPos))
 		{
-			//Only show for the listen server / host
-			bool bIsHost = World->GetAuthGameMode() != nullptr;
-			StartButton->SetVisibility(bIsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			HoveredBorder = Border;
+			break;
+		}
+	}
+
+	if (HoveredBorder != CurrentHoveredBorder)
+	{
+
+		if (StandardTooltip && CurrentHoveredBorder)
+		{
+			StandardTooltip->RemoveFromParent();
+			StandardTooltip = nullptr;
 		}
 
-		StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
+		CurrentHoveredBorder = HoveredBorder;
+
+		if (CurrentHoveredBorder)
+		{
+			ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
+		}
 	}
 
-	if (AresButton)
+	return FReply::Handled();
+}
+
+void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
+{
+	if (!StandardTooltipClass || !ClassDataAsset) return;
+
+	const FClassData& Info = ClassDataAsset->Classes[CurrentClass];
+	if (!HoveredBorder) return;
+
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	if (!StandardTooltip)
 	{
-		AresButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAresClicked);
+		StandardTooltip = CreateWidget<UStandardTooltip>(PC, StandardTooltipClass);
+		StandardTooltip->AddToViewport();
 	}
 
-	if (ArtemisButton)
+	FText TooltipName = FText::GetEmpty();
+	FText TooltipValue = FText::GetEmpty();
+	TArray<FText> Descriptions;
+
+	if (HoveredBorder == B_Health)
 	{
-		ArtemisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnArtemisClicked);
-	}
+		TooltipName = FText::FromString("Health");
+		TooltipValue = FText::AsNumber(Info.Health);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
 
-	if (AphroditeButton)
+		Descriptions.Add(FText::FromString("Maximum health pool."));
+	}
+	else if (HoveredBorder == B_Defence)
 	{
-		AphroditeButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnAphroditeClicked);
-	}
+		TooltipName = FText::FromString("Defence");
+		TooltipValue = FText::AsNumber(Info.Armor);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
 
-	if (NemesisButton)
+		float Percentage = ItemStats::GetDefencePerc(Info.Armor);
+		FText FormatString = FText::FromString("Damage taken reduced by {0}%.");
+		FText FormattedDescription = FText::Format(FormatString,FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Strength)
 	{
-		NemesisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnNemesisClicked);
+		TooltipName = FText::FromString("Strength");
+		TooltipValue = FText::AsNumber(Info.Strength);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
+
+		float Percentage = ItemStats::GetStrengthPerc(Info.Strength);
+		FText FormatString = FText::FromString("Attack and ability damage +{0}%.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Agility)
+	{
+		TooltipName = FText::FromString("Agility");
+		TooltipValue = FText::AsNumber(Info.Dexterity);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
+
+		float Percentage = ItemStats::GetCritPerc(Info.Dexterity);
+		FText FormatString = FText::FromString("Critical strike chance increased by {0}%.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+
+		float PercentageDamage = ItemStats::GetCritDmgPerc(Info.Dexterity);
+		FormatString = FText::FromString("Critical strikes deal {0}x damage.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(PercentageDamage));
+		Descriptions.Add(FormattedDescription);
+
+		Percentage = ItemStats::GetSpeedPerc(Info.Dexterity);
+		FormatString = FText::FromString("Movement speed increased by {0}%.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Intelligence)
+	{
+		TooltipName = FText::FromString("Intelligence");
+		TooltipValue = FText::AsNumber(Info.Intelligence);
+		StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
+
+		int Num = ItemStats::GetManaPoolIncrease(Info.Intelligence);
+		FText FormatString = FText::FromString("Maximum mana pool increased by {0}.");
+		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
+		Descriptions.Add(FormattedDescription);
+
+		float Percentage = ItemStats::GetAbilityCostPerc(Info.Intelligence);
+		FormatString = FText::FromString("Reduces all ability costs by {0}%.");
+		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+		Descriptions.Add(FormattedDescription);
+	}
+	else if (HoveredBorder == B_Ability1)
+	{
+		TooltipName = FText::FromString(Info.Ability1);
+		Descriptions.Add(FText::FromString(Info.Ability1Description1));
+	}
+	else if (HoveredBorder == B_Ability2)
+	{
+		TooltipName = FText::FromString(Info.Ability2);
+		Descriptions.Add(FText::FromString(Info.Ability2Description1));
+	}
+	else if (HoveredBorder == B_Ability3)
+	{
+		TooltipName = FText::FromString(Info.Ability3);
+		Descriptions.Add(FText::FromString(Info.Ability3Description1));
+	}
+	else if (HoveredBorder == B_Ability4)
+	{
+		TooltipName = FText::FromString(Info.Ability4);
+		Descriptions.Add(FText::FromString(Info.Ability4Description1));
 	}
 
-	SetSelectedClass("Ares");
+	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
+
+	const FVector2D Offset(20.0f, 0);
+	ViewportPosition += Offset;
+
+	StandardTooltip->Setup(TooltipName, TooltipValue, Descriptions);
+	StandardTooltip->SetPositionInViewport(ViewportPosition, false);
+}
+
+void UJoinUserWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+
+	if (StandardTooltip)
+	{
+		StandardTooltip->RemoveFromParent();
+		StandardTooltip = nullptr;
+	}
+
+	CurrentHoveredBorder = nullptr;
 }
 
 void UJoinUserWidget::SetButtonColor(UButton* Button, const FLinearColor& Color)
@@ -103,6 +264,94 @@ void UJoinUserWidget::SetImageColor(UImage* Image, const FLinearColor& Color)
 	Image->SetColorAndOpacity(Color);
 }
 
+void UJoinUserWidget::SetBorderBrushColor(UBorder* Border, const FLinearColor& Color)
+{
+	if (Border)
+	{
+		Border->SetBrushColor(Color);
+	}
+}
+
+void UJoinUserWidget::SetButtonTint(UButton* Button, const FLinearColor& Color)
+{
+	if (!Button) return;
+
+	FButtonStyle Style = Button->GetStyle();
+	Style.Normal.TintColor = FSlateColor(Color);
+	Style.Hovered.TintColor = FSlateColor(Color);
+	Style.Pressed.TintColor = FSlateColor(Color);
+	Button->SetStyle(Style);
+}
+
+void UJoinUserWidget::SetButtonOutlineColor(UButton* Button, const FLinearColor& Color)
+{
+	if (!Button) return;
+
+	FButtonStyle Style = Button->GetStyle();
+
+	Style.Normal.OutlineSettings.Color = Color;
+	Style.Hovered.OutlineSettings.Color = Color;
+	Style.Pressed.OutlineSettings.Color = Color;
+	Style.Disabled.OutlineSettings.Color = Color;
+
+	Button->SetStyle(Style);
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Boar()
+{
+	SetSelectedDifficulty("Boar");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Bull()
+{
+	SetSelectedDifficulty("Bull");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Lion()
+{
+	SetSelectedDifficulty("Lion");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Hydra()
+{
+	SetSelectedDifficulty("Hydra");
+}
+
+void UJoinUserWidget::OnDifficultyClicked_Cerberus()
+{
+	SetSelectedDifficulty("Cerberus");
+}
+
+void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
+{
+	CurrentDifficulty = DifficultyKey;
+
+	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
+	const FLinearColor Black(0.f, 0.f, 0.f, 1.f);
+	const FLinearColor SectionBrush_Unselected(0.292f, 0.23f, 0.145f, 1.f);
+	const FLinearColor SectionOutline_Unselected(0.429f, 0.338f, 0.214f, 1.f);
+	const FLinearColor OuterBrush_Unselected(0.062f, 0.049f, 0.031f, 1.f);
+	const FLinearColor ButtonTint_Unselected(1.f, 1.f, 1.f, 0.6f);
+
+	//Reset
+	for (auto& Pair : DifficultyMap)
+	{
+		const FDifficultyWidgets& Widgets = Pair.Value;
+		if (!Widgets.Button || !Widgets.OuterBorder || !Widgets.SectionBorder) continue;
+
+		SetBorderColor(Widgets.SectionBorder, SectionOutline_Unselected);
+		SetBorderBrushColor(Widgets.SectionBorder, SectionBrush_Unselected);
+		SetButtonTint(Widgets.Button, ButtonTint_Unselected);
+	}
+
+	if (FDifficultyWidgets* Selected = DifficultyMap.Find(DifficultyKey))
+	{
+		SetBorderColor(Selected->SectionBorder, Gold);
+		SetButtonTint(Selected->Button, Gold);
+	}
+}
+
+
 void UJoinUserWidget::OnAresClicked() { SetSelectedClass("Ares"); }
 void UJoinUserWidget::OnArtemisClicked() { SetSelectedClass("Artemis"); }
 void UJoinUserWidget::OnAphroditeClicked() { SetSelectedClass("Aphrodite"); }
@@ -110,22 +359,22 @@ void UJoinUserWidget::OnNemesisClicked() { SetSelectedClass("Nemesis"); }
 
 void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
+	CurrentClass = ClassKey;
 	FLinearColor Gold(1.f, 0.5f, 0, 1.f);
-	FLinearColor Cyan(0.074f, 0.25f, 0.434f, 1.f);
-	FLinearColor DarkCyan(0, 0.021f, 0.02f, 1.f);
-	FLinearColor DarkGold(0.3f, 0.15, 0, 1.f);
+	FLinearColor Cyan(0, 1, 0.714, 1.f);
+	FLinearColor Silver(0.5, 0.5, 0.5, 1.f);
 	FLinearColor Black(0,0,0,1);
 	FLinearColor White(1, 1, 1, 1);
 
-	//Reset all buttons to cyan
+	//Reset all buttons
 	SetButtonColor(AresButton, Cyan);
 	SetButtonColor(ArtemisButton, Cyan);
 	SetButtonColor(AphroditeButton, Cyan);
 	SetButtonColor(NemesisButton, Cyan);
-	SetBorderColor(B_Ares, DarkCyan);
-	SetBorderColor(B_Artemis, DarkCyan);
-	SetBorderColor(B_Aphrodite, DarkCyan);
-	SetBorderColor(B_Nemesis, DarkCyan);
+	SetBorderColor(B_Ares, Black);
+	SetBorderColor(B_Artemis, Black);
+	SetBorderColor(B_Aphrodite, Black);
+	SetBorderColor(B_Nemesis, Black);
 	SetImageColor(I_Ares, White);
 	SetImageColor(I_Artemis, White);
 	SetImageColor(I_Aphrodite, White);
@@ -135,25 +384,25 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	if (ClassKey == "Ares")
 	{
 		SetButtonColor(AresButton, Gold);
-		SetBorderColor(B_Ares, DarkGold);
+		SetBorderColor(B_Ares, Black);
 		SetImageColor(I_Ares, Black);
 	}
 	else if (ClassKey == "Artemis")
 	{
 		SetButtonColor(ArtemisButton, Gold);
-		SetBorderColor(B_Artemis, DarkGold);
+		SetBorderColor(B_Artemis, Black);
 		SetImageColor(I_Artemis, Black);
 	}
 	else if (ClassKey == "Aphrodite")
 	{
 		SetButtonColor(AphroditeButton, Gold);
-		SetBorderColor(B_Aphrodite, DarkGold);
+		SetBorderColor(B_Aphrodite, Black);
 		SetImageColor(I_Aphrodite, Black);
 	}
 	else if (ClassKey == "Nemesis")
 	{
 		SetButtonColor(NemesisButton, Gold);
-		SetBorderColor(B_Nemesis, DarkGold);
+		SetBorderColor(B_Nemesis, Black);
 		SetImageColor(I_Nemesis, Black);
 	}
 
@@ -237,53 +486,6 @@ void UJoinUserWidget::FindGamesButtonClicked()
 	SearchForLanGames();
 }
 
-void UJoinUserWidget::UpdateFindGamesButtonVisibility()
-{
-	if (!FindGames || !SessionTileView || !SessionsBorder || !JoinBorder)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] UI references not ready yet."));
-		return;
-	}
-
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] World not valid."));
-		return;
-	}
-
-	AGameStateBase* GS = World->GetGameState();
-	if (!GS)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] No GameState yet"));
-		return;
-	}
-
-	const int32 NumPlayers = GS->PlayerArray.Num();
-	if (NumPlayers == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UpdateFindGamesButtonVisibility] PlayerArray empty"));
-		return;
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("[UpdateFindGamesButtonVisibility] NumPlayers: %d"), NumPlayers);
-
-	const bool Alone = (NumPlayers <= 1);
-
-	if (FindGames)
-	{
-		FindGames->SetVisibility(Alone ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-		FindGames->SetIsEnabled(Alone);
-	}
-
-	if (NumPlayers > 1)
-	{
-		if (SessionTileView) SessionTileView->ClearListItems();
-		if (SessionsBorder) SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
-		if (JoinBorder) JoinBorder->SetVisibility(ESlateVisibility::Collapsed);
-	}
-}
-
 void UJoinUserWidget::JoinGameButtonClicked()
 {
 	if (LastSelectedItem && SessionTileView)
@@ -300,8 +502,7 @@ void UJoinUserWidget::JoinGameButtonClicked()
 void UJoinUserWidget::StartGameButtonClicked()
 {
 	APlayerController* PC = GetOwningPlayer();
-	if (!PC)
-		return;
+	if (!PC) return;
 
 	if (PC->HasAuthority())
 	{
@@ -348,7 +549,6 @@ void UJoinUserWidget::SearchForLanGames()
 			FindGames->SetIsEnabled(false);
 			SessionTileView->ClearListItems();
 			SessionTileView->RequestRefresh();
-			SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
 			GameInstance->FindGames(this);
 			if (RefreshProgress)
 			{
@@ -373,12 +573,12 @@ void UJoinUserWidget::ShowJoinButton(bool IsEnabled)
 		{
 			JoinButton->SetIsEnabled(false);
 			JoinButton->SetVisibility(ESlateVisibility::Hidden);
-			JoinBorder->SetVisibility(ESlateVisibility::Collapsed);
+			JoinBorder->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
 
-void UJoinUserWidget::OnFindSessionsComplete(FString Str)
+void UJoinUserWidget::OnFindSessionsComplete(FString Str, int PlayerCount)
 {
 	if (!IsValid(this) || !SessionTileView) return;
 
@@ -386,6 +586,7 @@ void UJoinUserWidget::OnFindSessionsComplete(FString Str)
 	if (NewSessionItem)
 	{
 		NewSessionItem->SessionName = Str;
+		NewSessionItem->SessionPlayerCount = PlayerCount;
 	}
 
 	if (SessionTileView)
@@ -395,14 +596,6 @@ void UJoinUserWidget::OnFindSessionsComplete(FString Str)
 		if (USessionListItemWidget* Entry = Cast<USessionListItemWidget>(SessionTileView->GetEntryWidgetFromItem(NewSessionItem)))
 		{
 			Entry->OnSessionClicked.BindUObject(this, &UJoinUserWidget::HandleSessionClicked);
-		}
-		if (SessionTileView->GetNumItems() == 0)
-		{
-			SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
-		}
-		else
-		{
-			SessionsBorder->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 

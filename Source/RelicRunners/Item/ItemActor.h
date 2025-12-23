@@ -44,8 +44,6 @@ public:
     void SetupVisuals();
     UFUNCTION()
     void OnRep_ItemData();
-    UFUNCTION(Server, Reliable)
-    void Server_HandlePickup(class ARelicRunnersCharacter* Character);
     void HandlePickup(class ARelicRunnersCharacter* Char);
 
     //Properties
