@@ -28,6 +28,7 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Item/ItemActor.h"
 #include "RelicRunners/Director System/Director.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 // Sets default values
 AEnemyCharacterAI::AEnemyCharacterAI()
@@ -194,12 +195,13 @@ void AEnemyCharacterAI::Die(AController* KillerController)
 	// Grant XP to killer
 	if (KillerController)
 	{
-		if (ARelicRunnersCharacter* KillerCharacter = Cast<ARelicRunnersCharacter>(KillerController->GetPawn()))
+		if (ARelicRunnersPlayerState* KillerPS = KillerController->GetPlayerState<ARelicRunnersPlayerState>())
 		{
 			int XPGranted = CalculateXPReward();
-			KillerCharacter->AddExperience(XPGranted);
 
-			UE_LOG(LogTemp, Log, TEXT("%s gained %d XP for killing %s"), *KillerCharacter->GetName(), XPGranted, *GetName());
+			KillerPS->AddExperience(XPGranted);
+
+			UE_LOG(LogTemp, Log, TEXT("%s gained %d XP for killing %s"), *KillerPS->GetPlayerName(), XPGranted, *GetName());
 		}
 	}
 
@@ -315,7 +317,7 @@ void AEnemyCharacterAI::InitializeStartingEquipment()
 		if (Item)
 		{
 			InventoryComponent->AddItem(Item);
-			InventoryComponent->EquipItem(Item);
+			InventoryComponent->EquipItem(Item, nullptr);
 			UpdateItemVisuals(Item);
 		}
 	}
@@ -387,7 +389,7 @@ void AEnemyCharacterAI::Server_EquipItemByID_Implementation(FGuid ID)
 	if (ItemPtr && *ItemPtr)
 	{
 		UItemObject* Item = *ItemPtr;
-		InventoryComponent->EquipItem(Item);
+		InventoryComponent->EquipItem(Item, nullptr);
 		UpdateItemVisuals(Item);
 		InventoryComponent->UpdateTotalEquippedStats(this);
 	}
@@ -431,7 +433,7 @@ void AEnemyCharacterAI::Server_UnequipItemByID_Implementation(FGuid ID)
 
 	if (EquippedItem)
 	{
-		InventoryComponent->UnequipItem(EquippedItem);
+		InventoryComponent->UnequipItem(EquippedItem, nullptr);
 		UpdateItemVisuals(nullptr, ItemType);
 		InventoryComponent->UpdateTotalEquippedStats(this);
 	}

@@ -36,6 +36,7 @@
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include "InventoryComponent.h"
 #include <RelicRunners/RelicRunnersCharacter.h>
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 void UInventorySlotsEntry::NativeConstruct()
 {
@@ -139,11 +140,11 @@ void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const
     //Find equipped item of same type
     ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetWorld()->GetFirstPlayerController());
     UItemObject* EquippedItem = nullptr;
-    if (PC && PC->GetPossessedPawn())
+    if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
-        if (UInventoryComponent* InventoryComponent = PC->GetPossessedPawn()->GetInventoryComponent())
+        if (UInventoryComponent* InvComp = PS->GetInventoryComponent())
         {
-            EquippedItem = InventoryComponent->GetEquippedItemByType(Item->GetItemType());
+            EquippedItem = InvComp->GetEquippedItemByType(Item->GetItemType());
             if (EquippedItem == Item) EquippedItem = nullptr;
         }
     }

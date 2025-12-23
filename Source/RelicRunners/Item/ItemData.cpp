@@ -22,4 +22,5 @@ void UItemObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(UItemObject, ItemData);
+    DOREPLIFETIME(UItemObject, IsNewItem);
 }

@@ -194,9 +194,9 @@ void UInventoryItemOptions::OnEquipClicked()
 {
     if (!Item) return;
 
-    if (UInventory* inventory = UInventory::Get(this))
+    if (UInventory* Inventory = UInventory::Get(this))
     {
-        inventory->EquipItem(Item);
+        Inventory->EquipItem(Item);
         RemoveFromParent();
     }
 }

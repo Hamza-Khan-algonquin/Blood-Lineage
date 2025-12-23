@@ -7,19 +7,20 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 
 void UAbilitySelection::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // Bind upgrade button clicks
+    //Bind upgrade button clicks
     B_Upgrade1->OnClicked.AddDynamic(this, &UAbilitySelection::Upgrade1Clicked);
     B_Upgrade2->OnClicked.AddDynamic(this, &UAbilitySelection::Upgrade2Clicked);
     B_Upgrade3->OnClicked.AddDynamic(this, &UAbilitySelection::Upgrade3Clicked);
     B_Upgrade4->OnClicked.AddDynamic(this, &UAbilitySelection::Upgrade4Clicked);
 
-    // Get player reference
+    //Get player reference
     APlayerController* PC = GetOwningPlayer();
     if (PC)
     {
@@ -27,55 +28,65 @@ void UAbilitySelection::NativeConstruct()
         OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
     }
 
-	// Show fresh upgrade options
+	//Show fresh upgrade options
     RefreshUpgrades();
 }
 
 void UAbilitySelection::Upgrade1Clicked()
 {
-    // Spend point and apply upgrade
-    OwningCharacter->Server_SpendAbilityPoints();
+    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
+    if (!PS) return;
+
+    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff1);
     RefreshUpgrades();
 }
 
 void UAbilitySelection::Upgrade2Clicked()
 {
-    // Spend point and apply upgrade
-    OwningCharacter->Server_SpendAbilityPoints();
+    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
+    if (!PS) return;
+
+    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff2);
     RefreshUpgrades();
 }
 
 void UAbilitySelection::Upgrade3Clicked()
 {
-    // Spend point and apply upgrade
-    OwningCharacter->Server_SpendAbilityPoints();
+    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
+    if (!PS) return;
+
+    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff3);
     RefreshUpgrades();
 }
 
 void UAbilitySelection::Upgrade4Clicked()
 {
-    // Spend point and apply upgrade
-    OwningCharacter->Server_SpendAbilityPoints();
+    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
+    if (!PS) return;
+
+    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff4);
     RefreshUpgrades();
 }
 
 void UAbilitySelection::BuffStatValue(StatBuff Buff)
 {
-    // Apply stat buff based on type
+    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
+    if (!PS) return;
+
     if (Buff.StatType == EStats::Health)
-        OwningCharacter->SetPlayerStartingHealth(OwningCharacter->GetPlayerStartingMaxHealth() + Buff.Percentage);
+        PS->SetPlayerStartingHealth(PS->GetPlayerStartingMaxHealth() + Buff.Percentage);
     if (Buff.StatType == EStats::Intelligence)
-        OwningCharacter->SetPlayerStartingIntelligence(OwningCharacter->GetPlayerStartingIntelligence() + Buff.Percentage);
+        PS->SetPlayerStartingIntelligence(PS->GetPlayerStartingIntelligence() + Buff.Percentage);
     if (Buff.StatType == EStats::Strength)
-        OwningCharacter->SetPlayerStartingStrength(OwningCharacter->GetPlayerStartingStrength() + Buff.Percentage);
+        PS->SetPlayerStartingStrength(PS->GetPlayerStartingStrength() + Buff.Percentage);
     if (Buff.StatType == EStats::Armor)
-        OwningCharacter->SetPlayerStartingArmor(OwningCharacter->GetPlayerStartingArmor() + Buff.Percentage);
+        PS->SetPlayerStartingArmor(PS->GetPlayerStartingArmor() + Buff.Percentage);
     if (Buff.StatType == EStats::Dexterity)
-        OwningCharacter->SetPlayerStartingDexterity(OwningCharacter->GetPlayerStartingDexterity() + Buff.Percentage);
+        PS->SetPlayerStartingDexterity(PS->GetPlayerStartingDexterity() + Buff.Percentage);
 }
 
 UAbilitySelection::StatBuff UAbilitySelection::RandomStatBuff()
@@ -114,10 +125,11 @@ UAbilitySelection::StatBuff UAbilitySelection::RandomStatBuff()
 
 void UAbilitySelection::RefreshUpgrades()
 {
-	// Refresh total stats after upgrade used
-    if (!OwningCharacter) return;
-
-    OwningCharacter->GetInventoryComponent()->UpdateTotalEquippedStats(OwningCharacter);
+    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
+    if (PS && PS->GetInventoryComponent())
+    {
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(PS->GetPawn());
+    }
 
     Buff1 = RandomStatBuff();
     TB_Upgrade1->SetText(FText::FromString(Buff1.StatText));

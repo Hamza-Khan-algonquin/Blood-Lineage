@@ -17,7 +17,7 @@
 #include "LevelUpHUD.h"
 #include "Components/TextBlock.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
-
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 void ULevelUpHUD::NativeConstruct()
 {
@@ -37,14 +37,10 @@ void ULevelUpHUD::NativeConstruct()
 
 void ULevelUpHUD::EvaluatePlayerLevel()
 {
-	APlayerController* PC = GetOwningPlayer();
-	PC = GetOwningPlayer();
-	if (PC)
+	if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
 	{
-		APawn* Pawn = PC->GetPawn();
-		OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
-
-		TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), OwningCharacter->GetPlayerLevel())));
+		FString LevelString = FString::Printf(TEXT("%d"), PS->GetPlayerLevel());
+		TB_Level->SetText(FText::FromString(LevelString));
 	}
 }
 

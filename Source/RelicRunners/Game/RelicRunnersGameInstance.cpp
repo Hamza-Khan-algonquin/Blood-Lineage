@@ -423,7 +423,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     UWorld* World = GetWorld();
     if (!World) return;
 
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap?listen");
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap");
     //FString TravelURL = TEXT("/Game/ThirdPerson/Maps/GenerateLevelTest?listen");
     UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] Host starting travel to %s"), *TravelURL);
 
@@ -442,16 +442,5 @@ void URelicRunnersGameInstance::StartSessionGame()
         Sess->UpdateSession(NAME_GameSession, *CurrentSettings, true);
     }
 
-    //Tell all clients to prepare for travel
-    for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
-    {
-        ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(*Iterator);
-        if (PC && !PC->IsLocalController()) //skip host
-        {
-            PC->ClientTravelToGame();
-        }
-    }
-
-    //For host
-    World->SeamlessTravel(TravelURL);
+    World->ServerTravel(TravelURL);
 }

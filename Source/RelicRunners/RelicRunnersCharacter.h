@@ -32,8 +32,6 @@
 
 #include "RelicRunnersCharacter.generated.h"
 
-enum class EInventorySorting : uint8;
-
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -48,24 +46,38 @@ class ARelicRunnersCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	/** Camera boom positioning the camera behind the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraBoom;
-
-	/** Follow camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FollowCamera;
-	
-	/** MappingContext */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* DefaultMappingContext;
-
 public:
-	ARelicRunnersCharacter();
 
-	//Replication
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
-	EInventorySorting GetCurrentSortingMethod() const;
+	//Functions
+	ARelicRunnersCharacter();
+	void Die();
+	void PlayRandomAttackAnimation();
+	bool HasValidWeaponEquipped(class UInventoryComponent* InvComp) const;
+	void BasicAttack();
+	void MoveInDirection(EAxis::Type Axis, float Value);
+	void Look(const FInputActionValue& Value);
+	void Interact();
+	void DamageAbility();
+	void DefenceAbility();
+	void UtilityAbility();
+	void UltimateAbility();
+	virtual void GiveDamageAbilities();
+	virtual void GiveDefenceAbilities();
+	virtual void GiveUtilityAbilities();
+	virtual void GiveUltimateAbilities();
+	void HealthPotions();
+	void SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
+	void PerformSwingTrace();
+	void UpdatePlayerHUDWorldFacing();
+	void TraceForInteractables();
+	UFUNCTION(Server, Reliable)
+	void Server_SpawnDroppedItemWorld(const struct FItemData& Data);
+	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
+	void SyncEquippedVisuals(const TArray<struct FEquippedItemEntry>& EquippedEntries);
+	void UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType);
+	UFUNCTION(BlueprintCallable)
+	void UpdateItemVisuals(class UItemObject* Item);
+	void OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType);
 	UFUNCTION()
 	void OnRep_UpperMesh();
 	UFUNCTION()
@@ -80,7 +92,48 @@ public:
 	void OnRep_MainhandMesh();
 	UFUNCTION()
 	void OnRep_OffhandMesh();
+	UFUNCTION(Server, Reliable)
+	void Server_HitEnemy(AActor* HitActor);
+	UFUNCTION(Server, Reliable)
+	void Server_SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
+	UFUNCTION(Server, Reliable)
+	void Server_EquipItemByID(FGuid ID);
+	UFUNCTION(Server, Reliable)
+	void Server_UnequipItemByID(FGuid ID);
 
+	//Getters
+	FString GetMeshPathByItemType(const FString& ItemType);
+	USkeletalMeshComponent* GetSkeletalMeshComponentByItemType(const FString& ItemType);
+	UStaticMeshComponent* GetStaticMeshComponentByItemType(const FString& ItemType);
+	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+
+	//Animations
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimSequence* SwordBasicAttack0;
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimSequence* SwordBasicAttack1;
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimSequence* SwordBasicAttack2;
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimSequence* SwordBasicAttack3;
+
+	//Meshes
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* LowerMesh;
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* UpperMesh;
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* HelmetMesh;
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* ArmsMesh;
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* NecklaceMesh;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* MainhandItemMesh;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* OffhandItemMesh;
 	UPROPERTY(ReplicatedUsing = OnRep_HelmetMesh)
 	USkeletalMesh* ReplicatedHelmetMesh;
 	UPROPERTY(ReplicatedUsing = OnRep_UpperMesh)
@@ -96,355 +149,43 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_OffhandMesh)
 	UStaticMesh* ReplicatedOffhandMesh;
 
-	//Server
-	UFUNCTION(Server, Reliable)
-	void Server_SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
-	UFUNCTION(Server, Reliable)
-	void Server_EquipItemByID(FGuid ID);
-	UFUNCTION(Server, Reliable)
-	void Server_UnequipItemByID(FGuid ID);
-	UFUNCTION(Server, Reliable)
-	void Server_DropItem(const struct FItemData& ItemData);
-	UFUNCTION(Server, Reliable)
-	void Server_PickupItem(AItemActor* TargetItem);
-	
-	//Client
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateEquippedStats(const FEquippedStatsSummary& NewStats);
-
+	//Properties
 	TSet<AActor*> AlreadyHitActors;
-	
-	void PerformSwingTrace();
-
-	UFUNCTION(Server, Reliable)
-	void Server_HitEnemy(AActor* HitActor);
-
-	//Inputs
-	void BasicAttack();
-	void MoveInDirection(EAxis::Type Axis, float Value);
-	void Look(const FInputActionValue& Value);
-	void Interact();
-	void ToggleUI(UUserWidget* UIWidget);
-	void InventoryUI();
-	void PauseUI();
-	void AbilitySystemUI();
-	void HideUI(UUserWidget* UIWidget, APlayerController* PlayerController, bool bClosePopups);
-	void RemoveOtherUI(FString UI, APlayerController* playerController);
-	void DamageAbility();
-	void DefenceAbility();
-	void UtilityAbility();
-	void UltimateAbility();
-	void HealthPotions();
-
-	UFUNCTION(Server, Reliable)
-	void Server_SpendAbilityPoints();
-
-	UFUNCTION(Client, Reliable)
-	void Client_OnAbilityPointsUpdated(int32 NewAbilityPoints);
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseHealthPotion(int NewHealth, int NewPotionCount);
-
-	//Ticking
-	void UpdatePlayerHUDWorldFacing();
-	void TraceForInteractables();
-
-	//Getters
-	int GetPlayerLevel() { return PlayerLevel; };
-	int GetPlayerHealth() { return PlayerHealth; }
-	int GetPlayerMaxHealth() { return PlayerMaxHealth; }
-	int GetPlayerResource() { return PlayerResource; }
-	int GetPlayerMaxResource() { return PlayerMaxResource; }
-	int GetPlayerXP() { return PlayerXP; }
-	int GetPlayerXPToLevel() { return PlayerXPToLevel; }
-	int GetPlayerAbilityPoints() { return PlayerAbilityPoints; }
-	void SetPlayerMaxHealth(int value);
-
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void SetPlayerStartingArmor(int StartingArmor) { PlayerStartingArmor =  StartingArmor; }
-
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void SetPlayerStartingDexterity(int StartingDexterity) { PlayerStartingDexterity = StartingDexterity; }
-
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void SetPlayerStartingIntelligence(int StartingIntelligence) { PlayerStartingIntelligence = StartingIntelligence; }
-
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void SetPlayerStartingHealth(int StartingHealth) { PlayerStartingMaxHealth = StartingHealth; }
-
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void SetPlayerStartingStrength(int StartingStrength) { PlayerStartingStrength = StartingStrength; }
-
-	UFUNCTION()
-	int GetPlayerStartingMaxHealth() const { return PlayerStartingMaxHealth; }
-
-	UFUNCTION()
-	int GetPlayerNumInventorySlots() const { return PlayerNumInventorySlots; }
-
-	UFUNCTION()
-	int GetPlayerStartingArmor() const { return PlayerStartingArmor; }
-
-	UFUNCTION()
-	int GetPlayerStartingDexterity() const { return PlayerStartingDexterity; }
-
-	UFUNCTION()
-	int GetPlayerStartingStrength() const { return PlayerStartingStrength; }
-
-	UFUNCTION()
-	int GetPlayerStartingIntelligence() const { return PlayerStartingIntelligence; }
-
-	UFUNCTION()
-	int GetPlayerGold() const { return PlayerGold; }
-
-	UFUNCTION()
-	void AddGold(int Value);
-
-	UFUNCTION(Server, Reliable)
-	void Server_AddGold(int Value);
-
-	UFUNCTION()
-	bool CheckEnoughGold(int Value);
-
-	UFUNCTION(Server, Reliable)
-	void Server_BuyItem(const FItemData& ItemData, class AVendor* Vendor);
-
-	UFUNCTION(Server, Reliable)
-	void Server_SellItem(const FItemData& ItemData, class AVendor* Vendor);
-
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateVendorUI(class AVendor* Vendor);
-
-	class UInventory* GetInventory() { return Inventory; };
-
-	class UInventoryComponent* GetInventoryComponent() { return InventoryComponent; };
-	UFUNCTION(BlueprintCallable, Category="Inventory")
-	void SetInventoryComponent(UInventoryComponent* InvComp);
-
-	//Update functions
-	void UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType);
-	UFUNCTION(BlueprintCallable)
-	void UpdateItemVisuals(class UItemObject* Item);
-
-	//Helper functions
-	FString GetMeshPathByItemType(const FString& ItemType);
-	USkeletalMeshComponent* GetSkeletalMeshComponentByItemType(const FString& ItemType);
-	UStaticMeshComponent* GetStaticMeshComponentByItemType(const FString& ItemType);
-	void SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
-	void OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType);
-
-	void TryBindInventoryDelegates();
-
-	//Animations
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	UAnimSequence* SwordBasicAttack0;
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	UAnimSequence* SwordBasicAttack1;
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	UAnimSequence* SwordBasicAttack2;
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	UAnimSequence* SwordBasicAttack3;
-
-	UPROPERTY(VisibleAnywhere)
-	USkeletalMeshComponent* LowerMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	USkeletalMeshComponent* UpperMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	USkeletalMeshComponent* HelmetMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	USkeletalMeshComponent* ArmsMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	USkeletalMeshComponent* NecklaceMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* MainhandItemMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* OffhandItemMesh;
-
-	//Other Classes
-	UPROPERTY()
-	class UItemMeshData* ItemMeshData;
-	UPROPERTY(EditDefaultsOnly, Category = "Item Generation")
-	TSubclassOf<class UItemMeshData> ItemMeshDataClass;
-
-	UPROPERTY()
-	class UInventory* Inventory;
-
-	void AddExperience(int Amount);
-
-	UFUNCTION(Server, Reliable)
-	void Server_AddExperience(int Amount);
-
-	virtual void OnLevelUp();
-
-	UFUNCTION(Client, Reliable)
-	void Client_OnLevelUp();
-
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
-	void Die();
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool IsPauseMenuVisible();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UWidgetComponent* PlayerHUDWorld;
+	UPROPERTY(BlueprintReadOnly, Category = "Player")
+	class ARelicRunnersPlayerState* RelicPlayerState;
 
 protected:
 
-	//Other Classes
-	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
-	TSubclassOf<class AItemActor> ItemActorClass;
+	//Functions
+	void Tick(float DeltaTime);
+	void InitializeWeaponSockets();
+	void InitializeWorldHUD();
+	void RegisterDirector();
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UInventory> InventoryClass;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UPauseMenu> PauseMenuClass;
-	UPROPERTY()
-	class UPauseMenu* PauseMenu;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UPauseMenuWidget> PauseMenuWidgetClass;
-	UPROPERTY()
-	class UPauseMenuWidget* PauseMenuWidget;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UPlayerHUD> PlayerHUDClass;
-	UPROPERTY(BlueprintReadWrite)
-	class UPlayerHUD* PlayerHUD;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UAbilitySelection> AbilitySelectionClass;
-
-	UPROPERTY()
-	class UAbilitySelection* AbilitySelection;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ULoadingScreen> LoadingScreenClass;
-	UPROPERTY(BlueprintReadWrite)
-	class ULoadingScreen* LoadingScreen;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ULevelUpHUD> LevelUpHUDClass;
-	UPROPERTY()
-	class ULevelUpHUD* LevelUpHUD;
-
-	UPROPERTY(VisibleAnywhere)
-	class UWidgetComponent* PlayerHUDWorld;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
-	class UInventoryComponent* InventoryComponent;
-
-	FTimerHandle DelegateBindHandle;
-
-	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
-
+	//Virtual Functions
+	virtual void BeginPlay();
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
-	//Replication
-	UFUNCTION()
-	void OnRep_HealthHUD();
-	UFUNCTION()
-	void OnRep_ResourceHUD();
-	UFUNCTION()
-	void OnRep_ExperienceHUD();
-	UFUNCTION()
-	void OnRep_AbilityHUD();
-	UFUNCTION()
-	void OnRep_PlayerGold();
-	UFUNCTION()
-	void OnRep_PlayerLevel(int OldLevel);
-
-	//Stats
-	UPROPERTY()
-	int PlayerNumInventorySlots;
-	UPROPERTY(ReplicatedUsing = OnRep_HealthHUD)
-	int PlayerHealth;
-	UPROPERTY(ReplicatedUsing = OnRep_HealthHUD)
-	int PlayerMaxHealth;
-	UPROPERTY(ReplicatedUsing = OnRep_ResourceHUD)
-	int PlayerResource;
-	UPROPERTY(ReplicatedUsing = OnRep_ResourceHUD)
-	int PlayerMaxResource;
-	UPROPERTY(ReplicatedUsing = OnRep_ExperienceHUD)
-	int PlayerXP;
-	UPROPERTY(ReplicatedUsing = OnRep_ExperienceHUD)
-	int PlayerXPToLevel;
-	UPROPERTY(ReplicatedUsing = OnRep_PlayerLevel)
-	int PlayerLevel;
-	UPROPERTY(ReplicatedUsing = OnRep_AbilityHUD)
-	int PlayerAbilityPoints;
-	UPROPERTY(ReplicatedUsing = OnRep_PlayerGold, BlueprintReadOnly, Category = "Player")
-	int PlayerGold;
-	UPROPERTY()
-	int PlayerArmor;
-	UPROPERTY()
-	int PlayerDexterity;
-	UPROPERTY()
-	int PlayerStrength;
-	UPROPERTY()
-	int PlayerIntelligence;
-	UPROPERTY()
-	int PlayerStartingMaxHealth;
-	UPROPERTY()
-	int PlayerStartingMaxResource;
-	UPROPERTY()
-	int PlayerStartingArmor;
-	UPROPERTY()
-	int PlayerStartingDexterity;
-	UPROPERTY()
-	int PlayerStartingStrength;
-	UPROPERTY()
-	int PlayerStartingIntelligence;
-	UPROPERTY()
-	int PlayerStartingGold;
-	UPROPERTY()
-	int HealthPotionCount;   
-	UPROPERTY()
-	float HealthGranted;         
-
-	float DamageCooldown = 5.f;
-	float DefenceCooldown = 5.f;
-	float UtilityCooldown = 5.f;
-	float UltimateCooldown = 10.f;
-
+	//Properties
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* CameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* FollowCamera;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* DefaultMappingContext;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector respawnPoint;
 
-	UPROPERTY()
-	UAttributeSet* Attributes;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
-	UAbilitySystemComponent* AbilitySystem;
-
-	virtual void GiveDamageAbilities();
-	virtual void GiveDefenceAbilities();
-	virtual void GiveUtilityAbilities();
-	virtual void GiveUltimateAbilities();
-
-	//Setup
-	virtual void BeginPlay();
-	void InitLocalUI();
-
-	UFUNCTION()
-	void HideLoadingScreen();
-
-	void SpawnStarterItems();
-
-	//Ticking
-	void Tick(float DeltaTime);
-	UFUNCTION()
-	void PassiveHealthRegen();
+	//Timers
 	FTimerHandle HealthRegenTimerHandle;
+	FTimerHandle DelegateBindHandle;
 
-public:
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const { return AbilitySystem; }
-
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	//Stored Classes
+	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
+	TSubclassOf<class AItemActor> ItemActorClass;
 };
 

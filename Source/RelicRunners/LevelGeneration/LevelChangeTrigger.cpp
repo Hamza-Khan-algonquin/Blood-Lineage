@@ -95,31 +95,10 @@ void ALevelChangeTrigger::Server_SetTargetLevel_Implementation(FName newTargetLe
 void ALevelChangeTrigger::ChangeLevel()
 {
 	UWorld* world = GetWorld();
+	if (!world) return;
 
-	if (world == nullptr)
-		return;
-	
-	for (FConstPlayerControllerIterator Iterator = world->GetPlayerControllerIterator(); Iterator; ++Iterator)
-	{
-		ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(*Iterator);
-		if (PC && !PC->IsLocalController()) // skip host
-		{
-			PC->ClientTravelToGame();
-		}
-	}
-
-	if (HasAuthority())
-	{
-		if (!TargetLevel.IsNone())
-		{
-			UGameplayStatics::OpenLevel(this, TargetLevel, true, FString("listen"));
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 30.0f, FColor::Red, FString::Printf(TEXT("Warning!! Level Trigger has been triggered normally but *Target Level* is not valid.")));
-
-		}
-	}
+	FString TravelURL = TEXT("/Game/ThirdPerson/Maps/") + TargetLevel.ToString();
+	world->ServerTravel(TravelURL);
 }
 
 void ALevelChangeTrigger::Server_Activate_Implementation()

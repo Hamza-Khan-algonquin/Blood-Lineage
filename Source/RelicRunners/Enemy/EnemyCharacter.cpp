@@ -13,9 +13,8 @@
 #include "RelicRunners/Item/ItemStats.h"
 #include "Components/CapsuleComponent.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
-
-// Sets default values
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
 {
  	
@@ -103,24 +102,21 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 void AEnemyCharacter::Die(AController* EventInstigator)
 {
-	//make sure we are server side
 	if (HasAuthority())
 	{
-		//spawn item
 		SpawnItem();
 
-		//check to make sure it a play and if do add experience
 		if (EventInstigator)
 		{
-			if (ARelicRunnersCharacter* player = Cast<ARelicRunnersCharacter>(EventInstigator->GetPawn()))
+			ARelicRunnersPlayerState* PS = EventInstigator->GetPlayerState<ARelicRunnersPlayerState>();
+
+			if (PS)
 			{
-				player->AddExperience(CalculateXP());
+				PS->AddExperience(CalculateXP());
 			}
 		}
-		
+
 		OnDied.Broadcast(this);
-		//OnDied.Clear();
-		//OnDestroyed.Clear();
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
@@ -130,7 +126,6 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 		}
 		else
 		{
-			//be gone hud of my enemy
 			if (EnemyHUDWorld)
 			{
 				EnemyHUDWorld->DestroyComponent();

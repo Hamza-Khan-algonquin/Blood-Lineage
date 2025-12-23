@@ -11,6 +11,7 @@
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/Item/ItemData.h"
 #include "RelicRunners/Inventory/Inventory.h"
+#include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 
 AVendor::AVendor()
 {
@@ -94,13 +95,21 @@ void AVendor::Interact_Implementation(ARelicRunnersCharacter* Char)
 {
 	if (!Char) return;
 
-	LinkedInventoryWidget = Char->GetInventory();
-	if (!LinkedInventoryWidget->IsVisible() || LinkedInventoryWidget->VendorCanvas->IsVisible())
+	ARelicRunnersPlayerController* PC = Char->GetController<ARelicRunnersPlayerController>();
+	if (!PC) return;
+
+	LinkedInventoryWidget = PC->GetInventory();
+
+	if (LinkedInventoryWidget)
 	{
-		Char->InventoryUI();
+		if (!LinkedInventoryWidget->IsVisible() || !LinkedInventoryWidget->VendorCanvas->IsVisible())
+		{
+			PC->InventoryUI();
+		}
+
+		LinkedInventoryWidget->ToggleVendorUI(true);
+		LinkedInventoryWidget->DisplaySelectedVendorItems(Stock, this);
 	}
-	LinkedInventoryWidget->ToggleVendorUI(true);
-	LinkedInventoryWidget->DisplaySelectedVendorItems(Stock, this);
 }
 
 FItemData AVendor::GetItemData_Implementation()

@@ -24,6 +24,7 @@
 #include "Engine/ActorChannel.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -184,8 +185,7 @@ void UInventoryComponent::HandleSortingNow()
     OnInventoryChanged.Broadcast();
 }
 
-
-void UInventoryComponent::EquipItem(UItemObject* Item)
+void UInventoryComponent::EquipItem(UItemObject* Item, ARelicRunnersPlayerController* RPC)
 {
     if (!Item) return;
 
@@ -221,26 +221,13 @@ void UInventoryComponent::EquipItem(UItemObject* Item)
         InventoryItems.RemoveAt(Index);
     }
 
-    if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetWorld()->GetFirstPlayerController()))
-    {
-        PC->UpdatePreviewWithEquippedItems();
-    }
-
     OnEquipmentChanged.Broadcast();
     OnInventoryChanged.Broadcast();
+
+    if (RPC) RPC->UpdatePreviewWithEquippedItems();
 }
 
-void UInventoryComponent::OnRep_Inventory()
-{
-    OnInventoryChanged.Broadcast();
-}
-
-void UInventoryComponent::OnRep_EquippedItems()
-{
-    OnEquipmentChanged.Broadcast();
-}
-
-void UInventoryComponent::UnequipItem(UItemObject* Item)
+void UInventoryComponent::UnequipItem(UItemObject* Item, ARelicRunnersPlayerController* RPC)
 {
     if (!Item) return;
 
@@ -255,14 +242,29 @@ void UInventoryComponent::UnequipItem(UItemObject* Item)
 
             OnEquipmentChanged.Broadcast();
             OnInventoryChanged.Broadcast();
+
+            if (RPC) RPC->UpdatePreviewWithEquippedItems();
             return;
         }
     }
+}
 
-    if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetWorld()->GetFirstPlayerController()))
+void UInventoryComponent::OnRep_Inventory()
+{
+    OnInventoryChanged.Broadcast();
+}
+
+void UInventoryComponent::OnRep_EquippedItems()
+{
+    if (APawn* OwningPawn = Cast<APawn>(GetOwner()))
     {
-        PC->UpdatePreviewWithEquippedItems();
+        if (ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(OwningPawn))
+        {
+            Char->SyncEquippedVisuals(EquippedItems);
+        }
     }
+
+    OnEquipmentChanged.Broadcast();
 }
 
 UItemObject* UInventoryComponent::GetEquippedItemByType(const FString& ItemType) const
@@ -291,19 +293,33 @@ UItemObject*& UInventoryComponent::GetEquippedItemReference(const FString& ItemT
     return EquippedItems.Last().Item;
 }
 
-void UInventoryComponent::UpdateTotalEquippedStats(ARelicRunnersCharacter* Char)
+void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
 {
-    if (!Char) return;
+    if (!PawnOwner) return;
 
     FEquippedStatsSummary Stats = CalculateEquippedStats();
+    CachedEquippedStats = Stats;
 
-    if (Char->HasAuthority())
+    //Player
+    if (ARelicRunnersPlayerState* PS = PawnOwner->GetPlayerState<ARelicRunnersPlayerState>())
     {
-        Char->SetPlayerMaxHealth(Stats.TotalHealth);
-        Char->Client_UpdateEquippedStats(Stats);
+        if (PS->HasAuthority())
+        {
+            PS->SetPlayerMaxHealth(Stats.TotalHealth);
+            PS->Client_UpdateEquippedStats(Stats);
+        }
+    }
+    
+    //Enemies
+    else if (AEnemyCharacterAI* Enemy = Cast<AEnemyCharacterAI>(PawnOwner))
+    {
+        if (Enemy->HasAuthority())
+        {
+            Enemy->SetMaxHealth(Stats.TotalHealth);
+            Enemy->Client_UpdateEquippedStats(Stats);
+        }
     }
 
-    CachedEquippedStats = Stats;
     OnStatsChanged.Broadcast(Stats);
 }
 
@@ -320,23 +336,6 @@ void UInventoryComponent::SwapItems(UItemObject* ItemA, UItemObject* ItemB)
         InventoryItems.Swap(IndexA, IndexB);
         OnInventoryChanged.Broadcast();
     }
-}
-
-void UInventoryComponent::UpdateTotalEquippedStats(AEnemyCharacterAI* Char)
-{
-    if (!Char) return;
-
-    FEquippedStatsSummary Stats = CalculateEquippedStats();
-
-    if (Char->HasAuthority())
-    {
-        Char->SetMaxHealth(Stats.TotalHealth);
-    }
-
-    Char->Client_UpdateEquippedStats(Stats);
-
-    CachedEquippedStats = Stats;
-    OnStatsChanged.Broadcast(Stats);
 }
 
 UItemObject* UInventoryComponent::FindItemByID(FGuid ID) const
@@ -380,13 +379,13 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
 {
     FEquippedStatsSummary Summary;
 
-    if (const ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(GetOwner()))
+    if (const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner()))
     {
-        Summary.TotalHealth = OwnerChar->GetPlayerStartingMaxHealth();
-        Summary.TotalArmor = OwnerChar->GetPlayerStartingArmor();
-        Summary.TotalDexterity = OwnerChar->GetPlayerStartingDexterity();
-        Summary.TotalStrength = OwnerChar->GetPlayerStartingStrength();
-        Summary.TotalIntelligence = OwnerChar->GetPlayerStartingIntelligence();
+        Summary.TotalHealth = PS->GetPlayerStartingMaxHealth();
+        Summary.TotalArmor = PS->GetPlayerStartingArmor();
+        Summary.TotalDexterity = PS->GetPlayerStartingDexterity();
+        Summary.TotalStrength = PS->GetPlayerStartingStrength();
+        Summary.TotalIntelligence = PS->GetPlayerStartingIntelligence();
     }
 
     for (const FEquippedItemEntry& Entry : EquippedItems)

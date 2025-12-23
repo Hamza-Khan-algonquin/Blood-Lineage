@@ -15,9 +15,7 @@
  ************************************************************************************/
 
 #include "RelicRunnersCharacter.h"
-#include "PlayerHUD/PlayerHUD.h"
 #include "PlayerHUD/PlayerHUDWorld.h"
-#include "RelicRunners/LevelUpHUD/LevelUpHUD.h"
 #include "PlayerPreview/PlayerPreview.h"
 #include "PlayerState/RelicRunnersPlayerState.h"
 #include "Kismet/GameplayStatics.h"
@@ -38,16 +36,11 @@
 #include "Inventory/Inventory.h"
 #include "Inventory/InventoryComponent.h"
 #include "Inventory/InventoryToolTip.h"
-#include "Inventory/InventoryItemOptions.h"
-#include "Inventory/InventorySortingOptions.h"
 #include "Inventory/InventoryDragOperation.h"
 #include "Item/ItemStats.h"
 #include "Item/ItemActor.h"
 #include "RelicRunners/Vendor/Vendor.h"
 #include "Interact/InteractInterface.h"
-#include "Menu/PauseMenu.h"
-#include "Menu/PauseMenuWidget.h"
-#include "Menu/LoadingScreen.h"
 #include "AbilitySystem/AbilitySelection.h"
 #include "Item/ItemData.h"
 #include "Engine/ActorChannel.h"
@@ -63,20 +56,14 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 ARelicRunnersCharacter::ARelicRunnersCharacter()
 {
-	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
-	// Don't rotate when the controller rotates. Let that just affect the camera.
+	
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
-	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
-
-	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
-	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
@@ -84,13 +71,11 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 
-	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
-	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
@@ -102,41 +87,41 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	UpperMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	UpperMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	UpperMesh->SetLeaderPoseComponent(GetMesh());
-	// Mesh attachments
+
 	LowerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LowerMesh"));
 	LowerMesh->SetupAttachment(GetMesh());
 	LowerMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LowerMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	LowerMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	LowerMesh->SetLeaderPoseComponent(GetMesh());
-	// Mesh attachments
+
 	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsMesh"));
 	ArmsMesh->SetupAttachment(GetMesh());
 	ArmsMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ArmsMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	ArmsMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	ArmsMesh->SetLeaderPoseComponent(GetMesh());
-	// Mesh attachments
+
 	HelmetMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HelmetMesh"));
 	HelmetMesh->SetupAttachment(GetMesh());
 	HelmetMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HelmetMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	HelmetMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	HelmetMesh->SetLeaderPoseComponent(GetMesh());
-	// Mesh attachments
+
 	NecklaceMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("NecklaceMesh"));
 	NecklaceMesh->SetupAttachment(GetMesh());
 	NecklaceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	NecklaceMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	NecklaceMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	NecklaceMesh->SetLeaderPoseComponent(GetMesh());
-	// Mesh attachments
+
 	MainhandItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MainhandMesh"));
 	MainhandItemMesh->SetupAttachment(GetMesh(), TEXT("MainhandSocket"));
 	MainhandItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MainhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	MainhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	// Mesh attachments
+
 	OffhandItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("OffhandMesh"));
 	OffhandItemMesh->SetupAttachment(GetMesh(), TEXT("OffhandSocket"));
 	OffhandItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -153,72 +138,34 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	PlayerHUDWorld->SetVisibility(true);
 	PlayerHUDWorld->CastShadow = false;
 
-	//Inventory
-	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
-	InventoryComponent->SetIsReplicated(true);
-
-	PlayerNumInventorySlots = 20;
-	//Health
-	PlayerStartingMaxHealth = 100;
-	PlayerMaxHealth = PlayerStartingMaxHealth;
-	PlayerHealth = PlayerMaxHealth;
-	//Resource
-	PlayerStartingMaxResource = 100;
-	PlayerMaxResource = PlayerStartingMaxResource;
-	PlayerResource = PlayerMaxResource;
-	//Level
-	PlayerLevel = 1;
-	PlayerXP = 0;
-	PlayerXPToLevel = 100;
-	//Stats
-	PlayerStartingArmor = 0;
-	PlayerStartingDexterity = 0;
-	PlayerStartingStrength = 0;
-	PlayerStartingIntelligence = 0;
-	PlayerArmor = 0;
-	PlayerDexterity = 0;
-	PlayerStrength = 0;
-	PlayerIntelligence = 0;
-	PlayerAbilityPoints = 2;
-	//Gold
-	PlayerStartingGold = 0;
-	PlayerGold = PlayerStartingGold;
-	//Potions
-	HealthPotionCount = 3;
-	HealthGranted = 0.5;
-
 	bAlwaysRelevant = true;
 	SetReplicates(true);
 	SetReplicateMovement(true);
 
 	Tags.Add("Player");
+}
 
-	static ConstructorHelpers::FClassFinder<ULoadingScreen> BP_LoadingScreen(TEXT("/Game/Blueprints/Menu/BP_LoadingScreen"));
+void ARelicRunnersCharacter::BeginPlay()
+{
+	Super::BeginPlay();
 
-	if (BP_LoadingScreen.Class)
+	InitializeWeaponSockets();
+	InitializeWorldHUD();
+
+	//Server
+	if (HasAuthority())
 	{
-		LoadingScreenClass = BP_LoadingScreen.Class;
-		UE_LOG(LogTemp, Warning, TEXT("Character Assigned Loading Screen"));
+		RegisterDirector();
 	}
 
+	respawnPoint = GetActorLocation();
 }
+
 
 void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//stats
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerHealth);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerMaxHealth);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerResource);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerMaxResource);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerLevel);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerXP);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerXPToLevel);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerAbilityPoints);
-	DOREPLIFETIME(ARelicRunnersCharacter, PlayerGold);
-
-	//equipped items
 	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedArmsMesh);
 	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedUpperMesh);
 	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedLowerMesh);
@@ -228,55 +175,39 @@ void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedOffhandMesh);
 }
 
-EInventorySorting ARelicRunnersCharacter::GetCurrentSortingMethod() const
+void ARelicRunnersCharacter::PossessedBy(AController* NewController)
 {
-	if (InventoryComponent)
-	{
-		return InventoryComponent->CurrentSortingMethod;
-	}
+	Super::PossessedBy(NewController);
 
-	return EInventorySorting::SortByNewest;
+	//Server
+	RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+}
+
+float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (!HasAuthority()) return 0.0f;
+
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (RelicPlayerState) RelicPlayerState->ModifyHealth(-ActualDamage);
+
+	return ActualDamage;
+}
+
+void ARelicRunnersCharacter::Die()
+{
+	SetActorLocation(respawnPoint);
+	if (RelicPlayerState) RelicPlayerState->ResetHealth();
 }
 
 void ARelicRunnersCharacter::Server_EquipItemByID_Implementation(FGuid ID)
 {
-	if (!InventoryComponent) return;
-
-	UItemObject* Item = InventoryComponent->FindItemByID(ID);
-
-	if (Item)
-	{
-		InventoryComponent->EquipItem(Item);
-		UpdateItemVisuals(Item);
-		InventoryComponent->UpdateTotalEquippedStats(this);
-	}
+	if (RelicPlayerState) RelicPlayerState->Server_EquipItemByID(ID);
 }
 
 void ARelicRunnersCharacter::Server_UnequipItemByID_Implementation(FGuid ID)
 {
-	if (!InventoryComponent) return;
-
-	UItemObject* EquippedItem = nullptr;
-	FString ItemType;
-
-	for (FEquippedItemEntry& Entry : InventoryComponent->EquippedItems)
-	{
-		if (Entry.Item && Entry.Item->ItemData.UniqueID == ID)
-		{
-			EquippedItem = Entry.Item;
-			ItemType = Entry.ItemType;
-			break;
-		}
-	}
-
-	if (EquippedItem)
-	{
-		InventoryComponent->UnequipItem(EquippedItem);
-		UpdateItemVisuals(nullptr, ItemType);
-		InventoryComponent->UpdateTotalEquippedStats(this);
-	}
-
-	InventoryComponent->SortInventoryByCurrentMethod();
+	if (RelicPlayerState) RelicPlayerState->Server_UnequipItemByID(ID);
 }
 
 void ARelicRunnersCharacter::Server_SetReplicatedMeshByItemType_Implementation(UObject* MeshAsset, const FString& ItemType)
@@ -284,9 +215,17 @@ void ARelicRunnersCharacter::Server_SetReplicatedMeshByItemType_Implementation(U
 	SetReplicatedMeshByItemType(MeshAsset, ItemType);
 }
 
-void ARelicRunnersCharacter::OnRep_PlayerGold()
+void ARelicRunnersCharacter::OnRep_PlayerState()
 {
-	InventoryComponent->UpdateTotalEquippedStats(this);
+	Super::OnRep_PlayerState();
+
+	//Client
+	RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+}
+
+void ARelicRunnersCharacter::OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType)
+{
+	SetReplicatedMeshByItemType(MeshAsset, ItemType);
 }
 
 void ARelicRunnersCharacter::OnRep_UpperMesh()
@@ -326,7 +265,6 @@ void ARelicRunnersCharacter::OnRep_OffhandMesh()
 
 void ARelicRunnersCharacter::SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType)
 {
-
 	if (!HasAuthority())
 	{
 		return;
@@ -369,227 +307,14 @@ void ARelicRunnersCharacter::SetReplicatedMeshByItemType(UObject* MeshAsset, con
 	}
 }
 
-void ARelicRunnersCharacter::AddExperience(int Amount)
+void ARelicRunnersCharacter::InitializeWeaponSockets()
 {
-	if (!HasAuthority())
-	{
-		Server_AddExperience(Amount);
-		return;
-	}
-
-	PlayerXP += Amount;
-
-	while (PlayerXP >= PlayerXPToLevel)
-	{
-		OnLevelUp();
-	}
-
-	//Server Update HUD
-	if (PlayerHUD)
-	{
-		PlayerHUD->UpdateHUDXP(PlayerLevel, PlayerXP, PlayerXPToLevel);
-		PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
-	}
-}
-
-void ARelicRunnersCharacter::Client_OnLevelUp_Implementation()
-{
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC) return;
-
-	if (LevelUpHUDClass)
-	{
-		ULevelUpHUD* NewLevelUpHUD = CreateWidget<ULevelUpHUD>(PC, LevelUpHUDClass);
-		if (NewLevelUpHUD)
-		{
-			NewLevelUpHUD->AddToViewport();
-		}
-	}
-
-	if (Inventory) Inventory->RefreshEquippedUI();
-}
-
-void ARelicRunnersCharacter::Server_AddExperience_Implementation(int Amount)
-{
-	AddExperience(Amount);
-}
-
-void ARelicRunnersCharacter::OnRep_PlayerLevel(int OldLevel)
-{
-	if (PlayerLevel > OldLevel)
-	{
-		//Show UI Popup
-		Client_OnLevelUp();
-	}
-}
-
-void ARelicRunnersCharacter::OnLevelUp()
-{
-	PlayerXP -= PlayerXPToLevel;
-	PlayerLevel++;
-	PlayerXPToLevel = PlayerLevel * 100;
-
-	//starting stats / base stats
-	PlayerStartingMaxHealth++;
-	PlayerStartingMaxResource++;
-	PlayerStartingArmor++;
-	PlayerStartingDexterity++;
-	PlayerStartingStrength++;
-	PlayerStartingIntelligence++;
-
-	//current health / max health
-	PlayerMaxHealth++;
-	PlayerHealth = PlayerMaxHealth;
-
-	//current resource / max resource
-	PlayerMaxResource++;
-	PlayerResource = PlayerMaxResource;
-
-	//current stats
-	PlayerArmor++;
-	PlayerDexterity++;
-	PlayerStrength++;
-	PlayerIntelligence++;
-	PlayerNumInventorySlots++;
-
-	//ability points
-	PlayerAbilityPoints++;
-
-	InventoryComponent->UpdateTotalEquippedStats(this);
-
-	//Listen server only
-	if (IsLocallyControlled())
-	{
-		//Show UI Popup
-		Client_OnLevelUp();
-	}
-}
-
-float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	if (!HasAuthority()) return 0.0f;
-
-	float actualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
-	PlayerHealth -= actualDamage;
-
-	if (PlayerHealth <= 0)
-	{
-		PlayerHealth = 0;
-		Die();
-	}
-
-	if (PlayerHUD)
-	{
-		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
-	}
-
-	return actualDamage;
-}
-
-void ARelicRunnersCharacter::Die()
-{
-	SetActorLocation(respawnPoint);
-	PlayerHealth = PlayerMaxHealth;
-}
-
-bool ARelicRunnersCharacter::IsPauseMenuVisible()
-{
-	return PauseMenuWidget->GetVisibility() != ESlateVisibility::Hidden;
-}
-
-bool ARelicRunnersCharacter::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
-{
-	bool WroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
-
-	if (InventoryComponent)
-	{
-		WroteSomething |= Channel->ReplicateSubobject(InventoryComponent, *Bunch, *RepFlags);
-	}
-
-	return WroteSomething;
-}
-
-void ARelicRunnersCharacter::OnRep_PlayerState()
-{
-	Super::OnRep_PlayerState();
-
-	InitLocalUI();
-
-	OnRep_HealthHUD();
-	OnRep_ResourceHUD();
-	OnRep_ExperienceHUD();
-	OnRep_AbilityHUD();
-}
-
-void ARelicRunnersCharacter::OnRep_HealthHUD()
-{
-	if (PlayerHUD) PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
-}
-
-void ARelicRunnersCharacter::OnRep_ResourceHUD()
-{
-	if (PlayerHUD) PlayerHUD->UpdateHUDResource(PlayerResource, PlayerMaxResource);
-}
-
-void ARelicRunnersCharacter::OnRep_ExperienceHUD()
-{
-	if (PlayerHUD) PlayerHUD->UpdateHUDXP(PlayerLevel, PlayerXP, PlayerXPToLevel);
-}
-
-void ARelicRunnersCharacter::OnRep_AbilityHUD()
-{
-	if (PlayerHUD) PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
-}
-
-void ARelicRunnersCharacter::OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType)
-{
-	SetReplicatedMeshByItemType(MeshAsset, ItemType);
-}
-
-void ARelicRunnersCharacter::TryBindInventoryDelegates()
-{
-	if (!IsLocallyControlled()) return;
-
-	if (Inventory && InventoryComponent)
-	{
-		Inventory->SetInventoryComponent(InventoryComponent);
-		InventoryComponent->UpdateTotalEquippedStats(this);
-		GetWorldTimerManager().ClearTimer(DelegateBindHandle);
-
-		Inventory->RefreshInventoryUI();
-		Inventory->RefreshEquippedUI();
-
-		UE_LOG(LogTemp, Warning, TEXT("[UI] Bound inventory component delegates successfully."));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UI] Waiting for Inventory or InventoryComponent..."));
-	}
-}
-
-void ARelicRunnersCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// Always load ItemMeshData locally
-	if (ItemMeshDataClass)
-	{
-		ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
-	}
-
-	// === Local client UI setup ===
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC && PC->IsLocalController())
-	{
-		// Delay UI setup until everything else is ready
-		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ARelicRunnersCharacter::InitLocalUI);
-	}
-
-	// Attach item mesh components
 	MainhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("MainhandSocket"));
 	OffhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("OffhandSocket"));
+}
 
+void ARelicRunnersCharacter::InitializeWorldHUD()
+{
 	if (PlayerHUDWorld)
 	{
 		if (UPlayerHUDWorld* HUDWorldWidget = Cast<UPlayerHUDWorld>(PlayerHUDWorld->GetUserWidgetObject()))
@@ -597,149 +322,24 @@ void ARelicRunnersCharacter::BeginPlay()
 			HUDWorldWidget->InitWidgetWithCharacter(this);
 		}
 	}
+}
 
-	if (HasAuthority())
-	{
-		// Generate initial items only once on server
-		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ARelicRunnersCharacter::SpawnStarterItems);
-
-		// Setup health regen loop
-		//GetWorld()->GetTimerManager().SetTimer(HealthRegenTimerHandle, this, &ARelicRunnersCharacter::PassiveHealthRegen, 3.0f, true);
-
-		UWorld* World = GetWorld();
-		APawn* player = static_cast<APawn*>(this);
-
-		GetWorld()->GetTimerManager().SetTimerForNextTick([World, player] {
-			ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(World, ADirector::StaticClass()));
-
-			if (Director != nullptr)
+void ARelicRunnersCharacter::RegisterDirector()
+{
+	GetWorldTimerManager().SetTimerForNextTick([this]()
+		{
+			ADirector* Director = Cast<ADirector>(UGameplayStatics::GetActorOfClass(GetWorld(), ADirector::StaticClass()));
+			if (Director)
 			{
-				Director->AddPlayer(player);
-				player->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
+				Director->AddPlayer(this);
+
+				this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("missing director"));
+				UE_LOG(LogTemp, Error, TEXT("Character: Missing Director in World!"));
 			}
 		});
-	}
-
-	respawnPoint = GetActorLocation();
-
-}
-
-void ARelicRunnersCharacter::InitLocalUI()
-{
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC) return;
-
-	// === HUD Widget ===
-	if (!PlayerHUD && PlayerHUDClass)
-	{
-		PlayerHUD = CreateWidget<UPlayerHUD>(PC, PlayerHUDClass);
-		if (PlayerHUD)
-		{
-			PlayerHUD->AddToViewport();
-			PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
-			PlayerHUD->UpdateHUDResource(PlayerResource, PlayerMaxResource);
-			PlayerHUD->UpdateHUDXP(PlayerLevel, PlayerXP, PlayerXPToLevel);
-			PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
-		}
-	}
-	// === Inventory Widget ===
-	if (!Inventory && InventoryClass)
-	{
-		Inventory = CreateWidget<UInventory>(PC, InventoryClass);
-		if (Inventory)
-		{
-			Inventory->AddToViewport();
-			Inventory->SetVisibility(ESlateVisibility::Hidden);
-			Inventory->SetIsEnabled(false);
-		}
-	}
-	// === Pause Widget ===
-	if (!PauseMenu && PauseMenuClass)
-	{
-		PauseMenu = CreateWidget<UPauseMenu>(PC, PauseMenuClass);
-		if (PauseMenu)
-		{
-			PauseMenu->AddToViewport();
-			PauseMenu->SetVisibility(ESlateVisibility::Hidden);
-			PauseMenu->SetIsEnabled(false);
-		}
-	}
-
-	// === Fixed Pause Widget ===
-	if (!PauseMenuWidget && PauseMenuWidgetClass)
-	{
-		PauseMenuWidget = CreateWidget<UPauseMenuWidget>(PC, PauseMenuWidgetClass);
-		if (PauseMenuWidget)
-		{
-			PauseMenuWidget->AddToViewport();
-			PauseMenuWidget->SetVisibility(ESlateVisibility::Hidden);
-			PauseMenuWidget->SetIsEnabled(false);
-		}
-	}
-	// === Ability Selection HUD Widget ===
-	if (!AbilitySelection && AbilitySelectionClass)
-	{
-		{
-			AbilitySelection = CreateWidget<UAbilitySelection>(PC, AbilitySelectionClass);
-			if (AbilitySelection)
-			{
-				AbilitySelection->AddToViewport();
-				AbilitySelection->SetVisibility(ESlateVisibility::Hidden);
-				AbilitySelection->SetIsEnabled(false);
-			}
-		}
-	}
-
-	// === Loading Screen ===
-	if (!LoadingScreen && LoadingScreenClass)
-	{
-		FInputModeUIOnly InputMode;
-		PC->SetInputMode(InputMode);
-
-		LoadingScreen = CreateWidget<ULoadingScreen>(PC, LoadingScreenClass);
-
-		FTimerHandle LoadingScreenTimer;
-
-		if (LoadingScreen)
-		{
-			LoadingScreen->AddToViewport();
-			//LoadingScreen->SetVisibility(ESlateVisibility::Visible);
-			//LoadingScreen->SetIsEnabled(true);
-			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersCharacter::HideLoadingScreen, 10.0f, false);
-		}
-	}
-
-	TryBindInventoryDelegates();
-}
-
-void ARelicRunnersCharacter::HideLoadingScreen()
-{
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC) return;
-
-	FInputModeGameOnly InputMode;
-	PC->SetInputMode(InputMode);
-
-	LoadingScreen->RemoveFromParent();
-}
-
-void ARelicRunnersCharacter::SpawnStarterItems()
-{
-	if (!ItemMeshData || !InventoryComponent) return;
-
-	for (int i = 0; i < 50; i++)
-	{
-		FString RandomType = ItemStats::GetRandomItemType();
-		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, ItemMeshData);
-		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
-		if (!Item) continue;
-
-		InventoryComponent->AddItem(Item);
-	}
 }
 
 void ARelicRunnersCharacter::Tick(float DeltaTime)
@@ -749,7 +349,7 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 	TraceForInteractables();
 	UpdatePlayerHUDWorldFacing();
 
-	if (GetActorLocation().Z <= -100.0f)
+	if (GetActorLocation().Z <= -200.0f)
 	{
 		Die();
 	}
@@ -780,31 +380,6 @@ void ARelicRunnersCharacter::TraceForInteractables()
 		bool bShouldShow = bWithinDistance && bFacingItem;
 		IInteractInterface::Execute_ShowTooltip(Item, bShouldShow);
 	}
-
-	/*for (TActorIterator<AVendor> It(GetWorld()); It; ++It)
-	{
-		AVendor* Vendor = *It;
-
-		if (!Vendor || !Vendor->Implements<UInteractInterface>()) continue;
-
-		FVector ToVendor = Vendor->GetActorLocation() - PlayerLocation;
-		float Distance = ToVendor.Size();
-
-		bool bWithinDistance = Distance <= MaxDistance;
-		bool bFacingItem = FVector::DotProduct(PlayerForward, ToVendor.GetSafeNormal()) > MinFacingDot;
-
-		bool bShouldShow = bWithinDistance && bFacingItem;
-		IInteractInterface::Execute_ShowTooltip(Vendor, bShouldShow);
-	}*/
-}
-
-void ARelicRunnersCharacter::SetPlayerMaxHealth(int value)
-{
-	PlayerMaxHealth = value;
-	if (HasAuthority() && PlayerHUD)
-	{
-		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
-	}
 }
 
 void ARelicRunnersCharacter::UpdatePlayerHUDWorldFacing()
@@ -831,33 +406,6 @@ void ARelicRunnersCharacter::UpdatePlayerHUDWorldFacing()
 			FRotator LookAtRotation = ToCamera.Rotation();
 			PlayerHUDWorld->SetWorldRotation(LookAtRotation);
 		}
-	}
-}
-
-void ARelicRunnersCharacter::PassiveHealthRegen()
-{
-	if (PlayerHealth < PlayerMaxHealth)
-	{
-		PlayerHealth += (int)(PlayerMaxHealth * 0.05f);
-	}
-	if (PlayerHealth > PlayerMaxHealth)
-	{
-		PlayerHealth = PlayerMaxHealth;
-	}
-
-	//Server Update HUD
-	if (HasAuthority() && PlayerHUD)
-	{
-		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
-	}
-}
-
-void ARelicRunnersCharacter::Client_UpdateEquippedStats_Implementation(const FEquippedStatsSummary& NewStats)
-{
-	if (InventoryComponent)
-	{
-		InventoryComponent->CachedEquippedStats = NewStats;
-		InventoryComponent->OnStatsChanged.Broadcast(NewStats);
 	}
 }
 
@@ -888,7 +436,7 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 		{
 			if (!AlreadyHitActors.Contains(HitActor))
 			{
-				// Check if it's an enemy before applying damage
+				//Check if it's an enemy before applying damage
 				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 				{
 					Server_HitEnemy(Enemy);
@@ -912,36 +460,48 @@ void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 	}
 }
 
+void ARelicRunnersCharacter::PlayRandomAttackAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance) return;
+
+	TArray<UAnimSequence*> SwordAttacks;
+	if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
+	if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
+	if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
+	if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+
+	if (SwordAttacks.Num() > 0)
+	{
+		int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
+		AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
+	}
+}
+
+bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const
+{
+	if (!InvComp) return false;
+
+	const TArray<FString> WeaponTypes = { "Greatsword", "Sword", "Staff", "Bow" };
+
+	for (const FString& Type : WeaponTypes)
+	{
+		if (InvComp->GetEquippedItemByType(Type))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void ARelicRunnersCharacter::BasicAttack()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Attacking"));
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-	if (!Inventory || !InventoryComponent)
+	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 	{
-		return;
-	}
-	if (InventoryComponent->GetEquippedItemByType("Greatsword")
-		|| InventoryComponent->GetEquippedItemByType("Sword")
-		|| InventoryComponent->GetEquippedItemByType("Staff")
-		|| InventoryComponent->GetEquippedItemByType("Bow"))
-	{
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (!AnimInstance) return;
-
-		TArray<UAnimSequence*> SwordAttacks;
-		if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
-		if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
-		if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
-		if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
-
-		if (SwordAttacks.Num() > 0)
-		{
-			int32 Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
-			UAnimSequence* SelectedSequence = SwordAttacks[Index];
-
-			// Play as dynamic montage
-			AnimInstance->PlaySlotAnimationAsDynamicMontage(SelectedSequence, FName("DefaultSlot"));
-		}
+		PlayRandomAttackAnimation();
 	}
 }
 
@@ -980,8 +540,10 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 
 void ARelicRunnersCharacter::Interact()
 {
+	if (!IsLocallyControlled()) return;
+
 	FVector Start = GetActorLocation();
-	FVector End = Start + (FollowCamera->GetForwardVector() * 1000.f); // Match TraceForInteractables
+	FVector End = Start + (FollowCamera->GetForwardVector() * 1000.f); //Match TraceForInteractables
 
 	FHitResult Hit;
 	FCollisionQueryParams Params;
@@ -1002,6 +564,8 @@ void ARelicRunnersCharacter::Interact()
 					if (RPC)
 					{
 						RPC->Server_RequestPickup(Item);
+						Item->SetActorEnableCollision(false);
+						Item->SetActorHiddenInGame(true);
 					}
 				}
 			}
@@ -1025,286 +589,16 @@ void ARelicRunnersCharacter::Interact()
 	}
 }
 
-void ARelicRunnersCharacter::ToggleUI(UUserWidget* UIWidget)
+void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const FItemData& Data)
 {
-	if (!IsLocallyControlled() || !UIWidget) return;
-
-	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	if (!PlayerController) return;
-
-	bool bIsVisible = UIWidget->IsVisible();
-	ESlateVisibility Visibility = bIsVisible ? ESlateVisibility::Hidden : ESlateVisibility::Visible;
-	bool bEnable = !bIsVisible;
-
-	UIWidget->SetVisibility(Visibility);
-	UIWidget->SetIsEnabled(bEnable);
-	if (bEnable)
-	{
-		FInputModeGameAndUI InputMode;
-		PlayerController->SetInputMode(InputMode);
-	}
-	else
-	{
-		FInputModeGameOnly InputMode;
-		PlayerController->SetInputMode(InputMode);
-	}
-	PlayerController->SetShowMouseCursor(bEnable);
-
-	if (UIWidget == Inventory)
-	{
-		UInventoryItemOptions::CloseAnyOpenPopup();
-		UInventorySortingOptions::CloseAnyOpenPopup();
-	}
-
-	if (UIWidget == PauseMenuWidget)
-	{
-		UPauseMenuWidget* pauseMenu = Cast<UPauseMenuWidget>(UIWidget);
-
-		pauseMenu->ShowPauseMenu();
-	}
-}
-
-void ARelicRunnersCharacter::InventoryUI()
-{
-	if (!Inventory) return;
-	RemoveOtherUI("Inventory", Cast<APlayerController>(Controller));
-	ToggleUI(Inventory);
-	FSlateApplication::Get().CancelDragDrop();
-	Inventory->ToggleVendorUI(false);
-}
-
-void ARelicRunnersCharacter::PauseUI()
-{
-	//if (!PauseMenu) return;
-	//RemoveOtherUI("Pause", Cast<APlayerController>(Controller));
-	//ToggleUI(PauseMenu);
-
-	if (!PauseMenuWidget) return;
-	RemoveOtherUI("Pause", Cast<APlayerController>(Controller));
-	ToggleUI(PauseMenuWidget);
-}
-
-void ARelicRunnersCharacter::AbilitySystemUI()
-{
-	if (!AbilitySelection || PlayerAbilityPoints < 1) return;
-	RemoveOtherUI("Ability", Cast<APlayerController>(Controller));
-	ToggleUI(AbilitySelection);
-}
-
-void ARelicRunnersCharacter::HideUI(UUserWidget* UIWidget, APlayerController* PlayerController, bool bClosePopups = false)
-{
-	if (UIWidget->IsVisible())
-	{
-		UIWidget->SetVisibility(ESlateVisibility::Hidden);
-		UIWidget->SetIsEnabled(false);
-		PlayerController->SetInputMode(FInputModeGameOnly());
-		PlayerController->SetShowMouseCursor(false);
-
-		if (bClosePopups && UIWidget == Inventory)
-		{
-			UInventoryItemOptions::CloseAnyOpenPopup();
-			UInventorySortingOptions::CloseAnyOpenPopup();
-		}
-	}
-}
-
-void ARelicRunnersCharacter::RemoveOtherUI(FString UI, APlayerController* playerController)
-{
-	if (UI != "Ability") HideUI(AbilitySelection, playerController);
-	if (UI != "Inventory") HideUI(Inventory, playerController, true);
-	if (UI != "Pause") HideUI(PauseMenu, playerController);
-	if (UI != "Pause") HideUI(PauseMenuWidget, playerController);
-}
-
-void ARelicRunnersCharacter::DamageAbility()
-{
-	GiveDamageAbilities();
-}
-
-void ARelicRunnersCharacter::DefenceAbility()
-{
-	GiveDefenceAbilities();
-}
-
-void ARelicRunnersCharacter::UtilityAbility()
-{
-	GiveUtilityAbilities();
-}
-
-void ARelicRunnersCharacter::UltimateAbility()
-{
-	GiveUltimateAbilities();
-}
-
-void ARelicRunnersCharacter::GiveDamageAbilities()
-{
-
-}
-
-void ARelicRunnersCharacter::GiveDefenceAbilities()
-{
-
-}
-
-void ARelicRunnersCharacter::GiveUtilityAbilities()
-{
-
-}
-
-void ARelicRunnersCharacter::GiveUltimateAbilities()
-{
-
-}
-
-void ARelicRunnersCharacter::HealthPotions()
-{
-	if (PlayerHUD)
-	{
-		int OldHealth = PlayerHealth;
-		int OldPotionCount = HealthPotionCount;
-
-		PlayerHUD->OnHealthPotionClicked(PlayerHealth, PlayerMaxHealth, HealthPotionCount, HealthGranted);
-
-		if (PlayerHealth != OldHealth || HealthPotionCount != OldPotionCount)
-		{
-			Server_UseHealthPotion(PlayerHealth, HealthPotionCount);
-		}
-
-		//Server Update HUD
-		if (HasAuthority())
-		{
-			PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
-		}
-	}
-}
-
-void ARelicRunnersCharacter::Server_UseHealthPotion_Implementation(int NewHealth, int NewPotionCount)
-{
-	if (!HasAuthority()) return;
-
-	PlayerHealth = (FMath::Clamp(NewHealth, 0, PlayerMaxHealth));
-	HealthPotionCount = FMath::Max(NewPotionCount, 0);
-
-	//Server Update HUD
-	if (PlayerHUD)
-	{
-		PlayerHUD->UpdateHUDHealth(PlayerHealth, PlayerMaxHealth);
-	}
-}
-
-
-void ARelicRunnersCharacter::Server_SpendAbilityPoints_Implementation()
-{
-	if (!HasAuthority()) return;
-	 
-	if (PlayerAbilityPoints > 0)
-	{
-		PlayerAbilityPoints--;
-
-		Client_OnAbilityPointsUpdated(PlayerAbilityPoints);
-	}
-
-	//Server Update HUD
-	if (PlayerHUD)
-	{
-		PlayerHUD->UpdateHUDAbilityPoints(PlayerAbilityPoints);
-	}
-}
-
-void ARelicRunnersCharacter::Client_OnAbilityPointsUpdated_Implementation(int32 NewAbilityPoints)
-{
-	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	if (!PlayerController) return;
-
-	//Update UI locally on the client
-	if (NewAbilityPoints == 0 && AbilitySelection)
-	{
-		AbilitySelection->SetVisibility(ESlateVisibility::Hidden);
-		AbilitySelection->SetIsEnabled(false);
-		PlayerController->SetInputMode(FInputModeGameOnly());
-		PlayerController->SetShowMouseCursor(false);
-	}
-}
-
-void ARelicRunnersCharacter::AddGold(int Value)
-{
-	Server_AddGold(Value);
-}
-
-void ARelicRunnersCharacter::Server_AddGold_Implementation(int Value)
-{
-	PlayerGold += Value;
-	InventoryComponent->UpdateTotalEquippedStats(this);
-}
-
-bool ARelicRunnersCharacter::CheckEnoughGold(int Value)
-{
-	if (PlayerGold >= Value)
-	{
-		PlayerGold -= Value;
-		InventoryComponent->UpdateTotalEquippedStats(this);
-		return true;
-	}
-	return false;
-}
-
-void ARelicRunnersCharacter::Server_BuyItem_Implementation(const FItemData& ItemData, AVendor* Vendor)
-{
-	if (!Vendor || !InventoryComponent) return;
-
-	if (!CheckEnoughGold(ItemData.Gold)) return;
-
-	UItemObject* NewItem = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
-	NewItem->IsNewItem = true;
-	InventoryComponent->AddItem(NewItem);
-	Vendor->RemoveStock(ItemData);
-
-	Client_UpdateVendorUI(Vendor);
-}
-
-void ARelicRunnersCharacter::Server_SellItem_Implementation(const FItemData& ItemData, AVendor* Vendor)
-{
-	if (!Vendor || !InventoryComponent) return;
-
-	//Unequip if equipped
-	UItemObject* EquippedItem = InventoryComponent->GetEquippedItemReference(ItemData.ItemType);
-	if (EquippedItem && EquippedItem->ItemData.UniqueID == ItemData.UniqueID)
-	{
-		InventoryComponent->UnequipItem(EquippedItem);
-	}
-
-	InventoryComponent->RemoveItemByID(ItemData.UniqueID);
-	AddGold(ItemData.Gold);
-	Vendor->AddStock(ItemData);
-
-	Client_UpdateVendorUI(Vendor);
-}
-
-void ARelicRunnersCharacter::Client_UpdateVendorUI_Implementation(AVendor* Vendor)
-{
-	if (Inventory)
-	{
-		Inventory->DisplaySelectedVendorItems(Vendor->GetStock(), Vendor);
-	}
-}
-
-void  ARelicRunnersCharacter::SetInventoryComponent(UInventoryComponent* InvComp)
-{ 
-	InventoryComponent = InvComp; 
-}
-
-void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Data)
-{
-	if (!HasAuthority() || !InventoryComponent) return;
-
 	bool FoundAndRemoved = false;
 
 	//Remove from Inventory
-	for (int i = 0; i < InventoryComponent->InventoryItems.Num(); i++)
+	for (int i = 0; i < RelicPlayerState->GetInventoryComponent()->InventoryItems.Num(); i++)
 	{
-		if (InventoryComponent->InventoryItems[i]->GetUniqueID() == Data.UniqueID)
+		if (RelicPlayerState->GetInventoryComponent()->InventoryItems[i]->GetUniqueID() == Data.UniqueID)
 		{
-			InventoryComponent->InventoryItems.RemoveAt(i);
+			RelicPlayerState->GetInventoryComponent()->InventoryItems.RemoveAt(i);
 			FoundAndRemoved = true;
 			break;
 		}
@@ -1313,12 +607,12 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 	//Remove from Equipped
 	if (!FoundAndRemoved)
 	{
-		for (int i = 0; i < InventoryComponent->EquippedItems.Num(); i++)
+		for (int i = 0; i < RelicPlayerState->GetInventoryComponent()->EquippedItems.Num(); i++)
 		{
-			if (InventoryComponent->EquippedItems[i].Item &&
-				InventoryComponent->EquippedItems[i].Item->GetUniqueID() == Data.UniqueID)
+			if (RelicPlayerState->GetInventoryComponent()->EquippedItems[i].Item &&
+				RelicPlayerState->GetInventoryComponent()->EquippedItems[i].Item->GetUniqueID() == Data.UniqueID)
 			{
-				InventoryComponent->EquippedItems.RemoveAt(i);
+				RelicPlayerState->GetInventoryComponent()->EquippedItems.RemoveAt(i);
 				FoundAndRemoved = true;
 				break;
 			}
@@ -1331,63 +625,10 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 		return;
 	}
 
-	//Desired drop location
+
 	FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
-	const float MinDistance = 50.f;
+	FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
 
-	//Get all items in the world
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundActors);
-
-	//Handle overlap resolution for existing nearby items
-	for (AActor* Actor : FoundActors)
-	{
-		AItemActor* OtherItem = Cast<AItemActor>(Actor);
-		if (!IsValid(Actor)) continue;
-
-		FVector OtherLoc = OtherItem->GetActorLocation();
-		if (FVector::Dist(OtherLoc, SpawnLoc) < MinDistance)
-		{
-			bool Moved = false;
-
-			// Try circular spreading from original location
-			for (int Radius = 50; Radius <= 300; Radius += 50)
-			{
-				for (int Angle = 0; Angle < 360; Angle += 45)
-				{
-					const float Radians = FMath::DegreesToRadians(Angle);
-					FVector Offset = FVector(FMath::Cos(Radians), FMath::Sin(Radians), 0.f) * Radius;
-					FVector NewLoc = OtherLoc + Offset;
-
-					// Check if new position is too close to any other item
-					bool bTooClose = false;
-					for (AActor* CheckActor : FoundActors)
-					{
-						if (CheckActor != OtherItem && FVector::Dist(NewLoc, CheckActor->GetActorLocation()) < MinDistance)
-						{
-							bTooClose = true;
-							break;
-						}
-					}
-
-					if (!bTooClose)
-					{
-						OtherItem->SetActorLocation(NewLoc);
-						Moved = true;
-						break;
-					}
-				}
-				if (Moved) break;
-			}
-
-			if (!Moved)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Could not reposition item: %s"), *OtherItem->GetName());
-			}
-		}
-	}
-
-	// Spawn new dropped item
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 	Params.Instigator = this;
@@ -1401,14 +642,104 @@ void ARelicRunnersCharacter::Server_DropItem_Implementation(const FItemData& Dat
 		Dropped->SetReplicateMovement(true);
 	}
 
-	InventoryComponent->UpdateTotalEquippedStats(this);
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+		if (RPC)
+		{
+			RPC->UpdatePreviewWithEquippedItems();
+		}
+	}
 }
 
-void ARelicRunnersCharacter::Server_PickupItem_Implementation(AItemActor* TargetItem)
+void ARelicRunnersCharacter::HealthPotions()
 {
-	if (TargetItem)
+	if (RelicPlayerState)
 	{
-		TargetItem->Server_HandlePickup(this);
+		RelicPlayerState->Server_UseHealthPotion();
+	}
+}
+
+FVector ARelicRunnersCharacter::CalculateValidDropLocation(FVector DesiredLoc) const
+{
+	const float MinDistance = 50.f;
+	TArray<AActor*> FoundItems;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundItems);
+
+	//If no items exist, the desired location is perfectly fine
+	if (FoundItems.Num() == 0) return DesiredLoc;
+
+	FVector CurrentBestLoc = DesiredLoc;
+	bool NeedsRepositioning = false;
+
+	//Check if our desired spot is blocked
+	for (AActor* Item : FoundItems)
+	{
+		if (IsValid(Item) && FVector::Dist(Item->GetActorLocation(), DesiredLoc) < MinDistance)
+		{
+			NeedsRepositioning = true;
+			break;
+		}
+	}
+
+	if (!NeedsRepositioning) return DesiredLoc;
+
+	//Spiral search
+	for (int Radius = 60; Radius <= 300; Radius += 60)
+	{
+		for (int Angle = 0; Angle < 360; Angle += 45)
+		{
+			const float Radians = FMath::DegreesToRadians(Angle);
+			FVector Offset(FMath::Cos(Radians) * Radius, FMath::Sin(Radians) * Radius, 0.f);
+			FVector CandidateLoc = DesiredLoc + Offset;
+
+			//Check candidate against all world items
+			bool CollisionFound = false;
+			for (AActor* Item : FoundItems)
+			{
+				if (FVector::Dist(CandidateLoc, Item->GetActorLocation()) < MinDistance)
+				{
+					CollisionFound = true;
+					break;
+				}
+			}
+
+			if (!CollisionFound)
+			{
+				return CandidateLoc;
+			}
+		}
+	}
+
+	//Fallback: If everywhere is crowded
+	return DesiredLoc;
+}
+
+void ARelicRunnersCharacter::SyncEquippedVisuals(const TArray<FEquippedItemEntry>& EquippedEntries)
+{
+	for (const FEquippedItemEntry& Entry : EquippedEntries)
+	{
+		if (!Entry.Item) continue;
+
+		const FString& ItemType = Entry.ItemType;
+		const FString MeshPath = GetMeshPathByItemType(ItemType);
+
+		if (ItemType == "Staff" || ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Bow" || ItemType == "Offhand")
+		{
+			UStaticMesh* NewMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *MeshPath));
+			if (NewMesh)
+			{
+				UpdateItemVisuals(NewMesh, ItemType);
+			}
+		}
+		else
+		{
+			USkeletalMesh* NewMesh = Cast<USkeletalMesh>(StaticLoadObject(USkeletalMesh::StaticClass(), nullptr, *MeshPath));
+			if (NewMesh)
+			{
+				UpdateItemVisuals(NewMesh, ItemType);
+			}
+		}
 	}
 }
 
@@ -1484,4 +815,44 @@ UStaticMeshComponent* ARelicRunnersCharacter::GetStaticMeshComponentByItemType(c
 	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow") return MainhandItemMesh;
 	if (ItemType == "Offhand") return OffhandItemMesh;
 	return nullptr;
+}
+
+void ARelicRunnersCharacter::GiveDamageAbilities()
+{
+
+}
+
+void ARelicRunnersCharacter::GiveDefenceAbilities()
+{
+
+}
+
+void ARelicRunnersCharacter::GiveUtilityAbilities()
+{
+
+}
+
+void ARelicRunnersCharacter::GiveUltimateAbilities()
+{
+
+}
+
+void ARelicRunnersCharacter::DamageAbility()
+{
+	UE_LOG(LogTemp, Log, TEXT("Damage Ability Activated on Character"));
+}
+
+void ARelicRunnersCharacter::DefenceAbility()
+{
+	UE_LOG(LogTemp, Log, TEXT("Defence Ability Activated on Character"));
+}
+
+void ARelicRunnersCharacter::UtilityAbility()
+{
+	UE_LOG(LogTemp, Log, TEXT("Utility Ability Activated on Character"));
+}
+
+void ARelicRunnersCharacter::UltimateAbility()
+{
+	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
