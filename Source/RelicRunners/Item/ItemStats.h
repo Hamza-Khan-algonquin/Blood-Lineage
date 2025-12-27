@@ -40,7 +40,7 @@ public:
         static const TMap<FString, FRarityData> RarityDataMap = {
             { "Common",    FRarityData("Common",    FLinearColor(0.753f, 0.753f, 0.753f, 1), 1.0f, 60.0f) },
             { "Uncommon",  FRarityData("Uncommon",  FLinearColor(0.5f, 1.0f, 0.0f, 1),       2.0f, 20.0f) },
-            { "Rare",      FRarityData("Rare",      FLinearColor(0.0f, 0.3f, 0.9f, 1),       4.0f, 12.0f) },
+            { "Rare",      FRarityData("Rare",      FLinearColor(0.05f, 0.4f, 1.0f, 1),       4.0f, 12.0f) },
             { "Epic",      FRarityData("Epic",      FLinearColor(0.4f, 0.0f, 0.8f, 1),       7.0f, 6.0f) },
             { "Legendary", FRarityData("Legendary", FLinearColor(0.9f, 0.4f, 0.0f, 1),       10.0f, 1.5f) },
             { "Mythic",    FRarityData("Mythic",    FLinearColor(0.745f, 0.0f, 0.314f, 1),   15.0f, 0.4f) },
