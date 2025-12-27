@@ -39,12 +39,12 @@ public:
     {
         static const TMap<FString, FRarityData> RarityDataMap = {
             { "Common",    FRarityData("Common",    FLinearColor(0.753f, 0.753f, 0.753f, 1), 1.0f, 60.0f) },
-            { "Uncommon",  FRarityData("Uncommon",  FLinearColor(0.5f, 1.0f, 0.0f, 1),       1.5f, 20.0f) },
-            { "Rare",      FRarityData("Rare",      FLinearColor(0.0f, 0.3f, 0.9f, 1),       2.0f, 12.0f) },
-            { "Epic",      FRarityData("Epic",      FLinearColor(0.4f, 0.0f, 0.8f, 1),       2.5f, 6.0f) },
-            { "Legendary", FRarityData("Legendary", FLinearColor(0.9f, 0.4f, 0.0f, 1),       3.0f, 1.5f) },
-            { "Mythic",    FRarityData("Mythic",    FLinearColor(0.745f, 0.0f, 0.314f, 1),   3.5f, 0.4f) },
-            { "Relic",     FRarityData("Relic",     FLinearColor(0.0f, 0.76f, 0.76f, 1),     4.0f, 0.1f) }
+            { "Uncommon",  FRarityData("Uncommon",  FLinearColor(0.5f, 1.0f, 0.0f, 1),       2.0f, 20.0f) },
+            { "Rare",      FRarityData("Rare",      FLinearColor(0.05f, 0.4f, 1.0f, 1),       4.0f, 12.0f) },
+            { "Epic",      FRarityData("Epic",      FLinearColor(0.4f, 0.0f, 0.8f, 1),       7.0f, 6.0f) },
+            { "Legendary", FRarityData("Legendary", FLinearColor(0.9f, 0.4f, 0.0f, 1),       10.0f, 1.5f) },
+            { "Mythic",    FRarityData("Mythic",    FLinearColor(0.745f, 0.0f, 0.314f, 1),   15.0f, 0.4f) },
+            { "Relic",     FRarityData("Relic",     FLinearColor(0.0f, 0.76f, 0.76f, 1),     20.0f, 0.1f) }
         };
         return RarityDataMap;
     }
@@ -102,44 +102,59 @@ public:
         ItemData.Name = ItemData.ItemType;
         ItemData.Level = Level;
 
-        float BaseMin = 1.f;
-        float BaseMax = 5.f;
-        float Multiplier = GetRarityDataMap()[ItemData.Rarity].Multiplier;
+        float BaseMin = 0.1f;
+        float BaseMax = 1.f;
+        float RarityMult = GetRarityDataMap()[ItemData.Rarity].Multiplier;
 
-        float Min = BaseMin * ItemData.Level * Multiplier;
-        float Max = BaseMax * ItemData.Level * Multiplier;
+        //Base scaling based on Level and Rarity
+        float Min = BaseMin * ItemData.Level * RarityMult;
+        float Max = BaseMax * ItemData.Level * RarityMult;
 
         TSet<FString> ArmorTypes = { "Helmet", "Upper", "Lower", "Arms" };
-        TSet<FString> WeaponTypes = { "Greatsword", "Bow", "Sword", "Staff"};
         TSet<FString> MixedTypes = { "Necklace" };
+
+        //Size of armor multiplier
+        float SizeMult = 1.0f;
+        if (ItemType == "Upper" || ItemType == "Lower") SizeMult = 1.5f;
+        else if (ItemType == "Helmet") SizeMult = 1.25f;
+        else if (ItemType == "Arms") SizeMult = 1.0f;
+
+        auto AssignTripleStats = [&](int& Primary, int& Secondary, int& Tertiary)
+            {
+                TArray<int*> Stats = { &Primary, &Secondary, &Tertiary };
+
+                //Pick random main stat
+                for (int i = Stats.Num() - 1; i > 0; i--)
+                {
+                    int j = FMath::RandRange(0, i);
+                    Stats.Swap(i, j);
+                }
+
+                //Apply weights
+                float SecondaryWeight = FMath::FRandRange(0.4f, 0.77f);
+                float TertiaryWeight = FMath::FRandRange(0.0f, 0.33f);
+                *Stats[0] = FMath::Max(0, FMath::RoundToInt(FMath::FRandRange(Min, Max)));
+                *Stats[1] = FMath::Max(0, FMath::RoundToInt(FMath::FRandRange(Min * SecondaryWeight, Max * SecondaryWeight)));
+                *Stats[2] = FMath::Max(0, FMath::RoundToInt(FMath::FRandRange(Min * TertiaryWeight, Max * TertiaryWeight)));
+            };
 
         if (ArmorTypes.Contains(ItemData.ItemType))
         {
-            ItemData.Health = FMath::RoundToInt(ItemData.Level + FMath::FRandRange(Min, Max * 1.2f));
-            ItemData.Armor = FMath::RoundToInt(ItemData.Level + FMath::FRandRange(Min, Max * 1.2f));
-            ItemData.Dexterity = FMath::RoundToInt(FMath::FRandRange(Min * 0.3f, Max * 0.5f));
-            ItemData.Strength = FMath::RoundToInt(FMath::FRandRange(Min * 0.3f, Max * 0.5f));
-            ItemData.Intelligence = FMath::RoundToInt(FMath::FRandRange(Min * 0.3f, Max * 0.5f));
-            ItemData.Gold = FMath::RoundToInt(FMath::FRandRange(Min * 0.3f, Max * 0.5f));
-        }
-        else if (WeaponTypes.Contains(ItemData.ItemType))
-        {
-            //Currently only generated in character class files
+            ItemData.Health = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max)) * SizeMult));
+            ItemData.Armor = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max)) * SizeMult));
+
+            AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
+
+            ItemData.Gold = FMath::Max(1, FMath::RoundToInt(FMath::FRandRange(Min * 0.5f, Max * 0.5f)));
         }
         else if (MixedTypes.Contains(ItemData.ItemType))
         {
-            ItemData.Dexterity = FMath::RoundToInt(FMath::FRandRange(Min * 0.8f, Max * 1.2f));
-            ItemData.Strength = FMath::RoundToInt(FMath::FRandRange(Min * 0.8f, Max * 1.2f));
-            ItemData.Intelligence = FMath::RoundToInt(FMath::FRandRange(Min * 0.8f, Max * 1.2f));
-            ItemData.Gold = FMath::RoundToInt(FMath::FRandRange(Min * 0.5f, Max));
+            AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
+
+            ItemData.Gold = FMath::Max(1, FMath::RoundToInt(FMath::FRandRange(Min, Max)));
         }
 
-        if (MeshData)
-        {
-            SetItemMeshes(ItemData, MeshData);
-        }
-
-        // Load and assign icon texture
+        if (MeshData) { SetItemMeshes(ItemData, MeshData); }
         FString ImagePath = FString::Printf(TEXT("Texture2D'/Game/ThirdPerson/Icons/%s.%s'"), *ItemData.ItemType, *ItemData.ItemType);
         if (UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *ImagePath)))
         {
