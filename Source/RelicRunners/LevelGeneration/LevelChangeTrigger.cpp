@@ -94,6 +94,8 @@ void ALevelChangeTrigger::Server_SetTargetLevel_Implementation(FName newTargetLe
 
 void ALevelChangeTrigger::ChangeLevel()
 {
+	if (!HasAuthority()) return;
+
 	UWorld* world = GetWorld();
 	if (!world) return;
 

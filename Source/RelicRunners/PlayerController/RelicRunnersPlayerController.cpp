@@ -152,6 +152,47 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 }
 
+void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
+{
+	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
+
+	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+	{
+		if (UWorld* World = GetWorld())
+		{
+			if (PlayerHUD)
+			{
+				PlayerHUD->RemoveFromParent();
+			}
+
+			if (Inventory)
+			{
+				Inventory->RemoveFromParent();
+			}
+
+			if (PauseMenu)
+			{
+				PauseMenu->RemoveFromParent();
+			}
+
+			if (PauseMenuWidget)
+			{
+				PauseMenuWidget->RemoveFromParent();
+			}
+
+			if (AbilitySelection)
+			{
+				AbilitySelection->RemoveFromParent();
+			}
+
+			if (LoadingScreen)
+			{
+				LoadingScreen->RemoveFromParent();
+			}
+		}
+	}
+}
+
 void ARelicRunnersPlayerController::SyncUI()
 {
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent())
