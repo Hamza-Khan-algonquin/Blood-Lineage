@@ -50,7 +50,7 @@ public:
     void SetForgeButtonVisibility(bool Visible);
 
     UFUNCTION()
-    void SetRemoveButtonVisibility(bool Visible);
+    void SetStoreButtonVisibility(bool Visible);
 
     void ClosePopup();
     static void CloseAnyOpenPopup();
@@ -67,7 +67,7 @@ public:
     UFUNCTION()
     void OnForgeClicked();
     UFUNCTION()
-    void OnRemoveClicked();
+    void OnStoreButtonClicked();
     void ApplyConfig(const struct FItemOptionsUIConfig& Config);
 protected:
 
@@ -93,7 +93,7 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UButton* ForgeButton;
     UPROPERTY(meta = (BindWidget))
-    class UButton* RemoveButton;
+    class UButton* StoreButton;
 private:
 
     //Properties

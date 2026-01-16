@@ -52,9 +52,9 @@ void UInventoryItemOptions::NativeConstruct()
     {
         ForgeButton->OnClicked.AddDynamic(this, &UInventoryItemOptions::OnForgeClicked);
     }
-    if (RemoveButton)
+    if (StoreButton)
     {
-        RemoveButton->OnClicked.AddDynamic(this, &UInventoryItemOptions::OnRemoveClicked);
+        StoreButton->OnClicked.AddDynamic(this, &UInventoryItemOptions::OnStoreButtonClicked);
     }
 }
 
@@ -107,7 +107,7 @@ void UInventoryItemOptions::ApplyConfig(const FItemOptionsUIConfig& Config)
     SetSellButtonVisibility(Config.ShowSell);
     SetBuyButtonVisibility(Config.ShowBuy);
     SetForgeButtonVisibility(Config.ShowForge);
-    SetRemoveButtonVisibility(Config.ShowRemove);
+    SetStoreButtonVisibility(Config.ShowRemove);
 }
 
 static ESlateVisibility BoolToVisibility(bool b)
@@ -163,11 +163,11 @@ void UInventoryItemOptions::SetForgeButtonVisibility(bool Visible)
     }
 }
 
-void UInventoryItemOptions::SetRemoveButtonVisibility(bool Visible)
+void UInventoryItemOptions::SetStoreButtonVisibility(bool Visible)
 {
-    if (RemoveButton)
+    if (StoreButton)
     {
-        RemoveButton->SetVisibility(BoolToVisibility(Visible));
+        StoreButton->SetVisibility(BoolToVisibility(Visible));
     }
 }
 
@@ -254,7 +254,7 @@ void UInventoryItemOptions::OnForgeClicked()
     }
 }
 
-void UInventoryItemOptions::OnRemoveClicked()
+void UInventoryItemOptions::OnStoreButtonClicked()
 {
     if (UInventory* Inventory = UInventory::Get(this))
     {
