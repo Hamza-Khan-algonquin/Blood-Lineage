@@ -170,6 +170,7 @@ protected:
 	virtual void ClientRestart_Implementation(APawn* NewPawn) override;
 	virtual void SetupInputComponent() override;
 	virtual void PostSeamlessTravel() override;
+	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
 
 	//Properties
 	class ARelicRunnersCharacter* PossessedPawn;
