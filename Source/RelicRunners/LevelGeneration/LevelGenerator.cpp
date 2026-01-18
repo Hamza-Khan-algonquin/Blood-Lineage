@@ -12,6 +12,25 @@
 #include "RelicRunners/RelicRunnersGameState.h"
 /*
 TODO:
+Fix wall spawning -> Have specific walls for tiles without a pre-determined wall | Done
+
+Make it so that level generation is done within ranges | Done
+
+Adjust how the level generation with the textures work
+
+Make it so that the level generation can generate multiple islands that are connected to each other by bridge
+Each island has their own objective
+Bridges block the way until the objective is complete
+
+Maybe Make new zones spawn dynamically when the bridge falls
+
+Add map border that becomes more visible the closer you get to it to visualize where the edge of the island is
+Add beacon to make it easier to see the locations of objectives from far away. The closer you get, the less visible it becomes
+
+Remove concave corners | Done
+Make convex corners square instead of round | Done
+Adjust what type of floor spawns to accomadate not having concave corners | Done
+Change how the floor tiles are scaled to make them more dynamic | Done
 */
 
 ALevelGenerator::ALevelGenerator() :
@@ -22,8 +41,8 @@ ALevelGenerator::ALevelGenerator() :
 	GenerationIsRandom(true),
 	LevelTexture(nullptr),
 	StartingToEndingMinDistance(0),
-	SpawnWidth(2),
-	SpawnDepth(2),
+	//SpawnWidth(2),
+	//SpawnDepth(2),
 	FullPercentage(75.0f),
 	HolePercentage(0.0f),
 	BasicObstaclePercentage(50.0f),
@@ -31,10 +50,10 @@ ALevelGenerator::ALevelGenerator() :
 	BorderForceFull(0),
 	LevelStartPackedActor(nullptr),
 	LevelEndPackedActor(nullptr),
-	FullPiece(nullptr),
-	SidePiece(nullptr),
-	ConcaveCornerPiece(nullptr),
-	ConvexCornerPiece(nullptr),
+	FullFloorMesh(nullptr),
+	SideFloorMesh(nullptr),
+	ConvexCornerMesh(nullptr),
+	FloorMaterial(nullptr),
 	ObjectiveType(0),
 	MaxCapturableFlagAmount(0),
 	MaxEnemyZoneAmount(0),
@@ -48,18 +67,6 @@ ALevelGenerator::ALevelGenerator() :
 
 	DeliverySpline = CreateDefaultSubobject<USplineComponent>("Delivery Path");
 	DeliverySpline->SetupAttachment(Origin);
-
-	FullPiece = CreateDefaultSubobject<UStaticMeshComponent>("FullPiece");
-	FullPiece->SetupAttachment(Origin);
-
-	SidePiece = CreateDefaultSubobject<UStaticMeshComponent>("SidePiece");
-	SidePiece->SetupAttachment(Origin);
-
-	ConcaveCornerPiece = CreateDefaultSubobject<UStaticMeshComponent>("ConcaveCornerPiece");
-	ConcaveCornerPiece->SetupAttachment(Origin);
-
-	ConvexCornerPiece = CreateDefaultSubobject<UStaticMeshComponent>("ConvexCornerPiece");
-	ConvexCornerPiece->SetupAttachment(Origin);
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -139,11 +146,14 @@ void ALevelGenerator::PostInitializeComponents()
 		}
 		else
 		{
+			WidthRange.Final = FMath::RandRange(WidthRange.Min, WidthRange.Max);
+			DepthRange.Final = FMath::RandRange(DepthRange.Min, DepthRange.Max);
+
 			//Set Camera Position relative to size of map
 			if (CameraActor)
 			{
-				float cameraX = SpawnWidth * TileScale * 2 - TileScale;
-				float cameraY = SpawnDepth * TileScale * 2 - TileScale;
+				float cameraX = WidthRange.Final * TileScale * 2 - TileScale;
+				float cameraY = DepthRange.Final * TileScale * 2 - TileScale;
 				CameraActor->SetActorLocation(FVector(cameraX, cameraY, 0.0f));
 			}
 
@@ -153,26 +163,26 @@ void ALevelGenerator::PostInitializeComponents()
 			//If somehow both are at the exact same index, reinitialize starting and ending tiles
 			do
 			{
-				startingIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
-				endingIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+				startingIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
+				endingIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 			} while (CalculateDistanceBetweenTiles(startingIndex, endingIndex) || startingIndex == endingIndex);
 
-			for (int y = 0; y < SpawnDepth; y++)
+			for (int y = 0; y < DepthRange.Final; y++)
 			{
-				for (int x = 0; x < SpawnWidth; x++)
+				for (int x = 0; x < WidthRange.Final; x++)
 				{
 					//Initialize each tile and set them to either walkable or non-walkable.
 					GenerateFloor(x, y);
 				}
 			}
 
-			if (SpawnDepth * SpawnWidth > 1)
+			if (DepthRange.Final * WidthRange.Final > 1)
 			{
 				//Override starting and ending tiles initialized above and create a path from one to the other.
 				SetStartingAndEndingPoints(startingIndex, endingIndex);
 
-				FindStartToEndPath(startingIndex, endingIndex, SpawnWidth, true);
+				FindStartToEndPath(startingIndex, endingIndex, WidthRange.Final, true);
 
 				if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::MoveThePayload) && PayloadActor != nullptr)
 				{
@@ -184,14 +194,14 @@ void ALevelGenerator::PostInitializeComponents()
 			//Override previously initialized tiles with capturable flag tiles
 			for (int i = 0; i < MaxCapturableFlagAmount; i++)
 			{
-				int keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+				int keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 				int whileLoopLimit = 0;
 
 				//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
 				while (FloorValuesArray[keyTileIndex].FloorObstacle > EFloorObstacle::Basic)
 				{
-					keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+					keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 					whileLoopLimit++;
 
@@ -206,21 +216,21 @@ void ALevelGenerator::PostInitializeComponents()
 				{
 					SetFlagTile(keyTileIndex);
 
-					FindStartToEndPath(startingIndex, keyTileIndex, SpawnWidth);
+					FindStartToEndPath(startingIndex, keyTileIndex, WidthRange.Final);
 				}
 			}
 
 			//Override previously initialized tiles with enemy zone tiles
 			for (int i = 0; i < MaxEnemyZoneAmount; i++)
 			{
-				int keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+				int keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 				int whileLoopLimit = 0;
 
 				//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
 				while (FloorValuesArray[keyTileIndex].FloorObstacle > EFloorObstacle::Basic)
 				{
-					keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+					keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 					whileLoopLimit++;
 
@@ -235,21 +245,21 @@ void ALevelGenerator::PostInitializeComponents()
 				{
 					SetEnemyZoneTile(keyTileIndex);
 
-					FindStartToEndPath(startingIndex, keyTileIndex, SpawnWidth);
+					FindStartToEndPath(startingIndex, keyTileIndex, WidthRange.Final);
 				}
 			}
 
 			//Override previously initialized tiles with survival zone tiles
 			for (int i = 0; i < MaxSurvivalZoneAmount; i++)
 			{
-				int keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+				int keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 				int whileLoopLimit = 0;
 
 				//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
 				while (FloorValuesArray[keyTileIndex].FloorObstacle > EFloorObstacle::Basic)
 				{
-					keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+					keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 					whileLoopLimit++;
 
@@ -264,21 +274,21 @@ void ALevelGenerator::PostInitializeComponents()
 				{
 					SetSurvivalZoneTile(keyTileIndex);
 
-					FindStartToEndPath(startingIndex, keyTileIndex, SpawnWidth);
+					FindStartToEndPath(startingIndex, keyTileIndex, WidthRange.Final);
 				}
 			}
 
 			//Override previously initialized tiles with Vantage Point tiles
 			for (int i = 0; i < MaxVantagePointActors; i++)
 			{
-				int keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+				int keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 				int whileLoopLimit = 0;
 
 				//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
 				while (FloorValuesArray[keyTileIndex].FloorObstacle > EFloorObstacle::Vantage)
 				{
-					keyTileIndex = FMath::RandRange(0, (SpawnDepth * SpawnWidth) - 1);
+					keyTileIndex = FMath::RandRange(0, (DepthRange.Final * WidthRange.Final) - 1);
 
 					whileLoopLimit++;
 
@@ -293,21 +303,21 @@ void ALevelGenerator::PostInitializeComponents()
 				{
 					SetVantagePointTile(keyTileIndex);
 
-					FindStartToEndPath(startingIndex, keyTileIndex, SpawnWidth);
+					FindStartToEndPath(startingIndex, keyTileIndex, WidthRange.Final);
 				}
 			}
 
 			if (!FloorValuesArray.IsEmpty())
 			{
-				for (int y = 0; y < SpawnDepth; y++)
+				for (int y = 0; y < DepthRange.Final; y++)
 				{
-					for (int x = 0; x < SpawnWidth; x++)
+					for (int x = 0; x < WidthRange.Final; x++)
 					{
 						//Spawn the floor tiles with the instanced static mesh component.
-						CheckFloor(x, y, SpawnWidth, SpawnDepth);
+						CheckFloor(x, y, WidthRange.Final, DepthRange.Final);
 
 						//Spawn each modular obstacle based on previously defined variable.
-						Server_SpawnFloorObstacles(x, y, SpawnWidth);
+						Server_SpawnFloorObstacles(x, y, WidthRange.Final);
 					}
 				}
 				//Spawn the floor with the instanced static mesh component.
@@ -355,7 +365,7 @@ void ALevelGenerator::BeginPlay()
 
 void ALevelGenerator::GenerateFloor(int x, int y)
 {
-	if (FloorValuesArray.Num() == x + (SpawnWidth * y))
+	if (FloorValuesArray.Num() == x + (WidthRange.Final * y))
 	{
 		//Set current tile as walkable or non-walkable
 		InitializeFloor();
@@ -363,29 +373,29 @@ void ALevelGenerator::GenerateFloor(int x, int y)
 		//If initialized, force radius of tiles in the center to walkable
 		if (CenterForceFull > 0)
 		{
-			if (((x - CenterForceFull) >= 0 && (x + CenterForceFull) <= SpawnWidth - 1)
-				&& (y - CenterForceFull) >= 0 && (y + CenterForceFull) <= SpawnDepth - 1)
+			if (((x - CenterForceFull) >= 0 && (x + CenterForceFull) <= WidthRange.Final - 1)
+				&& (y - CenterForceFull) >= 0 && (y + CenterForceFull) <= DepthRange.Final - 1)
 			{
-				ForceFloorBool(true, x, y, SpawnWidth);
+				ForceFloorBool(true, x, y, WidthRange.Final);
 			}
 		}
 
 		//If initialized, force border to walkable
 		if (BorderForceFull > 0)
 		{
-			if (((x - BorderForceFull) < 0 || (x + BorderForceFull) > SpawnWidth - 1)
-				|| (y - BorderForceFull) < 0 || (y + BorderForceFull) > SpawnDepth - 1)
+			if (((x - BorderForceFull) < 0 || (x + BorderForceFull) > WidthRange.Final - 1)
+				|| (y - BorderForceFull) < 0 || (y + BorderForceFull) > DepthRange.Final - 1)
 
 			{
-				ForceFloorBool(true, x, y, SpawnWidth);
+				ForceFloorBool(true, x, y, WidthRange.Final);
 			}
 		}
 	}
 }
 
-bool ALevelGenerator::CalculateDistanceBetweenTiles(int firstIndex, int secondIndex)
+bool ALevelGenerator::CalculateDistanceBetweenTiles(int firstIndex, int secondIndex) const
 {
-	if ((StartingToEndingMinDistance + (StartingToEndingMinDistance * SpawnWidth)) > SpawnWidth * SpawnDepth)
+	if ((StartingToEndingMinDistance + (StartingToEndingMinDistance * WidthRange.Final)) > WidthRange.Final * DepthRange.Final)
 	{
 		return false;
 	}
@@ -394,15 +404,15 @@ bool ALevelGenerator::CalculateDistanceBetweenTiles(int firstIndex, int secondIn
 	{
 		for (int x = -StartingToEndingMinDistance; x < StartingToEndingMinDistance; x++)
 		{
-			int currentX = firstIndex % SpawnWidth + x;
-			int currentY = firstIndex / SpawnWidth + y;
+			int currentX = firstIndex % WidthRange.Final + x;
+			int currentY = firstIndex / WidthRange.Final + y;
 
-			bool validX = currentX >= 0 && currentX < SpawnWidth;
-			bool validY = currentY >= 0 && currentY < SpawnDepth;
+			bool validX = currentX >= 0 && currentX < WidthRange.Final;
+			bool validY = currentY >= 0 && currentY < DepthRange.Final;
 
 			if (validX && validY)
 			{
-				if ((currentX + (currentY * SpawnWidth)) == secondIndex)
+				if ((currentX + (currentY * WidthRange.Final)) == secondIndex)
 				{
 					return true;
 				}
@@ -435,7 +445,7 @@ void ALevelGenerator::InitializeFloor()
 
 void ALevelGenerator::ForceFloorBool(bool forcedFloor, int x, int y, int width)
 {
-	int index = x + (y * SpawnWidth);
+	int index = x + (y * WidthRange.Final);
 
 	if (!EnumHasAnyFlags(FloorValuesArray[index].FloorObstacle, EFloorObstacle::Hole))
 	{
@@ -607,7 +617,7 @@ void ALevelGenerator::FindStartToEndPath(int startingIndex, int targetIndex, int
 	}
 }
 
-void ALevelGenerator::InitializeModularObstacle(FSFloorValues& floorValue, bool canGenerateHoles)
+void ALevelGenerator::InitializeModularObstacle(FSFloorValues& floorValue, bool canGenerateHoles) const
 {
 	float holeTilePercentage = FMath::RandRange(0.1f, 100.0f);
 
@@ -847,10 +857,12 @@ void ALevelGenerator::SetTopLeftFloorShape(int x, int y, int width)
 	int index = x + (y * width);
 	FVector posOffset = FVector((x * 2), (y * 2), 0.0f) * (TileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
+	float scaleOffset = TileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
 	newTransform.SetRotation(rotationOffset.Quaternion());
+	newTransform.SetScale3D(FVector(scaleOffset));
 
 	EFloorNeighbours topLeftCornerCheck = FloorValuesArray[index].FloorNeighbours & (EFloorNeighbours::TopLeft | EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleLeft);
 
@@ -859,34 +871,22 @@ void ALevelGenerator::SetTopLeftFloorShape(int x, int y, int width)
 		switch (topLeftCornerCheck)
 		{
 		case EFloorNeighbours::TopMiddle:
+		case EFloorNeighbours::TopMiddle | EFloorNeighbours::TopLeft:
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
 		case EFloorNeighbours::MiddleLeft:
+		case EFloorNeighbours::MiddleLeft | EFloorNeighbours::TopLeft:
 			rotationOffset.Yaw = 90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
-		case EFloorNeighbours::TopLeft:
-		case EFloorNeighbours::TopLeft | EFloorNeighbours::TopMiddle:
-		case EFloorNeighbours::TopLeft | EFloorNeighbours::MiddleLeft:
 		case EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleLeft:
 		case EFloorNeighbours::TopLeft | EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleLeft:
 			FullFloorPieceTransforms.Add(newTransform);
 			break;
+		case EFloorNeighbours::TopLeft:
 		default:
 			ConvexCornerTransforms.Add(newTransform);
-		}
-	}
-	else
-	{
-		rotationOffset.Yaw = -90.0f;
-		newTransform.SetRotation(rotationOffset.Quaternion());
-		switch (topLeftCornerCheck)
-		{
-		case EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleLeft:
-		case EFloorNeighbours::TopLeft | EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleLeft:
-			ConcaveCornerPieceTransforms.Add(newTransform);
-			break;
 		}
 	}
 }
@@ -896,10 +896,12 @@ void ALevelGenerator::SetTopRightFloorShape(int x, int y, int width)
 	int index = x + (y * width);
 	FVector posOffset = FVector((x * 2) + 1.0f, (y * 2), 0.0f) * (TileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
+	float scaleOffset = TileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
 	newTransform.SetRotation(rotationOffset.Quaternion());
+	newTransform.SetScale3D(FVector(scaleOffset));
 
 	EFloorNeighbours topRightCornerCheck = FloorValuesArray[index].FloorNeighbours & (EFloorNeighbours::TopRight | EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleRight);
 
@@ -908,22 +910,22 @@ void ALevelGenerator::SetTopRightFloorShape(int x, int y, int width)
 		switch (topRightCornerCheck)
 		{
 		case EFloorNeighbours::TopMiddle:
+		case EFloorNeighbours::TopMiddle | EFloorNeighbours::TopRight:
 			rotationOffset.Yaw = 180.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
 		case EFloorNeighbours::MiddleRight:
+		case EFloorNeighbours::MiddleRight | EFloorNeighbours::TopRight:
 			rotationOffset.Yaw = 90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
-		case EFloorNeighbours::TopRight:
-		case EFloorNeighbours::TopRight | EFloorNeighbours::TopMiddle:
-		case EFloorNeighbours::TopRight | EFloorNeighbours::MiddleRight:
 		case EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleRight:
 		case EFloorNeighbours::TopRight | EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleRight:
 			FullFloorPieceTransforms.Add(newTransform);
 			break;
+		case EFloorNeighbours::TopRight:
 		default:
 			rotationOffset.Yaw = 90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
@@ -931,18 +933,6 @@ void ALevelGenerator::SetTopRightFloorShape(int x, int y, int width)
 			break;
 		}
 
-	}
-	else
-	{
-		switch (topRightCornerCheck)
-		{
-
-		case EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleRight:
-		case EFloorNeighbours::TopRight | EFloorNeighbours::TopMiddle | EFloorNeighbours::MiddleRight:
-			ConcaveCornerPieceTransforms.Add(newTransform);
-			break;
-
-		}
 	}
 }
 
@@ -951,10 +941,12 @@ void ALevelGenerator::SetBottomLeftFloorShape(int x, int y, int width)
 	int index = x + (y * width);
 	FVector posOffset = FVector((x * 2), (y * 2) + 1.0f, 0.0f) * (TileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
+	float scaleOffset = TileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
 	newTransform.SetRotation(rotationOffset.Quaternion());
+	newTransform.SetScale3D(FVector(scaleOffset));
 
 	EFloorNeighbours bottomLeftCornerCheck = FloorValuesArray[index].FloorNeighbours & (EFloorNeighbours::BottomLeft | EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleLeft);
 
@@ -963,39 +955,25 @@ void ALevelGenerator::SetBottomLeftFloorShape(int x, int y, int width)
 		switch (bottomLeftCornerCheck)
 		{
 		case EFloorNeighbours::BottomMiddle:
+		case EFloorNeighbours::BottomMiddle | EFloorNeighbours::BottomLeft:
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
 		case EFloorNeighbours::MiddleLeft:
+		case EFloorNeighbours::MiddleLeft | EFloorNeighbours::BottomLeft:
 			rotationOffset.Yaw = -90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
-		case EFloorNeighbours::BottomLeft:
-		case EFloorNeighbours::BottomLeft | EFloorNeighbours::BottomMiddle:
-		case EFloorNeighbours::BottomLeft | EFloorNeighbours::MiddleLeft:
 		case EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleLeft:
 		case EFloorNeighbours::BottomLeft | EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleLeft:
 			FullFloorPieceTransforms.Add(newTransform);
 			break;
+		case EFloorNeighbours::BottomLeft:
 		default:
 			rotationOffset.Yaw = -90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			ConvexCornerTransforms.Add(newTransform);
 			break;
-		}
-	}
-	else
-	{
-		rotationOffset.Yaw = 180.0f;
-		newTransform.SetRotation(rotationOffset.Quaternion());
-		switch (bottomLeftCornerCheck)
-		{
-
-		case EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleLeft:
-		case EFloorNeighbours::BottomLeft | EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleLeft:
-			ConcaveCornerPieceTransforms.Add(newTransform);
-			break;
-
 		}
 	}
 }
@@ -1005,10 +983,12 @@ void ALevelGenerator::SetBottomRightFloorShape(int x, int y, int width)
 	int index = x + (y * width);
 	FVector posOffset = FVector((x * 2) + 1.0f, (y * 2) + 1.0f, 0.0f) * (TileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
+	float scaleOffset = TileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
 	newTransform.SetRotation(rotationOffset.Quaternion());
+	newTransform.SetScale3D(FVector(scaleOffset));
 
 	EFloorNeighbours bottomRightCornerCheck = FloorValuesArray[index].FloorNeighbours & (EFloorNeighbours::BottomRight | EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleRight);
 
@@ -1017,38 +997,26 @@ void ALevelGenerator::SetBottomRightFloorShape(int x, int y, int width)
 		switch (bottomRightCornerCheck)
 		{
 		case EFloorNeighbours::BottomMiddle:
+		case EFloorNeighbours::BottomMiddle | EFloorNeighbours::BottomRight:
 			rotationOffset.Yaw = 180.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
 		case EFloorNeighbours::MiddleRight:
+		case EFloorNeighbours::MiddleRight | EFloorNeighbours::BottomRight:
 			rotationOffset.Yaw = -90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
-		case EFloorNeighbours::BottomRight:
-		case EFloorNeighbours::BottomRight | EFloorNeighbours::BottomMiddle:
-		case EFloorNeighbours::BottomRight | EFloorNeighbours::MiddleRight:
 		case EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleRight:
 		case EFloorNeighbours::BottomRight | EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleRight:
 			FullFloorPieceTransforms.Add(newTransform);
 			break;
+		case EFloorNeighbours::BottomRight:
 		default:
 			rotationOffset.Yaw = 180.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			ConvexCornerTransforms.Add(newTransform);
-			break;
-		}
-	}
-	else
-	{
-		rotationOffset.Yaw = 90.0f;
-		newTransform.SetRotation(rotationOffset.Quaternion());
-		switch (bottomRightCornerCheck)
-		{
-		case EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleRight:
-		case EFloorNeighbours::BottomRight | EFloorNeighbours::BottomMiddle | EFloorNeighbours::MiddleRight:
-			ConcaveCornerPieceTransforms.Add(newTransform);
 			break;
 		}
 	}
@@ -1074,26 +1042,25 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, yaw, 0.0f));
 		}
 
-		if (PackedActorWallArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
+		if (PackedActorBasicWall != nullptr)
 		{
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 0.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 90.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 180.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
 			}
 		}
-
 		break;
 	case EFloorObstacle::Hole:
 		if (HoleTilePackedActorArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
@@ -1120,7 +1087,6 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(HoleTilePackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
 			}
 		}
-
 		break;
 	case EFloorObstacle::Vantage:
 		if (!VantagePackedActorArray.IsEmpty())
@@ -1135,23 +1101,23 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 				}
 			}
 
-			if (PackedActorWallArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
+			if (PackedActorBasicWall != nullptr)
 			{
 				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
 				{
-					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 0.0f, 0.0f));
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
 				}
 				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
 				{
-					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 90.0f, 0.0f));
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
 				}
 				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
 				{
-					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 180.0f, 0.0f));
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
 				}
 				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
 				{
-					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
 				}
 			}
 		}
@@ -1169,6 +1135,27 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 					APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(CapturableFlagPackedActorArray[randIndex], posOffset, FRotator(0.0f, yaw, 0.0f));
 				}
 			}
+
+			if (PackedActorBasicWall != nullptr)
+			{
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
+				}
+			}
+
 		}
 		break;
 	case EFloorObstacle::EnemyZone:
@@ -1183,6 +1170,27 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 					APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(EnemyZonePackedActorArray[randIndex], posOffset, FRotator(0.0f, yaw, 0.0f));
 				}
 			}
+
+			if (PackedActorBasicWall != nullptr)
+			{
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
+				}
+			}
+
 		}
 		break;
 	case EFloorObstacle::SurvivalZone:
@@ -1197,6 +1205,27 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 					APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(SurvivalZonePackedActorArray[randIndex], posOffset, FRotator(0.0f, yaw, 0.0f));
 				}
 			}
+
+			if (PackedActorBasicWall != nullptr)
+			{
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
+				}
+				if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
+				{
+					APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
+				}
+			}
+
 		}
 		break;
 	case EFloorObstacle::Start:
@@ -1208,6 +1237,26 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 		if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::MoveThePayload))
 		{
 			DeliverySpline->SetLocationAtSplinePoint(0, posOffset, ESplineCoordinateSpace::World);
+		}
+
+		if (PackedActorBasicWall != nullptr)
+		{
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
+			}
 		}
 
 		break;
@@ -1226,29 +1275,49 @@ void ALevelGenerator::SpawnFloorObstacles(int x, int y, int width)
 				levelChangeActor->Server_SetTargetLevel(FName(TargetLevel.GetAssetName()));
 			}
 		}
-		break;
-	case EFloorObstacle::None:
-		if (PackedActorWallArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn) && FloorValuesArray[index].IsFullTile)
+
+		if (PackedActorBasicWall != nullptr)
 		{
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 0.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 90.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 180.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
 			{
-				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorWallArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, 270.0f, 0.0f));
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
 			}
 		}
+
 		break;
-	default:
+	case EFloorObstacle::None:
+
+		if (PackedActorBasicWall != nullptr && FloorValuesArray[index].IsFullTile)
+		{
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleLeft))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 0.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::TopMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 90.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::MiddleRight))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 180.0f, 0.0f));
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EFloorNeighbours::BottomMiddle))
+			{
+				APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(PackedActorBasicWall, posOffset, FRotator(0.0f, 270.0f, 0.0f));
+			}
+		}
 		break;
 	}
 }
@@ -1291,43 +1360,39 @@ void ALevelGenerator::CreateFloor()
 	TArray<TArray<FTransform>> arrayOfTransformArrays;
 	arrayOfTransformArrays.Add(FullFloorPieceTransforms);
 	arrayOfTransformArrays.Add(SideFloorPieceTransforms);
-	arrayOfTransformArrays.Add(ConcaveCornerPieceTransforms);
 	arrayOfTransformArrays.Add(ConvexCornerTransforms);
 
-	TArray<UStaticMeshComponent*> meshArray;
-	meshArray.Add(FullPiece);
-	meshArray.Add(SidePiece);
-	meshArray.Add(ConcaveCornerPiece);
-	meshArray.Add(ConvexCornerPiece);
+	TArray<UStaticMesh*> staticMeshArray;
+	staticMeshArray.Add(FullFloorMesh);
+	staticMeshArray.Add(SideFloorMesh);
+	staticMeshArray.Add(ConvexCornerMesh);
 
-	for (int i = 0; i < meshArray.Num(); i++)
+	for (int i = 0; i < staticMeshArray.Num(); i++)
 	{
 		UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this);
 					
-
-		if (meshArray[i]->GetStaticMesh() != nullptr)
+		if (staticMeshArray[i] != nullptr)
 		{
-			ISMComp->SetStaticMesh(meshArray[i]->GetStaticMesh());
+			ISMComp->SetStaticMesh(staticMeshArray[i]);
 		}
-		if (meshArray[i]->GetMaterial(0) != nullptr)
+		if (FloorMaterial != nullptr)
 		{
-			ISMComp->SetMaterial(0, meshArray[i]->GetMaterial(0));
+			ISMComp->SetMaterial(0, FloorMaterial);
 		}
 
 		ISMComp->AddInstances(arrayOfTransformArrays[i], false, true, true);
 
 		ISMComp->RegisterComponent();
-	
 	}
 }
 
 void ALevelGenerator::OnRep_FloorValuesArrayChange()
 {
-	for (int y = 0; y < SpawnDepth; y++)
+	for (int y = 0; y < DepthRange.Final; y++)
 	{
-		for (int x = 0; x < SpawnWidth; x++)
+		for (int x = 0; x < DepthRange.Final; x++)
 		{
-			CheckFloor(x, y, SpawnWidth, SpawnDepth);
+			CheckFloor(x, y, WidthRange.Final, DepthRange.Final);
 		}
 	}
 	CreateFloor();
