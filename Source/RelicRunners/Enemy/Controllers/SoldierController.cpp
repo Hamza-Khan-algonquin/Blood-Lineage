@@ -18,10 +18,9 @@ ASoldierController::ASoldierController()
 	CurrentPatrolCenter = FVector::ZeroVector;
 	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
 
-	for (EAILOD lod : TEnumRange<EAILOD>())
-	{
-		DistanceOfLOD.Add(lod, 10);
-	}
+	DistanceOfLOD.Add(EAILOD::L1, 500);
+	DistanceOfLOD.Add(EAILOD::L2, 1000);
+	DistanceOfLOD.Add(EAILOD::L3, 2000);
 }
 
 void ASoldierController::Tick(float DeltaTime)
@@ -164,7 +163,7 @@ void ASoldierController::LODCheck(float closeDistance)
 	{
 		CurrentLOD = EAILOD::L3;
 	}
-	else if (closeDistance <= DistanceOfLOD[EAILOD::L4] && CurrentLOD != EAILOD::L4)
+	else if(CurrentLOD != EAILOD::L4)
 	{
 		CurrentLOD = EAILOD::L4;
 	}*/
@@ -178,7 +177,8 @@ void ASoldierController::LODLowestLock(bool shouldLock)
 	}
 	else
 	{
-		CurrentLOD = EAILOD::L1;
+		//using count to force a LOD check and not skip over any LODs
+		CurrentLOD = EAILOD::Count;
 	}
 
 	LODCheck();
