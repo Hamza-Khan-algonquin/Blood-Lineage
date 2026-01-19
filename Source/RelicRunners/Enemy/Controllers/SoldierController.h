@@ -18,7 +18,7 @@ Contributors:
 #include "RelicRunners/ObjectPool/PoolActorInterface.h"
 #include "SoldierController.generated.h"
 
-//The level of detail the controller should be using
+//The level of detail the controller should be using. The higher the level the less detail
 UENUM(BlueprintType)
 enum class EAILOD : uint8
 {
@@ -99,8 +99,13 @@ public:
 	//Getter for the patrol zone origin
 	void SetOriginPatrolZone(const FVector &NewCenter) { OriginPatrolZone = NewCenter; }
 
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the patrol zone origin.", ShortToolTip = "Getter for the patrol zone origin."))
+	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Updates the LOD", ShortToolTip = "Updates the LOD"))
 	void LODCheck();
+	void LODCheck(float closeDistance);
+
+	//Lock the LOD to the lowest level of detail, if shouldLock is true. If false it will unlock the LOD to be updated normally
+	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Updates the LOD", ShortToolTip = "Updates the LOD"))
+	void LODLowestLock(bool shouldLock);
 
 protected:
 	virtual void BeginPlay() override;

@@ -72,6 +72,12 @@ FVector ASoldierController::GetRandomPatrolPoint()
 
 void ASoldierController::LODCheck()
 {
+	if (CurrentLOD == EAILOD::L5)
+	{
+		LODCheck(0);
+		return;
+	}
+
 	TArray<APawn*> players;
 	APawn* pawn = GetPawn();
 
@@ -96,31 +102,14 @@ void ASoldierController::LODCheck()
 		}
 	}
 	
-	if (closeDistance <= DistanceOfLOD[EAILOD::L1])
-	{
-		RunBehaviorTree(StartingBehaviorTree);
-		CurrentLOD = EAILOD::L1;
+	LODCheck(closeDistance);
+}
 
-		if (AIPerceptionComp)
-		{
-			AIPerceptionComp->Activate();
-		}
-	}
-	/*else if (closeDistance <= DistanceOfLOD[EAILOD::L2])
-	{
-		
+void ASoldierController::LODCheck(float closeDistance)
+{
+	APawn* pawn = GetPawn();
 
-		CurrentLOD = EAILOD::L2;
-	}
-	else if (closeDistance <= DistanceOfLOD[EAILOD::L3])
-	{
-		CurrentLOD = EAILOD::L3;
-	}
-	else if (closeDistance <= DistanceOfLOD[EAILOD::L4])
-	{
-		CurrentLOD = EAILOD::L4;
-	}*/
-	else
+	if (CurrentLOD == EAILOD::L5)
 	{
 		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
 		if (behaviorComp)
@@ -154,8 +143,45 @@ void ASoldierController::LODCheck()
 			skel->SetVisibility(false, true);
 		}
 
+		return;
+	}
+
+	if (closeDistance <= DistanceOfLOD[EAILOD::L1] && CurrentLOD != EAILOD::L1)
+	{
+		RunBehaviorTree(StartingBehaviorTree);
+		CurrentLOD = EAILOD::L1;
+
+		if (AIPerceptionComp)
+		{
+			AIPerceptionComp->Activate();
+		}
+	}
+	/*else if (closeDistance <= DistanceOfLOD[EAILOD::L2] && CurrentLOD != EAILOD::L2)
+	{
+		CurrentLOD = EAILOD::L2;
+	}
+	else if (closeDistance <= DistanceOfLOD[EAILOD::L3] && CurrentLOD != EAILOD::L3)
+	{
+		CurrentLOD = EAILOD::L3;
+	}
+	else if (closeDistance <= DistanceOfLOD[EAILOD::L4] && CurrentLOD != EAILOD::L4)
+	{
+		CurrentLOD = EAILOD::L4;
+	}*/
+}
+
+void ASoldierController::LODLowestLock(bool shouldLock)
+{
+	if (shouldLock)
+	{
 		CurrentLOD = EAILOD::L5;
 	}
+	else
+	{
+		CurrentLOD = EAILOD::L1;
+	}
+
+	LODCheck();
 }
 
 void ASoldierController::BeginPlay()
