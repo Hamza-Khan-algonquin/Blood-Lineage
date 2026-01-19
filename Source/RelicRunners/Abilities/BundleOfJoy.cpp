@@ -14,31 +14,100 @@ UBundleOfJoy::UBundleOfJoy()
     AttractionStrength = 1500.f;
     DamageAmount = 100.f;
     Duration = 3.f;
+    LastUseTime = -100.f;
+    CooldownTimer = 15.f;
 }
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo)) // Try to commit the ability
+
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    if (CurrentTime - LastUseTime < CooldownTimer)
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // If commit fails, end the ability 
-        return; // Exit early
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
     }
 
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // End the ability
-        return; 
+        return;
+    }
+
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    if (!CommitAbility(Handle, ActorInfo, ActivationInfo)) // Try to commit the ability
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // If commit fails, end the ability 
+        return; // Exit early
     }
 
     AttractionCenter = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 300.f; // Set spawn point 300 units in front of the actor
 
-    // Start repeatedly calling Attract() every tick
-    AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::Attract, 0.016f, true);
 
-    // Set a timer to trigger the explosion after the ability duration
-    AvatarActor->GetWorldTimerManager().SetTimer(ExplosionTimer, FTimerDelegate::CreateUObject(this, &UBundleOfJoy::Explode), Duration, false);
+    StartLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50);
+    Velocity = AvatarActor->GetActorForwardVector() * 700.f + FVector(0, 0, 600.f);
+    bIsFlying = true;
+
+    AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);
+
+    LastUseTime = CurrentTime;
+
 }
 
+void UBundleOfJoy::TickThrown()
+{
+    if (!bIsFlying) return;
+
+    AActor* Avatar = GetAvatarActorFromActorInfo();
+    UWorld* World = Avatar->GetWorld();
+    float Delta = World->GetDeltaSeconds();
+
+    // projectile physics
+    Velocity += FVector(0, 0, -980.f) * Delta;  // gravity
+    StartLocation += Velocity * Delta;
+
+    // see throw trajectory
+    DrawDebugSphere(World, StartLocation, 10.f, 12, FColor::Yellow, false, 0.05f);
+
+    // Check ground hit
+    FVector TraceStart = StartLocation;
+    FVector TraceEnd = StartLocation - FVector(0, 0, 50);
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(Avatar);
+
+    if (World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, Params))
+    {
+        // Landed
+        bIsFlying = false;
+        World->GetTimerManager().ClearTimer(AttractTimer);
+
+        OnThrownLanded(Hit.ImpactPoint);
+    }
+}
+
+void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
+{
+    AttractionCenter = LandLocation;
+
+    AActor* Avatar = GetAvatarActorFromActorInfo();
+    UWorld* World = Avatar->GetWorld();
+
+    // start attraction loop
+    World->GetTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::Attract, 0.016f, true);
+
+    // Timer for explosion
+    World->GetTimerManager().SetTimer(ExplosionTimer, FTimerDelegate::CreateUObject(this, &UBundleOfJoy::Explode), Duration, false);
+
+    DrawDebugSphere(World, LandLocation, 25.f, 12, FColor::Purple, false, 5.f);
+}
 
 void UBundleOfJoy::Attract()
 {
@@ -73,7 +142,7 @@ void UBundleOfJoy::Attract()
             Char->AddMovementInput(Dir, AttractionStrength * World->GetDeltaSeconds()); // Move character toward center
 
             FRotator TargetRot = Dir.Rotation(); // Get rotation to face center
-            TargetRot.Pitch = 0.f; 
+            TargetRot.Pitch = 0.f;
             TargetRot.Roll = 0.f;
             Char->SetActorRotation(TargetRot); // Rotate character toward center
         }

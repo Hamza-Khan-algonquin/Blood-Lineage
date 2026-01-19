@@ -19,7 +19,7 @@ public:
     virtual void PossessedBy(AController* NewController) override;
     virtual void OnRep_PlayerState() override;
 
-    void EndPlay(const EEndPlayReason::Type EndPlayReason);
+    //void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     class UClassInfo* ClassInfo;

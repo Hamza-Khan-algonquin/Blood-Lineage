@@ -29,7 +29,6 @@ private:
     float OriginalSpeed;
 
     FTimerHandle SpeedResetTimer;
-    FTimerHandle CooldownTimer;
 
     bool bIsOnCooldown = false;
 

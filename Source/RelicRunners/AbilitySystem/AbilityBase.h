@@ -53,6 +53,13 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Combat")
     float ConeAngle = 0.f;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Combat")
+    float LastUseTime = 0.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Combat")
+    float CooldownTimer = 0.f;
+
+
     //Ability Info
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Info")
     FName AbilityName;

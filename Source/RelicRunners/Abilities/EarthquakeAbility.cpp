@@ -11,35 +11,55 @@ UEarthquakeAbility::UEarthquakeAbility()
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
     Duration = 8.0f;
-    CooldownDuration = 5.0f;
     ConeAngle = 90.f;
-
+    LastUseTime = -100.f;
+    CooldownTimer = 10.f;
 }
 
 void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
-
-    if (bIsOnCooldown)
+    AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
+    if (!AvatarActor)
     {
-        if (GEngine)
-            GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("Earthquake ON COOLDOWN"));
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
-    bIsOnCooldown = true; 
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
 
-    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
-    if (!AvatarActor) return;
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    if (CurrentTime - LastUseTime < CooldownTimer)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
 
+    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
 
     ApplyDamageAndStun();
 
-    if (UWorld* World = AvatarActor->GetWorld())
-    {
-        World->GetTimerManager().ClearTimer(CooldownTimerHandle);
-        World->GetTimerManager().SetTimer(CooldownTimerHandle, [this](){bIsOnCooldown = false;if (GEngine)GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("Earthquake READY"));}, CooldownDuration,false);
-    }
+    LastUseTime = CurrentTime;
 
+    //   UAbilityPointCounter AbilityPointCounter;
+
+       //AbilityPointCounter.StartDamageCooldown(CooldownTimer);
+
+    //   if (ARelicRunnersCharacter* character = Cast<ARelicRunnersCharacter>(AvatarActor))
+    //   {
+    //       character->GetHUD
+    //   }
+
+
+    EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
 
@@ -50,7 +70,7 @@ void UEarthquakeAbility::ApplyDamageAndStun()
 
     FVector Origin = AvatarActor->GetActorLocation();
     FVector Forward = AvatarActor->GetActorForwardVector();
-    Forward.Z = 0.f; 
+    Forward.Z = 0.f;
     Forward.Normalize();
 
     UWorld* World = AvatarActor->GetWorld();
@@ -69,28 +89,28 @@ void UEarthquakeAbility::ApplyDamageAndStun()
         if (!Actor->Tags.Contains("Enemy")) continue;
 
         FVector DirToTarget = Actor->GetActorLocation() - Origin;
-        DirToTarget.Z = 0.f; 
+        DirToTarget.Z = 0.f;
         float Distance = DirToTarget.Size();
-        if (Distance > Radius) continue; 
+        if (Distance > Radius) continue;
 
         DirToTarget.Normalize();
 
-        
+
         float Dot = FVector::DotProduct(Forward, DirToTarget);
         float HalfAngleRad = FMath::DegreesToRadians(ConeAngle / 2.f);
-        if (Dot < FMath::Cos(HalfAngleRad)) continue; 
+        if (Dot < FMath::Cos(HalfAngleRad)) continue;
 
-        
+
         UGameplayStatics::ApplyDamage(Actor, DamagePerTick, AvatarActor->GetInstigatorController(), AvatarActor, nullptr);
 
-        
+
         if (ACharacter* HitChar = Cast<ACharacter>(Actor))
         {
             FVector Knockback = DirToTarget * KnockbackStrength;
-            Knockback.Z = VerticalKnockback; 
+            Knockback.Z = VerticalKnockback;
             HitChar->LaunchCharacter(Knockback, true, true);
 
-            
+
             if (auto Enemy = Cast<AEnemyCharacter>(HitChar))
             {
                 Enemy->ReduceStunTime(StunDuration);

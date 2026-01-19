@@ -90,33 +90,33 @@ void AAphroditeCharacter::GiveDefenceAbilities()
 {
 	Super::GiveDefenceAbilities();
 
-  //  if (AbilitySystem)
-  //  {
-		//// start ability cooldown
-  //      //AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
-  //  }
+    if (AbilitySystem)
+    {
+		// start ability cooldown
+        //AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
+    }
 }
 
 void AAphroditeCharacter::GiveUtilityAbilities()
 {
 	Super::GiveUtilityAbilities();
 
-  //  if (AbilitySystem)
-  //  {
-		//// start ability cooldown
-  //      //AbilityPointCounter->StartUtilityCooldown(UtilityCooldown);
-  //  }
+    if (AbilitySystem)
+    {
+		// start ability cooldown
+        //AbilityPointCounter->StartUtilityCooldown(UtilityCooldown);
+    }
 }
 
 void AAphroditeCharacter::GiveUltimateAbilities()
 {
 	Super::GiveUltimateAbilities();
 
-  //  if (AbilitySystem)
-  //  {
-		//// start ability cooldown
-  //      //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
-  //  }
+    if (AbilitySystem)
+    {
+		// start ability cooldown
+        //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
+    }
 }
 
 void AAphroditeCharacter::OnLevelUp()
