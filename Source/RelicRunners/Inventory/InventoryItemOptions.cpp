@@ -107,7 +107,7 @@ void UInventoryItemOptions::ApplyConfig(const FItemOptionsUIConfig& Config)
     SetSellButtonVisibility(Config.ShowSell);
     SetBuyButtonVisibility(Config.ShowBuy);
     SetForgeButtonVisibility(Config.ShowForge);
-    SetStoreButtonVisibility(Config.ShowRemove);
+    SetStoreButtonVisibility(Config.ShowStore);
 }
 
 static ESlateVisibility BoolToVisibility(bool b)

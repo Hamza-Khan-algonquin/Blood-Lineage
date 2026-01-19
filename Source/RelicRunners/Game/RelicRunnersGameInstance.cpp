@@ -2,6 +2,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include <Online/OnlineSessionNames.h>
 #include "Kismet/GameplayStatics.h"
+#include "Components/Border.h"
 #include "OnlineSessionSettings.h"
 #include "RelicRunners/Menu/JoinUserWidget.h"
 #include "RelicRunners/Menu/MainMenuWidget.h"
@@ -232,6 +233,7 @@ void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
         Session->FindSessions(0, SessionSearch.ToSharedRef());
 
         TextRenderWidget = UserWidget;
+        TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -271,6 +273,11 @@ void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
     if (!AddedAnyResults)
     {
         TextRenderWidget->EnableRefresh();
+        TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
+    }
+    else
+    {
+        TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Visible);
     }
 
     //Unbind delegate

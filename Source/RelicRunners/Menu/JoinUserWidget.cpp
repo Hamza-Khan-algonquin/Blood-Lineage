@@ -103,11 +103,11 @@ FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPo
 		}
 
 		CurrentHoveredBorder = HoveredBorder;
+	}
 
-		if (CurrentHoveredBorder)
-		{
-			ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
-		}
+	if (CurrentHoveredBorder)
+	{
+		ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
 	}
 
 	return FReply::Handled();
@@ -264,11 +264,14 @@ void UJoinUserWidget::SetImageColor(UImage* Image, const FLinearColor& Color)
 	Image->SetColorAndOpacity(Color);
 }
 
-void UJoinUserWidget::SetBorderBrushColor(UBorder* Border, const FLinearColor& Color)
+void UJoinUserWidget::SetBorderOutlineColor(UBorder* Border, const FLinearColor& InsideColor, const FLinearColor& OutlineColor)
 {
 	if (Border)
 	{
-		Border->SetBrushColor(Color);
+		Border->SetBrushColor(InsideColor);
+		FSlateBrush Brush = Border->Background;
+		Brush.OutlineSettings.Color = FSlateColor(OutlineColor);
+		Border->SetBrush(Brush);
 	}
 }
 
@@ -326,6 +329,7 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 {
 	CurrentDifficulty = DifficultyKey;
 
+	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
 	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
 	const FLinearColor Black(0.f, 0.f, 0.f, 1.f);
 	const FLinearColor SectionBrush_Unselected(0.292f, 0.23f, 0.145f, 1.f);
@@ -339,18 +343,21 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 		const FDifficultyWidgets& Widgets = Pair.Value;
 		if (!Widgets.Button || !Widgets.OuterBorder || !Widgets.SectionBorder) continue;
 
-		SetBorderColor(Widgets.SectionBorder, SectionOutline_Unselected);
-		SetBorderBrushColor(Widgets.SectionBorder, SectionBrush_Unselected);
+		SetBorderOutlineColor(Widgets.SectionBorder, SectionBrush_Unselected, SectionOutline_Unselected);
 		SetButtonTint(Widgets.Button, ButtonTint_Unselected);
 	}
-
+	//Set
 	if (FDifficultyWidgets* Selected = DifficultyMap.Find(DifficultyKey))
 	{
-		SetBorderColor(Selected->SectionBorder, Gold);
+		SetBorderOutlineColor(Selected->SectionBorder, Gold, DarkGold);
 		SetButtonTint(Selected->Button, Gold);
 	}
 }
 
+void UJoinUserWidget::UpdateClientDifficultyUI(FName NewDifficulty)
+{
+	
+}
 
 void UJoinUserWidget::OnAresClicked() { SetSelectedClass("Ares"); }
 void UJoinUserWidget::OnArtemisClicked() { SetSelectedClass("Artemis"); }
@@ -572,8 +579,8 @@ void UJoinUserWidget::ShowJoinButton(bool IsEnabled)
 		else
 		{
 			JoinButton->SetIsEnabled(false);
-			JoinButton->SetVisibility(ESlateVisibility::Hidden);
-			JoinBorder->SetVisibility(ESlateVisibility::Hidden);
+			JoinButton->SetVisibility(ESlateVisibility::Collapsed);
+			JoinBorder->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 }
@@ -597,6 +604,7 @@ void UJoinUserWidget::OnFindSessionsComplete(FString Str, int PlayerCount)
 		{
 			Entry->OnSessionClicked.BindUObject(this, &UJoinUserWidget::HandleSessionClicked);
 		}
+
 	}
 
 	EnableRefresh();
@@ -615,6 +623,6 @@ void UJoinUserWidget::EnableRefresh()
 
 	if (RefreshProgress)
 	{
-		RefreshProgress->SetVisibility(ESlateVisibility::Hidden);
+		RefreshProgress->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }

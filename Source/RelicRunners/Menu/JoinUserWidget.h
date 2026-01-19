@@ -84,13 +84,15 @@ public:
 
 	void SetImageColor(class UImage* Image, const FLinearColor& Color);
 
-	void SetBorderBrushColor(UBorder* Border, const FLinearColor& Color);
+	void SetBorderOutlineColor(UBorder* Border, const FLinearColor& InsideColor, const FLinearColor& OutlineColor);
 
 	void SetButtonTint(UButton* Button, const FLinearColor& Color);
 
 	void SetButtonOutlineColor(UButton* Button, const FLinearColor& Color);
 
 	void SetSelectedDifficulty(FName DifficultyKey);
+
+	void UpdateClientDifficultyUI(FName NewDifficulty);
 
 	UFUNCTION()
 	void OnAresClicked();
