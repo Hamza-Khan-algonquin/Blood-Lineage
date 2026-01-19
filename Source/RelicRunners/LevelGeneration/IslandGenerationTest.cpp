@@ -24,9 +24,6 @@ void AIslandGenerationTest::Generate()
 {
 	if (HasAuthority())
 	{
-		MapSizeRange.WidthFinal = FMath::RandRange(MapSizeRange.WidthMin, MapSizeRange.WidthMax);
-		MapSizeRange.DepthFinal = FMath::RandRange(MapSizeRange.DepthMax, MapSizeRange.DepthMax);
-
 
 		for (int y = 0; y < MapSizeRange.DepthFinal; y++)
 		{
@@ -59,6 +56,9 @@ void AIslandGenerationTest::SetSizeRange(uint8 newDepthMin, uint8 newDepthMax, u
 	MapSizeRange.DepthMax = newDepthMax;
 	MapSizeRange.WidthMin = newWidthMin;
 	MapSizeRange.WidthMax = newWidthMax;
+
+	MapSizeRange.WidthFinal = FMath::RandRange(MapSizeRange.WidthMin, MapSizeRange.WidthMax);
+	MapSizeRange.DepthFinal = FMath::RandRange(MapSizeRange.DepthMin, MapSizeRange.DepthMax);
 }
 
 void AIslandGenerationTest::SetTileScale(float newTileScale)

@@ -25,7 +25,12 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AIslandGenerationTest> IslandGenerationTestTemplate;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ALevelGenerator> LevelGeneratorTemplate;
+
 	TArray<class AIslandGenerationTest*> Islands;
+
+	TArray<class ALevelGenerator*> Level;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "1", UIMin = "1"))
 	uint8 WidthMin;
