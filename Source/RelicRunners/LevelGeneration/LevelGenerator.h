@@ -140,12 +140,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom"))
 	FSIntRange DepthRange;
 	
-	//UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "2", UIMin = "2", ClampMax = "100", UIMax = "100"))
-	//uint8 SpawnWidth;
-
-	//UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "2", UIMin = "2", ClampMax = "100", UIMax = "100"))
-	//uint8 SpawnDepth;
-
 	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (EditCondition = "GenerationIsRandom", ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float FullPercentage;
 
@@ -234,7 +228,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	//Used to call the functions that will initialize each tile individual and set it as a walkable or non-walkable tile.
+	//Used to call the functions that will initialize each tile individually and set it as a walkable or non-walkable tile.
 	//Also used to set the regular modular obstacle that would spawn on it if it is set to walkable.
 	void GenerateFloor(int x, int y);
 
@@ -261,10 +255,10 @@ public:
 	//Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
 	void SetSurvivalZoneTile(int index);
 
-	//Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
+	//Overrides tiles set by *InitializeFloor()* and sets them as Vantage Point Tiles.
 	void SetVantagePointTile(int index);
 
-	//Creates a path from *startingIndex* to *targetIndex* by setting those tile to walkable.
+	//Creates a path from *startingIndex* to *targetIndex* by setting those tiles to walkable.
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width);
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width, bool implementSpline);
 
