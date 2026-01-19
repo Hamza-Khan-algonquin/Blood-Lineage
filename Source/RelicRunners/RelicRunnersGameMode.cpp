@@ -63,48 +63,33 @@ void ARelicRunnersGameMode::PostSeamlessTravel()
 
 APawn* ARelicRunnersGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
 {
-    ARelicRunnersPlayerController* RRPC = Cast<ARelicRunnersPlayerController>(NewPlayer);
+    if (!NewPlayer) return nullptr;
 
-    URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-
-    TSubclassOf<ARelicRunnersCharacter> CharacterToSpawn = nullptr;
-
-    if (GameInstance)
+    ARelicRunnersPlayerState* PS = NewPlayer->GetPlayerState<ARelicRunnersPlayerState>();
+    if (!PS)
     {
-        if (GameInstance->SelectedClass == FName("Nemesis"))
-        {
-            CharacterToSpawn = NemesisCharacterClass;
-        }
-        else if (GameInstance->SelectedClass == FName("Aphrodite"))
-        {
-            CharacterToSpawn = AphroditeCharacterClass;
-        }
-        else if (GameInstance->SelectedClass == FName("Artemis"))
-        {
-            CharacterToSpawn = ArtemisCharacterClass;
-        }
-        else if (GameInstance->SelectedClass == FName("Ares"))
-        {
-            CharacterToSpawn = AresCharacterClass;
-        }
+        return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
     }
 
-    if (CharacterToSpawn)
+    TSubclassOf<APawn> PawnClassToSpawn = nullptr;
+
+    if (PS->SelectedClass == "Nemesis")
+        PawnClassToSpawn = NemesisCharacterClass;
+    else if (PS->SelectedClass == "Aphrodite")
+        PawnClassToSpawn = AphroditeCharacterClass;
+    else if (PS->SelectedClass == "Artemis")
+        PawnClassToSpawn = ArtemisCharacterClass;
+    else if (PS->SelectedClass == "Ares")
+        PawnClassToSpawn = AresCharacterClass;
+
+    if (!PawnClassToSpawn)
     {
-        FActorSpawnParameters Params;
-        if (RRPC)
-        {
-            Params.Owner = RRPC;
-        }
-        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-        FVector SpawnLoc = StartSpot->GetActorLocation();
-        FRotator SpawnRot = StartSpot->GetActorRotation();
-
-        ARelicRunnersCharacter* SpawnedCharacter = GetWorld()->SpawnActor<ARelicRunnersCharacter>(CharacterToSpawn,SpawnLoc,SpawnRot,Params);
-
-        return SpawnedCharacter;
+        return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
     }
 
-    return Cast<ARelicRunnersCharacter>(Super::SpawnDefaultPawnFor_Implementation(RRPC, StartSpot));
+    FActorSpawnParameters Params;
+    Params.Owner = NewPlayer;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    return GetWorld()->SpawnActor<APawn>(PawnClassToSpawn, StartSpot->GetActorLocation(), StartSpot->GetActorRotation(), Params);
 }

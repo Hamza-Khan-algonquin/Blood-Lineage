@@ -839,20 +839,24 @@ void ARelicRunnersCharacter::GiveUltimateAbilities()
 
 void ARelicRunnersCharacter::DamageAbility()
 {
+	GiveDamageAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Damage Ability Activated on Character"));
 }
 
 void ARelicRunnersCharacter::DefenceAbility()
 {
+	GiveDefenceAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Defence Ability Activated on Character"));
 }
 
 void ARelicRunnersCharacter::UtilityAbility()
 {
+	GiveUtilityAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Utility Ability Activated on Character"));
 }
 
 void ARelicRunnersCharacter::UltimateAbility()
 {
+	GiveUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }

@@ -90,6 +90,7 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerXP = this->PlayerXP;
 		PS->PlayerAbilityPoints = this->PlayerAbilityPoints;
 		PS->HasReceivedStarterItems = this->HasReceivedStarterItems;
+		PS->SelectedClass = this->SelectedClass;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)

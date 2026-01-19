@@ -46,16 +46,16 @@ void AAphroditeCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
-    //// Get PlayerState and set up ability system
-    //ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>();
-    //if (PS)
-    //{
-    //    AbilitySystem = PS->GetAbilitySystemComponent();
-    //    if (AbilitySystem)
-    //    {
-    //        AbilitySystem->InitAbilityActorInfo(PS, this);
-    //    }
-    //}
+    // Get PlayerState and set up ability system
+    ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>();
+    if (PS)
+    {
+        AbilitySystem = PS->GetAbilitySystemComponent();
+        if (AbilitySystem)
+        {
+            AbilitySystem->InitAbilityActorInfo(PS, this);
+        }
+    }
 }
 
 // Called when PlayerState is replicated on clients
@@ -63,28 +63,28 @@ void AAphroditeCharacter::OnRep_PlayerState()
 {
     Super::OnRep_PlayerState();
 
-    //// Reinitialize ability system
-    //ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>();
-    //if (PS)
-    //{
-    //    AbilitySystem = PS->GetAbilitySystemComponent();
-    //    AbilitySystem->InitAbilityActorInfo(PS, this);
-    //}
+    // Reinitialize ability system
+    ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>();
+    if (PS)
+    {
+        AbilitySystem = PS->GetAbilitySystemComponent();
+        AbilitySystem->InitAbilityActorInfo(PS, this);
+    }
 }
 
 void AAphroditeCharacter::GiveDamageAbilities()
 {
     Super::GiveDamageAbilities();
 
-  //  if (AbilitySystem)
-  //  {
-		//// Give Bundle of Joy ability 
-  //      AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
-		//// Activate Bundle of Joy ability
-  //      AbilitySystem->TryActivateAbilityByClass(UBundleOfJoy::StaticClass());
-		//// start ability cooldown
-  //      //AbilityPointCounter->StartDamageCooldown(DamageCooldown);
-  //  }
+    if (AbilitySystem)
+    {
+		// Give Bundle of Joy ability 
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
+		// Activate Bundle of Joy ability
+        AbilitySystem->TryActivateAbilityByClass(UBundleOfJoy::StaticClass());
+		// start ability cooldown
+        //AbilityPointCounter->StartDamageCooldown(DamageCooldown);
+    }
 }
 void AAphroditeCharacter::GiveDefenceAbilities()
 {

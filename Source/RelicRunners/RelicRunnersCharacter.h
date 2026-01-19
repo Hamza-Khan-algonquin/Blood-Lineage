@@ -156,7 +156,12 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 	class ARelicRunnersPlayerState* RelicPlayerState;
 
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const { return AbilitySystem; }
+
 protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	UAbilitySystemComponent* AbilitySystem;
 
 	//Functions
 	void Tick(float DeltaTime);
