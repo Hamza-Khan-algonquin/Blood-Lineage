@@ -43,6 +43,8 @@ void ULobbyHUDWorld::BindToPlayerState()
     PS->OnHostStatusChanged.RemoveAll(this);
     PS->OnHostStatusChanged.AddDynamic(this, &ULobbyHUDWorld::SetHostIconVisibility);
 
+    SetHostIconVisibility(PS->IsHost);
+
     UpdatePlayerClassDisplay(PS->SelectedClass);
 }
 
@@ -57,20 +59,26 @@ void ULobbyHUDWorld::UpdatePlayerClassDisplay(FName NewClass)
 
     if (I_Class)
     {
-        FString TexturePath = FString::Printf(TEXT("/Game/ThirdPerson/Icons/Icon_%s.Icon_%s"), *NewClass.ToString(), *NewClass.ToString());
+        UTexture2D* ClassIcon = nullptr;
 
-        UTexture2D* ClassIcon = LoadObject<UTexture2D>(nullptr, *TexturePath);
-        if (ClassIcon)
+        if (IconCache.Contains(NewClass))
         {
-            FSlateBrush Brush;
-            Brush.SetResourceObject(ClassIcon);
-            Brush.ImageSize = FVector2D(150.f, 150.f);
-            Brush.TintColor = FSlateColor(FLinearColor::Black);
-            I_Class->SetBrush(Brush);
+            ClassIcon = IconCache[NewClass];
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("Could not find icon for class: %s (Path: %s)"), *NewClass.ToString(), *TexturePath);
+            FString TexturePath = FString::Printf(TEXT("/Game/ThirdPerson/Icons/Icon_%s.Icon_%s"), *NewClass.ToString(), *NewClass.ToString());
+            ClassIcon = LoadObject<UTexture2D>(nullptr, *TexturePath);
+            if (ClassIcon)
+            {
+                ClassIcon->NeverStream = true;
+                IconCache.Add(NewClass, ClassIcon);
+            }
+        }
+
+        if (ClassIcon)
+        {
+            I_Class->SetBrushFromTexture(ClassIcon);
         }
     }
 }

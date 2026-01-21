@@ -35,6 +35,9 @@ public:
 	class UBorder* B_HostIcon;
 
 	UPROPERTY()
+	TMap<FName, UTexture2D*> IconCache;
+
+	UPROPERTY()
 	class ALobbyPreview* OwningPreview;
 
 	UFUNCTION()

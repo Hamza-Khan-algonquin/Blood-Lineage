@@ -53,6 +53,7 @@ void UJoinUserWidget::NativeConstruct()
 		B_CerberusSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
 		//Client Only
+		B_Ready->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 		B_CurrentSection->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 
