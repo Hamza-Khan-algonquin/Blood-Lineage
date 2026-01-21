@@ -447,6 +447,20 @@ void ARelicRunnersPlayerState::OnRep_PlayerGold()
 	}
 }
 
+void ARelicRunnersPlayerState::OnRep_IsHost()
+{
+	OnHostStatusChanged.Broadcast(IsHost);
+}
+
+void ARelicRunnersPlayerState::SetIsHost(bool NewIsHost)
+{
+	if (HasAuthority())
+	{
+		IsHost = NewIsHost;
+		OnHostStatusChanged.Broadcast(IsHost);
+	}
+}
+
 void ARelicRunnersPlayerState::OnRep_PlayerLevel(int OldLevel)
 {
 	if (PlayerLevel > OldLevel)
@@ -541,5 +555,6 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerAbilityPoints);
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerGold);
 	DOREPLIFETIME(ARelicRunnersPlayerState, HasReceivedStarterItems);
+	DOREPLIFETIME(ARelicRunnersPlayerState, IsHost);
 }
 

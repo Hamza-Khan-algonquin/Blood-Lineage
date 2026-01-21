@@ -13,6 +13,8 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <OnlineSessionSettings.h>
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include "RelicRunners/PlayerHUD/LobbyHUDWorld.h"
+#include "Components/WidgetComponent.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
@@ -46,6 +48,8 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
     ARelicRunnersPlayerState* RPS = NewPlayer->GetPlayerState<ARelicRunnersPlayerState>();
     if (!RPS) return;
+
+    RPS->SetIsHost(Index == 0);
 
     FActorSpawnParameters Params;
     Params.Owner = NewPlayer;

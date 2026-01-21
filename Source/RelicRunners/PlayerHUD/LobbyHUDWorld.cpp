@@ -4,6 +4,7 @@
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "Components/Border.h"
 #include "RelicRunners/PlayerPreview/LobbyPreview.h"
 
 void ULobbyHUDWorld::NativeConstruct()
@@ -25,6 +26,11 @@ void ULobbyHUDWorld::NativeConstruct()
     }
 }
 
+void ULobbyHUDWorld::SetHostIconVisibility(bool IsHost)
+{
+    if (B_HostIcon) B_HostIcon->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
 void ULobbyHUDWorld::BindToPlayerState()
 {
     if (!OwningPreview || !OwningPreview->LinkedPlayerState) return;
@@ -33,6 +39,9 @@ void ULobbyHUDWorld::BindToPlayerState()
 
     PS->OnSelectedClassChanged.RemoveAll(this);
     PS->OnSelectedClassChanged.AddUObject(this, &ULobbyHUDWorld::UpdatePlayerClassDisplay);
+
+    PS->OnHostStatusChanged.RemoveAll(this);
+    PS->OnHostStatusChanged.AddDynamic(this, &ULobbyHUDWorld::SetHostIconVisibility);
 
     UpdatePlayerClassDisplay(PS->SelectedClass);
 }

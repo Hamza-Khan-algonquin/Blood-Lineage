@@ -67,7 +67,7 @@ ALobbyPreview::ALobbyPreview()
 
 void ALobbyPreview::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
     if (LobbyHUDWorld)
     {
@@ -79,12 +79,11 @@ void ALobbyPreview::BeginPlay()
             }
         }
     }
-	
 }
 
 void ALobbyPreview::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+    Super::Tick(DeltaTime);
 
 }
 
@@ -106,8 +105,21 @@ void ALobbyPreview::OnRep_LinkedPlayerState()
         LinkedPlayerState->OnSelectedClassChanged.AddUObject(this, &ALobbyPreview::OnPlayerClassChanged);
         OnPlayerClassChanged(LinkedPlayerState->SelectedClass);
         OnPlayerStateReady.Broadcast();
+
+        if (LobbyHUDWorld)
+        {
+            if (UUserWidget* Widget = LobbyHUDWorld->GetUserWidgetObject())
+            {
+                if (ULobbyHUDWorld* LobbyWidget = Cast<ULobbyHUDWorld>(Widget))
+                {
+                    LobbyWidget->OwningPreview = this;
+                    LobbyWidget->SetHostIconVisibility(LinkedPlayerState->IsHost);
+                }
+            }
+        }
     }
 }
+
 
 void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
 {
