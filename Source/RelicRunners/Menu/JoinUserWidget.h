@@ -40,6 +40,13 @@ struct FDifficultyWidgets
 
 	UPROPERTY()
 	class UBorder* SectionBorder = nullptr;   
+
+	int HealthPercent;
+
+	int DamagePercent;
+
+	int LuckAmount;
+	
 };
 
 
@@ -54,14 +61,12 @@ public:
 
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	void UpdateDifficultyNumbers();
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 	class UBorder* CurrentHoveredBorder;
 
 	UPROPERTY()
 	TMap<FName, FDifficultyWidgets> DifficultyMap;
-
-	UPROPERTY(BlueprintReadOnly)
-	FName CurrentDifficulty;
 
 	UFUNCTION()
 	void OnDifficultyClicked_Boar();
@@ -92,7 +97,7 @@ public:
 
 	void SetSelectedDifficulty(FName DifficultyKey);
 
-	void UpdateClientDifficultyUI(FName NewDifficulty);
+	void UpdateClientDifficultyUI();
 
 	UFUNCTION()
 	void OnAresClicked();
@@ -107,6 +112,66 @@ public:
 
 	void SetSelectedClass(FName ClassKey);
 	void HandleEntryGenerated(UUserWidget& EntryWidget);
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_BoarHealth;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_BoarDamage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_BoarLuck;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_BullHealth;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_BullDamage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_BullLuck;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_LionHealth;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_LionDamage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_LionLuck;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_HydraHealth;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_HydraDamage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_HydraLuck;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_CerberusHealth;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_CerberusDamage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_CerberusLuck;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* I_CurrentDifficulty;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_CurrentDifficulty;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_CurrentEnemyHealth;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_CurrentEnemyDamage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_CurrentLuck;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_CurrentSection;

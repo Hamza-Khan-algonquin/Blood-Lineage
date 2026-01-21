@@ -89,6 +89,8 @@ public:
     class USaveFileListData* SelectedSaveSlot = nullptr;
 
     //Properties
+    UPROPERTY(BlueprintReadOnly)
+    FName CurrentDifficulty;
     UPROPERTY()
     TArray<FUniqueNetIdRepl> SavedPlayers;
     UPROPERTY(BlueprintReadOnly)

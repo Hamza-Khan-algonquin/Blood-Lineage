@@ -57,11 +57,12 @@ void UJoinUserWidget::NativeConstruct()
 		B_CurrentSection->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 
-	DifficultyMap.Add("Boar", { BoarBorder, B_Boar, B_BoarSection });
-	DifficultyMap.Add("Bull", { BullBorder, B_Bull, B_BullSection });
-	DifficultyMap.Add("Lion", { LionBorder, B_Lion, B_LionSection });
-	DifficultyMap.Add("Hydra", { HydraBorder, B_Hydra, B_HydraSection });
-	DifficultyMap.Add("Cerberus", { CerberusBorder, B_Cerberus, B_CerberusSection });
+	DifficultyMap.Add("Boar", { BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
+	DifficultyMap.Add("Bull", { BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
+	DifficultyMap.Add("Lion", { LionBorder, B_Lion, B_LionSection, 180, 150, 2});
+	DifficultyMap.Add("Hydra", { HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
+	DifficultyMap.Add("Cerberus", { CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
+	UpdateDifficultyNumbers();
 
 	if (B_Boar)     B_Boar->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Boar);
 	if (B_Bull)     B_Bull->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Bull);
@@ -112,6 +113,29 @@ FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPo
 	}
 
 	return FReply::Handled();
+}
+
+void UJoinUserWidget::UpdateDifficultyNumbers()
+{
+	TB_BoarHealth->SetText(FText::AsNumber(DifficultyMap["Boar"].HealthPercent));
+	TB_BoarDamage->SetText(FText::AsNumber(DifficultyMap["Boar"].DamagePercent));
+	TB_BoarLuck->SetText(FText::AsNumber(DifficultyMap["Boar"].LuckAmount));
+
+	TB_BullHealth->SetText(FText::AsNumber(DifficultyMap["Bull"].HealthPercent));
+	TB_BullDamage->SetText(FText::AsNumber(DifficultyMap["Bull"].DamagePercent));
+	TB_BullLuck->SetText(FText::AsNumber(DifficultyMap["Bull"].LuckAmount));
+
+	TB_LionHealth->SetText(FText::AsNumber(DifficultyMap["Lion"].HealthPercent));
+	TB_LionDamage->SetText(FText::AsNumber(DifficultyMap["Lion"].DamagePercent));
+	TB_LionLuck->SetText(FText::AsNumber(DifficultyMap["Lion"].LuckAmount));
+
+	TB_HydraHealth->SetText(FText::AsNumber(DifficultyMap["Hydra"].HealthPercent));
+	TB_HydraDamage->SetText(FText::AsNumber(DifficultyMap["Hydra"].DamagePercent));
+	TB_HydraLuck->SetText(FText::AsNumber(DifficultyMap["Hydra"].LuckAmount));
+
+	TB_CerberusHealth->SetText(FText::AsNumber(DifficultyMap["Cerberus"].HealthPercent));
+	TB_CerberusDamage->SetText(FText::AsNumber(DifficultyMap["Cerberus"].DamagePercent));
+	TB_CerberusLuck->SetText(FText::AsNumber(DifficultyMap["Cerberus"].LuckAmount));
 }
 
 void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
@@ -328,7 +352,10 @@ void UJoinUserWidget::OnDifficultyClicked_Cerberus()
 
 void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 {
-	CurrentDifficulty = DifficultyKey;
+	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GameInstance) return;
+
+	GameInstance->CurrentDifficulty = DifficultyKey;
 
 	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
 	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
@@ -355,9 +382,16 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 	}
 }
 
-void UJoinUserWidget::UpdateClientDifficultyUI(FName NewDifficulty)
+void UJoinUserWidget::UpdateClientDifficultyUI()
 {
-	
+	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GameInstance) return;
+
+	I_CurrentDifficulty;
+	TB_CurrentDifficulty->SetText(FText::FromName(GameInstance->CurrentDifficulty));
+	TB_CurrentEnemyDamage->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].HealthPercent));
+	TB_CurrentEnemyHealth->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].DamagePercent));
+	TB_CurrentLuck->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].LuckAmount));
 }
 
 void UJoinUserWidget::OnAresClicked() { SetSelectedClass("Ares"); }
