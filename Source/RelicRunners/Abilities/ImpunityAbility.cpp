@@ -71,5 +71,15 @@ void UImpunityAbility::ResetSpeed()
 void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
     ResetSpeed();
+
+    if (ActorInfo && ActorInfo->IsLocallyControlled())
+    {
+        APlayerController* PC = ActorInfo->PlayerController.Get();
+        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+        {
+            RPC->PlayerHUD->StartDefenceCooldown(CooldownTimer);
+        }
+    }
+
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

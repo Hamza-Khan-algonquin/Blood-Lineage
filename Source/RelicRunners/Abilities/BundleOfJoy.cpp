@@ -183,12 +183,23 @@ void UBundleOfJoy::Explode()
 
 void UBundleOfJoy::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (AvatarActor)
+    if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
-        // Clear timers
-        AvatarActor->GetWorldTimerManager().ClearTimer(AttractTimer);
-        AvatarActor->GetWorldTimerManager().ClearTimer(ExplosionTimer);
+        UWorld* World = ActorInfo->AvatarActor->GetWorld();
+        if (World)
+        {
+            World->GetTimerManager().ClearTimer(AttractTimer);
+            World->GetTimerManager().ClearTimer(ExplosionTimer);
+        }
+    }
+
+    if (ActorInfo && ActorInfo->IsLocallyControlled())
+    {
+        APlayerController* PC = ActorInfo->PlayerController.Get();
+        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+        {
+            RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
+        }
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

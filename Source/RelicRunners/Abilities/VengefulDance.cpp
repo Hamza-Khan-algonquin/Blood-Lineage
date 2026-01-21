@@ -106,13 +106,25 @@ void UVengefulDance::ApplyRingDamage()
 
 void UVengefulDance::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (AvatarActor)
+    if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
-        //Clear timers
-        AvatarActor->GetWorldTimerManager().ClearTimer(DamageTickTimer);
-        AvatarActor->GetWorldTimerManager().ClearTimer(EndTimer);
+        UWorld* World = ActorInfo->AvatarActor->GetWorld();
+        if (World)
+        {
+            World->GetTimerManager().ClearTimer(DamageTickTimer);
+            World->GetTimerManager().ClearTimer(EndTimer);
+        }
     }
+
+    if (ActorInfo && ActorInfo->IsLocallyControlled())
+    {
+        APlayerController* PC = ActorInfo->PlayerController.Get();
+        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+        {
+			RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
+        }
+    }
+
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

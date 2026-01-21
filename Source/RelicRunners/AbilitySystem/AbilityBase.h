@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"  
+#include "RelicRunners/PlayerController/RelicRunnersPlayerController.h"
+#include "RelicRunners/PlayerHUD/PlayerHUD.h"
 #include "CooldownGameplayEffect.h"
 #include "AbilityBase.generated.h"
 
@@ -84,6 +86,8 @@ public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Cooldown")
     TSubclassOf<UGameplayEffect> GenericCooldownEffect;
+
+
 
 };
 
