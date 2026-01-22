@@ -57,7 +57,6 @@ USTRUCT()
 struct FSFloorValues
 {
 	GENERATED_BODY()
-public:
 	UPROPERTY()
 	bool IsFullTile = false;
 

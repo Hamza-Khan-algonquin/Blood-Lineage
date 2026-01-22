@@ -75,38 +75,12 @@ public:
 	// Sets default values for this actor's properties
 	AIslandGenerationTest();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UIslandSpawningValuesComponent* GenerationValuesComponent;
+
+	void InitializeValues();
+
 	void Generate();
-
-	void SetSizeRange(uint8 newDepthMin, uint8 newDepthMax,uint8 newWidthMin, uint8 newWidthMax);
-
-	void SetTileScale(float newTileScale);
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (ClampMin = "1", UIMin = "1", ClampMax = "1000", UIMax = "1000", ToolTip = "Distance tiles are from each other in unreal units"))
-	float TileScale;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values")
-	FSIslandRangeTest MapSizeRange;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Values", meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
-	float FullPercentage;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Floor", meta = (ToolTip = "Mesh used for the quarter of a walkable tile with neighbours."))
-	class UStaticMesh* FullFloorMesh;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Floor", meta = (ToolTip = "Mesh used for the quarter of a walkable tile with neighbours."))
-	class UStaticMesh* SideFloorMesh;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Floor", meta = (ToolTip = "Mesh used for the quarter of a walkable tile with neighbours."))
-	class UStaticMesh* ConvexCornerMesh;
-
-	UPROPERTY(EditAnywhere, Category = "GenerationValues | Modular Floor", meta = (ToolTip = "Mesh used for the quarter of a walkable tile with neighbours."))
-	class UMaterial* FloorMaterial;
-
-protected:
-
-	virtual void BeginPlay() override;
-
-public:
 
 	//Used to call the functions that will initialize each tile individually and set it as a walkable or non-walkable tile.
 	//Also used to set the regular modular obstacle that would spawn on it if it is set to walkable.
@@ -146,5 +120,8 @@ public:
 	TArray<FTransform> FullFloorPieceTransforms;
 	TArray<FTransform> SideFloorPieceTransforms;
 	TArray<FTransform> ConvexCornerTransforms;
+
+	uint8 IslandWidth = 2;
+	uint8 IslandDepth = 2;
 
 };

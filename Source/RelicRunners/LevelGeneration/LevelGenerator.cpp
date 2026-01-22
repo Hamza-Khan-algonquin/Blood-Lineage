@@ -33,6 +33,50 @@ Adjust what type of floor spawns to accomadate not having concave corners | Done
 Change how the floor tiles are scaled to make them more dynamic | Done
 */
 
+
+/*
+Plan for level generation
+
+Island Spawner Spawns the islands
+Initialize each islands' position + values
+Each individual island then begins to generate with the values
+
+
+Values to send each island:
+
+Basic Values:
+	Map width + Map Depth
+	Tile Scale
+
+Visual Values:
+	Floor Meshes (Floor, Wall, Corner)(With wall, No wall)
+	Appropriate Floor Material
+
+Obstacle Values:
+	Array of packed level obstacles
+	Array of packed level bridges
+	Packed Level Start
+	Bridge actor used to travel between islands
+
+
+Objective Values:
+	Objective Type
+
+	Objective Actor to Spawn
+	Max Objective Amount
+
+
+Objective Actor Parent Class
+	Child classes:
+	 Capture the flag,
+	 Enemy Zone,
+	 Deliver the payload,
+	 Survive the Zone
+
+
+*/
+
+
 ALevelGenerator::ALevelGenerator() :
 	TileScale(1.0f),
 	CameraActor(nullptr),
@@ -41,8 +85,6 @@ ALevelGenerator::ALevelGenerator() :
 	GenerationIsRandom(true),
 	LevelTexture(nullptr),
 	StartingToEndingMinDistance(0),
-	//SpawnWidth(2),
-	//SpawnDepth(2),
 	FullPercentage(75.0f),
 	HolePercentage(0.0f),
 	BasicObstaclePercentage(50.0f),

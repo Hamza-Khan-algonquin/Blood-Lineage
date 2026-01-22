@@ -3,18 +3,30 @@
 
 #include "IslandGenerationTest.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "IslandSpawningValuesComponent.h"
 #include "Net/UnrealNetwork.h"
 
+/*
+Set index of starting tile and ending (bridge) tile
+
+Initialize values of each floor tile based on width and depth + set what regular obstacle will spawn based on a precentage
+
+Override previously defined tiles with starting and ending tiles
+
+Based on maximum amount, override previously defined tiles with the objective of that island
+Spawn the objective at the appropriate location
+
+Spawn obstacles and 
+
+*/
+
+
 // Sets default values
-AIslandGenerationTest::AIslandGenerationTest():
-	TileScale(0.0f),
-	FullPercentage(0.0f),
-	FullFloorMesh(nullptr),
-	SideFloorMesh(nullptr),
-	ConvexCornerMesh(nullptr),
-	FloorMaterial(nullptr)
+AIslandGenerationTest::AIslandGenerationTest()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	GenerationValuesComponent = CreateDefaultSubobject<UIslandSpawningValuesComponent>("GenerationValues");
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -24,10 +36,15 @@ void AIslandGenerationTest::Generate()
 {
 	if (HasAuthority())
 	{
-
-		for (int y = 0; y < MapSizeRange.DepthFinal; y++)
+		//if (IslandOwner)
+		//{
+		//	int num = IslandOwner->GetObjectiveValue();
+		//	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Current Objective: %i"), num));
+		//}
+			
+		for (int y = 0; y < IslandDepth; y++)
 		{
-			for (int x = 0; x < MapSizeRange.WidthFinal; x++)
+			for (int x = 0; x < IslandWidth; x++)
 			{
 				//Initialize each tile and set them to either walkable or non-walkable.
 				GenerateFloor(x, y);
@@ -36,12 +53,12 @@ void AIslandGenerationTest::Generate()
 
 		if (!FloorValuesArray.IsEmpty())
 		{
-			for (int y = 0; y < MapSizeRange.DepthFinal; y++)
+			for (int y = 0; y < IslandDepth; y++)
 			{
-				for (int x = 0; x < MapSizeRange.WidthFinal; x++)
+				for (int x = 0; x < IslandWidth; x++)
 				{
 					//Spawn the floor tiles with the instanced static mesh component.
-					CheckFloor(x, y, MapSizeRange.WidthFinal, MapSizeRange.DepthFinal);
+					CheckFloor(x, y, IslandWidth, IslandDepth);
 				}
 			}
 			//Spawn the floor with the instanced static mesh component.
@@ -50,30 +67,15 @@ void AIslandGenerationTest::Generate()
 	}
 }
 
-void AIslandGenerationTest::SetSizeRange(uint8 newDepthMin, uint8 newDepthMax, uint8 newWidthMin, uint8 newWidthMax)
+void AIslandGenerationTest::InitializeValues()
 {
-	MapSizeRange.DepthMin = newDepthMin;
-	MapSizeRange.DepthMax = newDepthMax;
-	MapSizeRange.WidthMin = newWidthMin;
-	MapSizeRange.WidthMax = newWidthMax;
-
-	MapSizeRange.WidthFinal = FMath::RandRange(MapSizeRange.WidthMin, MapSizeRange.WidthMax);
-	MapSizeRange.DepthFinal = FMath::RandRange(MapSizeRange.DepthMin, MapSizeRange.DepthMax);
-}
-
-void AIslandGenerationTest::SetTileScale(float newTileScale)
-{
-	TileScale = newTileScale;
-}
-
-void AIslandGenerationTest::BeginPlay()
-{
-	Super::BeginPlay();
+	IslandDepth = FMath::RandRange(GenerationValuesComponent->IslandValues.DepthMin, GenerationValuesComponent->IslandValues.DepthMax);
+	IslandWidth = FMath::RandRange(GenerationValuesComponent->IslandValues.WidthMin, GenerationValuesComponent->IslandValues.WidthMax);
 }
 
 void AIslandGenerationTest::GenerateFloor(int x, int y)
 {
-	if (FloorValuesArray.Num() == x + (MapSizeRange.WidthFinal * y))
+	if (FloorValuesArray.Num() == x + (IslandWidth * y))
 	{
 		//Set current tile as walkable or non-walkable
 		InitializeFloor();
@@ -86,7 +88,9 @@ void AIslandGenerationTest::InitializeFloor()
 	FSIslandFloorValues newFloorValues;
 	float randomFloor = FMath::RandRange(0.1f, 100.0f);
 
-	if (randomFloor > FullPercentage)
+	float fullPercentage = GenerationValuesComponent->IslandValues.FullPercentage;
+
+	if (randomFloor > fullPercentage)
 	{
 		newFloorValues.IsFullTile = false;
 	}
@@ -248,10 +252,12 @@ void AIslandGenerationTest::SetFloorShape(int x, int y, int width)
 
 void AIslandGenerationTest::SetTopLeftFloorShape(int x, int y, int width)
 {
+	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2), (y * 2), 0.0f) * (TileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2), (y * 2), 0.0f) * (tileScale * 2) + GetActorLocation();
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
-	float scaleOffset = TileScale * 2;
+	float scaleOffset = tileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
@@ -287,10 +293,12 @@ void AIslandGenerationTest::SetTopLeftFloorShape(int x, int y, int width)
 
 void AIslandGenerationTest::SetTopRightFloorShape(int x, int y, int width)
 {
+	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2) + 1.0f, (y * 2), 0.0f) * (TileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2) + 1.0f, (y * 2), 0.0f) * (tileScale * 2) + GetActorLocation();
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
-	float scaleOffset = TileScale * 2;
+	float scaleOffset = tileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
@@ -331,10 +339,12 @@ void AIslandGenerationTest::SetTopRightFloorShape(int x, int y, int width)
 
 void AIslandGenerationTest::SetBottomLeftFloorShape(int x, int y, int width)
 {
+	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2), (y * 2) + 1.0f, 0.0f) * (TileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2), (y * 2) + 1.0f, 0.0f) * (tileScale * 2) + GetActorLocation();
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
-	float scaleOffset = TileScale * 2;
+	float scaleOffset = tileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
@@ -373,10 +383,12 @@ void AIslandGenerationTest::SetBottomLeftFloorShape(int x, int y, int width)
 
 void AIslandGenerationTest::SetBottomRightFloorShape(int x, int y, int width)
 {
+	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2) + 1.0, (y * 2) + 1.0f, 0.0f) * (TileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2) + 1.0, (y * 2) + 1.0f, 0.0f) * (tileScale * 2) + GetActorLocation();
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
-	float scaleOffset = TileScale * 2;
+	float scaleOffset = tileScale * 2;
 	FTransform newTransform;
 
 	newTransform.SetLocation(posOffset);
@@ -423,9 +435,9 @@ void AIslandGenerationTest::CreateFloor()
 	arrayOfTransformArrays.Add(ConvexCornerTransforms);
 
 	TArray<UStaticMesh*> staticMeshArray;
-	staticMeshArray.Add(FullFloorMesh);
-	staticMeshArray.Add(SideFloorMesh);
-	staticMeshArray.Add(ConvexCornerMesh);
+	staticMeshArray.Add(GenerationValuesComponent->FloorMeshes.FullFloorMesh);
+	staticMeshArray.Add(GenerationValuesComponent->FloorMeshes.SideFloorMesh);
+	staticMeshArray.Add(GenerationValuesComponent->FloorMeshes.CornerFloorMesh);
 
 	for (int i = 0; i < staticMeshArray.Num(); i++)
 	{
@@ -435,9 +447,9 @@ void AIslandGenerationTest::CreateFloor()
 		{
 			ISMComp->SetStaticMesh(staticMeshArray[i]);
 		}
-		if (FloorMaterial != nullptr)
+		if (GenerationValuesComponent->FloorMeshes.FloorMaterial != nullptr)
 		{
-			ISMComp->SetMaterial(0, FloorMaterial);
+			ISMComp->SetMaterial(0, GenerationValuesComponent->FloorMeshes.FloorMaterial);
 		}
 
 		ISMComp->AddInstances(arrayOfTransformArrays[i], false, true, true);

@@ -4,10 +4,13 @@
 #include "IslandSpawner.h"
 #include "IslandGenerationTest.h"
 #include "LevelGenerator.h"
+#include "IslandSpawningValuesComponent.h"
 
 // Sets default values
 AIslandSpawner::AIslandSpawner():
+	ObjectiveType(0),
 	NumIslands(0),
+	TileScale(0.0f),
 	IslandGenerationTestTemplate(nullptr),
 	WidthMin(1),
 	WidthMax(1),
@@ -16,7 +19,10 @@ AIslandSpawner::AIslandSpawner():
 
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
+
+	GenerationValuesComponent = CreateDefaultSubobject<UIslandSpawningValuesComponent>("GenerationValues");
+
 }
 
 // Called when the game starts or when spawned
@@ -30,14 +36,15 @@ void AIslandSpawner::BeginPlay()
 		for (int i = 0; i < NumIslands; i++)
 		{
 			AIslandGenerationTest* newIsland = GetWorld()->SpawnActor<AIslandGenerationTest>(IslandGenerationTestTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
-			ALevelGenerator* newLevel = GetWorld()->SpawnActor<ALevelGenerator>(LevelGeneratorTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
 
-			newIsland->SetSizeRange(DepthMin, DepthMax, WidthMin, WidthMax);
-			newIsland->SetTileScale(TileScale);
+			newIsland->GenerationValuesComponent->SetIslandValues(GenerationValuesComponent->IslandValues);
+			newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
+
+			newIsland->InitializeValues();
 
 			Islands.Add(newIsland);
-			Level.Add(newLevel);
 		}
+
 
 		for (int i = 0; i < NumIslands; i++)
 		{
@@ -49,8 +56,8 @@ void AIslandSpawner::BeginPlay()
 
 			for (int j = 0; j < i; j++)
 			{
-				offsetX = offsetX + (Islands[j]->MapSizeRange.WidthFinal * Islands[j]->TileScale * 4) + (Islands[j]->TileScale * 4);
-				offsetY = FMath::FRandRange(0.0f, Islands[j]->MapSizeRange.DepthFinal) * Islands[j]->TileScale * 4;
+				offsetX = offsetX + (Islands[j]->IslandWidth * GenerationValuesComponent->IslandValues.TileScale * 4) + (GenerationValuesComponent->IslandValues.TileScale * 4);
+				offsetY = FMath::FRandRange(0.0f, Islands[j]->IslandDepth) * GenerationValuesComponent->IslandValues.TileScale * 4;
 			}
 
 			Islands[i]->SetActorLocation(FVector(offsetX, offsetY, Islands[i]->GetActorLocation().Z));
@@ -61,4 +68,11 @@ void AIslandSpawner::BeginPlay()
 			Islands[i]->Generate();
 		}
 	}
+}
+
+int AIslandSpawner::GetObjectiveValue()
+{
+	ObjectiveType = FMath::RandRange(0, 4);
+
+	return ObjectiveType;
 }
