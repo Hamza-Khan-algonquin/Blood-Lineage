@@ -352,10 +352,12 @@ void UJoinUserWidget::OnDifficultyClicked_Cerberus()
 
 void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 {
-	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (!GameInstance) return;
-
-	GameInstance->CurrentDifficulty = DifficultyKey;
+	APlayerController* PC = GetOwningPlayer();
+	if (PC)
+	{
+		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+		RPC->Server_SetDifficulty(DifficultyKey);
+	}
 
 	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
 	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
@@ -387,7 +389,8 @@ void UJoinUserWidget::UpdateClientDifficultyUI()
 	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
 	if (!GameInstance) return;
 
-	I_CurrentDifficulty;
+	FString IconName = GameInstance->CurrentDifficulty.ToString() + "Difficulty";
+	I_CurrentDifficulty->SetBrushFromTexture(ItemStats::LoadIcon(IconName));
 	TB_CurrentDifficulty->SetText(FText::FromName(GameInstance->CurrentDifficulty));
 	TB_CurrentEnemyDamage->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].HealthPercent));
 	TB_CurrentEnemyHealth->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].DamagePercent));
@@ -555,9 +558,9 @@ void UJoinUserWidget::StartGameButtonClicked()
 	}
 	else
 	{
-		if (ARelicRunnersPlayerController* MyPC = Cast<ARelicRunnersPlayerController>(PC))
+		if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
 		{
-			MyPC->Server_RequestStartGame();
+			RPC->Server_RequestStartGame();
 		}
 	}
 }

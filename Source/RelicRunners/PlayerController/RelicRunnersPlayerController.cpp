@@ -50,6 +50,8 @@
 #include "RelicRunners/Menu/LoadingScreen.h"
 #include "RelicRunners/PlayerHUD/PlayerHUD.h"
 #include "RelicRunners/LevelUpHUD/LevelUpHUD.h"
+#include <RelicRunners/RelicRunnersGameState.h>
+#include <RelicRunners/Game/LobbyGameState.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -260,6 +262,14 @@ void ARelicRunnersPlayerController::TryBindUI()
 	}
 }
 
+void ARelicRunnersPlayerController::Server_SetDifficulty_Implementation(FName NewDifficulty)
+{
+	ALobbyGameState* LGS = GetWorld()->GetGameState<ALobbyGameState>();
+	if (LGS)
+	{
+		LGS->SetDifficulty(NewDifficulty);
+	}
+}
 
 void ARelicRunnersPlayerController::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 {

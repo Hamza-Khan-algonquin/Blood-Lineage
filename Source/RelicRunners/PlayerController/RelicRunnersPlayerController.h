@@ -47,6 +47,8 @@ public:
 	void SyncUI();
 	UFUNCTION()
 	void TryBindUI();
+	UFUNCTION(Server, Reliable)
+	void Server_SetDifficulty(FName NewDifficulty);
 	UFUNCTION()
 	void OnRep_LobbyPreview();
 	UFUNCTION()
