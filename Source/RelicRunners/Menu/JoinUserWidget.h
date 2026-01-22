@@ -65,6 +65,14 @@ public:
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 	class UBorder* CurrentHoveredBorder;
 
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Countdown;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* Timer;
+
+	void UpdateCountdownUI(int RemainingTime);
+
 	UPROPERTY()
 	TMap<FName, FDifficultyWidgets> DifficultyMap;
 

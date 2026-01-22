@@ -35,7 +35,7 @@ inline bool operator|= (int num, EObjectiveType type)
 
 
 UCLASS()
-class RELICRUNNERS_API ARelicRunnersGameState : public AGameState
+class RELICRUNNERS_API ARelicRunnersGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 

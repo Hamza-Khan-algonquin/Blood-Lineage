@@ -24,6 +24,7 @@
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 #include "StandardTooltip.h"
 #include <RelicRunners/Item/ItemStats.h>
+#include "LobbyGameMode.h"
 
 void UJoinUserWidget::NativeConstruct()
 {
@@ -549,19 +550,18 @@ void UJoinUserWidget::StartGameButtonClicked()
 	APlayerController* PC = GetOwningPlayer();
 	if (!PC) return;
 
-	if (PC->HasAuthority())
+	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>()) 
 	{
-		if (URelicRunnersGameInstance* GI = PC->GetGameInstance<URelicRunnersGameInstance>())
-		{
-			GI->StartSessionGame();
-		}
+		GM->StartCountdown();
 	}
-	else
-	{
-		if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
-		{
-			RPC->Server_RequestStartGame();
-		}
+}
+
+void UJoinUserWidget::UpdateCountdownUI(int RemainingTime) {
+	if (!TB_Countdown) return;
+
+	if (RemainingTime > 0) {
+		TB_Countdown->SetText(FText::AsNumber(RemainingTime));
+		PlayAnimation(Timer);
 	}
 }
 

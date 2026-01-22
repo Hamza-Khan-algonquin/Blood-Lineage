@@ -11,14 +11,9 @@
  * 
  */
 UCLASS()
-class RELICRUNNERS_API ALobbyGameState : public ARelicRunnersGameState
+class RELICRUNNERS_API ALobbyGameState : public AGameState
 {
 	GENERATED_BODY()
 public:
 
-	void SetDifficulty(FName NewDifficulty);
-
-	virtual void OnRep_CurrentDifficulty() override;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

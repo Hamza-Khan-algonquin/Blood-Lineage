@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class RELICRUNNERS_API ALobbyGameMode : public AGameMode
+class RELICRUNNERS_API ALobbyGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
@@ -19,6 +19,12 @@ public:
     virtual void Logout(AController* Exiting) override;
     void OnPlayerStateUpdated(class ARelicRunnersPlayerState* RPS);
     virtual void BeginPlay() override;
+
+    FTimerHandle CountdownTimerHandle;
+    int CurrentCountdown = 5;
+    void AdvanceTimer();
+    void SetDifficulty(FName NewDifficulty);
+    void StartCountdown();
 protected:
     // Where to put players in lobby (pillars etc.)
     UPROPERTY(EditDefaultsOnly, Category = "Lobby")

@@ -52,6 +52,8 @@
 #include "RelicRunners/LevelUpHUD/LevelUpHUD.h"
 #include <RelicRunners/RelicRunnersGameState.h>
 #include <RelicRunners/Game/LobbyGameState.h>
+#include <Blueprint/WidgetBlueprintLibrary.h>
+#include <RelicRunners/Menu/LobbyGameMode.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -264,10 +266,9 @@ void ARelicRunnersPlayerController::TryBindUI()
 
 void ARelicRunnersPlayerController::Server_SetDifficulty_Implementation(FName NewDifficulty)
 {
-	ALobbyGameState* LGS = GetWorld()->GetGameState<ALobbyGameState>();
-	if (LGS)
+	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
 	{
-		LGS->SetDifficulty(NewDifficulty);
+		GM->SetDifficulty(NewDifficulty);
 	}
 }
 
@@ -501,6 +502,37 @@ void ARelicRunnersPlayerController::TrySetupPreviewRenderTarget()
 	}
 
 	SetupPreviewRenderTarget(PlayerPreviewInstance);
+}
+
+void ARelicRunnersPlayerController::Client_UpdateCountdown_Implementation(int NewTime)
+{
+	TArray<UUserWidget*> FoundWidgets;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UJoinUserWidget::StaticClass());
+	for (UUserWidget* Widget : FoundWidgets)
+	{
+		if (UJoinUserWidget* LobbyUI = Cast<UJoinUserWidget>(Widget))
+		{
+			LobbyUI->UpdateCountdownUI(NewTime);
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdateDifficulty_Implementation(FName NewDifficulty)
+{
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GI->CurrentDifficulty = NewDifficulty;
+	}
+
+	TArray<UUserWidget*> FoundWidgets;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UJoinUserWidget::StaticClass());
+	for (UUserWidget* Widget : FoundWidgets)
+	{
+		if (UJoinUserWidget* LobbyUI = Cast<UJoinUserWidget>(Widget))
+		{
+			LobbyUI->UpdateClientDifficultyUI();
+		}
+	}
 }
 
 void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)

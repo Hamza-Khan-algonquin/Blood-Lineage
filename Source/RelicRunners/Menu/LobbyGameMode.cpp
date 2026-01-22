@@ -15,6 +15,7 @@
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include "RelicRunners/PlayerHUD/LobbyHUDWorld.h"
 #include "Components/WidgetComponent.h"
+#include <RelicRunners/Game/LobbyGameState.h>
 
 ALobbyGameMode::ALobbyGameMode()
 {
@@ -122,6 +123,52 @@ void ALobbyGameMode::UpdateSetup()
             {
                 RPS->OnSelectedClassChanged.Broadcast(RPS->SelectedClass);
             }
+        }
+    }
+}
+
+void ALobbyGameMode::StartCountdown() 
+{
+    CurrentCountdown = 5;
+    GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &ALobbyGameMode::AdvanceTimer, 1.0f, true);
+}
+
+void ALobbyGameMode::AdvanceTimer()
+{
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(It->Get()))
+        {
+            PC->Client_UpdateCountdown(CurrentCountdown);
+        }
+    }
+
+    if (CurrentCountdown <= 0)
+    {
+        GetWorldTimerManager().ClearTimer(CountdownTimerHandle);
+
+        if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+        {
+            GI->StartSessionGame();
+        }
+        return; 
+    }
+
+    CurrentCountdown--;
+}
+
+void ALobbyGameMode::SetDifficulty(FName NewDifficulty)
+{
+    if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+    {
+        GI->CurrentDifficulty = NewDifficulty;
+    }
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(It->Get()))
+        {
+            PC->Client_UpdateDifficulty(NewDifficulty);
         }
     }
 }

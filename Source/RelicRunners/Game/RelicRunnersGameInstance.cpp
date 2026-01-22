@@ -434,7 +434,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     UE_LOG(LogTemp, Warning, TEXT("NetDriver: %s"), NetDriver ? *NetDriver->GetName() : TEXT("NULL"));
     UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
 
-    FString TravelURL = TEXT("ThirdPersonMap");
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap?listen");
     //FString TravelURL = TEXT("/Game/ThirdPerson/Maps/GenerateLevelTest?listen");
     UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] Host starting travel to %s"), *TravelURL);
 

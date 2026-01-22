@@ -71,6 +71,10 @@ public:
 	void Client_LeaveSession();
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateVendorUI(class AVendor* Vendor);
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateCountdown(int NewTime);
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateDifficulty(FName NewDifficulty);
 	UFUNCTION()
 	void UpdatePreviewWithEquippedItems();
 	UFUNCTION()
