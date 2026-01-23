@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameStateBase.h"
+#include "GameFramework/GameState.h"
 #include "RelicRunnersGameState.generated.h"
 
 /**
@@ -42,6 +42,14 @@ class RELICRUNNERS_API ARelicRunnersGameState : public AGameStateBase
 public:
 
 	ARelicRunnersGameState();
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentDifficulty, BlueprintReadWrite)
+	FName CurrentDifficulty;
+
+	UFUNCTION()
+	virtual void OnRep_CurrentDifficulty();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(Server, Reliable)
 	void Server_IncrementObjective(EObjectiveType objectiveType);

@@ -2,6 +2,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include <Online/OnlineSessionNames.h>
 #include "Kismet/GameplayStatics.h"
+#include "Components/Border.h"
 #include "OnlineSessionSettings.h"
 #include "RelicRunners/Menu/JoinUserWidget.h"
 #include "RelicRunners/Menu/MainMenuWidget.h"
@@ -232,6 +233,7 @@ void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
         Session->FindSessions(0, SessionSearch.ToSharedRef());
 
         TextRenderWidget = UserWidget;
+        TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -271,6 +273,11 @@ void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
     if (!AddedAnyResults)
     {
         TextRenderWidget->EnableRefresh();
+        TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
+    }
+    else
+    {
+        TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Visible);
     }
 
     //Unbind delegate
@@ -423,7 +430,11 @@ void URelicRunnersGameInstance::StartSessionGame()
     UWorld* World = GetWorld();
     if (!World) return;
 
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap");
+    UNetDriver* NetDriver = World->GetNetDriver();
+    UE_LOG(LogTemp, Warning, TEXT("NetDriver: %s"), NetDriver ? *NetDriver->GetName() : TEXT("NULL"));
+    UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
+
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap?listen");
     //FString TravelURL = TEXT("/Game/ThirdPerson/Maps/GenerateLevelTest?listen");
     UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] Host starting travel to %s"), *TravelURL);
 
@@ -442,5 +453,5 @@ void URelicRunnersGameInstance::StartSessionGame()
         Sess->UpdateSession(NAME_GameSession, *CurrentSettings, true);
     }
 
-    World->ServerTravel(TravelURL);
+    World->ServerTravel(TravelURL, true);
 }

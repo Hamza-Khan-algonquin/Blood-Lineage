@@ -8,6 +8,11 @@ ARelicRunnersGameState::ARelicRunnersGameState()
     bReplicates = true;
 }
 
+void ARelicRunnersGameState::OnRep_CurrentDifficulty()
+{
+
+}
+
 bool ARelicRunnersGameState::InitializeTriggerState()
 {
     if (ObjectiveType == 0)
@@ -177,4 +182,6 @@ void ARelicRunnersGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
     DOREPLIFETIME(ARelicRunnersGameState, RemainingSurvivalZones);
     DOREPLIFETIME(ARelicRunnersGameState, ObjectiveType);
     DOREPLIFETIME(ARelicRunnersGameState, CompletedObjectives);
+
+    DOREPLIFETIME(ARelicRunnersGameState, CurrentDifficulty);
 }

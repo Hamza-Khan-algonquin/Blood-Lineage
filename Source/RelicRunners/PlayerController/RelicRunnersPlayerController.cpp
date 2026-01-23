@@ -50,6 +50,10 @@
 #include "RelicRunners/Menu/LoadingScreen.h"
 #include "RelicRunners/PlayerHUD/PlayerHUD.h"
 #include "RelicRunners/LevelUpHUD/LevelUpHUD.h"
+#include <RelicRunners/RelicRunnersGameState.h>
+#include <RelicRunners/Game/LobbyGameState.h>
+#include <Blueprint/WidgetBlueprintLibrary.h>
+#include <RelicRunners/Menu/LobbyGameMode.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -260,6 +264,13 @@ void ARelicRunnersPlayerController::TryBindUI()
 	}
 }
 
+void ARelicRunnersPlayerController::Server_SetDifficulty_Implementation(FName NewDifficulty)
+{
+	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
+	{
+		GM->SetDifficulty(NewDifficulty);
+	}
+}
 
 void ARelicRunnersPlayerController::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 {
@@ -491,6 +502,27 @@ void ARelicRunnersPlayerController::TrySetupPreviewRenderTarget()
 	}
 
 	SetupPreviewRenderTarget(PlayerPreviewInstance);
+}
+
+void ARelicRunnersPlayerController::Client_UpdateCountdown_Implementation(int NewTime)
+{
+	if (LobbyWidget)
+	{
+		LobbyWidget->UpdateCountdownUI(NewTime);
+	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdateDifficulty_Implementation(FName NewDifficulty)
+{
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GI->CurrentDifficulty = NewDifficulty;
+	}
+
+	if (LobbyWidget)
+	{
+		LobbyWidget->UpdateClientDifficultyUI();
+	}
 }
 
 void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)

@@ -893,8 +893,8 @@ void UInventory::UpdateForgeUI()
     bool RightFilled = (ForgeItemRight != nullptr);
     bool BothFilled = LeftFilled && RightFilled;
 
-    Throbber1->SetRenderOpacity(LeftFilled ? 1.0f : 0.2f);
-    Throbber2->SetRenderOpacity(RightFilled ? 1.0f : 0.2f);
+    Throbber1->SetRenderOpacity(LeftFilled ? 1.0f : 0.0f);
+    Throbber2->SetRenderOpacity(RightFilled ? 1.0f : 0.0f);
 
     if (LeftFilled)
     {

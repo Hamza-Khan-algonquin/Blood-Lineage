@@ -44,7 +44,7 @@ struct FItemOptionsUIConfig
 	bool ShowForge = false;
 
 	UPROPERTY()
-	bool ShowRemove = false;
+	bool ShowStore = false;
 
 	static FItemOptionsUIConfig EquippedItem()
 	{
@@ -75,7 +75,7 @@ struct FItemOptionsUIConfig
 	static FItemOptionsUIConfig ForgeItem()
 	{
 		FItemOptionsUIConfig Config;
-		Config.ShowRemove = true;
+		Config.ShowStore = true;
 		return Config;
 	}
 
@@ -83,7 +83,7 @@ struct FItemOptionsUIConfig
 	{
 		FItemOptionsUIConfig Config;
 		Config.ShowEquip = true;
-		Config.ShowRemove = true;
+		Config.ShowStore = true;
 		return Config;
 	}
 
