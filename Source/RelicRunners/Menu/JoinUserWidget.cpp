@@ -34,6 +34,7 @@ void UJoinUserWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	if (StartButton) StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
+	if (LeaveGameButton) LeaveGameButton->OnClicked.AddDynamic(this, &UJoinUserWidget::LeaveGameButtonClicked);
 	if (FindGames) FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
 	if (SessionTileView) SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
 	if (BackButton) BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
@@ -60,11 +61,11 @@ void UJoinUserWidget::NativeConstruct()
 		B_CurrentSection->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 
-	DifficultyMap.Add("Boar", { BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
-	DifficultyMap.Add("Bull", { BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
-	DifficultyMap.Add("Lion", { LionBorder, B_Lion, B_LionSection, 180, 150, 2});
-	DifficultyMap.Add("Hydra", { HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
-	DifficultyMap.Add("Cerberus", { CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
+	DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
+	DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
+	DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 180, 150, 2});
+	DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
+	DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
 	UpdateDifficultyNumbers();
 
 	if (B_Boar)     B_Boar->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Boar);
@@ -362,6 +363,7 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 		RPC->Server_SetDifficulty(DifficultyKey);
 	}
 
+	const FLinearColor Silver(0.624f, 0.624f, 0.624f, 1.f);
 	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
 	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
 	const FLinearColor Black(0.f, 0.f, 0.f, 1.f);
@@ -374,14 +376,16 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 	for (auto& Pair : DifficultyMap)
 	{
 		const FDifficultyWidgets& Widgets = Pair.Value;
-		if (!Widgets.Button || !Widgets.OuterBorder || !Widgets.SectionBorder) continue;
+		if (!Widgets.Icon || !Widgets.Button || !Widgets.OuterBorder || !Widgets.SectionBorder) continue;
 
+		Widgets.Icon->SetColorAndOpacity(Silver);
 		SetBorderOutlineColor(Widgets.SectionBorder, SectionBrush_Unselected, SectionOutline_Unselected);
 		SetButtonTint(Widgets.Button, ButtonTint_Unselected);
 	}
 	//Set
 	if (FDifficultyWidgets* Selected = DifficultyMap.Find(DifficultyKey))
 	{
+		Selected->Icon->SetColorAndOpacity(DarkGold);
 		SetBorderOutlineColor(Selected->SectionBorder, Gold, DarkGold);
 		SetButtonTint(Selected->Button, Gold);
 	}
@@ -392,8 +396,10 @@ void UJoinUserWidget::UpdateClientDifficultyUI()
 	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
 	if (!GameInstance) return;
 
+	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
 	FString IconName = GameInstance->CurrentDifficulty.ToString() + "Difficulty";
 	I_CurrentDifficulty->SetBrushFromTexture(ItemStats::LoadIcon(IconName));
+	I_CurrentDifficulty->SetColorAndOpacity(DarkGold);
 	TB_CurrentDifficulty->SetText(FText::FromName(GameInstance->CurrentDifficulty));
 	TB_CurrentEnemyDamage->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].HealthPercent));
 	TB_CurrentEnemyHealth->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].DamagePercent));
@@ -532,6 +538,14 @@ void UJoinUserWidget::FindGamesButtonClicked()
 	if (!GameInstance) return;
 
 	SearchForLanGames();
+}
+
+void UJoinUserWidget::LeaveGameButtonClicked()
+{
+	URelicRunnersGameInstance* GameInstance = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GameInstance) return;
+
+	GameInstance->HostGame();
 }
 
 void UJoinUserWidget::JoinGameButtonClicked()

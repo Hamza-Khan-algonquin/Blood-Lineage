@@ -33,6 +33,9 @@ struct FDifficultyWidgets
 	GENERATED_BODY()
 
 	UPROPERTY()
+	class UImage* Icon = nullptr;
+
+	UPROPERTY()
 	class UBorder* OuterBorder = nullptr;
 
 	UPROPERTY()
@@ -263,6 +266,21 @@ public:
 	class UBorder* B_Intelligence = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Boar = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Bull = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Lion = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Hydra = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Cerberus = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UImage* I_Ares = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -282,6 +300,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* JoinButton = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UButton* LeaveGameButton = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* JoinBorder = nullptr;
@@ -375,6 +396,8 @@ protected:
 	void BackButtonClicked();
 	UFUNCTION()
 	void FindGamesButtonClicked();
+	UFUNCTION()
+	void LeaveGameButtonClicked();
 
 	UFUNCTION()
 	void JoinGameButtonClicked();
