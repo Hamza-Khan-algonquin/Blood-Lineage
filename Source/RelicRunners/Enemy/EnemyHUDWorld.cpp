@@ -19,6 +19,7 @@
 #include "Characters/EnemyCharacter.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "EnemyStats.h"
 
 void UEnemyHUDWorld::InitWidgetWithCharacter(class ACharacter* InOwnerCharacter)
 {
@@ -71,8 +72,8 @@ void UEnemyHUDWorld::UpdateInfo(AEnemyCharacterAI* enemy)
 
 void UEnemyHUDWorld::UpdateInfo(AEnemyCharacter* enemy)
 {
-	int CurrentHealth = enemy->GetCurrentHealth();
-	int MaxHealth = enemy->GetMaxHealth();
+	int CurrentHealth = enemy->EnemyStatsComponent->GetCurrentHealth();
+	int MaxHealth = enemy->EnemyStatsComponent->GetMaxHealth();
 
 	if (HealthBar)
 	{
@@ -85,18 +86,18 @@ void UEnemyHUDWorld::UpdateInfo(AEnemyCharacter* enemy)
 		TB_Health->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentHealth, MaxHealth)));
 	}
 
-	int CurrentResource = enemy->GetEnemyResource();
-	int MaxResource = enemy->GetEnemyMaxResource();
+	//int CurrentResource = enemy->GetEnemyResource();
+	//int MaxResource = enemy->GetEnemyMaxResource();
 
 	if (ResourceBar)
 	{
-		const float ResourcePercent = (MaxResource > 0) ? (float)CurrentResource / (float)MaxResource : 0.f;
-		ResourceBar->SetPercent(ResourcePercent);
+		//const float ResourcePercent = (MaxResource > 0) ? (float)CurrentResource / (float)MaxResource : 0.f;
+		ResourceBar->SetPercent(0);
 	}
 
 	if (TB_Name)
 	{
-		FName EnemyName = enemy->GetEnemyName();
+		FName EnemyName = enemy->EnemyStatsComponent->GetName();
 		if (!EnemyName.IsNone())
 		{
 			TB_Name->SetText(FText::FromName(EnemyName));
@@ -105,7 +106,7 @@ void UEnemyHUDWorld::UpdateInfo(AEnemyCharacter* enemy)
 
 	if (TB_Level)
 	{
-		int Level = enemy->GetEnemyLevel();
+		int Level = enemy->EnemyStatsComponent->GetLevel();
 		TB_Level->SetText(FText::AsNumber(Level));
 	}
 }

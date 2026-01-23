@@ -22,6 +22,7 @@ To Do:
 
 class UWidgetComponent;
 class UAnimMontage;
+class UEnemyStats;
 
 UCLASS(Blueprintable, Abstract)
 class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
@@ -35,6 +36,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
 	FEnemyCharacterDeactivated OnDeactivated;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UEnemyStats> EnemyStatsComponent;
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -45,30 +49,32 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Item Generation")
 	TSubclassOf<class UItemMeshData> ItemMeshDataClass;
 
-	UPROPERTY(DisplayName = "Name", Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
-	FName EnemyName = "Enemy";
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetCurrentHealth, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
-	float CurrentHealth;
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetMaxHealth, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
-	float MaxHealth;
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 0.1))
-	float RemainingStunTime = 0;
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 1))
-	int Level = 1;
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
-	//A Stand in for mana, energy, or stamina
-	int EnemyResource = 100;
+	//UPROPERTY(DisplayName = "Name", Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
+	//FName EnemyName = "Enemy";
+	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetCurrentHealth, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
+	//float CurrentHealth;
+	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetMaxHealth, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
+	//float MaxHealth;
+	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 0.1))
+	//float RemainingStunTime = 0;
+	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 1))
+	//int Level = 1;
+	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
+	////A Stand in for mana, energy, or stamina
+	//int EnemyResource = 100;
 
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
-	//A Stand in for mana, energy, or stamina
-	int EnemyMaxResource = 100;
+	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
+	////A Stand in for mana, energy, or stamina
+	//int EnemyMaxResource = 100;
 
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
-	//The Chance the enemy has to drop an item on death from 0.0 to 1.0
-	float ChanceToDropItem = 0.2f;
+	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
+	////The Chance the enemy has to drop an item on death from 0.0 to 1.0
+	//float ChanceToDropItem = 0.2f;
 
-	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
-	EEnemyType TypeOfEnemy;
+	
+
+	//UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
+	//EEnemyType TypeOfEnemy;
 	UPROPERTY(Category = "Enemy|Component", VisibleAnywhere, Replicated, NoClear, meta = (DisplayThumbnail = true))
 	UWidgetComponent* EnemyHUDWorld;
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
@@ -102,49 +108,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Check if the enemy is dead.", ShortToolTip = "Check if the enemy is dead."))
 	//Check if the enemy is dead
-	virtual bool IsDead() { return CurrentHealth <= 0; }
+	virtual bool IsDead();
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Reduces the remaining stun time by DeltaTime. Meant to be called in Tick but can be called elsewhere if needed.", ShortToolTip = "Check if the enemy is dead."))
 	//Reduces the remaining stun time by DeltaTime. Meant to be called in Tick but can be called elsewhere if needed.
 	void ReduceStunTime(float DeltaTime);
-
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the current health.", ShortToolTip = "Getter for the current health."))
-	//Getter for the current health
-	float GetCurrentHealth() const { return CurrentHealth; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the max health.", ShortToolTip = "Getter for the max health."))
-	//Getter for the max health
-	float GetMaxHealth() const { return MaxHealth; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the remaining stun time.", ShortToolTip = "Getter for the remaining stun time."))
-	//Getter for the remaining stun time
-	float GetStunTime() const { return RemainingStunTime; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the current level.", ShortToolTip = "Getter for the current level."))
-	//Getter for the current level
-	int GetEnemyLevel() const { return Level; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the enemy type.", ShortToolTip = "Getter for the enemy type."))
-	//Getter for the enemy type
-	EEnemyType GetEnemyType() const { return TypeOfEnemy; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the current resource.", ShortToolTip = "Getter for the current resource."))
-	//Getter for the current resource
-	int GetEnemyResource() const { return EnemyResource; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the max resource.", ShortToolTip = "Getter for the max resource."))
-	//Getter for the max resource
-	int GetEnemyMaxResource() const { return EnemyMaxResource; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the enemy name.", ShortToolTip = "Getter for the enemy name."))
-	//Getter for the enemy name
-	FName GetEnemyName() const { return EnemyName; }
-
-	UFUNCTION(BlueprintCallable, BlueprintSetter, meta = (ToolTip = "Getter for the current health.", ShortToolTip = "Getter for the current health."))
-	//Setter for the current health
-	void SetCurrentHealth(const float& NewHealth);
-	UFUNCTION(BlueprintCallable, BlueprintSetter, meta = (ToolTip = "Setter for the max health.", ShortToolTip = "Setter for the max health."))
-	//Setter for the max health
-	void SetMaxHealth(const float& newHealth);
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Setter for the remaining stun time.", ShortToolTip = "Setter for the remaining stun time."))
-	//Setter for the remaining stun time
-	void SetStunTime(const float& newStunTime) { RemainingStunTime = newStunTime; }
-	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Setter for the current level.", ShortToolTip = "Setter for the current level."))
-	//Setter for the current level
-	void SetEnemyLevel(const int& newLevel) { Level = newLevel; }
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Reset enemy variables.", ShortToolTip = "Hi."))
 	void ResetEnemy();
@@ -173,11 +141,7 @@ protected:
 	//rotates hud to face camera, courtesy of Mr big T him self Tristan
 	void UpdateEnemyHUDWorldFacing();
 
-	//This is an conditional compilation macro that specifies that the code with in should only be included when compiling for the Unreal Engine Editor. Basically mean it get tosed when building that blasted exe.
-#if WITH_EDITOR
-	//"Called when a property is changed in the editor" This is a quote from who ever wrote the comment for this function in UObject.h. This method is inherited from that by the way :)
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
+
 
 public:	
 	// Called every frame
