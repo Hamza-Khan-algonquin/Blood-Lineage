@@ -515,14 +515,9 @@ void ARelicRunnersPlayerController::TrySetupPreviewRenderTarget()
 
 void ARelicRunnersPlayerController::Client_UpdateCountdown_Implementation(int NewTime)
 {
-	TArray<UUserWidget*> FoundWidgets;
-	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UJoinUserWidget::StaticClass());
-	for (UUserWidget* Widget : FoundWidgets)
+	if (LobbyWidget)
 	{
-		if (UJoinUserWidget* LobbyUI = Cast<UJoinUserWidget>(Widget))
-		{
-			LobbyUI->UpdateCountdownUI(NewTime);
-		}
+		LobbyWidget->UpdateCountdownUI(NewTime);
 	}
 }
 
@@ -533,14 +528,9 @@ void ARelicRunnersPlayerController::Client_UpdateDifficulty_Implementation(FName
 		GI->CurrentDifficulty = NewDifficulty;
 	}
 
-	TArray<UUserWidget*> FoundWidgets;
-	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UJoinUserWidget::StaticClass());
-	for (UUserWidget* Widget : FoundWidgets)
+	if (LobbyWidget)
 	{
-		if (UJoinUserWidget* LobbyUI = Cast<UJoinUserWidget>(Widget))
-		{
-			LobbyUI->UpdateClientDifficultyUI();
-		}
+		LobbyWidget->UpdateClientDifficultyUI();
 	}
 }
 
