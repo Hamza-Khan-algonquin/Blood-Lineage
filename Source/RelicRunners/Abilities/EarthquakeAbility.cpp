@@ -17,14 +17,14 @@ UEarthquakeAbility::UEarthquakeAbility()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
-        TEXT("/Game/Particles/NiagaraSystems/NS_Earthquake.NS_Earthquake")
-    );
+    //static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
+    //    TEXT("/Game/Particles/NiagaraSystems/NS_Earthquake.NS_Earthquake")
+    //);
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
+    //if (VFXAsset.Succeeded())
+    //{
+    //    AbilityVFX = VFXAsset.Object;
+    //}
 }
 
 void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -36,20 +36,20 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
         return;
     }
 
-    if (AbilityVFX && ActorInfo && ActorInfo->AvatarActor.IsValid())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Spawning Niagara"));
+    //if (AbilityVFX && ActorInfo && ActorInfo->AvatarActor.IsValid())
+    //{
+    //    UE_LOG(LogTemp, Warning, TEXT("Spawning Niagara"));
 
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            ActorInfo->AvatarActor->GetWorld(),
-            AbilityVFX,
-            ActorInfo->AvatarActor->GetActorLocation() + FVector(0, 0, 0), 
-            ActorInfo->AvatarActor->GetActorRotation() + FRotator(0,0,0), 
-            FVector(1.f), 
-            true, 
-            true
-        );
-    }
+    //    UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+    //        ActorInfo->AvatarActor->GetWorld(),
+    //        AbilityVFX,
+    //        ActorInfo->AvatarActor->GetActorLocation() + FVector(0, 0, 0), 
+    //        ActorInfo->AvatarActor->GetActorRotation() + FRotator(0,0,0), 
+    //        FVector(1.f), 
+    //        true, 
+    //        true
+    //    );
+    //}
 
 
 
