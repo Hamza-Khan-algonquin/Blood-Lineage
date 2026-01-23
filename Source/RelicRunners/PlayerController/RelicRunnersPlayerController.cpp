@@ -538,6 +538,31 @@ void ARelicRunnersPlayerController::InventoryUI()
 	Inventory->ToggleVendorUI(false);
 }
 
+void ARelicRunnersPlayerController::HideMiniMap(bool bHide)
+{
+	if (!PossessedPawn) return;
+
+	UActorComponent* MiniMapComp = PossessedPawn->GetComponentByClass(UActorComponent::StaticClass());
+
+	if (!MiniMapComp) return;
+
+	static FName FuncName = TEXT("SetMiniMapVisible");
+	UFunction* Func = MiniMapComp->FindFunction(FuncName);
+
+	if (Func)
+	{
+		struct FParams
+		{
+			bool bVisible;
+		};
+
+		FParams Params;
+		Params.bVisible = !bHide;
+
+		MiniMapComp->ProcessEvent(Func, &Params);
+	}
+}
+
 void ARelicRunnersPlayerController::PauseUI()
 {
 	//if (!PauseMenu) return;
@@ -565,7 +590,7 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	FInputModeGameOnly InputMode;
 	SetInputMode(InputMode);
 
-	LoadingScreen->RemoveFromParent();
+		LoadingScreen->RemoveFromParent();
 }
 
 void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget, bool bClosePopups = false)
