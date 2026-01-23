@@ -48,8 +48,8 @@
 #include "Engine/Engine.h"
 #include "Game/RelicRunnersGameInstance.h"
 #include "Director System/Director.h"
-#include "Enemy/EnemyCharacter.h"
-#include "Enemy/EnemyCharacterAI.h"
+#include "Enemy/Characters/EnemyCharacter.h"
+#include "Enemy/Characters/EnemyCharacterAI.h"
 
 #include "LevelGeneration/CapturableFlag.h"
 

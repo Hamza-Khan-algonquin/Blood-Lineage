@@ -16,12 +16,12 @@
  ************************************************************************************/
 
 #include "EnemyCharacterAI.h"
-#include "EnemyControllerAI.h"
+#include "RelicRunners/Enemy/Controllers/EnemyControllerAI.h"
 #include "Components/WidgetComponent.h"
 #include <Kismet/GameplayStatics.h>
 #include "Components/CapsuleComponent.h"
 #include <Net/UnrealNetwork.h>
-#include "EnemyHUDWorld.h"
+#include "RelicRunners/Enemy/EnemyHUDWorld.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/Item/ItemMeshData.h"
