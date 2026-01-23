@@ -1,6 +1,6 @@
 
 #include "EnemiesAnimationNotifyStates.h"
-#include "TormentedSoulCharacter.h"
+#include "RelicRunners/Enemy/Characters/TormentedSoulCharacter.h"
 
 
 void UTormentedSoulAnimNotifyState::NotifyBegin(class USkeletalMeshComponent* MeshComp, class UAnimSequenceBase* Animation, float TotalDuration)

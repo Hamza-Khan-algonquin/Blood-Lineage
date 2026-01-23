@@ -248,7 +248,7 @@ void AObjectPoolManager::BeginPlay()
 
 	Super::BeginPlay();
 	
-	if (Instance.IsValid())
+	if (!Instance.IsValid())
 	{
 		Instance = this;
 	}

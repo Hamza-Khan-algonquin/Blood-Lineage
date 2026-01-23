@@ -9,8 +9,9 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "SoldierController.h"
+#include "RelicRunners/Enemy/Controllers/SoldierController.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
+#include "RelicRunners/Enemy/EnemyStats.h"
 
 ATormentedSoulCharacter::ATormentedSoulCharacter() : Super()
 {
@@ -18,7 +19,7 @@ ATormentedSoulCharacter::ATormentedSoulCharacter() : Super()
 	AttackOverlapCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Attack Collider"));
 	AttackOverlapCollider->BodyInstance.SetCollisionProfileName("OverlapAll");
 	AttackOverlapCollider->SetupAttachment(GetMesh());
-	EnemyName = "Tormented Soul";
+	EnemyStatsComponent->SetName("Tormented Soul");
 
 	//make sure to set the default controller to the right one
 	AIControllerClass = ASoldierController::StaticClass();

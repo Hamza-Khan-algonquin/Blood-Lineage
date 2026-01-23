@@ -1,7 +1,7 @@
 #include "SpawnPoint.h"
 #include <Kismet/GameplayStatics.h>
 #include "Director.h"
-#include "RelicRunners/Enemy/EnemyCharacter.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
 // Sets default values
@@ -180,8 +180,8 @@ void ASpawnPoint::SpawnEnemies()
 
 			for (int i = 0; i < 10; i++)
 			{
-				FActorSpawnParameters SpawnParams;
-				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+				//FActorSpawnParameters SpawnParams;
+				//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
 
 
@@ -258,7 +258,7 @@ void ASpawnPoint::BeginPlay()
 
 		if (!Director)
 		{
-			Director = Cast<ADirector>(UGameplayStatics::GetActorOfClass(GetWorld(), ADirector::StaticClass()));
+			Director = ADirector::GetInstance(this);
 
 			if (!Director)
 			{

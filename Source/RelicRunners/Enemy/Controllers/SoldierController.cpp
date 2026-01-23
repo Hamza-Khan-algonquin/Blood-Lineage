@@ -6,6 +6,8 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "RelicRunners/Director System/Director.h"
+#include "GameFramework/Character.h"
 
 ASoldierController::ASoldierController()
 {

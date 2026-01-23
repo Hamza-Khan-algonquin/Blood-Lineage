@@ -9,21 +9,20 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "Components/WidgetComponent.h"
 #include <Net/UnrealNetwork.h>
-#include "EnemyHUDWorld.h"
+#include "RelicRunners/Enemy/EnemyHUDWorld.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include "Components/CapsuleComponent.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/Enemy/EnemyStats.h"
 
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
 {
  	
 	//setting up default values
-	CurrentHealth = 100;
-	MaxHealth = 100;
-	RemainingStunTime = 0;
-	Level = 1;
-	TypeOfEnemy = EEnemyType::UNKNOWN;
+	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
+	EnemyStatsComponent->SetEnemyType(EEnemyType::MEDIUM);
+	EnemyStatsComponent->SetChanceToDropItem(0.2f);
 
 	//Make the collision profile is set to the right one
 	GetCapsuleComponent()->SetCollisionProfileName("Enemy");
@@ -39,7 +38,7 @@ AEnemyCharacter::AEnemyCharacter() : ACharacter()
 	EnemyHUDWorld->CastShadow = false;
 
 	//tick moment :O
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	//Setting up networking for the actor
 	bReplicates = true;
 	SetReplicateMovement(true);
@@ -51,14 +50,14 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AEnemyCharacter, CurrentHealth);
+	/*DOREPLIFETIME(AEnemyCharacter, CurrentHealth);
 	DOREPLIFETIME(AEnemyCharacter, MaxHealth);
 	DOREPLIFETIME(AEnemyCharacter, RemainingStunTime);
 	DOREPLIFETIME(AEnemyCharacter, Level);
 	DOREPLIFETIME(AEnemyCharacter, TypeOfEnemy);
 	DOREPLIFETIME(AEnemyCharacter, EnemyHUDWorld);
 	DOREPLIFETIME(AEnemyCharacter, EnemyResource);
-	DOREPLIFETIME(AEnemyCharacter, EnemyMaxResource);
+	DOREPLIFETIME(AEnemyCharacter, EnemyMaxResource);*/
 }
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -67,13 +66,7 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
 	//add the damage
-	CurrentHealth -= DamageAmount;
-
-	//make sure we don't go below zero
-	if (DamageAmount < 0)
-	{
-		DamageAmount = 0;
-	}
+	EnemyStatsComponent->AddToCurrentHealth(-DamageAmount);
 
 	//check if we meet the conditions to be dead and then die
 	if (IsDead())
@@ -88,11 +81,11 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 			FAttackDamageEvent* AttackDamageEvent = (FAttackDamageEvent*)&DamageEvent;
 			if (AttackDamageEvent && (
 				//light enemy stunned by light or heavy attack
-				(AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && TypeOfEnemy == EEnemyType::LIGHT || 
+				(AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT ||
 				//medium enemy stunned by heavy attack
-				AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK && TypeOfEnemy == EEnemyType::MEDIUM))
+				AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK && EnemyStatsComponent->GetEnemyType() == EEnemyType::MEDIUM))
 			{
-				RemainingStunTime = AttackDamageEvent->StunDuration;
+				EnemyStatsComponent->SetRemainingStunTime(AttackDamageEvent->StunDuration);
 			}
 		}
 	}
@@ -136,16 +129,17 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 	}
 }
 
+inline bool AEnemyCharacter::IsDead()
+{
+	return EnemyStatsComponent->GetCurrentHealth() <= 0;
+}
+
 void AEnemyCharacter::ReduceStunTime(float DeltaTime)
 {
 	//do I really need to explain this?
-	if (RemainingStunTime > 0)
+	if (EnemyStatsComponent->GetRemainingStunTime() > 0)
 	{
-		RemainingStunTime -= DeltaTime;
-		if (RemainingStunTime < 0)
-		{
-			RemainingStunTime = 0;
-		}
+		EnemyStatsComponent->AddToRemainingStunTime(-DeltaTime);
 	}
 }
 
@@ -154,7 +148,7 @@ void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentHealth = MaxHealth;
+	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
 
 	//set up the enemy hud
 	if (EnemyHUDWorld)
@@ -195,9 +189,9 @@ void AEnemyCharacter::SpawnItem()
 	{
 		float chance = FMath::FRandRange(0.f, 1.f);
 
-		if (chance <= ChanceToDropItem)
+		if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 		{
-			UItemObject* DroppedItem = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(Level, ItemStats::GetRandomItemType(), ItemMeshData), this);
+			UItemObject* DroppedItem = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemMeshData), this);
 
 			// Spawn new dropped item
 			FActorSpawnParameters Params;
@@ -219,7 +213,7 @@ void AEnemyCharacter::SpawnItem()
 float AEnemyCharacter::CalculateXP() const
 {
 	//calculate the xp
-	return Level * FMath::RandRange(100, 150);
+	return EnemyStatsComponent->GetLevel() * FMath::RandRange(100, 150);
 }
 
 void AEnemyCharacter::PlayMontageOnClient_Implementation(UAnimMontage* Montage, float PlayRate)
@@ -268,42 +262,7 @@ void AEnemyCharacter::UpdateEnemyHUDWorldFacing()
 	}
 }
 
-#if WITH_EDITOR
-void AEnemyCharacter::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	//calling the super
-	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	//crabing the property name
-	FName PropertyName = NAME_None; 
-	
-	//check to make sure this is a actual property
-	if (PropertyChangedEvent.Property)
-	{
-		//update the name
-		PropertyName = PropertyChangedEvent.Property->GetFName();
-	}
-
-	//go throught and check the possible properties that need to update other variables
-	//GET_MEMBER_NAME_CHECKED is a compiler time macro that gets the name of a property for anyone who is readying this and if so thank you for reading my comments
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(AEnemyCharacter, MaxHealth))
-	{
-		CurrentHealth = FMath::Min(CurrentHealth, MaxHealth);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(AEnemyCharacter, CurrentHealth))
-	{
-		CurrentHealth = FMath::Clamp(CurrentHealth, 0.f, MaxHealth);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(AEnemyCharacter, EnemyMaxResource))
-	{
-		EnemyResource = FMath::Min(EnemyResource, EnemyMaxResource);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(AEnemyCharacter, EnemyResource))
-	{
-		EnemyResource = FMath::Clamp(EnemyResource, 0, EnemyMaxResource);
-	}
-}
-#endif
 
 // Called every frame
 void AEnemyCharacter::Tick(float DeltaTime)
@@ -312,32 +271,15 @@ void AEnemyCharacter::Tick(float DeltaTime)
 	UpdateEnemyHUDWorldFacing();
 }
 
-// Called to bind functionality to input
-void AEnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
-void AEnemyCharacter::SetCurrentHealth(const float& NewHealth)
-{
-	CurrentHealth = FMath::Clamp(NewHealth, 0.f, MaxHealth);
-}
-
-void AEnemyCharacter::SetMaxHealth(const float& newHealth)
-{
-	MaxHealth = FMath::Max(0.f, newHealth);
-	CurrentHealth = FMath::Min(CurrentHealth, MaxHealth);
-}
-
 void AEnemyCharacter::ResetEnemy()
 {
-	CurrentHealth = MaxHealth;
-	RemainingStunTime = 0.f;
+	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
+	EnemyStatsComponent->SetRemainingStunTime(0.f);
 }
 
 void AEnemyCharacter::AddEnemyToDirector()
 {
-	ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(this->GetWorld(), ADirector::StaticClass()));
+	ADirector* Director = ADirector::GetInstance(this);
 
 	if (Director && !Director->ContainsEnemy(this))
 	{
@@ -363,7 +305,7 @@ bool AEnemyCharacter::GetIsActive()
 
 bool AEnemyCharacter::GetShouldTick()
 {
-	return true;
+	return false;
 }
 
 void AEnemyCharacter::SetIsActive(bool newIsActive)

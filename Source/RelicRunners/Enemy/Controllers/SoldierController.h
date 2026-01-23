@@ -1,11 +1,15 @@
 /***************************************************************************************
 Class Name:  ASoldierController
 Description: A controller class that is meant to be used as the base class for any npc that will fight in the game
-Date Last Changed:        2025/11/21
+Date Last Changed:        2025/12/07
 Author:      Thomas Johnson
 Contributors:
 	Description Of Contributions:
 ****************************************************************************************/
+
+/* to do list
+* Make LOD a interface
+*/
 
 #pragma once
 
@@ -27,6 +31,7 @@ public:
 	//The preception component that handles detecting targets for the soldier, like the player for the enemies
 	UAIPerceptionComponent* AIPerceptionComp;
 protected:
+	
 	UPROPERTY(Category = "Enemy", VisibleAnywhere, BlueprintReadWrite)
 	//A bool that keep track of whether the soldier 
 	bool IsInCombat;
@@ -43,6 +48,8 @@ protected:
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadOnly)
 	//The Behavoir tree to use on being play
 	UBehaviorTree* StartingBehaviorTree;
+
+	
 
 	//object pooling variables
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
