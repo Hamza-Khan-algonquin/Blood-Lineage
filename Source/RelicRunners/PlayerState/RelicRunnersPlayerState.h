@@ -81,8 +81,6 @@ public:
 	class UItemMeshData* ItemMeshData;
 	UPROPERTY(ReplicatedUsing = OnRep_IsHost, BlueprintReadOnly, Category = "Lobby")
 	bool IsHost = false;
-	UPROPERTY(ReplicatedUsing = OnRep_IsReady, BlueprintReadOnly, Category = "Lobby")
-	bool IsReady = false;
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Stats")
 	bool HasReceivedStarterItems = false;
 
@@ -103,8 +101,6 @@ public:
 	void OnRep_PlayerGold();
 	UFUNCTION()
 	void OnRep_IsHost();
-	UFUNCTION()
-	void OnRep_IsReady();
 	void SetIsHost(bool NewIsHost);
 	UFUNCTION()
 	void OnRep_PlayerLevel(int OldLevel);

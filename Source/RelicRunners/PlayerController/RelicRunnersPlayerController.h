@@ -75,8 +75,6 @@ public:
 	void Client_UpdateCountdown(int NewTime);
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateDifficulty(FName NewDifficulty);
-	UFUNCTION(Server, Reliable)
-	void Server_ToggleReady(bool NewReadyState);
 	UFUNCTION()
 	void UpdatePreviewWithEquippedItems();
 	UFUNCTION()

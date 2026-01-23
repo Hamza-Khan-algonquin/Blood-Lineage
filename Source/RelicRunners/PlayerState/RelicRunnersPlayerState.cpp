@@ -472,15 +472,6 @@ void ARelicRunnersPlayerState::OnRep_PlayerLevel(int OldLevel)
 	}
 }
 
-void ARelicRunnersPlayerState::OnRep_IsReady()
-{
-	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(GetWorld()->GetFirstPlayerController());
-	if (RPC && RPC->LobbyWidget)
-	{
-		RPC->LobbyWidget->UpdateHUDReadyStatus(this, IsReady);
-	}
-}
-
 void ARelicRunnersPlayerState::ModifyHealth(float Value)
 {
 	if (!HasAuthority()) return;

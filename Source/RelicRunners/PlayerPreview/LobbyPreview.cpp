@@ -116,7 +116,6 @@ void ALobbyPreview::OnRep_LinkedPlayerState()
                 {
                     LobbyWidget->OwningPreview = this;
                     LobbyWidget->SetHostIconVisibility(LinkedPlayerState->IsHost);
-                    LobbyWidget->UpdateHUDReadyStatus(LinkedPlayerState, LinkedPlayerState->IsReady);
                 }
             }
         }

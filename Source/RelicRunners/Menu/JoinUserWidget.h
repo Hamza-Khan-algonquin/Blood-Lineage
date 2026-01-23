@@ -110,8 +110,6 @@ public:
 
 	void UpdateClientDifficultyUI();
 
-	void UpdateHUDReadyStatus(APlayerState* TargetPS, bool Ready);
-
 	UFUNCTION()
 	void OnAresClicked();
 	UFUNCTION()
@@ -238,9 +236,6 @@ public:
 	class UBorder* B_Start = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	class UBorder* B_Ready = nullptr;
-
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_Ability1 = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -361,12 +356,6 @@ public:
 	class UButton* StartButton = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	class UButton* ReadyButton = nullptr;
-
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	class UTextBlock* TB_ReadyButton = nullptr;
-
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_Health = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -391,8 +380,6 @@ protected:
 	void JoinGameButtonClicked();
 	UFUNCTION()
 	void StartGameButtonClicked();
-	UFUNCTION()
-	void ReadyButtonClicked();
 	UFUNCTION()
 	void HandleSessionClicked(class USessionListItemData* ClickedSession);
 
