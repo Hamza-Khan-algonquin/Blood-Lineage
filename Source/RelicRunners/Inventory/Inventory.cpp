@@ -43,6 +43,7 @@
 #include "Blueprint/DragDropOperation.h"
 #include "RelicRunners/PlayerPreview/PlayerPreview.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/PlayerController/RelicRunnersPlayerController.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include "InventoryDragOperation.h"
 #include "InventorySlotsEntry.h"
@@ -218,6 +219,8 @@ void UInventory::RefreshInventoryUI()
 
 void UInventory::RefreshEquippedUI()
 {
+    if (!InventoryComponent) return;
+
     TArray<FString> AllItemTypes = {
         "Helmet", "Upper", "Lower", "Arms",
         "Necklace", "Greatsword", "Sword", "Staff", "Bow"
@@ -375,19 +378,6 @@ void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)
     UE_LOG(LogTemp, Warning, TEXT("[UI] Set preview image with RenderTarget: %s"), *GetNameSafe(RenderTarget));
 }
 
-UInventory* UInventory::Get(UObject* Context)
-{
-    if (!Context) return nullptr;
-
-    APlayerController* PC = UGameplayStatics::GetPlayerController(Context, 0);
-    if (!PC) return nullptr;
-
-    ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(PC->GetPawn());
-    if (!Character) return nullptr;
-
-    return Character->GetInventory();
-}
-
 void UInventory::EquipItem(UItemObject* Item)
 {
     if (Item->IsNewItem) Item->IsNewItem = false;
@@ -422,16 +412,16 @@ void UInventory::DropItem(UItemObject* Item)
     }
     InventorySlots->RemoveItem(Item);
 
-    OwningCharacter->Server_DropItem(Item->ItemData);
+    OwningCharacter->Server_SpawnDroppedItemWorld(Item->ItemData);
 }
 
 void UInventory::BuyItem(UItemObject* Item)
 {
     if (!Item) return;
 
-    if (OwningCharacter)
+    if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
-        OwningCharacter->Server_BuyItem(Item->ItemData, CurrentVendor);
+        PS->Server_BuyItem(Item->ItemData, CurrentVendor);
     }
 }
 
@@ -439,9 +429,9 @@ void UInventory::SellItem(UItemObject* Item)
 {
     if (!Item) return;
 
-    if (OwningCharacter)
+    if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
-        OwningCharacter->Server_SellItem(Item->ItemData, CurrentVendor);
+        PS->Server_SellItem(Item->ItemData, CurrentVendor);
     }
 }
 
@@ -466,21 +456,27 @@ void UInventory::RemoveForgeItem(UItemObject* ItemToRemove)
     UpdateForgeUI();
 }
 
-
 void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 {
     Super::NativeTick(MyGeometry, DeltaTime);
 
-    float VendorMaxDistance = 500.f;
+    if (!CurrentVendor) return;
 
-    if (CurrentVendor)
+    float VendorMaxDistance = 500.f;
+    APawn* OwningPawn = GetOwningPlayerPawn();
+
+    if (OwningPawn)
     {
-        float Dist = FVector::Dist(OwningCharacter->GetActorLocation(), CurrentVendor->GetActorLocation());
+        float Dist = FVector::Dist(OwningPawn->GetActorLocation(), CurrentVendor->GetActorLocation());
 
         if (Dist > VendorMaxDistance)
         {
             ToggleVendorUI(false);
         }
+    }
+    else
+    {
+        ToggleVendorUI(false);
     }
 }
 
@@ -731,7 +727,7 @@ void UInventory::OnFuseButtonPressed()
     FString NewRarity = RollForgeRarity(Rarity1, Chance1, Rarity2, Chance2, Rarity3, Chance3);
     FString NewType = ForgeItemLeft->ItemData.ItemType;
     int NewLevel = FMath::RandRange(ForgeItemLeft->ItemData.Level, ForgeItemRight->ItemData.Level);
-    FItemData NewItemData = ItemStats::CreateSpecificItemData(NewLevel, NewType, NewRarity, OwningCharacter->ItemMeshData);
+    FItemData NewItemData = ItemStats::CreateSpecificItemData(NewLevel, NewType, NewRarity, OwningCharacter->RelicPlayerState->ItemMeshData);
     UItemObject* NewItem = ItemStats::CreateItemFromData(NewItemData, InventoryComponent);
 
     //Clear forge items from inventory and UI
@@ -978,7 +974,7 @@ void UInventory::UpdateForgeUI()
         // Clear icon
         FSlateBrush ClearBrush;
         ClearBrush.SetResourceObject(nullptr);
-        ClearBrush.ImageSize = FVector2D(75.f, 75.f);
+        ClearBrush.ImageSize = FVector2D(100.f, 100.f);
         ClearBrush.TintColor = FSlateColor(FLinearColor(1, 1, 1, 0));
         I_ForgeItemResult->SetBrush(ClearBrush);
         B_Level_2->SetVisibility(ESlateVisibility::Hidden);
@@ -988,7 +984,7 @@ void UInventory::UpdateForgeUI()
     {
         FSlateBrush ResultBrush;
         ResultBrush.SetResourceObject(ForgeItemResult->ItemData.Icon);
-        ResultBrush.ImageSize = FVector2D(75.f, 75.f);
+        ResultBrush.ImageSize = FVector2D(100.f, 100.f);
         ResultBrush.TintColor = FSlateColor(FLinearColor::White);
         I_ForgeItemResult->SetBrush(ResultBrush);
         TB_ForgeItemResultLevel->SetText(FText::AsNumber(ForgeItemResult->ItemData.Level));
@@ -1008,17 +1004,35 @@ void UInventory::OnEquippedStatsUpdated(const FEquippedStatsSummary& Stats)
     if (TB_Strength)     TB_Strength->SetText(FText::AsNumber(Stats.TotalStrength));
     if (TB_Intelligence) TB_Intelligence->SetText(FText::AsNumber(Stats.TotalIntelligence));
 
-    if (OwningCharacter)
+    if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
-        if (TB_Gold) TB_Gold->SetText(FText::AsNumber(OwningCharacter->GetPlayerGold()));
-        if (ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(OwningCharacter->GetPlayerState()))
+        if (TB_Gold)
         {
-            if(TB_Username) TB_Username->SetText(FText::FromString(PS->GetPlayerName()));
+            TB_Gold->SetText(FText::AsNumber(PS->GetPlayerGold()));
+        }
+        if (TB_Username)
+        {
+            TB_Username->SetText(FText::FromString(PS->GetPlayerName()));
+        }
+        if (InventoryComponent && TB_InventorySlots)
+        {
+            int NumItems = InventoryComponent->InventoryItems.Num();
+            int MaxSlots = PS->GetPlayerNumInventorySlots();
+            TB_InventorySlots->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), NumItems, MaxSlots)));
         }
     }
+}
 
-    int NumItems = InventoryComponent->InventoryItems.Num();
-    int MaxSlots = OwningCharacter->GetPlayerNumInventorySlots();
+UInventory* UInventory::Get(UObject* ContextObject)
+{
+    if (!ContextObject) return nullptr;
 
-    TB_InventorySlots->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), NumItems, MaxSlots)));
+    if (APlayerController* PC = ContextObject->GetWorld()->GetFirstPlayerController())
+    {
+        if (ARelicRunnersPlayerController* RRPC = Cast<ARelicRunnersPlayerController>(PC))
+        {
+            return RRPC->GetInventory();
+        }
+    }
+    return nullptr;
 }

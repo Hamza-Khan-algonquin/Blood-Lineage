@@ -1,3 +1,4 @@
+
 /************************************************************************************
  * Author:   Tristan Anglin
  * Year:     2025
@@ -11,16 +12,16 @@
  *   Any use, distribution, or modification outside of these projects
  *   is strictly prohibited without explicit written permission.
  *
- *   © 2025 Tristan Anglin. All rights reserved.
+ *   ï¿½ 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
 #include "EnemyCharacterAI.h"
-#include "RelicRunners/Enemy/Controllers/EnemyControllerAI.h"
+#include "EnemyControllerAI.h"
 #include "Components/WidgetComponent.h"
 #include <Kismet/GameplayStatics.h>
 #include "Components/CapsuleComponent.h"
 #include <Net/UnrealNetwork.h>
-#include "RelicRunners/Enemy/EnemyHUDWorld.h"
+#include "EnemyHUDWorld.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/Item/ItemMeshData.h"
@@ -28,6 +29,7 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Item/ItemActor.h"
 #include "RelicRunners/Director System/Director.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 // Sets default values
 AEnemyCharacterAI::AEnemyCharacterAI()
@@ -194,12 +196,13 @@ void AEnemyCharacterAI::Die(AController* KillerController)
 	// Grant XP to killer
 	if (KillerController)
 	{
-		if (ARelicRunnersCharacter* KillerCharacter = Cast<ARelicRunnersCharacter>(KillerController->GetPawn()))
+		if (ARelicRunnersPlayerState* KillerPS = KillerController->GetPlayerState<ARelicRunnersPlayerState>())
 		{
 			int XPGranted = CalculateXPReward();
-			KillerCharacter->AddExperience(XPGranted);
 
-			UE_LOG(LogTemp, Log, TEXT("%s gained %d XP for killing %s"), *KillerCharacter->GetName(), XPGranted, *GetName());
+			KillerPS->AddExperience(XPGranted);
+
+			UE_LOG(LogTemp, Log, TEXT("%s gained %d XP for killing %s"), *KillerPS->GetPlayerName(), XPGranted, *GetName());
 		}
 	}
 
@@ -315,7 +318,7 @@ void AEnemyCharacterAI::InitializeStartingEquipment()
 		if (Item)
 		{
 			InventoryComponent->AddItem(Item);
-			InventoryComponent->EquipItem(Item);
+			InventoryComponent->EquipItem(Item, nullptr);
 			UpdateItemVisuals(Item);
 		}
 	}
@@ -387,7 +390,7 @@ void AEnemyCharacterAI::Server_EquipItemByID_Implementation(FGuid ID)
 	if (ItemPtr && *ItemPtr)
 	{
 		UItemObject* Item = *ItemPtr;
-		InventoryComponent->EquipItem(Item);
+		InventoryComponent->EquipItem(Item, nullptr);
 		UpdateItemVisuals(Item);
 		InventoryComponent->UpdateTotalEquippedStats(this);
 	}
@@ -431,7 +434,7 @@ void AEnemyCharacterAI::Server_UnequipItemByID_Implementation(FGuid ID)
 
 	if (EquippedItem)
 	{
-		InventoryComponent->UnequipItem(EquippedItem);
+		InventoryComponent->UnequipItem(EquippedItem, nullptr);
 		UpdateItemVisuals(nullptr, ItemType);
 		InventoryComponent->UpdateTotalEquippedStats(this);
 	}
@@ -589,5 +592,4 @@ void AEnemyCharacterAI::UpdateEnemyHUDWorldFacing()
 
 	EnemyHUDWorld->SetVisibility(true);
 }
-
 

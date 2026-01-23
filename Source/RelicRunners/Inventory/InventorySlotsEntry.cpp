@@ -36,6 +36,7 @@
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include "InventoryComponent.h"
 #include <RelicRunners/RelicRunnersCharacter.h>
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 void UInventorySlotsEntry::NativeConstruct()
 {
@@ -54,7 +55,7 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     TB_Level->SetText(FText::FromString(FString::FromInt(Item->GetLevel())));
     TB_Level->SetColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f, 1));
 
-    // Set border color by rarity
+    //Set border color by rarity
     FLinearColor ItemFrameColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
     B_Item->SetBrushColor(ItemFrameColor);
     B_Color->SetBrushColor(ItemFrameColor);
@@ -136,14 +137,14 @@ void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const
 
     FLinearColor RarityColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
 
-    // Find equipped item of same type
+    //Find equipped item of same type
     ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetWorld()->GetFirstPlayerController());
     UItemObject* EquippedItem = nullptr;
-    if (PC && PC->GetPossessedPawn())
+    if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
-        if (UInventoryComponent* InventoryComponent = PC->GetPossessedPawn()->GetInventoryComponent())
+        if (UInventoryComponent* InvComp = PS->GetInventoryComponent())
         {
-            EquippedItem = InventoryComponent->GetEquippedItemByType(Item->GetItemType());
+            EquippedItem = InvComp->GetEquippedItemByType(Item->GetItemType());
             if (EquippedItem == Item) EquippedItem = nullptr;
         }
     }

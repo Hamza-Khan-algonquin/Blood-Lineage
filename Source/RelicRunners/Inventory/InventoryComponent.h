@@ -84,15 +84,14 @@ public:
     void SetSortingMethod(EInventorySorting NewMethod);
     void HandleSortingNow();
     UFUNCTION(BlueprintCallable)
-    void EquipItem(UItemObject* Item);
+    void EquipItem(class UItemObject* Item, class ARelicRunnersPlayerController* RPC);
+    UFUNCTION(BlueprintCallable)
+    void UnequipItem(class UItemObject* Item, class ARelicRunnersPlayerController* RPC);
     UFUNCTION()
     void OnRep_Inventory();
     UFUNCTION()
     void OnRep_EquippedItems();
-    UFUNCTION(BlueprintCallable)
-    void UnequipItem(UItemObject* Item);
-    void UpdateTotalEquippedStats(class ARelicRunnersCharacter* Char);
-    void UpdateTotalEquippedStats(class AEnemyCharacterAI* Char);
+    void UpdateTotalEquippedStats(APawn* PawnOwner);
     UFUNCTION()
     UItemObject* FindItemByID(FGuid ItemID) const;
     FEquippedStatsSummary CalculateEquippedStats() const;

@@ -113,7 +113,7 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
 {
     if (!LinkedPlayerState) return;
 
-    UE_LOG(LogTemp, Log, TEXT("[LobbyPreview] %s -> %s"),*GetNameSafe(LinkedPlayerState), *NewClass.ToString());
+    UE_LOG(LogTemp, Log, TEXT("[LobbyPreview][%s] %s > %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"), *GetNameSafe(LinkedPlayerState), *NewClass.ToString());
 
     FString ItemType;
     if (NewClass == "Ares")             ItemType = "Greatsword";

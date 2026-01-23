@@ -25,6 +25,7 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/InventoryToolTip.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 AItemActor::AItemActor()
 {
@@ -176,7 +177,7 @@ void AItemActor::SetupVisuals()
     Fog->HeightFogExtinction = 0.3f;
     Fog->HeightFogFalloff = 1;      
     Fog->FogAlbedo = RarityData.Color;             // tints the fog
-    Fog->FogEmissive = RarityData.Color * 7.0f;    // strong inner glow
+    Fog->FogEmissive = RarityData.Color * 10.0f;    // strong inner glow
     Fog->MarkRenderStateDirty();
 
     // Tooltip setup
@@ -201,13 +202,9 @@ void AItemActor::ShowTooltip_Implementation(bool bShow)
 
 void AItemActor::Interact_Implementation(ARelicRunnersCharacter* Char)
 {
-    if (HasAuthority())
+    if (HasAuthority() && Char)
     {
         HandlePickup(Char);
-    }
-    else
-    {
-        Server_HandlePickup(Char);
     }
 }
 
@@ -216,23 +213,19 @@ FItemData AItemActor::GetItemData_Implementation()
     return ItemData;
 }
 
-void AItemActor::Server_HandlePickup_Implementation(ARelicRunnersCharacter* Char)
-{
-    if (HasAuthority() && Char)
-    {
-        HandlePickup(Char);
-    }
-}
-
 void AItemActor::HandlePickup(ARelicRunnersCharacter* Char)
 {
     if (!Char) return;
 
-    if (UInventoryComponent* InventoryComponent = Char->GetInventoryComponent())
+    ARelicRunnersPlayerState* PS = Char->GetPlayerState<ARelicRunnersPlayerState>();
+
+    if (PS && PS->GetInventoryComponent())
     {
-        UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+        UInventoryComponent* InvComp = PS->GetInventoryComponent();
+        UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InvComp);
         Item->IsNewItem = true;
-        InventoryComponent->AddItem(Item);
+        InvComp->AddItem(Item);
+
         Destroy();
     }
 }

@@ -78,7 +78,7 @@ void UInventoryItemOptions::NativeTick(const FGeometry& MyGeometry, float InDelt
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
 
-    // Close if mouse moved too far
+    //Close if mouse moved too far
     FVector2D CurrentMousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
     float Distance = FVector2D::Distance(CurrentMousePos, InitialScreenPosition);
 
@@ -194,9 +194,9 @@ void UInventoryItemOptions::OnEquipClicked()
 {
     if (!Item) return;
 
-    if (UInventory* inventory = UInventory::Get(this))
+    if (UInventory* Inventory = UInventory::Get(this))
     {
-        inventory->EquipItem(Item);
+        Inventory->EquipItem(Item);
         RemoveFromParent();
     }
 }

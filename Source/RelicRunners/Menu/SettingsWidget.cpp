@@ -84,7 +84,7 @@ FReply USettingsWidget::HandleKeyBindPressed(FKey PressedKey)
 	if (!Data)
 		return FReply::Handled();
 
-	// Prevent duplicate keys
+	//Prevent duplicate keys
 	for (UKeybindingsListData* Binding : DefaultKeybindings)
 	{
 		if (Binding != Data && Binding->Keybind == PressedKey)

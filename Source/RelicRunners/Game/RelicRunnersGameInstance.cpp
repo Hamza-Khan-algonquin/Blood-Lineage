@@ -20,7 +20,6 @@
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
-#include <RelicRunners/AbilitySystem/AbilityPointCounter.h>
 
 void URelicRunnersGameInstance::Init()
 {
@@ -96,10 +95,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
 
         MappingContext->MapKey(FoundAction, Binding.Bind);
 
-
-        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> key %s"), *Binding.Name, *Binding.Bind.ToString());
-
-        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s -> %s"), *Binding.Name, *Binding.ReadableBind);
+        UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s > %s"), *Binding.Name, *GetReadableKeyName(Binding.Bind));
 
     }
 
@@ -196,7 +192,8 @@ void URelicRunnersGameInstance::CreateNewSession()
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.bAllowJoinViaPresence = true;
         SessionSettings.bAllowJoinInProgress = true;
-        SessionSettings.Set(SETTING_MAPNAME, FString(TEXT("Lobby")), EOnlineDataAdvertisementType::ViaOnlineService);
+        FString LobbyTitle = FString::Printf(TEXT("%s's Lobby"), *PlayerName);
+        SessionSettings.Set(SETTING_MAPNAME, LobbyTitle, EOnlineDataAdvertisementType::ViaOnlineService);
 
         Sess->OnCreateSessionCompleteDelegates.RemoveAll(this);
         Sess->OnCreateSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnCreateSessionComplete);
@@ -224,7 +221,7 @@ void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
     if (TSharedPtr<IOnlineSession> Session = SessionInterface.Pin())
     {
         //Search parameters
-        int NumResults = 10;
+        int NumResults = 20;
         SessionSearch = MakeShareable(new FOnlineSessionSearch());
         SessionSearch->MaxSearchResults = NumResults;
         SessionSearch->bIsLanQuery = false;
@@ -240,26 +237,40 @@ void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
 
 void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-    if (TextRenderWidget.IsValid())
+    if (!TextRenderWidget.IsValid())
+        return;
+
+    bool AddedAnyResults = false;
+
+    if (bWasSuccessful && SessionSearch.IsValid())
     {
-        if (bWasSuccessful && SessionSearch.IsValid() && SessionSearch->SearchResults.Num() > 0)
-        {
-            for (const FOnlineSessionSearchResult& R : SessionSearch->SearchResults)
-            {
-                FString MapName = R.Session.SessionSettings.Settings.Contains("MAPNAME")
-                    ? *R.Session.SessionSettings.Settings.Find("MAPNAME")->Data.ToString()
-                    : TEXT("Unknown Map");
+        TSharedPtr<IOnlineSession> Session = SessionInterface.Pin();
+        if (!Session.IsValid()) return;
 
-                int32 MaxPlayers = R.Session.SessionSettings.NumPublicConnections;
-                int32 CurrentPlayers = MaxPlayers - R.Session.NumOpenPublicConnections;
+        FNamedOnlineSession* LocalSession = Session->GetNamedSession(NAME_GameSession);
 
-                TextRenderWidget->OnFindSessionsComplete(MapName + " " + FString::FromInt(CurrentPlayers) + " | " + FString::FromInt(MaxPlayers));
-            }
-        }
-        else
+        for (const FOnlineSessionSearchResult& R : SessionSearch->SearchResults)
         {
-            TextRenderWidget->EnableRefresh();
+            //Skip the current session
+            if (LocalSession && R.Session.GetSessionIdStr() == LocalSession->GetSessionIdStr()) continue;
+
+            AddedAnyResults = true;
+
+            FString MapName = R.Session.SessionSettings.Settings.Contains("MAPNAME")
+                ? *R.Session.SessionSettings.Settings.Find("MAPNAME")->Data.ToString()
+                : TEXT("Unknown Map");
+
+            int MaxPlayers = R.Session.SessionSettings.NumPublicConnections;
+            int CurrentPlayers = MaxPlayers - R.Session.NumOpenPublicConnections;
+
+            TextRenderWidget->OnFindSessionsComplete(MapName, CurrentPlayers);
         }
+    }
+
+    //If nothing was added
+    if (!AddedAnyResults)
+    {
+        TextRenderWidget->EnableRefresh();
     }
 
     //Unbind delegate
@@ -268,6 +279,7 @@ void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         Sess->OnFindSessionsCompleteDelegates.RemoveAll(this);
     }
 }
+
 
 void URelicRunnersGameInstance::LeaveSession(bool bQueueHost)
 {
@@ -286,7 +298,7 @@ void URelicRunnersGameInstance::LeaveSession(bool bQueueHost)
             Sess->OnDestroySessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnDestroySessionComplete);
             Sess->DestroySession(NAME_GameSession);
 
-            // Clear local state so it won't reuse stale info
+            //Clear local state so it won't reuse stale info
             PendingJoinIndex = -1;
             SessionSearch.Reset();
         }
@@ -411,7 +423,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     UWorld* World = GetWorld();
     if (!World) return;
 
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap?listen");
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap");
     //FString TravelURL = TEXT("/Game/ThirdPerson/Maps/GenerateLevelTest?listen");
     UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] Host starting travel to %s"), *TravelURL);
 
@@ -425,20 +437,10 @@ void URelicRunnersGameInstance::StartSessionGame()
     FOnlineSessionSettings* CurrentSettings = Sess->GetSessionSettings(NAME_GameSession);
     if (CurrentSettings)
     {
-        CurrentSettings->Set(SETTING_MAPNAME, FString(TEXT("Game")), EOnlineDataAdvertisementType::ViaOnlineService);
+        FString GameTitle = FString::Printf(TEXT("%s's Game"), *PlayerName);
+        CurrentSettings->Set(SETTING_MAPNAME, GameTitle, EOnlineDataAdvertisementType::ViaOnlineService);
         Sess->UpdateSession(NAME_GameSession, *CurrentSettings, true);
     }
 
-    // Tell all clients to prepare for travel
-    for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
-    {
-        ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(*Iterator);
-        if (PC && !PC->IsLocalController()) // skip host
-        {
-            PC->ClientTravelToGame();
-        }
-    }
-
-    // For host
-    World->SeamlessTravel(TravelURL);
+    World->ServerTravel(TravelURL);
 }

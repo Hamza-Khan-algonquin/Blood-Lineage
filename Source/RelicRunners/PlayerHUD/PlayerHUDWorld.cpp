@@ -17,6 +17,7 @@
 #include "PlayerHUDWorld.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
+#include "Components/RadialSlider.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -26,55 +27,53 @@ void UPlayerHUDWorld::InitWidgetWithCharacter(ARelicRunnersCharacter* InOwnerCha
 	if (!InOwnerCharacter) return;
 
 	OwningCharacter = InOwnerCharacter;
-
 }
 
 void UPlayerHUDWorld::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
-	Super::NativeTick(MyGeometry, InDeltaTime);
+    Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (!OwningCharacter) return;
+    if (!OwningCharacter) return;
 
-	int CurrentHealth = OwningCharacter->GetPlayerHealth();
-	int MaxHealth = OwningCharacter->GetPlayerMaxHealth();
+    ARelicRunnersPlayerState* PS = OwningCharacter->GetPlayerState<ARelicRunnersPlayerState>();
+    if (!PS) return;
 
-	if (HealthBar)
-	{
-		float Percent = (MaxHealth > 0) ? (float)CurrentHealth / (float)MaxHealth : 0.f;
-		HealthBar->SetPercent(Percent);
-	}
-	if (TB_Health)
-	{
-		TB_Health->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentHealth, MaxHealth)));
-	}
+    int CurrentHealth = PS->GetPlayerHealth();
+    int MaxHealth = PS->GetPlayerMaxHealth();
 
-	int CurrentResource = OwningCharacter->GetPlayerResource();
-	int MaxResource = OwningCharacter->GetPlayerMaxResource();
-	if (ResourceBar)
-	{
-		float ResourcePercent = (MaxResource > 0) ? (float)CurrentResource / (float)MaxResource : 0.f;
-		ResourceBar->SetPercent(ResourcePercent);
-	}
+    if (HealthBar)
+    {
+        float Percent = (MaxHealth > 0) ? (float)CurrentHealth / (float)MaxHealth : 0.f;
+        HealthBar->SetPercent(Percent);
+    }
+    if (TB_Health)
+    {
+        TB_Health->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentHealth, MaxHealth)));
+    }
 
-	int CurrentXP = OwningCharacter->GetPlayerXP();
-	int RequiredXP = OwningCharacter->GetPlayerXPToLevel();
-	if (ExperienceBar)
-	{
-		float XPPercent = (RequiredXP > 0) ? (float)CurrentXP / (float)RequiredXP : 0.f;
-		ExperienceBar->SetPercent(XPPercent);
-	}
+    int CurrentResource = PS->GetPlayerResource();
+    int MaxResource = PS->GetPlayerMaxResource();
+    if (ResourceBar)
+    {
+        float ResourcePercent = (MaxResource > 0) ? (float)CurrentResource / (float)MaxResource : 0.f;
+        ResourceBar->SetPercent(ResourcePercent);
+    }
 
-	if (TB_Name)
-	{
-		if (ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(OwningCharacter->GetPlayerState()))
-		{
-			TB_Name->SetText(FText::FromString(FString::Printf(TEXT("%s"), *PS->GetPlayerName())));
-		}
-	}
+    int CurrentXP = PS->GetPlayerXP();
+    int RequiredXP = PS->GetPlayerXPToLevel();
+    if (ExperienceSlider)
+    {
+        float XPPercent = (RequiredXP > 0) ? (float)CurrentXP / (float)RequiredXP : 0.f;
+        ExperienceSlider->SetValue(XPPercent);
+    }
 
-	if (TB_Level)
-	{
-		int Level = OwningCharacter->GetPlayerLevel();
-		TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), Level)));
-	}
+    if (TB_Name)
+    {
+        TB_Name->SetText(FText::FromString(PS->GetPlayerName()));
+    }
+
+    if (TB_Level)
+    {
+        TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), PS->GetPlayerLevel())));
+    }
 }

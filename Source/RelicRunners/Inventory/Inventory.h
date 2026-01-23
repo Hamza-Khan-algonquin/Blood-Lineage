@@ -68,6 +68,7 @@ struct FItemOptionsUIConfig
 		Config.ShowEquip = true;
 		Config.ShowDrop = true;
 		Config.ShowForge = true;
+		Config.ShowSell = true;
 		return Config;
 	}
 

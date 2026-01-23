@@ -8,13 +8,15 @@ public class RelicRunners : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", 
+		PublicDependencyModuleNames.AddRange(new string[] { 
+			"Core", 
 			"CoreUObject", 
 			"Engine", 
 			"InputCore", 
 			"EnhancedInput", 
-			"UMG", 
-			"Slate", 
+			"UMG",
+            "AdvancedWidgets",
+            "Slate", 
 			"SlateCore",
 			"AIModule", 
 			"NavigationSystem", 

@@ -32,7 +32,7 @@ public:
 	// IInteractInterface
 	virtual void Interact_Implementation(ARelicRunnersCharacter* Char) override;
 	virtual FItemData GetItemData_Implementation() override;
-	virtual void ShowTooltip_Implementation(bool bShow) override; // Empty
+	virtual void ShowTooltip_Implementation(bool bShow) override;
 
 	TArray<struct FItemData> GetStock() { return Stock; }
 

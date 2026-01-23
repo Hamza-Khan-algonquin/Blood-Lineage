@@ -119,6 +119,7 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetItemData(const FItemData& NewData) { ItemData = NewData; }
 
+    UPROPERTY(Replicated)
     bool IsNewItem = false;
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
