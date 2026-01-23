@@ -15,17 +15,19 @@ UBundleOfJoy::UBundleOfJoy()
     DamageAmount = 100.f;
     Duration = 3.f;
     LastUseTime = -100.f;
-    CooldownTimer = 15.f;
+    CooldownTimer = 10.f;
 }
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 
-    float CurrentTime = GetWorld()->GetTimeSeconds();
+    float CurrentTime = ActorInfo->AvatarActor->GetWorld()->GetTimeSeconds();
+
     if (CurrentTime - LastUseTime < CooldownTimer)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+    
 
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
@@ -56,7 +58,7 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 
     AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);
 
-    LastUseTime = CurrentTime;
+    
 
 }
 
@@ -190,15 +192,20 @@ void UBundleOfJoy::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
         {
             World->GetTimerManager().ClearTimer(AttractTimer);
             World->GetTimerManager().ClearTimer(ExplosionTimer);
-        }
-    }
 
-    if (ActorInfo && ActorInfo->IsLocallyControlled())
-    {
-        APlayerController* PC = ActorInfo->PlayerController.Get();
-        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
-        {
-            RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
+            if (!bWasCancelled)
+            {
+                LastUseTime = World->GetTimeSeconds();
+
+                if (ActorInfo->IsLocallyControlled())
+                {
+                    if (ARelicRunnersPlayerController* RPC =
+                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    {
+                        RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
+                    }
+                }
+            }
         }
     }
 

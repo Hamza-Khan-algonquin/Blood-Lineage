@@ -47,8 +47,6 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
     ApplyDamageAndStun();
 
-    LastUseTime = CurrentTime;
-
     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
@@ -114,12 +112,24 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 {
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
-    if (ActorInfo && ActorInfo->IsLocallyControlled())
+    if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
-        APlayerController* PC = ActorInfo->PlayerController.Get();
-        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+        UWorld* World = ActorInfo->AvatarActor->GetWorld();
+        if (World)
         {
-            RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
+            if (!bWasCancelled)
+            {
+                LastUseTime = World->GetTimeSeconds();
+
+                if (ActorInfo->IsLocallyControlled())
+                {
+                    if (ARelicRunnersPlayerController* RPC =
+                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    {
+                        RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
+                    }
+                }
+            }
         }
     }
     

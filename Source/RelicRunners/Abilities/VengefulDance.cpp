@@ -60,7 +60,6 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
     DrawDebugCircle(AvatarActor->GetWorld(), AvatarActor->GetActorLocation(), AreaRadius, 64, FColor::Red, false, Duration, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false);
 
-    LastUseTime = CurrentTime;
 }
 
 void UVengefulDance::ApplyRingDamage()
@@ -106,6 +105,7 @@ void UVengefulDance::ApplyRingDamage()
 
 void UVengefulDance::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
@@ -113,18 +113,22 @@ void UVengefulDance::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         {
             World->GetTimerManager().ClearTimer(DamageTickTimer);
             World->GetTimerManager().ClearTimer(EndTimer);
+
+            if (!bWasCancelled)
+            {
+                LastUseTime = World->GetTimeSeconds();
+
+                if (ActorInfo->IsLocallyControlled())
+                {
+                    if (ARelicRunnersPlayerController* RPC =
+                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    {
+                        RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
+                    }
+                }
+            }
         }
     }
-
-    if (ActorInfo && ActorInfo->IsLocallyControlled())
-    {
-        APlayerController* PC = ActorInfo->PlayerController.Get();
-        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
-        {
-			RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
-        }
-    }
-
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

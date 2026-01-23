@@ -55,7 +55,6 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.75f;
     AvatarChar->GetWorldTimerManager().SetTimer(SpeedResetTimer, FTimerDelegate::CreateUObject(this, &UImpunityAbility::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
 
-    LastUseTime = CurrentTime;
 
 }
 
@@ -72,12 +71,24 @@ void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 {
     ResetSpeed();
 
-    if (ActorInfo && ActorInfo->IsLocallyControlled())
+    if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
-        APlayerController* PC = ActorInfo->PlayerController.Get();
-        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+        UWorld* World = ActorInfo->AvatarActor->GetWorld();
+        if (World)
         {
-            RPC->PlayerHUD->StartDefenceCooldown(CooldownTimer);
+            if (!bWasCancelled)
+            {
+                LastUseTime = World->GetTimeSeconds();
+
+                if (ActorInfo->IsLocallyControlled())
+                {
+                    if (ARelicRunnersPlayerController* RPC =
+                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    {
+                        RPC->PlayerHUD->StartDefenceCooldown(CooldownTimer);
+                    }
+                }
+            }
         }
     }
 
