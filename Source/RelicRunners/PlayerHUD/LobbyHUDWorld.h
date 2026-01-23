@@ -17,6 +17,8 @@ class RELICRUNNERS_API ULobbyHUDWorld : public UUserWidget
 public:
 	void NativeConstruct();
 
+	void UpdateHUDReadyStatus(APlayerState* TargetPS, bool IsReady);
+
 	UFUNCTION()
 	void SetHostIconVisibility(bool IsHost);
 	UFUNCTION()
@@ -30,6 +32,9 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Name;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Status;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_HostIcon;

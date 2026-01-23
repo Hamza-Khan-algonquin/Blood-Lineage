@@ -25,12 +25,16 @@
 #include "StandardTooltip.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "LobbyGameMode.h"
+#include "RelicRunners/PlayerPreview/LobbyPreview.h"
+#include <RelicRunners/PlayerHUD/LobbyHUDWorld.h>
+#include "Components/WidgetComponent.h"
 
 void UJoinUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	if (StartButton) StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
+	if (ReadyButton) ReadyButton->OnClicked.AddDynamic(this, &UJoinUserWidget::ReadyButtonClicked);
 	if (FindGames) FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
 	if (SessionTileView) SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
 	if (BackButton) BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
@@ -521,6 +525,56 @@ void UJoinUserWidget::BackButtonClicked()
 	if (GameInstance)
 	{
 		GameInstance->BackToMainMenu();
+	}
+}
+
+void UJoinUserWidget::ReadyButtonClicked()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		bool NewReadyStatus = !PS->IsReady;
+
+		if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+		{
+			RPC->Server_ToggleReady(NewReadyStatus);
+		}
+	}
+}
+
+void UJoinUserWidget::UpdateHUDReadyStatus(APlayerState* TargetPS, bool bReady)
+{
+	if (!TargetPS) return;
+
+	if (TargetPS == GetOwningPlayerState())
+	{
+		FText Label = bReady ? FText::FromString("Unready") : FText::FromString("Ready");
+		if (TB_ReadyButton) TB_ReadyButton->SetText(Label);
+	}
+
+	if (CachedLobbyPreviews.Num() == 0)
+	{
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ALobbyPreview::StaticClass(), CachedLobbyPreviews);
+	}
+
+	for (AActor* Actor : CachedLobbyPreviews)
+	{
+		if (ALobbyPreview* Preview = Cast<ALobbyPreview>(Actor))
+		{
+			if (Preview->LinkedPlayerState == TargetPS)
+			{
+				if (Preview->LobbyHUDWorld)
+				{
+					if (ULobbyHUDWorld* WorldUI = Cast<ULobbyHUDWorld>(Preview->LobbyHUDWorld->GetUserWidgetObject()))
+					{
+						WorldUI->UpdateHUDReadyStatus(TargetPS, bReady);
+						return; 
+					}
+				}
+			}
+		}
 	}
 }
 

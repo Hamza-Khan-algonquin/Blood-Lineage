@@ -7,6 +7,8 @@
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 #include <Net/UnrealNetwork.h>
 #include <RelicRunners/PlayerHUD/LobbyHUDWorld.h>
+#include <Blueprint/WidgetBlueprintLibrary.h>
+#include <RelicRunners/Menu/JoinUserWidget.h>
 
 ALobbyPreview::ALobbyPreview()
 {
@@ -114,12 +116,12 @@ void ALobbyPreview::OnRep_LinkedPlayerState()
                 {
                     LobbyWidget->OwningPreview = this;
                     LobbyWidget->SetHostIconVisibility(LinkedPlayerState->IsHost);
+                    LobbyWidget->UpdateHUDReadyStatus(LinkedPlayerState, LinkedPlayerState->IsReady);
                 }
             }
         }
     }
 }
-
 
 void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
 {

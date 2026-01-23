@@ -29,6 +29,8 @@
 #include "RelicRunners/AbilitySystem/AbilitySelection.h"
 #include "RelicRunners/Item/ItemMeshData.h"
 #include "Engine/ActorChannel.h"
+#include <Blueprint/WidgetBlueprintLibrary.h>
+#include "RelicRunners/Menu/JoinUserWidget.h"
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {
@@ -467,6 +469,15 @@ void ARelicRunnersPlayerState::OnRep_PlayerLevel(int OldLevel)
 	{
 		//Show UI Popup
 		Client_OnLevelUp();
+	}
+}
+
+void ARelicRunnersPlayerState::OnRep_IsReady()
+{
+	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (RPC && RPC->LobbyWidget)
+	{
+		RPC->LobbyWidget->UpdateHUDReadyStatus(this, IsReady);
 	}
 }
 

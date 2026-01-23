@@ -272,6 +272,15 @@ void ARelicRunnersPlayerController::Server_SetDifficulty_Implementation(FName Ne
 	}
 }
 
+void ARelicRunnersPlayerController::Server_ToggleReady_Implementation(bool NewReadyState)
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->IsReady = NewReadyState;
+		PS->OnRep_IsReady();
+	}
+}
+
 void ARelicRunnersPlayerController::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 {
 	if (IsLocalController() && PlayerHUD)

@@ -26,6 +26,13 @@ void ULobbyHUDWorld::NativeConstruct()
     }
 }
 
+void ULobbyHUDWorld::UpdateHUDReadyStatus(APlayerState* TargetPS, bool IsReady)
+{
+    FText StatusText = IsReady ? FText::FromString("READY") : FText::FromString("NOT READY");
+
+    TB_Status->SetText(StatusText);
+}
+
 void ULobbyHUDWorld::SetHostIconVisibility(bool IsHost)
 {
     if (B_HostIcon) B_HostIcon->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);

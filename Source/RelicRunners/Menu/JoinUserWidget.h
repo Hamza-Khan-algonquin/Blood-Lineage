@@ -65,6 +65,9 @@ public:
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 	class UBorder* CurrentHoveredBorder;
 
+	UPROPERTY()
+	TArray<AActor*> CachedLobbyPreviews;
+
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Countdown;
 
@@ -106,6 +109,8 @@ public:
 	void SetSelectedDifficulty(FName DifficultyKey);
 
 	void UpdateClientDifficultyUI();
+
+	void UpdateHUDReadyStatus(APlayerState* TargetPS, bool Ready);
 
 	UFUNCTION()
 	void OnAresClicked();
@@ -386,7 +391,8 @@ protected:
 	void JoinGameButtonClicked();
 	UFUNCTION()
 	void StartGameButtonClicked();
-
+	UFUNCTION()
+	void ReadyButtonClicked();
 	UFUNCTION()
 	void HandleSessionClicked(class USessionListItemData* ClickedSession);
 
