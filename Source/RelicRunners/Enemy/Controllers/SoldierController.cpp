@@ -17,10 +17,6 @@ ASoldierController::ASoldierController()
 	OriginPatrolZone = FVector::ZeroVector;
 	CurrentPatrolCenter = FVector::ZeroVector;
 	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
-
-	DistanceOfLOD.Add(EAILOD::L1, 500);
-	DistanceOfLOD.Add(EAILOD::L2, 1000);
-	DistanceOfLOD.Add(EAILOD::L3, 2000);
 }
 
 void ASoldierController::Tick(float DeltaTime)
@@ -67,121 +63,6 @@ FVector ASoldierController::GetRandomPatrolPoint()
 #endif
 
 	return FVector::ZeroVector;
-}
-
-void ASoldierController::LODCheck()
-{
-	if (CurrentLOD == EAILOD::L5)
-	{
-		LODCheck(0);
-		return;
-	}
-
-	TArray<APawn*> players;
-	APawn* pawn = GetPawn();
-
-	if (ADirector* dir = ADirector::GetInstance(this))
-	{
-		players = dir->GetPlayers();
-	}
-	else
-	{
-		return;
-	}
-
-	float closeDistance = FVector::Dist(players[0]->GetActorLocation(), pawn->GetActorLocation());
-
-	for (int i = 1; i < players.Num(); i++)
-	{
-		float newDistance = FVector::Dist(players[i]->GetActorLocation(), pawn->GetActorLocation());
-
-		if (closeDistance > newDistance)
-		{
-			closeDistance = newDistance;
-		}
-	}
-	
-	LODCheck(closeDistance);
-}
-
-void ASoldierController::LODCheck(float closeDistance)
-{
-	APawn* pawn = GetPawn();
-
-	if (CurrentLOD == EAILOD::L5)
-	{
-		UBehaviorTreeComponent* behaviorComp = Cast<UBehaviorTreeComponent>(BrainComponent);
-		if (behaviorComp)
-		{
-			behaviorComp->StopTree(EBTStopMode::Safe);
-		}
-
-		if (AIPerceptionComp)
-		{
-			AIPerceptionComp->Deactivate();
-		}
-
-		SetActorTickEnabled(false);
-		pawn->SetActorTickEnabled(false);
-		pawn->PrimaryActorTick.bCanEverTick = false;
-
-		for (UActorComponent* comp : pawn->GetComponents())
-		{
-			comp->PrimaryComponentTick.bCanEverTick = false;
-			comp->SetComponentTickEnabled(false);
-		}
-
-		StopMovement();
-
-		if (USkeletalMeshComponent* skel = Cast<ACharacter>(pawn)->GetMesh())
-		{
-			skel->GlobalAnimRateScale = 0.f;
-			skel->bPauseAnims = true;
-			skel->SetComponentTickEnabled(false);
-			skel->SetSimulatePhysics(false);
-			skel->SetVisibility(false, true);
-		}
-
-		return;
-	}
-
-	if (closeDistance <= DistanceOfLOD[EAILOD::L1] && CurrentLOD != EAILOD::L1)
-	{
-		RunBehaviorTree(StartingBehaviorTree);
-		CurrentLOD = EAILOD::L1;
-
-		if (AIPerceptionComp)
-		{
-			AIPerceptionComp->Activate();
-		}
-	}
-	/*else if (closeDistance <= DistanceOfLOD[EAILOD::L2] && CurrentLOD != EAILOD::L2)
-	{
-		CurrentLOD = EAILOD::L2;
-	}
-	else if (closeDistance <= DistanceOfLOD[EAILOD::L3] && CurrentLOD != EAILOD::L3)
-	{
-		CurrentLOD = EAILOD::L3;
-	}
-	else if(CurrentLOD != EAILOD::L4)
-	{
-		CurrentLOD = EAILOD::L4;
-	}*/
-}
-
-void ASoldierController::LODLowestLock(bool shouldLock)
-{
-	if (shouldLock)
-	{
-		CurrentLOD = EAILOD::L5;
-	}
-	else
-	{
-		//using count to force a LOD check and not skip over any LODs
-		CurrentLOD = EAILOD::Count;
-	}
-
-	LODCheck();
 }
 
 void ASoldierController::BeginPlay()
@@ -240,7 +121,7 @@ void ASoldierController::SetIsActive(bool newIsActive)
 			behaviorComp->StopTree(EBTStopMode::Safe);
 		}
 	}
-	else if (StartingBehaviorTree && CurrentLOD == EAILOD::L1)
+	else if (StartingBehaviorTree)
 	{
 		RunBehaviorTree(StartingBehaviorTree);
 	}

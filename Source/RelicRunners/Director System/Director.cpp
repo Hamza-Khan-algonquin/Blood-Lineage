@@ -39,13 +39,6 @@ void ADirector::BeginPlay()
 
 		//reseting some varialbes
 		SpawnTimer = 0;
-
-		AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
-
-		if (HasAuthority())
-		{
-			GetWorldTimerManager().SetTimer(LODTimerHandle, this, &ADirector::UpdateEnemiesLOD, 0.5f, true);
-		}
 	}
 	//if we are not the server make sure we don't tick
 	else if (GetLocalRole() == ROLE_AutonomousProxy)
@@ -172,23 +165,6 @@ void ADirector::SpawnCheck()
 	}
 }
 
-void ADirector::UpdateEnemiesLOD()
-{
-	for (APawn* enemy : EnemiesInWorld)
-	{
-		AController* contr = enemy->GetController();
-
-		if (!contr)
-		{
-			continue;
-		}
-
-		if (ASoldierController* soldierContr = Cast<ASoldierController>(contr))
-		{
-			soldierContr->LODCheck();
-		}
-	}
-}
 
 // Called every frame
 void ADirector::Tick(float DeltaTime)

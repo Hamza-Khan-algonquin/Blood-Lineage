@@ -317,11 +317,6 @@ void AEnemyCharacter::Tick(float DeltaTime)
 	UpdateEnemyHUDWorldFacing();
 }
 
-// Called to bind functionality to input
-void AEnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
 
 void AEnemyCharacter::SetCurrentHealth(const float& NewHealth)
 {

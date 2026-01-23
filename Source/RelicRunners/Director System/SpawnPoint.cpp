@@ -180,8 +180,8 @@ void ASpawnPoint::SpawnEnemies()
 
 			for (int i = 0; i < 10; i++)
 			{
-				FActorSpawnParameters SpawnParams;
-				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+				//FActorSpawnParameters SpawnParams;
+				//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
 
 

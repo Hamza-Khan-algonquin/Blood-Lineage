@@ -73,7 +73,7 @@ public:
 	UFUNCTION(meta = (ToolTip = "A method to add a player to the list of players the director knows of", ShortToolTip = "Add the players"))
 	void AddPlayer(APawn* newPlayer);
 
-	FTimerHandle LODTimerHandle;
+
 
 public:
 	// Sets default values for this actor's properties
@@ -86,7 +86,6 @@ protected:
 	//A method to try and spawn enemies on near by spawnPoints
 	void SpawnCheck();
 
-	void UpdateEnemiesLOD();
 
 public:	
 	// Called every frame
