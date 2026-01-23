@@ -21,29 +21,20 @@ enum class EIslandFloorNeighbours : uint8
 };
 ENUM_CLASS_FLAGS(EIslandFloorNeighbours);
 
-USTRUCT()
-struct FSIslandRangeTest
+UENUM(BlueprintType)
+enum class EIslandFloorObstacle : uint8
 {
-	GENERATED_BODY()
-public:
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 WidthMin = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 WidthMax = 2;
-
-	UPROPERTY()
-	uint8 WidthFinal = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 DepthMin = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 DepthMax = 2;
-
-	UPROPERTY()
-	uint8 DepthFinal = 2;
+	None,
+	Basic,
+	Hole,
+	Vantage,
+	CapturableFlag,
+	EnemyZone,
+	SurvivalZone,
+	Start,
+	End,
 };
+
 
 USTRUCT()
 struct FSIslandFloorValues
@@ -58,6 +49,9 @@ public:
 
 	UPROPERTY()
 	EIslandFloorNeighbours ObstacleNeighbours = EIslandFloorNeighbours::Blank;
+
+	UPROPERTY()
+	EIslandFloorObstacle IslandFloorObstacle = EIslandFloorObstacle::None;
 
 	UPROPERTY()
 	uint8 randomFloorToSpawn = 0;
@@ -86,8 +80,35 @@ public:
 	//Also used to set the regular modular obstacle that would spawn on it if it is set to walkable.
 	void GenerateFloor(int x, int y);
 
+	bool CalculateDistanceBetweenTiles(int firstIndex, int secondIndex) const;
+
 	//Initializes the floor tile and adds it to the array of floor tiles
 	void InitializeFloor();
+
+	//If this is called, the tile's *IsFullTile* variable will be set to *forcedFloor* regardless of what *InitializeFloor()* set it to.
+	void ForceFloorBool(bool forcedFloor, int x, int y, int width);
+
+	//Sets wether or not the current tile will have a modular obstacle spawned on top of itself.
+	void InitializeModularObstacle(FSIslandFloorValues& floorValue, bool canGenerateHoles) const;
+
+	//Finds the starting and ending indexes and sets them accordingly.
+	void SetStartingAndEndingPoints(int startingIndex, int endingIndex);
+
+	////Overrides tiles set by *InitializeFloor()* and sets them as Capturable Flag Tiles.
+	//void SetFlagTile(int index);
+
+	////Overrides tiles set by *InitializeFloor()* and sets them as Enemy Zone Tiles.
+	//void SetEnemyZoneTile(int index);
+
+	////Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
+	//void SetSurvivalZoneTile(int index);
+
+	////Overrides tiles set by *InitializeFloor()* and sets them as Vantage Point Tiles.
+	//void SetVantagePointTile(int index);
+
+	//Creates a path from *startingIndex* to *targetIndex* by setting those tiles to walkable.
+	void FindStartToEndPath(int startingIndex, int targetIndex, int width);
+	void FindStartToEndPath(int startingIndex, int targetIndex, int width, bool implementSpline);
 
 	//Checks the neighbours of each tile to determine what mesh should be used for each quarter tile.
 	//Calls FloorCheckTopNeighbours, FloorCheckMiddleNeighbours and FloorCheckBottomNeighbours
@@ -106,6 +127,11 @@ public:
 	void SetBottomLeftFloorShape(int x, int y, int width);
 	void SetBottomRightFloorShape(int x, int y, int width);
 
+	//Spawns the modular obstacles based on previously defined variable.
+	UFUNCTION(Server, Reliable)
+	void Server_SpawnFloorObstacles(int x, int y, int width);
+	void SpawnFloorObstacles(int x, int y, int width);
+
 	//Spawns the appropriate mesh into an instanced static mesh component based on the tile's neighbours.
 	void CreateFloor();
 
@@ -123,5 +149,7 @@ public:
 
 	uint8 IslandWidth = 2;
 	uint8 IslandDepth = 2;
+
+	uint8 IslandIndex = 0;
 
 };

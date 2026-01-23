@@ -37,8 +37,12 @@ void AIslandSpawner::BeginPlay()
 		{
 			AIslandGenerationTest* newIsland = GetWorld()->SpawnActor<AIslandGenerationTest>(IslandGenerationTestTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
 
+			newIsland->IslandIndex = i;
+
 			newIsland->GenerationValuesComponent->SetIslandValues(GenerationValuesComponent->IslandValues);
+			newIsland->GenerationValuesComponent->SetIslandStartAndEndValues(GenerationValuesComponent->IslandStartEnd);
 			newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
+			newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
 
 			newIsland->InitializeValues();
 

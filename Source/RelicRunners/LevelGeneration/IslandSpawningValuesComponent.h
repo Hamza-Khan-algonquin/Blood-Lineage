@@ -17,6 +17,9 @@ struct FIslandValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float FullPercentage = 50.0f;
 
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile spawned is a hole. 100% = All holes, 0% = No holes. Note: All hole tiles will spawn a modular obstacle."))
+	float HolePercentage = 0;
+
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 WidthMin = 2;
 
@@ -29,6 +32,21 @@ struct FIslandValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 DepthMax = 2;
 
+};
+
+USTRUCT()
+struct FIslandStartAndEndTile
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, meta = (ToolTip = "Packed level actor used as the starting point of the level."));
+	TSubclassOf<class APackedLevelActor> LevelStartPackedActor;
+
+	UPROPERTY(EditAnywhere, meta = (ToolTip = "Packed level actor used as the ending point of the level."));
+	TSubclassOf<class APackedLevelActor> LevelEndPackedActor;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Minimum distance the starting and ending tiles can be from each other."))
+	uint8 StartingToEndingMinDistance;
 };
 
 USTRUCT()
@@ -55,7 +73,7 @@ struct FNormalObstacleValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSet<TSubclassOf<class APackedLevelActor>> ObstacleMesh;
+	TSet<TSubclassOf<class APackedLevelActor>> ObstacleActor;
 
 	UPROPERTY(EditAnywhere)
 	TSet<UStaticMesh*> WallMesh;
@@ -70,7 +88,7 @@ struct FHoleObstacleValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSet<TSubclassOf<class APackedLevelActor>> HoleTileMesh;
+	TSet<TSubclassOf<class APackedLevelActor>> HoleTileActor;
 
 	UPROPERTY(EditAnywhere)
 	TSet<UStaticMesh*> HoleWallMesh;
@@ -85,7 +103,7 @@ struct FVantagePointValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSet<TSubclassOf<class APackedLevelActor>> VantageMesh;
+	TSet<TSubclassOf<class APackedLevelActor>> VantageActor;
 
 	UPROPERTY(EditAnywhere)
 	TSet<UStaticMesh*> VantageWallMesh;
@@ -180,6 +198,11 @@ public:
 	FIslandValues IslandValues;
 
 	void SetIslandValues(FIslandValues newValues) { IslandValues = newValues; }
+
+	UPROPERTY(EditAnywhere)
+	FIslandStartAndEndTile IslandStartEnd;
+
+	void SetIslandStartAndEndValues(FIslandStartAndEndTile newIslandStartEnd) { IslandStartEnd = newIslandStartEnd; }
 
 	UPROPERTY(EditAnywhere)
 	FIslandFloorMeshes FloorMeshes;
