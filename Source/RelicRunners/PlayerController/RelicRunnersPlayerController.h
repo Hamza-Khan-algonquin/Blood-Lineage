@@ -37,10 +37,12 @@ public:
 	void UpdateHUDAbilityPoints(int Points);
 	void UpdateHUDAll();
 	void InventoryUI();
+	void HideMiniMap(bool bHide); 
 	void PauseUI();
 	void HideUI(UUserWidget* UIWidget, bool bClosePopups);
 	void HandleLevelUpVisuals();
 	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
+
 	UFUNCTION()
 	void UpdateCharacterVisuals();
 	UFUNCTION()
