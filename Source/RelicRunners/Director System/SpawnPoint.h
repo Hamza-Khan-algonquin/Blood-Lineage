@@ -11,6 +11,8 @@ Date Last Changed:        2025/10/27
 #include "SpawningCard.h"
 #include "SpawnPoint.generated.h"
 
+class ADirector;
+
 //Justin added this
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyWavesComplete);
 
@@ -62,7 +64,7 @@ protected:
 	class UStaticMeshComponent* Mesh;
 	//The Director
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Director", meta = (AllowPrivateAccess = "true", ToolTip = "The Director"))
-	class ADirector* Director;
+	TObjectPtr<ADirector> Director;
 
 public:	
 	// Sets default values for this actor's properties

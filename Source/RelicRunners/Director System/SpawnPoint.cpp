@@ -258,7 +258,7 @@ void ASpawnPoint::BeginPlay()
 
 		if (!Director)
 		{
-			Director = Cast<ADirector>(UGameplayStatics::GetActorOfClass(GetWorld(), ADirector::StaticClass()));
+			Director = ADirector::GetInstance(this);
 
 			if (!Director)
 			{

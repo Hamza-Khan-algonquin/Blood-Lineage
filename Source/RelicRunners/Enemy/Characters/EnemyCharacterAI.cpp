@@ -268,7 +268,7 @@ void AEnemyCharacterAI::BeginPlay()
 		APawn* enemy = static_cast<APawn*>(this);
 
 		GetWorld()->GetTimerManager().SetTimerForNextTick([World, enemy] {
-			ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(World, ADirector::StaticClass()));
+			ADirector* Director = ADirector::GetInstance(enemy);
 
 			if (Director != nullptr)
 			{

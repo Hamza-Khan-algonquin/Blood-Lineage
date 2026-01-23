@@ -329,7 +329,7 @@ void ARelicRunnersCharacter::RegisterDirector()
 {
 	GetWorldTimerManager().SetTimerForNextTick([this]()
 		{
-			ADirector* Director = Cast<ADirector>(UGameplayStatics::GetActorOfClass(GetWorld(), ADirector::StaticClass()));
+			ADirector* Director = ADirector::GetInstance(this);
 			if (Director)
 			{
 				Director->AddPlayer(this);

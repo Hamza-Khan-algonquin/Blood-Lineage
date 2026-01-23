@@ -142,7 +142,7 @@ void AEnemyPawn::ResetEnemy()
 
 void AEnemyPawn::AddEnemyToDirector()
 {
-	ADirector* Director = static_cast<ADirector*>(UGameplayStatics::GetActorOfClass(this->GetWorld(), ADirector::StaticClass()));
+	ADirector* Director = ADirector::GetInstance(this);
 
 	if (Director && !Director->ContainsEnemy(this))
 	{
