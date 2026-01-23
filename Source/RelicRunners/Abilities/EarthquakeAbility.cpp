@@ -2,6 +2,8 @@
 #include "GameFramework/Character.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "RelicRunners/Enemy/EnemyCharacter.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
@@ -14,6 +16,15 @@ UEarthquakeAbility::UEarthquakeAbility()
     ConeAngle = 90.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
+
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
+        TEXT("/Game/Particles/NiagaraSystems/NS_Earthquake.NS_Earthquake")
+    );
+
+    if (VFXAsset.Succeeded())
+    {
+        AbilityVFX = VFXAsset.Object;
+    }
 }
 
 void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -24,6 +35,23 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+
+    if (AbilityVFX && ActorInfo && ActorInfo->AvatarActor.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Spawning Niagara"));
+
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            ActorInfo->AvatarActor->GetWorld(),
+            AbilityVFX,
+            ActorInfo->AvatarActor->GetActorLocation() + FVector(0, 0, 0), 
+            ActorInfo->AvatarActor->GetActorRotation() + FRotator(0,0,0), 
+            FVector(1.f), 
+            true, 
+            true
+        );
+    }
+
+
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World)

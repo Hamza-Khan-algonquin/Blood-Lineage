@@ -4,6 +4,8 @@
 #include "Abilities/GameplayAbility.h"  
 #include "RelicRunners/PlayerController/RelicRunnersPlayerController.h"
 #include "RelicRunners/PlayerHUD/PlayerHUD.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "CooldownGameplayEffect.h"
 #include "AbilityBase.generated.h"
 
@@ -26,6 +28,7 @@ enum class EAbilityTargetType : uint8
     Area,
     Cone
 };
+
 
 UCLASS(Abstract, Blueprintable)
 class RELICRUNNERS_API UAbilityBase : public UGameplayAbility
@@ -78,16 +81,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Cooldown")
     float CooldownDuration = 0;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ability|Cooldown")
-    FGameplayTag CooldownTag;
-
-    UPROPERTY()
-    FGameplayTagContainer CooldownTagContainer;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Cooldown")
-    TSubclassOf<UGameplayEffect> GenericCooldownEffect;
-
-
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+    TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;
 
 };
 

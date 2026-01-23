@@ -26,8 +26,9 @@ public class RelicRunners : ModuleRules
 			"AdvancedSteamSessions",
 			"GameplayAbilities",    
 			"GameplayTasks",        
-			"GameplayTags"
-		});
+			"GameplayTags",
+            "Niagara"
+        });
 
     }
 }

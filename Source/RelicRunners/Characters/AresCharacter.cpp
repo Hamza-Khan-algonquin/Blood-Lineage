@@ -80,12 +80,9 @@ void AAresCharacter::GiveDamageAbilities()
 
 	if (AbilitySystem)
 	{
-		// Give Earthquake ability
-		//AbilitySystem->GiveAbility(FGameplayAbilitySpec(UEarthquakeAbility::StaticClass(), 1, 0));
 		// Activate Earthquake ability 
 		AbilitySystem->TryActivateAbilityByClass(UEarthquakeAbility::StaticClass());
-		// start ability cooldown
-		//AbilityPointCounter->StartDamageCooldown(DamageCooldown);
+
 	}
 }
 
