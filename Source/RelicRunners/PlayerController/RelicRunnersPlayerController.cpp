@@ -560,27 +560,44 @@ void ARelicRunnersPlayerController::InventoryUI()
 
 void ARelicRunnersPlayerController::HideMiniMap(bool bHide)
 {
-	if (!PossessedPawn) return;
 
-	UActorComponent* MiniMapComp = PossessedPawn->GetComponentByClass(UActorComponent::StaticClass());
-
-	if (!MiniMapComp) return;
-
-	static FName FuncName = TEXT("SetMiniMapVisible");
-	UFunction* Func = MiniMapComp->FindFunction(FuncName);
-
-	if (Func)
+	if (PossessedPawn == nullptr)
 	{
-		struct FParams
-		{
-			bool bVisible;
-		};
-
-		FParams Params;
-		Params.bVisible = !bHide;
-
-		MiniMapComp->ProcessEvent(Func, &Params);
+		return;
 	}
+
+	UActorComponent* FoundMiniMapComponent = PossessedPawn->GetComponentByClass(UActorComponent::StaticClass());
+
+	if (FoundMiniMapComponent == nullptr)
+	{
+		return;
+	}
+
+	UFunction* SetMiniMapVisibilityFunction =
+		FoundMiniMapComponent->FindFunction(FName(TEXT("SetMiniMapVisible")));
+
+	if (SetMiniMapVisibilityFunction == nullptr)
+	{
+		return;
+	}
+
+	struct FSetMiniMapVisibleParams
+	{
+		bool bVisible;
+	};
+
+	FSetMiniMapVisibleParams MiniMapParams;
+
+	if (bHide)
+	{
+		MiniMapParams.bVisible = false;
+	}
+	else
+	{
+		MiniMapParams.bVisible = true;
+	}
+
+	FoundMiniMapComponent->ProcessEvent(SetMiniMapVisibilityFunction, &MiniMapParams);
 }
 
 void ARelicRunnersPlayerController::PauseUI()
@@ -610,7 +627,9 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	FInputModeGameOnly InputMode;
 	SetInputMode(InputMode);
 
-		LoadingScreen->RemoveFromParent();
+	LoadingScreen->RemoveFromParent();
+
+	HideMiniMap(false);
 }
 
 void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget, bool bClosePopups = false)
@@ -707,6 +726,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (LoadingScreen)
 		{
 			LoadingScreen->AddToViewport();
+			HideMiniMap(true);
 			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 10.0f, false);
 		}
 	}
