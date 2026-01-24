@@ -160,40 +160,28 @@ void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, E
 {
 	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 
-	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+	if (GEngine && GEngine->GameViewport)
 	{
-		if (UWorld* World = GetWorld())
+		GEngine->GameViewport->RemoveAllViewportWidgets();
+	}
+
+	CleanupWidget(PlayerHUD);
+	CleanupWidget(Inventory);
+	CleanupWidget(PauseMenu);
+	CleanupWidget(PauseMenuWidget);
+	CleanupWidget(AbilitySelection);
+	CleanupWidget(LoadingScreen);
+}
+
+void ARelicRunnersPlayerController::CleanupWidget(UUserWidget* Widget)
+{
+	if (Widget)
+	{
+		if (Widget->IsInViewport())
 		{
-			if (PlayerHUD)
-			{
-				PlayerHUD->RemoveFromParent();
-			}
-
-			if (Inventory)
-			{
-				Inventory->RemoveFromParent();
-			}
-
-			if (PauseMenu)
-			{
-				PauseMenu->RemoveFromParent();
-			}
-
-			if (PauseMenuWidget)
-			{
-				PauseMenuWidget->RemoveFromParent();
-			}
-
-			if (AbilitySelection)
-			{
-				AbilitySelection->RemoveFromParent();
-			}
-
-			if (LoadingScreen)
-			{
-				LoadingScreen->RemoveFromParent();
-			}
+			Widget->RemoveFromParent();
 		}
+		Widget = nullptr;
 	}
 }
 

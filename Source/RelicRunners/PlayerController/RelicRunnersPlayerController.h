@@ -166,6 +166,7 @@ protected:
 	void UltimateAbility();
 	void HealthPotion();
 	void BasicAttack();
+	void CleanupWidget(UUserWidget* Widget);
 
 	//Virtual Functions
 	virtual void BeginPlay() override;

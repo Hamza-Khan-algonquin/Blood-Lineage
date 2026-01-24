@@ -99,8 +99,8 @@ void ALevelChangeTrigger::ChangeLevel()
 	UWorld* world = GetWorld();
 	if (!world) return;
 
-	FString TravelURL = TEXT("/Game/ThirdPerson/Maps/") + TargetLevel.ToString();
-	world->ServerTravel(TravelURL);
+	FString TravelURL = TargetLevel.ToString() + TEXT("?listen");
+	world->ServerTravel(TravelURL, true);
 }
 
 void ALevelChangeTrigger::Server_Activate_Implementation()
