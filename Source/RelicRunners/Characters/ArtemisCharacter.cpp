@@ -17,17 +17,6 @@ void AArtemisCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//DamageCooldown = 5.0f;
-	//DefenceCooldown = 5.0f;
-	//UtilityCooldown = 5.0f;
-	//UltimateCooldown = 10.0f;
-
-	//Starting Weapon
-	//UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, "Bow", "Common", ItemMeshData), InventoryComponent);
-	//InventoryComponent->AddItem(Item);
-	//Server_EquipItemByID(Item->ItemData.UniqueID);
-
-	//Starting Stats
 	if (ClassInfo)
 	{
 		//FClassData Stats = ClassInfo->GetStats("Artemis");
@@ -117,15 +106,4 @@ void AArtemisCharacter::GiveUltimateAbilities()
 		//AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
 	}
 
-}
-
-void AArtemisCharacter::OnLevelUp()
-{
-	//UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Bow");
-	//Item->ItemData.Level++;
-	//Item->ItemData.Strength += FMath::RandRange(1, 3);
-	//Item->ItemData.Intelligence += FMath::RandRange(0, 1);
-	//Item->ItemData.Dexterity += FMath::RandRange(1, 5);
-
-	//Super::OnLevelUp();
 }

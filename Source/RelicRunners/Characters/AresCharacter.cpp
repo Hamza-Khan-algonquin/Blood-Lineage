@@ -24,12 +24,6 @@ void AAresCharacter::BeginPlay()
 
 	}
 
-	////Starting Weapon
-	//UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, "Greatsword", "Common", ItemMeshData), InventoryComponent);
-	//InventoryComponent->AddItem(Item);
-	//Server_EquipItemByID(Item->ItemData.UniqueID);
-
-	////Starting Stats
 	//if (ClassInfo)
 	//{
 	//	FClassData Stats = ClassInfo->GetStats("Ares");
@@ -165,17 +159,4 @@ void AAresCharacter::GiveUltimateAbilities()
 		// start ability cooldown
 		//AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
 	}
-}
-
-void AAresCharacter::OnLevelUp()
-{
-	//UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Greatsword");
-	//Item->ItemData.Level++;
-	//Item->ItemData.Health += FMath::RandRange(1, 5);
-	//Item->ItemData.Armor += FMath::RandRange(1, 3);
-	//Item->ItemData.Strength += FMath::RandRange(0, 1);
-	//Item->ItemData.Intelligence += FMath::RandRange(0, 1);
-	//Item->ItemData.Dexterity += FMath::RandRange(0, 1);
-
-	//Super::OnLevelUp();
 }

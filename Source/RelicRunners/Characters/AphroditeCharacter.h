@@ -30,5 +30,4 @@ protected:
 	virtual void GiveDefenceAbilities() override;
 	virtual void GiveUtilityAbilities() override;
 	virtual void GiveUltimateAbilities() override;
-	void OnLevelUp();
 };

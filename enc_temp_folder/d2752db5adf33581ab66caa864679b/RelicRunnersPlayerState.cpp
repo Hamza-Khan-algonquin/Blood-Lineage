@@ -165,6 +165,28 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		InventoryComponent->AddItem(Item);
 	}
 
+	//Starting Weapon
+	FString StartingWeapon = "";
+	if (SelectedClass == "Ares")
+	{
+		StartingWeapon = "Greatsword";
+	}
+	else if (SelectedClass == "Artemis")
+	{
+		StartingWeapon = "Bow";
+	}
+	else if (SelectedClass == "Aphrodite")
+	{
+		StartingWeapon = "Staff";
+	}
+	else if (SelectedClass == "Nemesis")
+	{
+		StartingWeapon = "Sword";
+	}
+	UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData), InventoryComponent);
+	InventoryComponent->AddItem(Item);
+	Server_EquipItemByID(Item->ItemData.UniqueID);
+
 	HasReceivedStarterItems = true;
 }
 
