@@ -54,6 +54,7 @@
 #include <RelicRunners/Game/LobbyGameState.h>
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include <RelicRunners/Menu/LobbyGameMode.h>
+#include "RelicRunners/Minimap/Minimap.h"
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -158,31 +159,49 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 
 void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
 {
-	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
-
-	if (GEngine && GEngine->GameViewport)
+	//Clean up UI
+	if (UWorld* World = GetWorld())
 	{
-		GEngine->GameViewport->RemoveAllViewportWidgets();
-	}
+		if (!IsLocalController()) return;
 
-	CleanupWidget(PlayerHUD);
-	CleanupWidget(Inventory);
-	CleanupWidget(PauseMenu);
-	CleanupWidget(PauseMenuWidget);
-	CleanupWidget(AbilitySelection);
-	CleanupWidget(LoadingScreen);
-}
+		TArray<UUserWidget*> FoundWidgets;
+		UWidgetBlueprintLibrary::GetAllWidgetsOfClass(World, FoundWidgets, UUserWidget::StaticClass(), false);
 
-void ARelicRunnersPlayerController::CleanupWidget(UUserWidget* Widget)
-{
-	if (Widget)
-	{
-		if (Widget->IsInViewport())
+		UE_LOG(LogTemp, Warning, TEXT("--- TRAVEL CLEANUP: Checking %d Widgets ---"), FoundWidgets.Num());
+
+		for (int i = 0; i < FoundWidgets.Num(); i++)
 		{
-			Widget->RemoveFromParent();
+			UUserWidget* CurrentWidget = FoundWidgets[i];
+			if (!IsValid(CurrentWidget)) continue;
+
+			APlayerController* WidgetOwner = CurrentWidget->GetOwningPlayer();
+
+			if (WidgetOwner == this)
+			{
+				if (CurrentWidget->IsInViewport() || CurrentWidget->GetParent() != nullptr)
+				{
+					CleanupWidget(FoundWidgets[i]);
+				}
+				else
+				{
+					CurrentWidget->MarkAsGarbage();
+					FoundWidgets[i] = nullptr;
+					UE_LOG(LogTemp, Log, TEXT("SILENT: [%s] (Non-Viewport / 3D Widget)"), *CurrentWidget->GetName());
+				}
+			}
+			else
+			{
+				FString OwnerName = WidgetOwner ? WidgetOwner->GetName() : TEXT("NO OWNER");
+				UE_LOG(LogTemp, Log, TEXT("SKIPPING: [%s] (Owned by: %s)"), *CurrentWidget->GetName(), *OwnerName);
+			}
 		}
-		Widget = nullptr;
+		UE_LOG(LogTemp, Warning, TEXT("---------------------------------------------"));
 	}
+
+	FInputModeGameOnly GameOnly;
+	SetInputMode(GameOnly);
+
+	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
 
 void ARelicRunnersPlayerController::SyncUI()
@@ -535,6 +554,13 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 	}
 	SetShowMouseCursor(Enable);
 
+	if (UIWidget == MinimapWidget)
+	{
+		FInputModeGameOnly InputMode;
+		SetInputMode(InputMode);
+		SetShowMouseCursor(false);
+	}
+
 	if (UIWidget == Inventory)
 	{
 		UInventoryItemOptions::CloseAnyOpenPopup();
@@ -558,46 +584,10 @@ void ARelicRunnersPlayerController::InventoryUI()
 	Inventory->ToggleVendorUI(false);
 }
 
-void ARelicRunnersPlayerController::HideMiniMap(bool bHide)
+void ARelicRunnersPlayerController::MinimapUI()
 {
-
-	if (PossessedPawn == nullptr)
-	{
-		return;
-	}
-
-	UActorComponent* FoundMiniMapComponent = PossessedPawn->GetComponentByClass(UActorComponent::StaticClass());
-
-	if (FoundMiniMapComponent == nullptr)
-	{
-		return;
-	}
-
-	UFunction* SetMiniMapVisibilityFunction =
-		FoundMiniMapComponent->FindFunction(FName(TEXT("SetMiniMapVisible")));
-
-	if (SetMiniMapVisibilityFunction == nullptr)
-	{
-		return;
-	}
-
-	struct FSetMiniMapVisibleParams
-	{
-		bool bVisible;
-	};
-
-	FSetMiniMapVisibleParams MiniMapParams;
-
-	if (bHide)
-	{
-		MiniMapParams.bVisible = false;
-	}
-	else
-	{
-		MiniMapParams.bVisible = true;
-	}
-
-	FoundMiniMapComponent->ProcessEvent(SetMiniMapVisibilityFunction, &MiniMapParams);
+	if (!MinimapWidget) return;
+	ToggleUI(MinimapWidget);
 }
 
 void ARelicRunnersPlayerController::PauseUI()
@@ -613,10 +603,7 @@ void ARelicRunnersPlayerController::PauseUI()
 
 void ARelicRunnersPlayerController::AbilitySystemUI()
 {
-	if (!AbilitySelection || !RelicPlayerState || RelicPlayerState->GetPlayerAbilityPoints() < 1)
-	{
-		return;
-	}
+	if (!AbilitySelection || !RelicPlayerState || RelicPlayerState->GetPlayerAbilityPoints() < 1) return;
 
 	RemoveOtherUI("Ability");
 	ToggleUI(AbilitySelection);
@@ -628,8 +615,7 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	SetInputMode(InputMode);
 
 	LoadingScreen->RemoveFromParent();
-
-	HideMiniMap(false);
+	MinimapUI();
 }
 
 void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget, bool bClosePopups = false)
@@ -659,12 +645,28 @@ void ARelicRunnersPlayerController::RemoveOtherUI(FString UI)
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
+	if (BuildVersion && !BuildVersion->IsInViewport())
+	{
+		BuildVersion->AddToViewport();
+	}
+
 	if (!PlayerHUD && PlayerHUDClass)
 	{
 		PlayerHUD = CreateWidget<UPlayerHUD>(this, PlayerHUDClass);
 		if (PlayerHUD)
 		{
 			PlayerHUD->AddToViewport();
+		}
+	}
+
+	if (!MinimapWidget && MinimapClass)
+	{
+		MinimapWidget = CreateWidget<UMinimap>(this, MinimapClass);
+		if (MinimapWidget)
+		{
+			MinimapWidget->AddToViewport();
+			MinimapWidget->SetVisibility(ESlateVisibility::Hidden);
+			MinimapWidget->SetIsEnabled(false);
 		}
 	}
 
@@ -726,7 +728,6 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (LoadingScreen)
 		{
 			LoadingScreen->AddToViewport();
-			HideMiniMap(true);
 			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 10.0f, false);
 		}
 	}

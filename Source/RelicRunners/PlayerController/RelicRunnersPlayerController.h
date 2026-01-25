@@ -37,7 +37,7 @@ public:
 	void UpdateHUDAbilityPoints(int Points);
 	void UpdateHUDAll();
 	void InventoryUI();
-	void HideMiniMap(bool bHide); 
+	void MinimapUI();
 	void PauseUI();
 	void HideUI(UUserWidget* UIWidget, bool bClosePopups);
 	void HandleLevelUpVisuals();
@@ -92,6 +92,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	UInputMappingContext* GetInputMappingContext() const { return InputMappingContext; }
 	class UInventory* GetInventory() { return Inventory; };
+	UFUNCTION(BlueprintCallable)
+	class UMinimap* GetMinimap() { return MinimapWidget; };
 	class ARelicRunnersCharacter* GetPossessedPawn() { return PossessedPawn; }
 
 	//Stored Classes
@@ -113,11 +115,16 @@ public:
 	TSubclassOf<class UMainMenuWidget> MainMenuWidgetClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<class UInventory> InventoryClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UMinimap> MinimapClass;
 	UPROPERTY(EditDefaultsOnly, Category = "Preview")
 	TSubclassOf<class APlayerPreview> PlayerPreviewClass;
 
-
 	//Properties
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UUserWidget* BuildVersion;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UMinimap* MinimapWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UPauseMenu* PauseMenu;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
@@ -145,6 +152,18 @@ public:
 
 protected:
 
+	//Template
+	template<typename T>
+	void CleanupWidget(T*& WidgetPtr)
+	{
+		if (WidgetPtr)
+		{
+			WidgetPtr->RemoveFromParent();
+			WidgetPtr->MarkAsGarbage();
+			WidgetPtr = nullptr;
+		}
+	}
+
 	//Basic Functions
 	ARelicRunnersPlayerController();
 	void MoveForward(const struct FInputActionValue& Value);
@@ -166,7 +185,6 @@ protected:
 	void UltimateAbility();
 	void HealthPotion();
 	void BasicAttack();
-	void CleanupWidget(UUserWidget* Widget);
 
 	//Virtual Functions
 	virtual void BeginPlay() override;
