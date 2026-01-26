@@ -84,5 +84,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
     TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+    TObjectPtr<UNiagaraSystem> AbilityVFX1 = nullptr;
+
 };
 

@@ -20,6 +20,15 @@ UVengefulDance::UVengefulDance()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
+      TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash")
+  );
+
+  if (VFXAsset.Succeeded())
+  {
+      AbilityVFX = VFXAsset.Object;
+  }
+
 }
 
 void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -40,6 +49,22 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    if (AbilityVFX && ActorInfo && ActorInfo->AvatarActor.IsValid())
+{
+    UE_LOG(LogTemp, Warning, TEXT("Spawning Niagara"));
+
+    UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+        ActorInfo->AvatarActor->GetWorld(),
+        AbilityVFX,
+        ActorInfo->AvatarActor->GetActorLocation() + FVector(0, 0, 0), 
+        ActorInfo->AvatarActor->GetActorRotation() + FRotator(0,0,90), 
+        FVector(1.5f), 
+        true, 
+        true
+    );
+}
+
+
     UWorld* World = AvatarActor->GetWorld();
     if (!World)
     {
@@ -58,7 +83,7 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
     AvatarActor->GetWorldTimerManager().SetTimer(EndTimer, FTimerDelegate::CreateUObject(this, &UVengefulDance::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
 
-    DrawDebugCircle(AvatarActor->GetWorld(), AvatarActor->GetActorLocation(), AreaRadius, 64, FColor::Red, false, Duration, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false);
+    //DrawDebugCircle(AvatarActor->GetWorld(), AvatarActor->GetActorLocation(), AreaRadius, 64, FColor::Red, false, Duration, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false);
 
 }
 
