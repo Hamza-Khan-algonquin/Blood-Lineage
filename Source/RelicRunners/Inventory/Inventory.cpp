@@ -705,7 +705,9 @@ void UInventory::SetForgeTooltip(UImage* IconWidget, UBorder* BorderWidget, UIte
 
     const FLinearColor RarityColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
 
-    ToolTip->Setup(Item, RarityColor, nullptr);
+    UItemObject* EquippedItem = InventoryComponent->GetEquippedItemByType(Item->GetItemType());
+    
+    ToolTip->Setup(Item, RarityColor, EquippedItem);
 
     BorderWidget->SetToolTip(ToolTip);
 }

@@ -364,7 +364,7 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 	}
 
 	const FLinearColor Silver(0.624f, 0.624f, 0.624f, 1.f);
-	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
+	const FLinearColor DarkGold(0.43f, 0.29f, 0.1f, 1.f);
 	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
 	const FLinearColor Black(0.f, 0.f, 0.f, 1.f);
 	const FLinearColor SectionBrush_Unselected(0.292f, 0.23f, 0.145f, 1.f);
@@ -385,7 +385,7 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 	//Set
 	if (FDifficultyWidgets* Selected = DifficultyMap.Find(DifficultyKey))
 	{
-		Selected->Icon->SetColorAndOpacity(DarkGold);
+		Selected->Icon->SetColorAndOpacity(Gold);
 		SetBorderOutlineColor(Selected->SectionBorder, Gold, DarkGold);
 		SetButtonTint(Selected->Button, Gold);
 	}
