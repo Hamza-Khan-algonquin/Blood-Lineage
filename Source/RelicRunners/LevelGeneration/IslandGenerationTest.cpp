@@ -72,6 +72,9 @@ void AIslandGenerationTest::Generate()
 			FindStartToEndPath(startingIndex, endingIndex, IslandWidth, true);
 		}
 
+		//TODO: Make functions that handle setting the objective 
+		//values so that this current function (AIslandGenerationTest::Generate()) doesn't get too crowded
+
 		int flagamount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
 
 		//Override previously initialized tiles with capturable flag tiles
@@ -102,6 +105,8 @@ void AIslandGenerationTest::Generate()
 				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
 			}
 		}
+
+		//end of the above TODO
 
 		if (!FloorValuesArray.IsEmpty())
 		{
