@@ -155,14 +155,23 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 	Super::PostSeamlessTravel();
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+
+	EnableInput(this);
 }
 
 void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
+{
+	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
+}
+
+void ARelicRunnersPlayerController::TravelCleanUI()
 {
 	//Clean up UI
 	if (UWorld* World = GetWorld())
 	{
 		if (!IsLocalController()) return;
+
+		DisableInput(this);
 
 		TArray<UUserWidget*> FoundWidgets;
 		UWidgetBlueprintLibrary::GetAllWidgetsOfClass(World, FoundWidgets, UUserWidget::StaticClass(), false);
@@ -200,8 +209,6 @@ void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, E
 
 	FInputModeGameOnly GameOnly;
 	SetInputMode(GameOnly);
-
-	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
 
 void ARelicRunnersPlayerController::SyncUI()

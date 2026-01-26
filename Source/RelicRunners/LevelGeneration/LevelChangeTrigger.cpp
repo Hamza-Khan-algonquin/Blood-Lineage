@@ -96,11 +96,16 @@ void ALevelChangeTrigger::ChangeLevel()
 {
 	if (!HasAuthority()) return;
 
-	UWorld* world = GetWorld();
-	if (!world) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(World->GetFirstPlayerController());
+	if (!RPC) return;
+
+	RPC->TravelCleanUI();
 
 	FString TravelURL = TargetLevel.ToString() + TEXT("?listen");
-	world->ServerTravel(TravelURL, true);
+	World->ServerTravel(TravelURL, true);
 }
 
 void ALevelChangeTrigger::Server_Activate_Implementation()

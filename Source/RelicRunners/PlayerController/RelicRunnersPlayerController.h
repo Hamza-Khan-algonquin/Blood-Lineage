@@ -42,6 +42,7 @@ public:
 	void HideUI(UUserWidget* UIWidget, bool bClosePopups);
 	void HandleLevelUpVisuals();
 	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
+	void TravelCleanUI();
 
 	UFUNCTION()
 	void UpdateCharacterVisuals();
