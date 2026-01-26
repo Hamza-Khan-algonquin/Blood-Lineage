@@ -45,6 +45,9 @@ struct FIslandStartAndEndTile
 	UPROPERTY(EditAnywhere, meta = (ToolTip = "Packed level actor used as the ending point of the level."));
 	TSubclassOf<class APackedLevelActor> LevelEndPackedActor;
 
+	UPROPERTY(EditAnywhere, meta = (ToolTip = "Packed level actor used as the ending point of the level."));
+	TSubclassOf<class APackedLevelActor> BridgePackedActor;
+
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Minimum distance the starting and ending tiles can be from each other."))
 	uint8 StartingToEndingMinDistance;
 };
@@ -121,8 +124,8 @@ struct FObjectiveFlagValues
 {
 	GENERATED_BODY()
 
-	//UPROPERTY(EditAnywhere)
-	//ACapturableFlag* Flag;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ACapturableFlag> Flag;
 
 	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMin = 0;

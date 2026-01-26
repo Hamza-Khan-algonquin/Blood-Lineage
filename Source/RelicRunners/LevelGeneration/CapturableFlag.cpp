@@ -7,6 +7,7 @@
 #include "Components/TextRenderComponent.h"
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
+#include "Components/StaticMeshComponent.h"
 #include <Net/UnrealNetwork.h>
 
 // Sets default values
@@ -31,6 +32,8 @@ ACapturableFlag::ACapturableFlag():
 	TextComponent->SetupAttachment(Origin);
 	TextComponent->SetText(FText::FromString("Press E to Interact"));
 
+	BeaconMesh = CreateDefaultSubobject<UStaticMeshComponent>("Beacon");
+	BeaconMesh->SetupAttachment(Origin);
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -88,6 +91,14 @@ void ACapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 
 	FString text = HasAuthority() ? "Server: " : "Client: ";
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
+
+	BeaconMesh->SetVisibility(false);
+	OnFlagObjectiveActivated.Broadcast();
+}
+
+void ACapturableFlag::Activate()
+{
+	OnFlagObjectiveCreated.Broadcast();
 }
 
 void ACapturableFlag::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

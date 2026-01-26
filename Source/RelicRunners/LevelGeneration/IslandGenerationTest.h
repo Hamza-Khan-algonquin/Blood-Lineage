@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "IslandGenerationTest.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnObjectiveIslandObjectiveComplete);
+
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
 enum class EIslandFloorNeighbours : uint8
 {
@@ -94,8 +96,8 @@ public:
 	//Finds the starting and ending indexes and sets them accordingly.
 	void SetStartingAndEndingPoints(int startingIndex, int endingIndex);
 
-	////Overrides tiles set by *InitializeFloor()* and sets them as Capturable Flag Tiles.
-	//void SetFlagTile(int index);
+	//Overrides tiles set by *InitializeFloor()* and sets them as Capturable Flag Tiles.
+	void SetFlagTile(int index);
 
 	////Overrides tiles set by *InitializeFloor()* and sets them as Enemy Zone Tiles.
 	//void SetEnemyZoneTile(int index);
@@ -135,6 +137,10 @@ public:
 	//Spawns the appropriate mesh into an instanced static mesh component based on the tile's neighbours.
 	void CreateFloor();
 
+	UFUNCTION()
+	void IncrementObjective();
+	UFUNCTION()
+	void DecrementObjective();
 public:
 	//Client only. Used to replicate the array of floor values.
 	UFUNCTION()
@@ -151,5 +157,14 @@ public:
 	uint8 IslandDepth = 2;
 
 	uint8 IslandIndex = 0;
+
+	TArray<class ACapturableFlag*> flag;
+	class AEnemyZone* enemyzone;
+	class APayloadActor* payload;
+	class ASurvivalZone* survivalzone;
+
+	FOnObjectiveIslandObjectiveComplete OnObjectiveIslandObjectiveComplete;
+
+	int8 CurrentObjectives = 0;
 
 };
