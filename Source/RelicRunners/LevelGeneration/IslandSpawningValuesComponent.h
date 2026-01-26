@@ -6,10 +6,13 @@
 #include "Components/ActorComponent.h"
 #include "IslandSpawningValuesComponent.generated.h"
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FIslandValues
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = "/Script/RelicRunners.EIslandObjectiveType"))
+	int Objectives;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "1", UIMin = "1", ClampMax = "1000", UIMax = "1000"))
 	float TileScale = 1;
@@ -140,8 +143,8 @@ struct FObjectiveEnemyZoneValues
 {
 	GENERATED_BODY()
 
-	//UPROPERTY(EditAnywhere)
-	//AEnemyZone* EnemyZone;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AEnemyZone> EnemyZone;
 
 	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMin = 0;
@@ -156,8 +159,8 @@ struct FObjectivePayloadValues
 {
 	GENERATED_BODY()
 
-	//UPROPERTY(EditAnywhere)
-	//APayloadActor* Payload
+	UPROPERTY(EditAnywhere)
+	TSubclassOf <class APayloadActor> Payload;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "1", UIMin = "1", ToolTip = "Speed at which the payload moves towards the target."))
 	float PayloadSpeed = 1.0f;
@@ -169,8 +172,8 @@ struct FSurvivalZoneValues
 {
 	GENERATED_BODY()
 
-	//UPROPERTY(EditAnywhere)
-	//ASurvivalZone* SurvivalZone
+	UPROPERTY(EditAnywhere)
+	TSubclassOf <class ASurvivalZone> SurvivalZone;
 
 	UPROPERTY(EditAnywhere)
 	uint8 ZoneAmountMin = 0;
@@ -179,6 +182,16 @@ struct FSurvivalZoneValues
 	uint8 ZoneAmountMax = 0;
 };
 
+UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
+enum class EIslandObjectiveType : uint8
+{
+	None = 0 UMETA(Hidden),
+	CaptureTheFlag = 1 << 0,
+	DefeatAllEnemies = 1 << 1,
+	MoveThePayload = 1 << 2,
+	Survival = 1 << 3,
+};
+ENUM_CLASS_FLAGS(EIslandObjectiveType);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RELICRUNNERS_API UIslandSpawningValuesComponent : public UActorComponent

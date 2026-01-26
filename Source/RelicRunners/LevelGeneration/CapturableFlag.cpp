@@ -33,6 +33,7 @@ ACapturableFlag::ACapturableFlag():
 	TextComponent->SetText(FText::FromString("Press E to Interact"));
 
 	BeaconMesh = CreateDefaultSubobject<UStaticMeshComponent>("Beacon");
+	BeaconMesh->SetCollisionProfileName("NoCollision");
 	BeaconMesh->SetupAttachment(Origin);
 
 	bReplicates = true;

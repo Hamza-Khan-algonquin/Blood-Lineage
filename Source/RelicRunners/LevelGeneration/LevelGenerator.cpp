@@ -19,7 +19,7 @@ Make it so that level generation is done within ranges | Done
 Adjust how the level generation with the textures work
 
 Make it so that the level generation can generate multiple islands that are connected to each other by bridge
-Each island has their own objective
+Each island has their own objective | Done
 Bridges block the way until the objective is complete
 
 Maybe Make new zones spawn dynamically when the bridge falls
@@ -31,6 +31,9 @@ Remove concave corners | Done
 Make convex corners square instead of round | Done
 Adjust what type of floor spawns to accomadate not having concave corners | Done
 Change how the floor tiles are scaled to make them more dynamic | Done
+
+Create Objective parent class where each objective derives from
+
 */
 
 

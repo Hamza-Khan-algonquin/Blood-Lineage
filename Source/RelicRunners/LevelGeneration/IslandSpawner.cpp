@@ -5,6 +5,8 @@
 #include "IslandGenerationTest.h"
 #include "LevelGenerator.h"
 #include "IslandSpawningValuesComponent.h"
+#include "PayloadActor.h"
+
 
 // Sets default values
 AIslandSpawner::AIslandSpawner():
@@ -45,7 +47,24 @@ void AIslandSpawner::BeginPlay()
 			newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
 			newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
 
-			newIsland->InitializeValues();
+			EIslandObjectiveType islandObjective = EIslandObjectiveType::None;
+			TArray<EIslandObjectiveType> ActiveFlags;
+			for (int32 j = 0; j < 8; ++j)
+			{
+				uint8 FlagValue = 1 << j;
+				if ((GenerationValuesComponent->IslandValues.Objectives & FlagValue) != 0 && FlagValue != (uint8)EIslandObjectiveType::None)
+				{
+					ActiveFlags.Add((EIslandObjectiveType)FlagValue);
+				}
+			}
+
+			if (ActiveFlags.Num() > 0)
+			{
+				int32 RandomIndex = FMath::RandRange(0, ActiveFlags.Num() - 1);
+				islandObjective = ActiveFlags[RandomIndex];
+			}
+
+			newIsland->InitializeValues(islandObjective);
 
 			Islands.Add(newIsland);
 		}

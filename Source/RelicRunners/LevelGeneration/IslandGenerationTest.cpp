@@ -7,6 +7,9 @@
 #include "Net/UnrealNetwork.h"
 #include "PackedLevelActor/PackedLevelActor.h"
 #include "CapturableFlag.h"
+#include "EnemyZone.h"
+#include "PayloadActor.h"
+#include "SurvivalZone.h"
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -72,41 +75,7 @@ void AIslandGenerationTest::Generate()
 			FindStartToEndPath(startingIndex, endingIndex, IslandWidth, true);
 		}
 
-		//TODO: Make functions that handle setting the objective 
-		//values so that this current function (AIslandGenerationTest::Generate()) doesn't get too crowded
-
-		int flagamount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
-
-		//Override previously initialized tiles with capturable flag tiles
-		for (int i = 0; i < flagamount; i++)
-		{
-			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
-
-			int whileLoopLimit = 0;
-
-			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
-			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Basic)
-			{
-				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
-
-				whileLoopLimit++;
-
-				if (whileLoopLimit >= 10)
-				{
-					break;
-				}
-			}
-
-			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
-			if (whileLoopLimit < 10)
-			{
-				SetFlagTile(keyTileIndex);
-
-				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
-			}
-		}
-
-		//end of the above TODO
+		InitializeObjectives(startingIndex, endingIndex);
 
 		if (!FloorValuesArray.IsEmpty())
 		{
@@ -127,10 +96,12 @@ void AIslandGenerationTest::Generate()
 	}
 }
 
-void AIslandGenerationTest::InitializeValues()
+void AIslandGenerationTest::InitializeValues(EIslandObjectiveType islandObjective)
 {
 	IslandDepth = FMath::RandRange(GenerationValuesComponent->IslandValues.DepthMin, GenerationValuesComponent->IslandValues.DepthMax);
 	IslandWidth = FMath::RandRange(GenerationValuesComponent->IslandValues.WidthMin, GenerationValuesComponent->IslandValues.WidthMax);
+
+	IslandObjective = islandObjective;
 }
 
 void AIslandGenerationTest::GenerateFloor(int x, int y)
@@ -190,6 +161,30 @@ void AIslandGenerationTest::SetFlagTile(int index)
 {
 	FloorValuesArray[index].IsFullTile = true;
 	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::CapturableFlag;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetEnemyZoneTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::EnemyZone;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetSurvivalZoneTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::SurvivalZone;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetVantagePointTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::Vantage;
 	FloorValuesArray[index].randomFloorToSpawn = 0;
 	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
 }
@@ -333,6 +328,123 @@ void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetInde
 
 void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetIndex, int width, bool implementSpline)
 {
+}
+
+void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
+{
+	switch (IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+		int flagAmount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
+
+		//Override previously initialized tiles with capturable flag tiles
+		for (int i = 0; i < flagAmount; i++)
+		{
+			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+			int whileLoopLimit = 0;
+
+			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Basic)
+			{
+				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+				whileLoopLimit++;
+
+				if (whileLoopLimit >= 10)
+				{
+					break;
+				}
+			}
+
+			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+			if (whileLoopLimit < 10)
+			{
+				SetFlagTile(keyTileIndex);
+
+				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
+			}
+		}
+		break;
+	case EIslandObjectiveType::DefeatAllEnemies:
+		int enemyZoneAmount = FMath::RandRange(GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMin, GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMax);
+
+		for (int i = 0; i < enemyZoneAmount; i++)
+		{
+			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+			int whileLoopLimit = 0;
+
+			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Basic)
+			{
+				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+				whileLoopLimit++;
+
+				if (whileLoopLimit >= 10)
+				{
+					break;
+				}
+			}
+
+			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+			if (whileLoopLimit < 10)
+			{
+				SetEnemyZoneTile(keyTileIndex);
+
+				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
+			}
+		}
+		break;
+	case EIslandObjectiveType::MoveThePayload:
+		if (IslandDepth * IslandWidth > 1)
+		{
+			//Override starting and ending tiles initialized above and create a path from one to the other.
+			SetStartingAndEndingPoints(startingIndex, endingIndex);
+
+			FindStartToEndPath(startingIndex, endingIndex, IslandWidth, true);
+
+			if (GenerationValuesComponent->PayloadObjectiveValues.Payload != nullptr)
+			{
+				APayloadActor* payload = GetWorld()->SpawnActor<APayloadActor>(GenerationValuesComponent->PayloadObjectiveValues.Payload, FVector::ZeroVector, FRotator::ZeroRotator);
+				//payload->Multicast_Initialize(DeliverySpline, GenerationValuesComponent->PayloadObjectiveValues.PayloadSpeed);
+			}
+		}
+		break;
+	case EIslandObjectiveType::Survival:
+		int survivalZoneAmount = FMath::RandRange(GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMin, GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMax);
+
+		//Override previously initialized tiles with survival zone tiles
+		for (int i = 0; i < survivalZoneAmount; i++)
+		{
+			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+			int whileLoopLimit = 0;
+
+			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Basic)
+			{
+				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+				whileLoopLimit++;
+
+				if (whileLoopLimit >= 10)
+				{
+					break;
+				}
+			}
+
+			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+			if (whileLoopLimit < 10)
+			{
+				SetSurvivalZoneTile(keyTileIndex);
+
+				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
+			}
+		}
+		break;
+	}
 }
 
 void AIslandGenerationTest::CheckFloor(int x, int y, int width, int depth)
@@ -779,8 +891,6 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			newFlag->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 
 			newFlag->Activate();
-
-			flag.Add(newFlag);
 		}
 
 	//	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::CaptureTheFlag))
@@ -852,7 +962,17 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 	//	}
 	//	break;
-	//case EFloorObstacle::SurvivalZone:
+	case EIslandFloorObstacle::SurvivalZone:
+	 		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
+		{
+			ASurvivalZone* newZone = GetWorld()->SpawnActor<ASurvivalZone>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZone, posOffset, FRotator(0.0f, yaw, 0.0f));
+			
+			newZone->OnFlagObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
+			newZone->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+
+			newZone->Activate();
+		}
+
 	//	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::Survival))
 	//	{
 	//		if (!SurvivalZonePackedActorArray.IsEmpty())
@@ -886,7 +1006,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	//		}
 
 	//	}
-	//	break;
+		break;
 	case EIslandFloorObstacle::Start:
 		if (GenerationValuesComponent->IslandStartEnd.LevelStartPackedActor != nullptr && IslandIndex == 0)
 		{
@@ -1024,7 +1144,7 @@ void AIslandGenerationTest::DecrementObjective()
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining flags: %i"), IslandIndex, CurrentObjectives));
 	if (CurrentObjectives <= 0)
 	{
-		OnObjectiveIslandObjectiveComplete.Broadcast();
+		//BridgeActor->Activate();
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Bridge Activated")));
 	}
 }

@@ -7,6 +7,9 @@
 #include "GameFramework/Actor.h"
 #include "SurvivalZone.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFlagObjectiveCreated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFlagObjectiveActivated);
+
 UCLASS()
 class RELICRUNNERS_API ASurvivalZone : public AActor
 {
@@ -56,5 +59,10 @@ public:
 
 	UPROPERTY(Replicated)
 	TArray<AActor*> CollidingActors;
+
+	void Activate();
+
+	FOnFlagObjectiveCreated OnFlagObjectiveCreated;
+	FOnFlagObjectiveActivated OnFlagObjectiveActivated;
 
 };
