@@ -70,6 +70,8 @@ public:
 	void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
+	UFUNCTION()
+	void ResetBasicAttack();
 	UFUNCTION(Server, Reliable)
 	void Server_SpawnDroppedItemWorld(const struct FItemData& Data);
 	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
@@ -150,6 +152,10 @@ public:
 	UStaticMesh* ReplicatedOffhandMesh;
 
 	//Properties
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool CanBasicAttack = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float BasicAttackCooldown = 0.5f;
 	TSet<AActor*> AlreadyHitActors;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UWidgetComponent* PlayerHUDWorld;
@@ -188,6 +194,7 @@ protected:
 	//Timers
 	FTimerHandle HealthRegenTimerHandle;
 	FTimerHandle DelegateBindHandle;
+	FTimerHandle TimerHandle_AttackCooldown;
 
 	//Stored Classes
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")

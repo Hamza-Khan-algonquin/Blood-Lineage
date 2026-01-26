@@ -420,13 +420,8 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 
 	TArray<FHitResult> Hits;
 	GetWorld()->SweepMultiByChannel(
-		Hits,
-		Start,
-		End,
-		FQuat::Identity,
-		ECC_Pawn,
-		FCollisionShape::MakeSphere(100.0f),
-		Params
+		Hits, Start, End, FQuat::Identity,
+		ECC_Pawn, FCollisionShape::MakeSphere(100.0f), Params
 	);
 
 	AlreadyHitActors.Empty();
@@ -437,7 +432,6 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 		{
 			if (!AlreadyHitActors.Contains(HitActor))
 			{
-				//Check if it's an enemy before applying damage
 				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 				{
 					Server_HitEnemy(Enemy);
@@ -446,19 +440,36 @@ void ARelicRunnersCharacter::PerformSwingTrace()
 				{
 					Server_HitEnemy(TEnemy);
 				}
-
 				AlreadyHitActors.Add(HitActor);
 			}
 		}
 	}
 }
 
-void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+void ARelicRunnersCharacter::ResetBasicAttack()
 {
-	if (HitActor)
+	CanBasicAttack = true;
+}
+
+void ARelicRunnersCharacter::BasicAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+	if (!CanBasicAttack) return;
+	CanBasicAttack = false;
+
+	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 	{
-		UGameplayStatics::ApplyDamage(HitActor, 5.f, GetController(), this, nullptr);
+		PlayRandomAttackAnimation();
 	}
+
+	GetWorldTimerManager().SetTimer(
+		TimerHandle_AttackCooldown,
+		this,
+		&ARelicRunnersCharacter::ResetBasicAttack,
+		BasicAttackCooldown,
+		false
+	);
 }
 
 void ARelicRunnersCharacter::PlayRandomAttackAnimation()
@@ -479,6 +490,14 @@ void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 	}
 }
 
+void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+{
+	if (HitActor)
+	{
+		UGameplayStatics::ApplyDamage(HitActor, 5.f, GetController(), this, nullptr);
+	}
+}
+
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const
 {
 	if (!InvComp) return false;
@@ -494,16 +513,6 @@ bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp
 	}
 
 	return false;
-}
-
-void ARelicRunnersCharacter::BasicAttack()
-{
-	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-
-	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-	{
-		PlayRandomAttackAnimation();
-	}
 }
 
 void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
