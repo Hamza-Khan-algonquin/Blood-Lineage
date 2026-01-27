@@ -29,11 +29,15 @@
 #include "RelicRunners/AbilitySystem/AbilitySelection.h"
 #include "RelicRunners/Item/ItemMeshData.h"
 #include "Engine/ActorChannel.h"
+#include "TimerManager.h"
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include "RelicRunners/Menu/JoinUserWidget.h"
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+
     AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
     AttributeSet = CreateDefaultSubobject<UAttributeSet>(TEXT("AttributeSet"));
 
@@ -78,8 +82,16 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	//Potions
 	HealthPotionCount = 3;
 	HealthGranted = 0.5;
+
 }
 
+void ARelicRunnersPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, 3.f, true);
+
+}
 void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 {
 	Super::CopyProperties(PlayerState);
@@ -204,6 +216,21 @@ void ARelicRunnersPlayerState::PassiveHealthRegen()
 	}
 }
 
+void ARelicRunnersPlayerState::PassiveResourceRegen()
+{
+	if (!HasAuthority()) return;
+
+	if (PlayerResource < PlayerMaxResource)
+	{
+		int RegenAmount = FMath::CeilToInt(PlayerMaxResource * 0.05f);
+		PlayerResource = FMath::Min(PlayerResource + RegenAmount, PlayerMaxResource);
+
+		//For server
+		UpdateRemoteHUDResource();
+	}
+}
+
+
 void ARelicRunnersPlayerState::Client_UpdateEquippedStats_Implementation(const FEquippedStatsSummary& NewStats)
 {
 	if (InventoryComponent)
@@ -257,7 +284,7 @@ void ARelicRunnersPlayerState::OnLevelUp()
 
 	//Current resource / max resource
 	PlayerMaxResource++;
-	PlayerResource = PlayerMaxResource;
+	//PlayerResource = PlayerMaxResource;
 
 	//Current stats
 	PlayerArmor++;
@@ -625,6 +652,11 @@ void ARelicRunnersPlayerState::OnRep_Ability()
 {
 	UpdateRemoteHUDAbility();
 }
+
+
+
+
+
 
 void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

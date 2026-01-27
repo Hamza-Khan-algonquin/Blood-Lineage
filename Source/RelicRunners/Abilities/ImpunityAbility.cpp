@@ -1,6 +1,7 @@
 #include "ImpunityAbility.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Character.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "TimerManager.h"
 
 UImpunityAbility::UImpunityAbility()
@@ -11,6 +12,7 @@ UImpunityAbility::UImpunityAbility()
     CooldownDuration = 8.0f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
+	Cost = 40;
 }
 
 void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -50,6 +52,24 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         return;
     }
 
+    // Get PlayerState safely
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    // Must have PlayerState and enough resource
+    if (!PS || PS->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->UpdateRemoteHUDResource();
+
     bIsActive = true;
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.75f;
@@ -69,7 +89,7 @@ void UImpunityAbility::ResetSpeed()
 
 void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-    ResetSpeed();
+    
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
@@ -90,6 +110,7 @@ void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
                 }
             }
         }
+        ResetSpeed();
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

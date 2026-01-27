@@ -354,6 +354,7 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 	{
 		Die();
 	}
+
 }
 
 void ARelicRunnersCharacter::TraceForInteractables()

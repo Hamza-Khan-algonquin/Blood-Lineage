@@ -1,6 +1,7 @@
 #include "BundleOfJoy.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
@@ -16,6 +17,7 @@ UBundleOfJoy::UBundleOfJoy()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
+    Cost = 60;
 
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
         TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Attract.NS_BundleOfJoy_Attract")
@@ -35,6 +37,7 @@ UBundleOfJoy::UBundleOfJoy()
         AbilityVFX1 = VFXAsset1.Object;
     }
 }
+
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 
@@ -67,6 +70,25 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
         return; // Exit early
     }
 
+    // Get PlayerState safely
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    // Must have PlayerState and enough resource
+    if (!PS || PS->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->UpdateRemoteHUDResource();
+
+
     AttractionCenter = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 300.f; // Set spawn point 300 units in front of the actor
 
 
@@ -75,8 +97,6 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
     bIsFlying = true;
 
     AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);
-
-    
 
 }
 
@@ -226,6 +246,8 @@ void UBundleOfJoy::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
 {
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
+        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
+
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
@@ -238,14 +260,16 @@ void UBundleOfJoy::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
 
                 if (ActorInfo->IsLocallyControlled())
                 {
-                    if (ARelicRunnersPlayerController* RPC =
-                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    if (RPC)
                     {
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
+
                     }
                 }
             }
         }
+
+
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
