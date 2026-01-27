@@ -39,13 +39,15 @@ public:
 	void InventoryUI();
 	void MinimapUI();
 	void PauseUI();
-	void HideUI(UUserWidget* UIWidget, bool bClosePopups);
+	void HideUI(UUserWidget* UIWidget);
 	void HandleLevelUpVisuals();
 	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
 	void TravelCleanUI();
 
 	UFUNCTION()
 	void UpdateCharacterVisuals();
+	UFUNCTION()
+	void DisableInventoryUIFromTimer();
 	UFUNCTION()
 	void SyncUI();
 	UFUNCTION()
@@ -148,8 +150,11 @@ public:
 	class APlayerPreview* PlayerPreviewInstance;
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)
 	class ALobbyPreview* LobbyPreviewInstance;
+
+	//Timers
 	FTimerHandle UIInitialSyncTimerHandle;
 	FTimerHandle SyncDataTimerHandle;
+	FTimerHandle DisableUITimer;
 
 protected:
 
@@ -179,7 +184,8 @@ protected:
 	void ToggleUI(UUserWidget* UIWidget);
 	void AbilitySystemUI();
 	void LoadingScreenUI();
-	void RemoveOtherUI(FString UI);
+	void ForceGameModeOnly();
+	void RemoveOtherUI(UUserWidget* KeepAlive);
 	void DamageAbility();
 	void DefenceAbility();
 	void UtilityAbility();

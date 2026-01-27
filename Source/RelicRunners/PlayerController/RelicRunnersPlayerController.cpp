@@ -543,111 +543,124 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 {
 	if (!UIWidget) return;
 
-	bool IsVisible = UIWidget->IsVisible();
-	ESlateVisibility Visibility = IsVisible ? ESlateVisibility::Hidden : ESlateVisibility::Visible;
-	bool Enable = !IsVisible;
+	bool IsOpening = !UIWidget->IsVisible();
 
-	UIWidget->SetVisibility(Visibility);
-	UIWidget->SetIsEnabled(Enable);
-	if (Enable)
+	if (IsOpening)
 	{
-		FInputModeGameAndUI InputMode;
-		SetInputMode(InputMode);
+		RemoveOtherUI(UIWidget);
+
+		if (UIWidget != MinimapWidget)
+		{
+			SetInputMode(FInputModeGameAndUI());
+			SetShowMouseCursor(true);
+		}
+		if (UIWidget == PauseMenuWidget)
+		{
+			if (UPauseMenuWidget* Pause = Cast<UPauseMenuWidget>(UIWidget)) Pause->ShowPauseMenu();
+		}
+		else if (UIWidget == Inventory)
+		{
+			Inventory->PlayAnimation(Inventory->InventoryOpen);
+		}
+		UIWidget->SetVisibility(ESlateVisibility::Visible);
+		UIWidget->SetIsEnabled(true);
 	}
 	else
 	{
-		FInputModeGameOnly InputMode;
-		SetInputMode(InputMode);
+		HideUI(UIWidget);
 	}
-	SetShowMouseCursor(Enable);
+}
 
-	if (UIWidget == MinimapWidget)
-	{
-		FInputModeGameOnly InputMode;
-		SetInputMode(InputMode);
-		SetShowMouseCursor(false);
-	}
+void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
+{
+	if (!UIWidget || !UIWidget->IsVisible()) return;
+
+	SetInputMode(FInputModeGameOnly());
+	SetShowMouseCursor(false);
 
 	if (UIWidget == Inventory)
 	{
 		UInventoryItemOptions::CloseAnyOpenPopup();
 		UInventorySortingOptions::CloseAnyOpenPopup();
+
+		Inventory->PlayAnimation(Inventory->InventoryClose);
+
+		float AnimDelay = 0.25f;
+		GetWorld()->GetTimerManager().SetTimer(DisableUITimer, this, &ARelicRunnersPlayerController::DisableInventoryUIFromTimer, AnimDelay, false);
 	}
-
-	if (UIWidget == PauseMenuWidget)
+	else
 	{
-		UPauseMenuWidget* pauseMenu = Cast<UPauseMenuWidget>(UIWidget);
+		UIWidget->SetVisibility(ESlateVisibility::Hidden);
+		UIWidget->SetIsEnabled(false);
+	}
+}
 
-		pauseMenu->ShowPauseMenu();
+void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
+{
+	if (Inventory)
+	{
+		Inventory->SetVisibility(ESlateVisibility::Hidden);
+		Inventory->SetIsEnabled(false);
+
+		GetWorld()->GetTimerManager().ClearTimer(DisableUITimer);
+	}
+}
+
+void ARelicRunnersPlayerController::RemoveOtherUI(UUserWidget* KeepAlive)
+{
+	TArray<UUserWidget*> AllMenus = { Inventory, PauseMenuWidget, AbilitySelection };
+
+	for (UUserWidget* Menu : AllMenus)
+	{
+		if (Menu && Menu != KeepAlive)
+		{
+			HideUI(Menu);
+		}
 	}
 }
 
 void ARelicRunnersPlayerController::InventoryUI()
 {
 	if (!Inventory) return;
-	RemoveOtherUI("Inventory");
-	ToggleUI(Inventory);
 	FSlateApplication::Get().CancelDragDrop();
 	Inventory->ToggleVendorUI(false);
+	ToggleUI(Inventory);
 }
 
 void ARelicRunnersPlayerController::MinimapUI()
 {
 	if (!MinimapWidget) return;
+
 	ToggleUI(MinimapWidget);
 }
 
 void ARelicRunnersPlayerController::PauseUI()
 {
-	//if (!PauseMenu) return;
-	//RemoveOtherUI("Pause");
-	//ToggleUI(PauseMenu);
-
-	if (!PauseMenuWidget) return;
-	RemoveOtherUI("Pause");
 	ToggleUI(PauseMenuWidget);
 }
 
 void ARelicRunnersPlayerController::AbilitySystemUI()
 {
-	if (!AbilitySelection || !RelicPlayerState || RelicPlayerState->GetPlayerAbilityPoints() < 1) return;
-
-	RemoveOtherUI("Ability");
-	ToggleUI(AbilitySelection);
+	if (AbilitySelection && RelicPlayerState && RelicPlayerState->GetPlayerAbilityPoints() >= 1)
+	{
+		ToggleUI(AbilitySelection);
+	}
 }
 
 void ARelicRunnersPlayerController::LoadingScreenUI()
 {
-	FInputModeGameOnly InputMode;
-	SetInputMode(InputMode);
-
-	LoadingScreen->RemoveFromParent();
-	MinimapUI();
-}
-
-void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget, bool bClosePopups = false)
-{
-	if (UIWidget->IsVisible())
+	if (LoadingScreen)
 	{
-		UIWidget->SetVisibility(ESlateVisibility::Hidden);
-		UIWidget->SetIsEnabled(false);
-		SetInputMode(FInputModeGameOnly());
-		SetShowMouseCursor(false);
-
-		if (bClosePopups && UIWidget == Inventory)
-		{
-			UInventoryItemOptions::CloseAnyOpenPopup();
-			UInventorySortingOptions::CloseAnyOpenPopup();
-		}
+		LoadingScreen->RemoveFromParent();
+		ForceGameModeOnly();
+		MinimapUI();
 	}
 }
 
-void ARelicRunnersPlayerController::RemoveOtherUI(FString UI)
+void ARelicRunnersPlayerController::ForceGameModeOnly()
 {
-	if (UI != "Ability") HideUI(AbilitySelection);
-	if (UI != "Inventory") HideUI(Inventory, true);
-	if (UI != "Pause") HideUI(PauseMenu);
-	if (UI != "Pause") HideUI(PauseMenuWidget);
+	SetInputMode(FInputModeGameOnly());
+	SetShowMouseCursor(false);
 }
 
 void ARelicRunnersPlayerController::InitLocalUI()
@@ -735,7 +748,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (LoadingScreen)
 		{
 			LoadingScreen->AddToViewport();
-			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 10.0f, false);
+			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 5.0f, false);
 		}
 	}
 

@@ -20,6 +20,8 @@ UKeybinds::UKeybinds()
     KeyBinds.Add({ TEXT("Utility Ability"),    EKeys::Three });
     KeyBinds.Add({ TEXT("Ultimate Ability"),   EKeys::Four });
     KeyBinds.Add({ TEXT("Health Potion"),      EKeys::H });
+    KeyBinds.Add({ TEXT("Zoom"),               EKeys::MouseWheelAxis });
+    KeyBinds.Add({ TEXT("Drag Map"),           EKeys::LeftMouseButton });
 }
 
 FKey UKeybinds::GetKeyForAction(const FString& ActionName) const

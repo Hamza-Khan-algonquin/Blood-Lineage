@@ -395,7 +395,7 @@ void ARelicRunnersPlayerState::Client_OnAbilityPointsUpdated_Implementation(int 
 
 	if (NewAbilityPoints <= 0 && PC->AbilitySelection)
 	{
-		PC->HideUI(PC->AbilitySelection, false);
+		PC->HideUI(PC->AbilitySelection);
 	}
 }
 
