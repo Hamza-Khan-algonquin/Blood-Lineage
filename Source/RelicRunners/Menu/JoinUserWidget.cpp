@@ -252,11 +252,12 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 
 	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
 
-	const FVector2D Offset(20.0f, 0);
-	ViewportPosition += Offset;
+	const FVector2D Offset(5.0f, 5.0f);
+	const FVector2D Anchor(0.f, 1.f);
 
+	StandardTooltip->SetAnchor(Anchor);
 	StandardTooltip->Setup(TooltipName, TooltipValue, Descriptions);
-	StandardTooltip->SetPositionInViewport(ViewportPosition, false);
+	StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }
 
 void UJoinUserWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)

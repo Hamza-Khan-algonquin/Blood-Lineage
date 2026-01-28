@@ -5,6 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/Border.h"
+#include "Components/CanvasPanelSlot.h"
 
 void UStandardTooltip::NativeConstruct()
 {
@@ -45,8 +46,6 @@ void UStandardTooltip::NativeConstruct()
 		B_Description5->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
-
-
 
 void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArray<FText>& NewDescriptions)
 {
@@ -134,6 +133,11 @@ void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArra
 			B_Description5->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}
+}
+
+void UStandardTooltip::SetAnchor(FVector2D anchor)
+{
+	this->SetAlignmentInViewport(anchor);
 }
 
 void UStandardTooltip::SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor)

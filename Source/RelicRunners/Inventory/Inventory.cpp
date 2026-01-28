@@ -47,6 +47,7 @@
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include "InventoryDragOperation.h"
 #include "InventorySlotsEntry.h"
+#include "RelicRunners/Menu/StandardTooltip.h"
 
 void UInventory::NativeConstruct()
 {
@@ -503,6 +504,148 @@ FReply UInventory::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointe
     UInventoryItemOptions::CloseAnyOpenPopup();
     UInventorySortingOptions::CloseAnyOpenPopup();
     return FReply::Unhandled(); 
+}
+
+FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+
+    if (!IsVisible()) return FReply::Handled();
+
+    FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
+
+    TArray<UBorder*> Borders = { B_Health, B_Defence, B_Strength, B_Agility, B_Intelligence};
+
+    UBorder* HoveredBorder = nullptr;
+    for (UBorder* Border : Borders)
+    {
+        if (!Border) continue;
+
+        FGeometry BorderGeom = Border->GetCachedGeometry();
+        if (BorderGeom.IsUnderLocation(CursorPos))
+        {
+            HoveredBorder = Border;
+            break;
+        }
+    }
+
+    if (HoveredBorder != CurrentHoveredBorder)
+    {
+
+        if (StandardTooltip && CurrentHoveredBorder)
+        {
+            StandardTooltip->RemoveFromParent();
+            StandardTooltip = nullptr;
+        }
+
+        CurrentHoveredBorder = HoveredBorder;
+    }
+
+    if (CurrentHoveredBorder)
+    {
+        ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
+    }
+
+    return FReply::Handled();
+}
+
+void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
+{
+    if (!StandardTooltipClass) return;
+
+    if (!HoveredBorder) return;
+
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC) return;
+
+    if (!StandardTooltip)
+    {
+        StandardTooltip = CreateWidget<UStandardTooltip>(PC, StandardTooltipClass);
+        StandardTooltip->AddToViewport();
+    }
+
+    FEquippedStatsSummary Stats = InventoryComponent->GetCachedEquippedStats();
+
+    FText TooltipName = FText::GetEmpty();
+    FText TooltipValue = FText::GetEmpty();
+    TArray<FText> Descriptions;
+
+    if (HoveredBorder == B_Health)
+    {
+        TooltipName = FText::FromString("Health");
+        TooltipValue = FText::AsNumber(Stats.TotalHealth);
+        StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
+
+        Descriptions.Add(FText::FromString("Maximum health pool."));
+    }
+    else if (HoveredBorder == B_Defence)
+    {
+        TooltipName = FText::FromString("Defence");
+        TooltipValue = FText::AsNumber(Stats.TotalArmor);
+        StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
+
+        float Percentage = ItemStats::GetDefencePerc(Stats.TotalArmor);
+        FText FormatString = FText::FromString("Damage taken reduced by {0}%.");
+        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+        Descriptions.Add(FormattedDescription);
+    }
+    else if (HoveredBorder == B_Strength)
+    {
+        TooltipName = FText::FromString("Strength");
+        TooltipValue = FText::AsNumber(Stats.TotalStrength);
+        StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
+
+        float Percentage = ItemStats::GetStrengthPerc(Stats.TotalStrength);
+        FText FormatString = FText::FromString("Attack and ability damage +{0}%.");
+        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+        Descriptions.Add(FormattedDescription);
+    }
+    else if (HoveredBorder == B_Agility)
+    {
+        TooltipName = FText::FromString("Agility");
+        TooltipValue = FText::AsNumber(Stats.TotalDexterity);
+        StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
+
+        float Percentage = ItemStats::GetCritPerc(Stats.TotalDexterity);
+        FText FormatString = FText::FromString("Critical strike chance increased by {0}%.");
+        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+        Descriptions.Add(FormattedDescription);
+
+        float PercentageDamage = ItemStats::GetCritDmgPerc(Stats.TotalDexterity);
+        FormatString = FText::FromString("Critical strikes deal {0}x damage.");
+        FormattedDescription = FText::Format(FormatString, FText::AsNumber(PercentageDamage));
+        Descriptions.Add(FormattedDescription);
+
+        Percentage = ItemStats::GetSpeedPerc(Stats.TotalDexterity);
+        FormatString = FText::FromString("Movement speed increased by {0}%.");
+        FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+        Descriptions.Add(FormattedDescription);
+    }
+    else if (HoveredBorder == B_Intelligence)
+    {
+        TooltipName = FText::FromString("Intelligence");
+        TooltipValue = FText::AsNumber(Stats.TotalIntelligence);
+        StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
+
+        int Num = ItemStats::GetManaPoolIncrease(Stats.TotalIntelligence);
+        FText FormatString = FText::FromString("Maximum mana pool increased by {0}.");
+        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
+        Descriptions.Add(FormattedDescription);
+
+        float Percentage = ItemStats::GetAbilityCostPerc(Stats.TotalIntelligence);
+        FormatString = FText::FromString("Reduces all ability costs by {0}%.");
+        FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
+        Descriptions.Add(FormattedDescription);
+    }
+
+    FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
+
+    const FVector2D Offset(-5.0f, 5.0f);
+    const FVector2D Anchor(1.f, 0.f);
+
+    StandardTooltip->SetAnchor(Anchor);
+    StandardTooltip->Setup(TooltipName, TooltipValue, Descriptions);
+    StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }
 
 void UInventory::HelmetSlotClicked()

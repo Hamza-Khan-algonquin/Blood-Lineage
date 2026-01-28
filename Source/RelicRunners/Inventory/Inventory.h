@@ -123,6 +123,10 @@ public:
 	TSubclassOf<class UInventoryItemOptions> InventoryItemOptionsClass;
 	UPROPERTY(EditAnywhere, Category = "Popup")
 	TSubclassOf<class UInventorySortingOptions> InventorySortingOptionsClass;
+	UPROPERTY()
+	class UStandardTooltip* StandardTooltip;
+	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
+	TSubclassOf<class UStandardTooltip> StandardTooltipClass;
 	UPROPERTY(EditAnywhere, Category = "Popup")
 	class UInventorySortingOptions* InventorySortingOptions = nullptr;
 	UPROPERTY()
@@ -140,7 +144,8 @@ public:
 	float ForgeChance1;
 	float ForgeChance2;
 	float ForgeChance3;
-	 
+	class UBorder* CurrentHoveredBorder;
+
 	//Functions
 	void ToggleVendorUI(bool value);
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, AVendor* Vendor);
@@ -164,6 +169,8 @@ public:
 	void ClearForgeItemLeft();
 	void ClearForgeItemRight();
 	void ClearForgeItemResult();
+	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+
 	UFUNCTION()
 	void RefreshInventoryUI();
 	UFUNCTION()
@@ -204,6 +211,20 @@ public:
 	class UTileView* InventorySlots;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UVerticalBox* InventorySide;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Health = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Defence = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Strength = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Agility = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Intelligence = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTileView* VendorSlots;
 
@@ -397,7 +418,7 @@ public:
 	class UImage* I_Mainhand;
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* EquippedCanvas;
-	
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
@@ -405,5 +426,5 @@ protected:
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
-	
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 };
