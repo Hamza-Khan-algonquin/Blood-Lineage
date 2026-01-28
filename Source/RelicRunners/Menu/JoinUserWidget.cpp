@@ -75,6 +75,9 @@ void UJoinUserWidget::NativeConstruct()
 	if (B_Cerberus) B_Cerberus->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Cerberus);
 
 	SetSelectedDifficulty("Boar");
+
+	PlayAnimation(LeftPanelOpen);
+	PlayAnimation(RightPanelOpen);
 }
 
 FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
