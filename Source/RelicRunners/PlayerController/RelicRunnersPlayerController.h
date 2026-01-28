@@ -49,6 +49,8 @@ public:
 	void SyncUI();
 	UFUNCTION()
 	void TryBindUI();
+	UFUNCTION(Server, Reliable)
+	void Server_SetDifficulty(FName NewDifficulty);
 	UFUNCTION()
 	void OnRep_LobbyPreview();
 	UFUNCTION()
@@ -71,6 +73,10 @@ public:
 	void Client_LeaveSession();
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateVendorUI(class AVendor* Vendor);
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateCountdown(int NewTime);
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateDifficulty(FName NewDifficulty);
 	UFUNCTION()
 	void UpdatePreviewWithEquippedItems();
 	UFUNCTION()
@@ -160,6 +166,7 @@ protected:
 	void UltimateAbility();
 	void HealthPotion();
 	void BasicAttack();
+	void CleanupWidget(UUserWidget* Widget);
 
 	//Virtual Functions
 	virtual void BeginPlay() override;

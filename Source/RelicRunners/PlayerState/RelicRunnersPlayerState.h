@@ -23,6 +23,8 @@
 #include "AttributeSet.h"
 #include "RelicRunnersPlayerState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHostStatusChanged, bool, NewIsHost);
+
 enum class EInventorySorting : uint8;
 
 UCLASS()
@@ -77,7 +79,8 @@ public:
 	UAbilitySystemComponent* AbilitySystem;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	class UItemMeshData* ItemMeshData;
-
+	UPROPERTY(ReplicatedUsing = OnRep_IsHost, BlueprintReadOnly, Category = "Lobby")
+	bool IsHost = false;
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Stats")
 	bool HasReceivedStarterItems = false;
 
@@ -96,6 +99,9 @@ public:
 	void OnRep_Ability();
 	UFUNCTION()
 	void OnRep_PlayerGold();
+	UFUNCTION()
+	void OnRep_IsHost();
+	void SetIsHost(bool NewIsHost);
 	UFUNCTION()
 	void OnRep_PlayerLevel(int OldLevel);
 	void ModifyHealth(float Value);
@@ -173,6 +179,7 @@ public:
 	int GetPlayerXP() { return PlayerXP; }
 	int GetPlayerXPToLevel() { return PlayerXPToLevel; }
 	int GetPlayerAbilityPoints() { return PlayerAbilityPoints; }
+	bool IsSessionHost() const { return IsHost; }
 
     //Setters
     void SetSelectedClass(FName NewClass);
@@ -192,6 +199,7 @@ public:
 	void ResetHealth() { PlayerHealth = PlayerMaxHealth; }
 
     //Delegates
+	FOnHostStatusChanged OnHostStatusChanged;
     DECLARE_MULTICAST_DELEGATE_OneParam(FOnSelectedClassChanged, FName);
     FOnSelectedClassChanged OnSelectedClassChanged;
 

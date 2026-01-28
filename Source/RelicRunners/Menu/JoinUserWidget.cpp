@@ -24,12 +24,17 @@
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 #include "StandardTooltip.h"
 #include <RelicRunners/Item/ItemStats.h>
+#include "LobbyGameMode.h"
+#include "RelicRunners/PlayerPreview/LobbyPreview.h"
+#include <RelicRunners/PlayerHUD/LobbyHUDWorld.h>
+#include "Components/WidgetComponent.h"
 
 void UJoinUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	if (StartButton) StartButton->OnClicked.AddDynamic(this, &UJoinUserWidget::StartGameButtonClicked);
+	if (LeaveGameButton) LeaveGameButton->OnClicked.AddDynamic(this, &UJoinUserWidget::LeaveGameButtonClicked);
 	if (FindGames) FindGames->OnClicked.AddDynamic(this, &UJoinUserWidget::FindGamesButtonClicked);
 	if (SessionTileView) SessionTileView->OnEntryWidgetGenerated().AddUObject(this, &UJoinUserWidget::HandleEntryGenerated);
 	if (BackButton) BackButton->OnClicked.AddDynamic(this, &UJoinUserWidget::BackButtonClicked);
@@ -56,11 +61,12 @@ void UJoinUserWidget::NativeConstruct()
 		B_CurrentSection->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 
-	DifficultyMap.Add("Boar", { BoarBorder, B_Boar, B_BoarSection });
-	DifficultyMap.Add("Bull", { BullBorder, B_Bull, B_BullSection });
-	DifficultyMap.Add("Lion", { LionBorder, B_Lion, B_LionSection });
-	DifficultyMap.Add("Hydra", { HydraBorder, B_Hydra, B_HydraSection });
-	DifficultyMap.Add("Cerberus", { CerberusBorder, B_Cerberus, B_CerberusSection });
+	DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
+	DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
+	DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 180, 150, 2});
+	DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
+	DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
+	UpdateDifficultyNumbers();
 
 	if (B_Boar)     B_Boar->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Boar);
 	if (B_Bull)     B_Bull->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Bull);
@@ -103,14 +109,37 @@ FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPo
 		}
 
 		CurrentHoveredBorder = HoveredBorder;
+	}
 
-		if (CurrentHoveredBorder)
-		{
-			ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
-		}
+	if (CurrentHoveredBorder)
+	{
+		ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
 	}
 
 	return FReply::Handled();
+}
+
+void UJoinUserWidget::UpdateDifficultyNumbers()
+{
+	TB_BoarHealth->SetText(FText::AsNumber(DifficultyMap["Boar"].HealthPercent));
+	TB_BoarDamage->SetText(FText::AsNumber(DifficultyMap["Boar"].DamagePercent));
+	TB_BoarLuck->SetText(FText::AsNumber(DifficultyMap["Boar"].LuckAmount));
+
+	TB_BullHealth->SetText(FText::AsNumber(DifficultyMap["Bull"].HealthPercent));
+	TB_BullDamage->SetText(FText::AsNumber(DifficultyMap["Bull"].DamagePercent));
+	TB_BullLuck->SetText(FText::AsNumber(DifficultyMap["Bull"].LuckAmount));
+
+	TB_LionHealth->SetText(FText::AsNumber(DifficultyMap["Lion"].HealthPercent));
+	TB_LionDamage->SetText(FText::AsNumber(DifficultyMap["Lion"].DamagePercent));
+	TB_LionLuck->SetText(FText::AsNumber(DifficultyMap["Lion"].LuckAmount));
+
+	TB_HydraHealth->SetText(FText::AsNumber(DifficultyMap["Hydra"].HealthPercent));
+	TB_HydraDamage->SetText(FText::AsNumber(DifficultyMap["Hydra"].DamagePercent));
+	TB_HydraLuck->SetText(FText::AsNumber(DifficultyMap["Hydra"].LuckAmount));
+
+	TB_CerberusHealth->SetText(FText::AsNumber(DifficultyMap["Cerberus"].HealthPercent));
+	TB_CerberusDamage->SetText(FText::AsNumber(DifficultyMap["Cerberus"].DamagePercent));
+	TB_CerberusLuck->SetText(FText::AsNumber(DifficultyMap["Cerberus"].LuckAmount));
 }
 
 void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
@@ -264,11 +293,14 @@ void UJoinUserWidget::SetImageColor(UImage* Image, const FLinearColor& Color)
 	Image->SetColorAndOpacity(Color);
 }
 
-void UJoinUserWidget::SetBorderBrushColor(UBorder* Border, const FLinearColor& Color)
+void UJoinUserWidget::SetBorderOutlineColor(UBorder* Border, const FLinearColor& InsideColor, const FLinearColor& OutlineColor)
 {
 	if (Border)
 	{
-		Border->SetBrushColor(Color);
+		Border->SetBrushColor(InsideColor);
+		FSlateBrush Brush = Border->Background;
+		Brush.OutlineSettings.Color = FSlateColor(OutlineColor);
+		Border->SetBrush(Brush);
 	}
 }
 
@@ -324,8 +356,15 @@ void UJoinUserWidget::OnDifficultyClicked_Cerberus()
 
 void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 {
-	CurrentDifficulty = DifficultyKey;
+	APlayerController* PC = GetOwningPlayer();
+	if (PC)
+	{
+		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+		RPC->Server_SetDifficulty(DifficultyKey);
+	}
 
+	const FLinearColor Silver(0.624f, 0.624f, 0.624f, 1.f);
+	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
 	const FLinearColor Gold(1.f, 0.5f, 0.f, 1.f);
 	const FLinearColor Black(0.f, 0.f, 0.f, 1.f);
 	const FLinearColor SectionBrush_Unselected(0.292f, 0.23f, 0.145f, 1.f);
@@ -337,20 +376,35 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 	for (auto& Pair : DifficultyMap)
 	{
 		const FDifficultyWidgets& Widgets = Pair.Value;
-		if (!Widgets.Button || !Widgets.OuterBorder || !Widgets.SectionBorder) continue;
+		if (!Widgets.Icon || !Widgets.Button || !Widgets.OuterBorder || !Widgets.SectionBorder) continue;
 
-		SetBorderColor(Widgets.SectionBorder, SectionOutline_Unselected);
-		SetBorderBrushColor(Widgets.SectionBorder, SectionBrush_Unselected);
+		Widgets.Icon->SetColorAndOpacity(Silver);
+		SetBorderOutlineColor(Widgets.SectionBorder, SectionBrush_Unselected, SectionOutline_Unselected);
 		SetButtonTint(Widgets.Button, ButtonTint_Unselected);
 	}
-
+	//Set
 	if (FDifficultyWidgets* Selected = DifficultyMap.Find(DifficultyKey))
 	{
-		SetBorderColor(Selected->SectionBorder, Gold);
+		Selected->Icon->SetColorAndOpacity(DarkGold);
+		SetBorderOutlineColor(Selected->SectionBorder, Gold, DarkGold);
 		SetButtonTint(Selected->Button, Gold);
 	}
 }
 
+void UJoinUserWidget::UpdateClientDifficultyUI()
+{
+	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GameInstance) return;
+
+	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
+	FString IconName = GameInstance->CurrentDifficulty.ToString() + "Difficulty";
+	I_CurrentDifficulty->SetBrushFromTexture(ItemStats::LoadIcon(IconName));
+	I_CurrentDifficulty->SetColorAndOpacity(DarkGold);
+	TB_CurrentDifficulty->SetText(FText::FromName(GameInstance->CurrentDifficulty));
+	TB_CurrentEnemyDamage->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].HealthPercent));
+	TB_CurrentEnemyHealth->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].DamagePercent));
+	TB_CurrentLuck->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].LuckAmount));
+}
 
 void UJoinUserWidget::OnAresClicked() { SetSelectedClass("Ares"); }
 void UJoinUserWidget::OnArtemisClicked() { SetSelectedClass("Artemis"); }
@@ -486,6 +540,14 @@ void UJoinUserWidget::FindGamesButtonClicked()
 	SearchForLanGames();
 }
 
+void UJoinUserWidget::LeaveGameButtonClicked()
+{
+	URelicRunnersGameInstance* GameInstance = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GameInstance) return;
+
+	GameInstance->HostGame();
+}
+
 void UJoinUserWidget::JoinGameButtonClicked()
 {
 	if (LastSelectedItem && SessionTileView)
@@ -504,19 +566,18 @@ void UJoinUserWidget::StartGameButtonClicked()
 	APlayerController* PC = GetOwningPlayer();
 	if (!PC) return;
 
-	if (PC->HasAuthority())
+	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>()) 
 	{
-		if (URelicRunnersGameInstance* GI = PC->GetGameInstance<URelicRunnersGameInstance>())
-		{
-			GI->StartSessionGame();
-		}
+		GM->StartCountdown();
 	}
-	else
-	{
-		if (ARelicRunnersPlayerController* MyPC = Cast<ARelicRunnersPlayerController>(PC))
-		{
-			MyPC->Server_RequestStartGame();
-		}
+}
+
+void UJoinUserWidget::UpdateCountdownUI(int RemainingTime) {
+	if (!TB_Countdown) return;
+
+	if (RemainingTime > 0) {
+		TB_Countdown->SetText(FText::AsNumber(RemainingTime));
+		PlayAnimation(Timer);
 	}
 }
 
@@ -572,8 +633,8 @@ void UJoinUserWidget::ShowJoinButton(bool IsEnabled)
 		else
 		{
 			JoinButton->SetIsEnabled(false);
-			JoinButton->SetVisibility(ESlateVisibility::Hidden);
-			JoinBorder->SetVisibility(ESlateVisibility::Hidden);
+			JoinButton->SetVisibility(ESlateVisibility::Collapsed);
+			JoinBorder->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 }
@@ -597,6 +658,7 @@ void UJoinUserWidget::OnFindSessionsComplete(FString Str, int PlayerCount)
 		{
 			Entry->OnSessionClicked.BindUObject(this, &UJoinUserWidget::HandleSessionClicked);
 		}
+
 	}
 
 	EnableRefresh();
@@ -615,6 +677,6 @@ void UJoinUserWidget::EnableRefresh()
 
 	if (RefreshProgress)
 	{
-		RefreshProgress->SetVisibility(ESlateVisibility::Hidden);
+		RefreshProgress->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }

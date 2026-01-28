@@ -16,17 +16,6 @@ void AAphroditeCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-	//// set cooldown durations
- //   DamageCooldown = 5.0f;
- //   DefenceCooldown = 5.0f;
- //   UtilityCooldown = 5.0f;
- //   UltimateCooldown = 10.0f;
-
- //   //Starting Weapon
- //   UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, "Staff", "Common", ItemMeshData), InventoryComponent);
- //   InventoryComponent->AddItem(Item);
- //   Server_EquipItemByID(Item->ItemData.UniqueID);
-
  //   //Starting Stats
  //   if (ClassInfo)
  //   {
@@ -117,18 +106,6 @@ void AAphroditeCharacter::GiveUltimateAbilities()
 		// start ability cooldown
         //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
     }
-}
-
-void AAphroditeCharacter::OnLevelUp()
-{
-    //UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Staff");
-    //Item->ItemData.Level++;
-    //Item->ItemData.Dexterity += FMath::RandRange(0, 1);
-    //Item->ItemData.Strength += FMath::RandRange(0, 1);
-    //Item->ItemData.Intelligence += FMath::RandRange(2, 5);
-
-    //Super::OnLevelUp();
-
 }
 
 

@@ -14,17 +14,6 @@ void ANemesisCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    //// set cooldown durations
-    //DamageCooldown = 5.0f;
-    //DefenceCooldown = 5.0f;
-    //UtilityCooldown = 5.0f;
-    //UltimateCooldown = 10.0f;
-
-    ////Starting Weapon
-    //UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, "Sword", "Common", ItemMeshData), InventoryComponent);
-    //InventoryComponent->AddItem(Item);
-    //Server_EquipItemByID(Item->ItemData.UniqueID);
-
     ////Starting Stats
     //if (ClassInfo)
     //{
@@ -137,15 +126,4 @@ void ANemesisCharacter::GiveUltimateAbilities()
         // Start ability cooldown
         //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
     }
-}
-
-void ANemesisCharacter::OnLevelUp()
-{
-    //UItemObject*& Item = InventoryComponent->GetEquippedItemReference("Sword");
-    //Item->ItemData.Level++;
-    //Item->ItemData.Strength += FMath::RandRange(1, 5);
-    //Item->ItemData.Intelligence += FMath::RandRange(0, 1);
-    //Item->ItemData.Dexterity += FMath::RandRange(1, 3);
-
-    //Super::OnLevelUp();
 }

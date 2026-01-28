@@ -182,15 +182,14 @@ void ASpawnPoint::SpawnEnemies()
 			{
 				//FActorSpawnParameters SpawnParams;
 				//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-
-
 				//APawn* newEnemy = static_cast<APawn*>(GetWorld()->SpawnActor<APawn>(PickableCards[pickedEnemyIndex]->EnemyClass, GetRandomPosition(), FRotator::ZeroRotator, SpawnParams));
 				
 				APawn* newEnemy = Cast<APawn>(pool->GetActor(PickableCards[pickedEnemyIndex]->EnemyClass));
+				if (!newEnemy) continue;
 
 				FVector origin;
 				FVector bounds;
+				
 				newEnemy->GetActorBounds(true, origin, bounds);
 				 
 				//newEnemy->SetActorLocation(GetRandomPosition() + FVector(0,0, bounds.Z * 2));

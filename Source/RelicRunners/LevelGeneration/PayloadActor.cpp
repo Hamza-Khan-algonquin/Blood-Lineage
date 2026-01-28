@@ -12,9 +12,9 @@
 // Sets default values
 APayloadActor::APayloadActor() :
 	DeliverySpline(nullptr),
+	Distance(0),
 	Acceleration(0),
 	Deceleration(0),
-	Distance(0),
 	MaxSpeed(0),
 	TargetSpeed(0),
 	CurrentSpeed(0),

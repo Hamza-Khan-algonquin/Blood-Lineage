@@ -12,13 +12,13 @@ struct FSaveData
     GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite)
-	FString SavefileName;
+	FString SavefileName = "";
 
 	UPROPERTY(BlueprintReadWrite)
-	float TimePlayed;
+	float TimePlayed = 0.0f;
 
 	UPROPERTY(BlueprintReadWrite)
-	int NumUpgrades;
+	int NumUpgrades = 0;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FGuid UniqueID = FGuid::NewGuid();
@@ -56,7 +56,7 @@ public:
 	struct FSaveData SaveData;
 
 	UPROPERTY(BlueprintReadWrite)
-	class UModeSelectionWidget* ParentWidget;
+	class UModeSelectionWidget* ParentWidget = nullptr;
 
 	UPROPERTY()
 	bool IsEmptySlot = true;
