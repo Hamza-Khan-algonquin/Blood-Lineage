@@ -12,6 +12,7 @@ class UCapsuleComponent;
 class UEnemyLODSkeletalMeshComponent;
 class UEnemyLODStaticMeshComponent;
 class UEnemyLODComponent;
+class UEnemyBoidMovementComponent;
 
 UCLASS()
 class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
@@ -32,17 +33,20 @@ public:
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
 	EEnemyType TypeOfEnemy = EEnemyType::LIGHT;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<UEnemyLODSkeletalMeshComponent> SkeletalMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<UEnemyLODStaticMeshComponent> StaticMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<UEnemyLODComponent> LODComponent;
+
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<UEnemyBoidMovementComponent> MovementComponent;
 
 protected:
 	//interface implementation variable

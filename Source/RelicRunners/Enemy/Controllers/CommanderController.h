@@ -40,6 +40,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AEnemyPawn> PawnEnemyToSpawn;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	APawn* TargetPlayer;
+
 protected:
 	
 public: 
@@ -49,6 +52,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void AddPawnEnemy(AEnemyPawn* enemy);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<AEnemyPawn*> GetPawnEnemies();
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void SpawnPawnEnemy();
