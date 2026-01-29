@@ -40,15 +40,15 @@ protected:
 	TObjectPtr<ACommanderController> Commander;
 
 public:
-	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+	//virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 	//calculate the direction the boid should be move in and update the velocity
 	void CalculateDirection();
 	//clamp the direction to move onto the navmesh
-	bool ClampToNavMesh(const FVector& DesiredMovement, FVector& out);
+	//bool ClampToNavMesh(const FVector& DesiredMovement, FVector& out);
 	//move in a given direction
-	void MoveInDirection(const FVector& Direction, float DeltaTime);
+	//void MoveInDirection(const FVector& Direction, float DeltaTime);
 	//move the enemy onto the ground
-	void GroundSnap();
+	//void GroundSnap();
 	//check to see if another boid is in range and feild of view
 	bool CanSeeOtherBoid(APawn* otherBoid, FVector& directionToBoid, float& distanceToBoid);
 	const FVector GetVelocity();

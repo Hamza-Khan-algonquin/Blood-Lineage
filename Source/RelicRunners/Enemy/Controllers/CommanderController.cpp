@@ -68,7 +68,7 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
-TArray<TObjectPtr<AEnemyPawn>> ACommanderController::GetPawnEnemies()
+TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
 {
 	return ControlledEnemies;
 }
