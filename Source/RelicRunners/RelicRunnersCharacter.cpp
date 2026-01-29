@@ -122,21 +122,17 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	MainhandItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MainhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	MainhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	MainhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("MainhandSocket"));
-	MainhandItemMesh->SetIsReplicated(true);
 
 	OffhandItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("OffhandMesh"));
 	OffhandItemMesh->SetupAttachment(GetMesh(), TEXT("OffhandSocket"));
 	OffhandItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	OffhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	OffhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	OffhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("OffhandSocket"));
-	OffhandItemMesh->SetIsReplicated(true);
 
 	//UI
 	PlayerHUDWorld = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidgetComponent"));
 	PlayerHUDWorld->SetupAttachment(GetMesh());
-	PlayerHUDWorld->SetWorldScale3D(FVector(0.1, 0.1, 0.1));
+	PlayerHUDWorld->SetWorldScale3D(FVector(0.15, 0.15, 0.15));
 	PlayerHUDWorld->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
 	PlayerHUDWorld->SetWidgetSpace(EWidgetSpace::World);
 	PlayerHUDWorld->SetDrawAtDesiredSize(true);
@@ -155,6 +151,9 @@ void ARelicRunnersCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	InitializeWorldHUD();
+
+	MainhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("MainhandSocket"));
+	OffhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("OffhandSocket"));
 
 	//Server
 	if (HasAuthority())
@@ -177,8 +176,10 @@ void ARelicRunnersCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	//Server
 	RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+
+	const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
+	SyncEquippedVisuals(EquippedEntries);
 }
 
 float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
