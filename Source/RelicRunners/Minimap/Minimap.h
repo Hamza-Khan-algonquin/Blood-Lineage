@@ -14,4 +14,8 @@ class RELICRUNNERS_API UMinimap : public UUserWidget
 {
 	GENERATED_BODY()
 	
+	void SetMinimapImage(UTextureRenderTarget2D* RenderTarget);
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* I_Minimap;
 };
