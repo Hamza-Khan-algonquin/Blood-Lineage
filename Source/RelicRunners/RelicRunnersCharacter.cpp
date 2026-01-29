@@ -152,9 +152,6 @@ void ARelicRunnersCharacter::BeginPlay()
 
 	InitializeWorldHUD();
 
-	MainhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("MainhandSocket"));
-	OffhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("OffhandSocket"));
-
 	//Server
 	if (HasAuthority())
 	{

@@ -780,7 +780,8 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 		return;
 	}
 
-	SetViewTargetWithBlend(Cameras[0], 0.0f);
+	SetViewTargetWithBlend(Cameras[1], 0.0f);
+	SetViewTargetWithBlend(Cameras[0], 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
 
 	if (!LobbyWidget && LobbyWidgetClass)
 	{

@@ -780,8 +780,6 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 		return;
 	}
 
-	SetViewTargetWithBlend(Cameras[0], 0.0f);
-
 	if (!LobbyWidget && LobbyWidgetClass)
 	{
 		LobbyWidget = CreateWidget<UJoinUserWidget>(this, LobbyWidgetClass);
@@ -792,6 +790,9 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 			bShowMouseCursor = true;
 			SetInputMode(FInputModeUIOnly());
 		}
+
+		SetViewTargetWithBlend(Cameras[1], 0.0f);
+		SetViewTargetWithBlend(Cameras[0], 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
 	}
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
