@@ -122,12 +122,16 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	MainhandItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MainhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	MainhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+	MainhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("MainhandSocket"));
+	MainhandItemMesh->SetIsReplicated(true);
 
 	OffhandItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("OffhandMesh"));
 	OffhandItemMesh->SetupAttachment(GetMesh(), TEXT("OffhandSocket"));
 	OffhandItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	OffhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	OffhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+	OffhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("OffhandSocket"));
+	OffhandItemMesh->SetIsReplicated(true);
 
 	//UI
 	PlayerHUDWorld = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidgetComponent"));
@@ -150,7 +154,6 @@ void ARelicRunnersCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializeWeaponSockets();
 	InitializeWorldHUD();
 
 	//Server
@@ -167,13 +170,7 @@ void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedArmsMesh);
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedUpperMesh);
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedLowerMesh);
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedHelmetMesh);
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedNecklaceMesh);
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedMainhandMesh);
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedOffhandMesh);
+	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedVisuals);
 }
 
 void ARelicRunnersCharacter::PossessedBy(AController* NewController)
@@ -211,107 +208,12 @@ void ARelicRunnersCharacter::Server_UnequipItemByID_Implementation(FGuid ID)
 	if (RelicPlayerState) RelicPlayerState->Server_UnequipItemByID(ID);
 }
 
-void ARelicRunnersCharacter::Server_SetReplicatedMeshByItemType_Implementation(UObject* MeshAsset, const FString& ItemType)
-{
-	SetReplicatedMeshByItemType(MeshAsset, ItemType);
-}
-
 void ARelicRunnersCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
 	//Client
 	RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
-}
-
-void ARelicRunnersCharacter::OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType)
-{
-	SetReplicatedMeshByItemType(MeshAsset, ItemType);
-}
-
-void ARelicRunnersCharacter::OnRep_UpperMesh()
-{
-	if (UpperMesh) UpperMesh->SetSkeletalMesh(ReplicatedUpperMesh);
-}
-
-void ARelicRunnersCharacter::OnRep_LowerMesh()
-{
-	if (LowerMesh) LowerMesh->SetSkeletalMesh(ReplicatedLowerMesh);
-}
-
-void ARelicRunnersCharacter::OnRep_HelmetMesh()
-{
-	if (HelmetMesh) HelmetMesh->SetSkeletalMesh(ReplicatedHelmetMesh);
-}
-
-void ARelicRunnersCharacter::OnRep_ArmsMesh()
-{
-	if (ArmsMesh) ArmsMesh->SetSkeletalMesh(ReplicatedArmsMesh);
-}
-
-void ARelicRunnersCharacter::OnRep_NecklaceMesh()
-{
-	if (NecklaceMesh) NecklaceMesh->SetSkeletalMesh(ReplicatedNecklaceMesh);
-}
-
-void ARelicRunnersCharacter::OnRep_MainhandMesh()
-{
-	if (MainhandItemMesh) MainhandItemMesh->SetStaticMesh(ReplicatedMainhandMesh);
-}
-
-void ARelicRunnersCharacter::OnRep_OffhandMesh()
-{
-	if (OffhandItemMesh) OffhandItemMesh->SetStaticMesh(ReplicatedOffhandMesh);
-}
-
-void ARelicRunnersCharacter::SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-
-	if (ItemType == "Upper")
-	{
-		ReplicatedUpperMesh = Cast<USkeletalMesh>(MeshAsset);
-		OnRep_UpperMesh();
-	}
-	else if (ItemType == "Lower")
-	{
-		ReplicatedLowerMesh = Cast<USkeletalMesh>(MeshAsset);
-		OnRep_LowerMesh();
-	}
-	else if (ItemType == "Helmet")
-	{
-		ReplicatedHelmetMesh = Cast<USkeletalMesh>(MeshAsset);
-		OnRep_HelmetMesh();
-	}
-	else if (ItemType == "Arms")
-	{
-		ReplicatedArmsMesh = Cast<USkeletalMesh>(MeshAsset);
-		OnRep_ArmsMesh();
-	}
-	else if (ItemType == "Necklace")
-	{
-		ReplicatedNecklaceMesh = Cast<USkeletalMesh>(MeshAsset);
-		OnRep_NecklaceMesh();
-	}
-	else if (ItemType == "Greatsword" || ItemType == "Bow" || ItemType == "Sword" || ItemType == "Staff")
-	{
-		ReplicatedMainhandMesh = Cast<UStaticMesh>(MeshAsset);
-		OnRep_MainhandMesh();
-	}
-	else if (ItemType == "Offhand")
-	{
-		ReplicatedOffhandMesh = Cast<UStaticMesh>(MeshAsset);
-		OnRep_OffhandMesh();
-	}
-}
-
-void ARelicRunnersCharacter::InitializeWeaponSockets()
-{
-	MainhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("MainhandSocket"));
-	OffhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("OffhandSocket"));
 }
 
 void ARelicRunnersCharacter::InitializeWorldHUD()
@@ -341,6 +243,20 @@ void ARelicRunnersCharacter::RegisterDirector()
 				UE_LOG(LogTemp, Error, TEXT("Character: Missing Director in World!"));
 			}
 		});
+}
+
+void ARelicRunnersCharacter::OnRep_VisualsChanged()
+{
+	//Update Static Meshes
+	if (MainhandItemMesh) MainhandItemMesh->SetStaticMesh(ReplicatedVisuals.Mainhand);
+	if (OffhandItemMesh) OffhandItemMesh->SetStaticMesh(ReplicatedVisuals.Offhand);
+
+	//Update Skeletal Meshes
+	if (UpperMesh) UpperMesh->SetSkeletalMesh(ReplicatedVisuals.Upper);
+	if (LowerMesh) LowerMesh->SetSkeletalMesh(ReplicatedVisuals.Lower);
+	if (HelmetMesh) HelmetMesh->SetSkeletalMesh(ReplicatedVisuals.Helmet);
+	if (ArmsMesh) ArmsMesh->SetSkeletalMesh(ReplicatedVisuals.Arms);
+	if (NecklaceMesh) NecklaceMesh->SetSkeletalMesh(ReplicatedVisuals.Necklace);
 }
 
 void ARelicRunnersCharacter::Tick(float DeltaTime)
@@ -753,26 +669,6 @@ void ARelicRunnersCharacter::SyncEquippedVisuals(const TArray<FEquippedItemEntry
 	}
 }
 
-void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType)
-{
-	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff" || ItemType == "Offhand")
-	{
-		if (UStaticMeshComponent* TargetMesh = GetStaticMeshComponentByItemType(ItemType))
-		{
-			TargetMesh->SetStaticMesh(Cast<UStaticMesh>(MeshAsset));
-			OnRep_MeshUpdate(MeshAsset, ItemType);
-		}
-	}
-	else
-	{
-		if (USkeletalMeshComponent* TargetMesh = GetSkeletalMeshComponentByItemType(ItemType))
-		{
-			TargetMesh->SetSkeletalMesh(Cast<USkeletalMesh>(MeshAsset));
-			OnRep_MeshUpdate(MeshAsset, ItemType);
-		}
-	}
-}
-
 void ARelicRunnersCharacter::UpdateItemVisuals(UItemObject* Item)
 {
 	if (!Item) return;
@@ -780,28 +676,35 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UItemObject* Item)
 	const FString& ItemType = Item->ItemData.ItemType;
 	const FString MeshPath = GetMeshPathByItemType(ItemType);
 
-	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow")
-	{
-		if (UStaticMesh* LoadedMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath))
-		{
-			if (UStaticMeshComponent* TargetMesh = GetStaticMeshComponentByItemType(ItemType))
-			{
-				TargetMesh->SetStaticMesh(LoadedMesh);
-				OnRep_MeshUpdate(LoadedMesh, ItemType);
-			}
-		}
-	}
-	else
-	{
-		if (USkeletalMesh* LoadedMesh = LoadObject<USkeletalMesh>(nullptr, *MeshPath))
-		{
-			if (USkeletalMeshComponent* TargetMesh = GetSkeletalMeshComponentByItemType(ItemType))
-			{
-				TargetMesh->SetSkeletalMesh(LoadedMesh);
-				OnRep_MeshUpdate(LoadedMesh, ItemType);
-			}
-		}
-	}
+	UClass* MeshClass = (ItemType == "Upper" || ItemType == "Lower" || ItemType == "Helmet" || ItemType == "Arms")
+		? USkeletalMesh::StaticClass() : UStaticMesh::StaticClass();
+
+	UObject* LoadedMesh = StaticLoadObject(MeshClass, nullptr, *MeshPath);
+
+	if (LoadedMesh) UpdateItemVisuals(LoadedMesh, ItemType);
+}
+
+void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType)
+{
+	if (!HasAuthority()) return;
+
+	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff") 
+		ReplicatedVisuals.Mainhand = Cast<UStaticMesh>(MeshAsset);
+	else if (ItemType == "Offhand") 
+		ReplicatedVisuals.Offhand = Cast<UStaticMesh>(MeshAsset);
+	else if (ItemType == "Upper")    
+		ReplicatedVisuals.Upper = Cast<USkeletalMesh>(MeshAsset);
+	else if (ItemType == "Lower")    
+		ReplicatedVisuals.Lower = Cast<USkeletalMesh>(MeshAsset);
+	else if (ItemType == "Helmet")   
+		ReplicatedVisuals.Helmet = Cast<USkeletalMesh>(MeshAsset);
+	else if (ItemType == "Arms")     
+		ReplicatedVisuals.Arms = Cast<USkeletalMesh>(MeshAsset);
+	else if (ItemType == "Necklace") 
+		ReplicatedVisuals.Necklace = Cast<USkeletalMesh>(MeshAsset);
+
+	//Server
+	OnRep_VisualsChanged();
 }
 
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)

@@ -39,6 +39,33 @@ class UInputAction;
 class AAbilityBase;
 struct FInputActionValue;
 
+USTRUCT(BlueprintType)
+struct FEquippedVisuals
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UStaticMesh* Mainhand = nullptr;
+
+	UPROPERTY()
+	UStaticMesh* Offhand = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Upper = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Lower = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Helmet = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Arms = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Necklace = nullptr;
+};
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
@@ -66,7 +93,6 @@ public:
 	virtual void GiveUtilityAbilities();
 	virtual void GiveUltimateAbilities();
 	void HealthPotions();
-	void SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
 	void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
@@ -79,25 +105,8 @@ public:
 	void UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType);
 	UFUNCTION(BlueprintCallable)
 	void UpdateItemVisuals(class UItemObject* Item);
-	void OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType);
-	UFUNCTION()
-	void OnRep_UpperMesh();
-	UFUNCTION()
-	void OnRep_LowerMesh();
-	UFUNCTION()
-	void OnRep_ArmsMesh();
-	UFUNCTION()
-	void OnRep_HelmetMesh();
-	UFUNCTION()
-	void OnRep_NecklaceMesh();
-	UFUNCTION()
-	void OnRep_MainhandMesh();
-	UFUNCTION()
-	void OnRep_OffhandMesh();
 	UFUNCTION(Server, Reliable)
 	void Server_HitEnemy(AActor* HitActor);
-	UFUNCTION(Server, Reliable)
-	void Server_SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
 	UFUNCTION(Server, Reliable)
 	void Server_EquipItemByID(FGuid ID);
 	UFUNCTION(Server, Reliable)
@@ -136,20 +145,11 @@ public:
 	UStaticMeshComponent* MainhandItemMesh;
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* OffhandItemMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_HelmetMesh)
-	USkeletalMesh* ReplicatedHelmetMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_UpperMesh)
-	USkeletalMesh* ReplicatedUpperMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_LowerMesh)
-	USkeletalMesh* ReplicatedLowerMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_ArmsMesh)
-	USkeletalMesh* ReplicatedArmsMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_NecklaceMesh)
-	USkeletalMesh* ReplicatedNecklaceMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_MainhandMesh)
-	UStaticMesh* ReplicatedMainhandMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_OffhandMesh)
-	UStaticMesh* ReplicatedOffhandMesh;
+
+	UPROPERTY(ReplicatedUsing = OnRep_VisualsChanged)
+	FEquippedVisuals ReplicatedVisuals;
+	UFUNCTION()
+	void OnRep_VisualsChanged();
 
 	//Properties
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
@@ -171,7 +171,6 @@ protected:
 
 	//Functions
 	void Tick(float DeltaTime);
-	void InitializeWeaponSockets();
 	void InitializeWorldHUD();
 	void RegisterDirector();
 

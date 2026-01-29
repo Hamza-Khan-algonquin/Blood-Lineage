@@ -334,7 +334,7 @@ void AEnemyCharacterAI::UpdateItemVisuals(UObject* MeshAsset, const FString& Ite
 		if (UStaticMeshComponent* TargetMesh = GetStaticMeshComponentByItemType(ItemType))
 		{
 			TargetMesh->SetStaticMesh(Cast<UStaticMesh>(MeshAsset));
-			OnRep_MeshUpdate(MeshAsset, ItemType);
+			MeshUpdate(MeshAsset, ItemType);
 		}
 	}
 	else
@@ -342,7 +342,7 @@ void AEnemyCharacterAI::UpdateItemVisuals(UObject* MeshAsset, const FString& Ite
 		if (USkeletalMeshComponent* TargetMesh = GetSkeletalMeshComponentByItemType(ItemType))
 		{
 			TargetMesh->SetSkeletalMesh(Cast<USkeletalMesh>(MeshAsset));
-			OnRep_MeshUpdate(MeshAsset, ItemType);
+			MeshUpdate(MeshAsset, ItemType);
 		}
 	}
 }
@@ -361,7 +361,7 @@ void AEnemyCharacterAI::UpdateItemVisuals(UItemObject* Item)
 			if (UStaticMeshComponent* TargetMesh = GetStaticMeshComponentByItemType(ItemType))
 			{
 				TargetMesh->SetStaticMesh(LoadedMesh);
-				OnRep_MeshUpdate(LoadedMesh, ItemType);
+				MeshUpdate(LoadedMesh, ItemType);
 			}
 		}
 	}
@@ -372,7 +372,7 @@ void AEnemyCharacterAI::UpdateItemVisuals(UItemObject* Item)
 			if (USkeletalMeshComponent* TargetMesh = GetSkeletalMeshComponentByItemType(ItemType))
 			{
 				TargetMesh->SetSkeletalMesh(LoadedMesh);
-				OnRep_MeshUpdate(LoadedMesh, ItemType);
+				MeshUpdate(LoadedMesh, ItemType);
 			}
 		}
 	}
@@ -440,7 +440,7 @@ void AEnemyCharacterAI::Server_UnequipItemByID_Implementation(FGuid ID)
 	}
 }
 
-void AEnemyCharacterAI::OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType)
+void AEnemyCharacterAI::MeshUpdate(UObject* MeshAsset, const FString& ItemType)
 {
 	SetReplicatedMeshByItemType(MeshAsset, ItemType);
 }

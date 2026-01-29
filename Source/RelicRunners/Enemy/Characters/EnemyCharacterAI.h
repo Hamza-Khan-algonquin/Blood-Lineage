@@ -124,7 +124,7 @@ public:
 
 	void SetMaxHealth(int health);
 
-	void OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType);
+	void MeshUpdate(UObject* MeshAsset, const FString& ItemType);
 
 	void SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
 	UFUNCTION()
