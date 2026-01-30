@@ -145,6 +145,8 @@ public:
 	float ForgeChance2;
 	float ForgeChance3;
 	class UBorder* CurrentHoveredBorder;
+	int CycleCount;
+	FTimerHandle FuseTimerHandle;
 
 	//Functions
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
@@ -197,6 +199,9 @@ public:
 	UFUNCTION()
 	void OnFuseButtonPressed();
 	UFUNCTION()
+	void CycleRarityVisuals();
+	void CompleteForgeSequence();
+	UFUNCTION()
 	void RemoveForgeItem(class UItemObject* ItemToRemove);
 	UFUNCTION()
 	FEventReply  OnForgeItem1Clicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
@@ -243,6 +248,9 @@ public:
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	class UWidgetAnimation* InventoryClose;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	class UWidgetAnimation* RollRarity;
 
 	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* ForgeBox;
