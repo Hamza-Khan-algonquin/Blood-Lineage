@@ -50,6 +50,7 @@
 #include "Director System/Director.h"
 #include "Enemy/Characters/EnemyCharacter.h"
 #include "Enemy/Characters/EnemyCharacterAI.h"
+#include "Components/SceneCaptureComponent2D.h"
 
 #include "LevelGeneration/CapturableFlag.h"
 
@@ -81,7 +82,25 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Mesh attachments
+	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
+	MinimapSpringArm->SetupAttachment(RootComponent);
+	MinimapSpringArm->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f)); 
+	MinimapSpringArm->TargetArmLength = 450.0; 
+	MinimapSpringArm->bInheritPitch = false;
+	MinimapSpringArm->bInheritRoll = false;
+	MinimapSpringArm->bInheritYaw = false; 
+
+	//Capture Component
+	MinimapCaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapCaptureComponent"));
+	MinimapCaptureComponent->SetupAttachment(MinimapSpringArm);
+	MinimapCaptureComponent->ProjectionType = ECameraProjectionMode::Orthographic;
+	MinimapCaptureComponent->OrthoWidth = 5000.0f; 
+	MinimapCaptureComponent->CaptureSource = SCS_FinalColorLDR;
+	MinimapCaptureComponent->bAutoActivate = false; 
+	MinimapCaptureComponent->SetIsReplicated(false);
+	MinimapCaptureComponent->HideComponent(GetMesh());
+
+	//Mesh attachments
 	UpperMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("UpperMesh"));
 	UpperMesh->SetupAttachment(GetMesh());
 	UpperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -151,6 +170,7 @@ void ARelicRunnersCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	InitializeWorldHUD();
+	InitializeWeaponSockets();
 
 	//Server
 	if (HasAuthority())
@@ -175,8 +195,11 @@ void ARelicRunnersCharacter::PossessedBy(AController* NewController)
 
 	RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
-	const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
-	SyncEquippedVisuals(EquippedEntries);
+	if (RelicPlayerState)
+	{
+		const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
+		SyncEquippedVisuals(EquippedEntries);
+	}
 }
 
 float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -223,6 +246,12 @@ void ARelicRunnersCharacter::InitializeWorldHUD()
 			HUDWorldWidget->InitWidgetWithCharacter(this);
 		}
 	}
+}
+
+void ARelicRunnersCharacter::InitializeWeaponSockets()
+{
+	MainhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("MainhandSocket"));
+	OffhandItemMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("OffhandSocket"));
 }
 
 void ARelicRunnersCharacter::RegisterDirector()

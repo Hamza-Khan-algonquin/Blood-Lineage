@@ -192,6 +192,7 @@ protected:
 	void UltimateAbility();
 	void HealthPotion();
 	void BasicAttack();
+	void SetupMinimapRenderTarget();
 
 	//Virtual Functions
 	virtual void BeginPlay() override;
@@ -199,6 +200,7 @@ protected:
 	virtual void OnRep_PlayerState() override;
 	virtual void AcknowledgePossession(APawn* Pawn) override;
 	virtual void OnUnPossess() override;
+	void TrySetupMinimap();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnPossess(APawn* aPawn) override;
 	virtual void ClientRestart_Implementation(APawn* NewPawn) override;

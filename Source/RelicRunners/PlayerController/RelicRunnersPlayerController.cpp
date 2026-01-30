@@ -56,6 +56,8 @@
 #include <RelicRunners/Menu/LobbyGameMode.h>
 #include "RelicRunners/Minimap/Minimap.h"
 
+#include "Components/SceneCaptureComponent2D.h"
+
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
 	static ConstructorHelpers::FClassFinder<ULoadingScreen> BP_LoadingScreen(TEXT("/Game/Blueprints/Menu/BP_LoadingScreen"));
@@ -104,6 +106,7 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
+		TrySetupMinimap();
 	}
 }
 
@@ -219,34 +222,37 @@ void ARelicRunnersPlayerController::SyncUI()
 		return;
 	}
 
-	if (IsLocalController() && !PlayerPreviewInstance && PlayerPreviewClass)
+	if (IsLocalController())
 	{
-		int UniqueID = RelicPlayerState->GetPlayerId();
-		FVector SpawnLoc = FVector(-50000.0f - (UniqueID * 10000.0f), -50000.0f, -2000.0f);
+		if (!PlayerPreviewInstance && PlayerPreviewClass)
+		{
+			int UniqueID = RelicPlayerState->GetPlayerId();
+			FVector SpawnLoc = FVector(-50000.0f - (UniqueID * 10000.0f), -50000.0f, -2000.0f);
 
-		FActorSpawnParameters Params;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			FActorSpawnParameters Params;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		PlayerPreviewInstance = GetWorld()->SpawnActor<APlayerPreview>(PlayerPreviewClass, SpawnLoc, FRotator(0, 180, 0), Params);
+			PlayerPreviewInstance = GetWorld()->SpawnActor<APlayerPreview>(PlayerPreviewClass, SpawnLoc, FRotator(0, 180, 0), Params);
 
+			if (PlayerPreviewInstance)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Local Client: Spawned Preview Actor at %s"), *SpawnLoc.ToString());
+				TrySetupPreviewRenderTarget();
+			}
+		}
 		if (PlayerPreviewInstance)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Local Client: Spawned Preview Actor at %s"), *SpawnLoc.ToString());
-			TrySetupPreviewRenderTarget();
+			//Ensures ui and meshes are refreshed
+			UpdatePreviewWithEquippedItems();
+			UpdateCharacterVisuals();
+
+			Inventory->RefreshEquippedUI();
+			RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
+			UpdateHUDAll();
+
+			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
+			UE_LOG(LogTemp, Warning, TEXT("Local Client Sync Complete: Actor spawned and Gear equipped."));
 		}
-	}
-	if (PlayerPreviewInstance)
-	{
-		//Ensures ui and meshes are refreshed
-		UpdatePreviewWithEquippedItems();
-		UpdateCharacterVisuals(); 
-
-		Inventory->RefreshEquippedUI();
-		RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
-		UpdateHUDAll();
-
-		GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
-		UE_LOG(LogTemp, Warning, TEXT("Local Client Sync Complete: Actor spawned and Gear equipped."));
 	}
 }
 
@@ -462,6 +468,42 @@ void ARelicRunnersPlayerController::Server_RequestFlagActivation_Implementation(
 void ARelicRunnersPlayerController::OnUnPossess()
 {
 	Super::OnUnPossess();
+}
+
+void ARelicRunnersPlayerController::TrySetupMinimap()
+{
+	if (!IsLocalController()) return;
+
+	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
+
+	if (!MinimapWidget || !Char || !Char->MinimapCaptureComponent)
+	{
+		FTimerHandle RetryHandle;
+		GetWorldTimerManager().SetTimer(RetryHandle, this, &ARelicRunnersPlayerController::TrySetupMinimap, 0.1f, false);
+		return;
+	}
+
+	SetupMinimapRenderTarget();
+}
+
+void ARelicRunnersPlayerController::SetupMinimapRenderTarget()
+{
+	if (!IsLocalController() || !MinimapWidget) return;
+
+	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
+	if (!Char || !Char->IsLocallyControlled()) return;
+
+	UTextureRenderTarget2D* NewRT = MinimapWidget->CreateRenderTarget(Char);
+
+	if (NewRT)
+	{
+		Char->MinimapCaptureComponent->TextureTarget = NewRT;
+		Char->MinimapCaptureComponent->Activate();
+		Char->MinimapCaptureComponent->bCaptureEveryFrame = true;
+		MinimapWidget->SetMinimapImage(NewRT);
+
+		UE_LOG(LogTemp, Warning, TEXT("SERVER: Minimap successfully linked to RT: %s"), *NewRT->GetName());
+	}
 }
 
 void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview)

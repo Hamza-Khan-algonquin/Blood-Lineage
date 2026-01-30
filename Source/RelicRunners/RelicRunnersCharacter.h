@@ -119,6 +119,7 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const { return AbilitySystem; }
 
 	//Animations
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -161,8 +162,11 @@ public:
 	class UWidgetComponent* PlayerHUDWorld;
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 	class ARelicRunnersPlayerState* RelicPlayerState;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
+	class USceneCaptureComponent2D* MinimapCaptureComponent;
 
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const { return AbilitySystem; }
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
+	USpringArmComponent* MinimapSpringArm;
 
 protected:
 
@@ -172,6 +176,7 @@ protected:
 	//Functions
 	void Tick(float DeltaTime);
 	void InitializeWorldHUD();
+	void InitializeWeaponSockets();
 	void RegisterDirector();
 
 	//Virtual Functions
