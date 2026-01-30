@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "AbilitySystemComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -19,6 +20,15 @@ UVengefulDance::UVengefulDance()
     AreaRadius = 300.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
+    Cost = 50;
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
+      TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash")
+  );
+
+  if (VFXAsset.Succeeded())
+  {
+      AbilityVFX = VFXAsset.Object;
+  }
 
 }
 
@@ -40,6 +50,7 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+
     UWorld* World = AvatarActor->GetWorld();
     if (!World)
     {
@@ -54,11 +65,28 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    // Get PlayerState safely
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    // Must have PlayerState and enough resource
+    if (!PS || PS->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->UpdateRemoteHUDResource();
 
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
     AvatarActor->GetWorldTimerManager().SetTimer(EndTimer, FTimerDelegate::CreateUObject(this, &UVengefulDance::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
 
-    DrawDebugCircle(AvatarActor->GetWorld(), AvatarActor->GetActorLocation(), AreaRadius, 64, FColor::Red, false, Duration, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false);
+    //DrawDebugCircle(AvatarActor->GetWorld(), AvatarActor->GetActorLocation(), AreaRadius, 64, FColor::Red, false, Duration, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false);
 
 }
 
@@ -69,6 +97,21 @@ void UVengefulDance::ApplyRingDamage()
 
     UWorld* World = AvatarActor->GetWorld(); // Get the world
     if (!World) return; // Exit if world is invalid
+
+
+    if (AbilityVFX)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            AvatarActor->GetWorld(),
+            AbilityVFX,
+            AvatarActor->GetActorLocation() + FVector(0, 0, 0),
+            AvatarActor->GetActorRotation() + FRotator(0, 0, 90),
+            FVector(1.5f),
+            true,
+            true
+        );
+    }
+
 
     FVector Origin = AvatarActor->GetActorLocation(); // Center of the damage/knockback
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius

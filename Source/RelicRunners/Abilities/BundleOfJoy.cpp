@@ -1,6 +1,7 @@
 #include "BundleOfJoy.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
@@ -13,10 +14,30 @@ UBundleOfJoy::UBundleOfJoy()
     ExplosionRadius = 400.f;
     AttractionStrength = 1500.f;
     DamageAmount = 100.f;
-    Duration = 3.f;
+    Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
+    Cost = 60;
+
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
+        TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Attract.NS_BundleOfJoy_Attract")
+    );
+
+    if (VFXAsset.Succeeded())
+    {
+        AbilityVFX = VFXAsset.Object;
+    }
+
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset1(
+        TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Explosion.NS_BundleOfJoy_Explosion")
+    );
+
+    if (VFXAsset1.Succeeded())
+    {
+        AbilityVFX1 = VFXAsset1.Object;
+    }
 }
+
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 
@@ -49,6 +70,25 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
         return; // Exit early
     }
 
+    // Get PlayerState safely
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    // Must have PlayerState and enough resource
+    if (!PS || PS->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->UpdateRemoteHUDResource();
+
+
     AttractionCenter = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 300.f; // Set spawn point 300 units in front of the actor
 
 
@@ -57,8 +97,6 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
     bIsFlying = true;
 
     AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);
-
-    
 
 }
 
@@ -102,13 +140,23 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
     AActor* Avatar = GetAvatarActorFromActorInfo();
     UWorld* World = Avatar->GetWorld();
 
+    UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+        Avatar->GetWorld(),
+        AbilityVFX,
+        AttractionCenter,
+        FRotator(0, 0, 0),
+        FVector(1.f),
+        true,
+        true
+    );
+
     // start attraction loop
     World->GetTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::Attract, 0.016f, true);
 
     // Timer for explosion
     World->GetTimerManager().SetTimer(ExplosionTimer, FTimerDelegate::CreateUObject(this, &UBundleOfJoy::Explode), Duration, false);
 
-    DrawDebugSphere(World, LandLocation, 25.f, 12, FColor::Purple, false, 5.f);
+    //DrawDebugSphere(World, LandLocation, 25.f, 12, FColor::Purple, false, 5.f);
 }
 
 void UBundleOfJoy::Attract()
@@ -121,7 +169,8 @@ void UBundleOfJoy::Attract()
 
     FVector Center = AttractionCenter; // Set the attraction center 
 
-    DrawDebugCircle(World, Center, AttractionRadius, 32, FColor::Purple, false, 0.1f, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false); // Draw the debug circle showing the attraction radius
+    //DrawDebugCircle(World, Center, AttractionRadius, 32, FColor::Purple, false, 0.1f, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false); // Draw the debug circle showing the attraction radius
+    
 
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -175,7 +224,17 @@ void UBundleOfJoy::Explode()
         UGameplayStatics::ApplyDamage(Actor, DamageAmount, nullptr, AvatarActor, nullptr); // Apply damage to each actor
     }
 
-    DrawDebugSphere(World, Center, ExplosionRadius, 32, FColor::Red, false, 2.f); // Draw debug sphere for explosion radius
+    //DrawDebugSphere(World, Center, ExplosionRadius, 32, FColor::Red, false, 2.f); // Draw debug sphere for explosion radius
+
+    UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+        AvatarActor->GetWorld(),
+        AbilityVFX1,
+        AttractionCenter,
+        FRotator(0, 0, 0),
+        FVector(2.f),
+        true,
+        true
+    );
 
     // End the ability after explosion
     EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);
@@ -187,6 +246,8 @@ void UBundleOfJoy::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
 {
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
+        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
+
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
@@ -199,14 +260,16 @@ void UBundleOfJoy::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
 
                 if (ActorInfo->IsLocallyControlled())
                 {
-                    if (ARelicRunnersPlayerController* RPC =
-                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    if (RPC)
                     {
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
+
                     }
                 }
             }
         }
+
+
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

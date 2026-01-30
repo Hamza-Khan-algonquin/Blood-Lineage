@@ -76,13 +76,17 @@ public:
     EAbilityTargetType TargetType;
 
 
-    // GAS Cooldown
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Cooldown")
     float CooldownDuration = 0;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Cost")
+    int Cost = 0;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
     TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+    TObjectPtr<UNiagaraSystem> AbilityVFX1 = nullptr;
 
 };
 

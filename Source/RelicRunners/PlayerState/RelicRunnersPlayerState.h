@@ -67,6 +67,8 @@ public:
 	void Client_OnLevelUp();
 	UFUNCTION()
 	void PassiveHealthRegen();
+	UFUNCTION()
+	void PassiveResourceRegen();
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
 
@@ -195,6 +197,7 @@ public:
 	void SetPlayerStartingHealth(int StartingHealth) { PlayerStartingMaxHealth = StartingHealth; }
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	void SetPlayerStartingStrength(int StartingStrength) { PlayerStartingStrength = StartingStrength; }
+	void SetPlayerResource(int Resource) { PlayerResource = Resource; }
 	void SetPlayerMaxHealth(int value);
 	void ResetHealth() { PlayerHealth = PlayerMaxHealth; }
 
@@ -205,7 +208,11 @@ public:
 
 protected:
 
+
+	FTimerHandle RegenTimer;
+
 	//Virtual Functions
+	virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void CopyProperties(APlayerState* PlayerState) override;
 	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, struct FReplicationFlags* RepFlags) override;

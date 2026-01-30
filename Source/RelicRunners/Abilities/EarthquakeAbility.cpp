@@ -2,10 +2,9 @@
 #include "GameFramework/Character.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
-//#include "RelicRunners/Enemy/EnemyCharacter.h"
-
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -17,7 +16,7 @@ UEarthquakeAbility::UEarthquakeAbility()
     ConeAngle = 90.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-
+    Cost = 50;
     //static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
     //    TEXT("/Game/Particles/NiagaraSystems/NS_Earthquake.NS_Earthquake")
     //);
@@ -74,9 +73,28 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
         return;
     }
 
+    // Get PlayerState safely
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    // Must have PlayerState and enough resource
+    if (!PS || PS->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->UpdateRemoteHUDResource();
+
+
     ApplyDamageAndStun();
 
-    EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+    //EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
 
