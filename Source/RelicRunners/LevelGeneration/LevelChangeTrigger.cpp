@@ -61,22 +61,22 @@ void ALevelChangeTrigger::BeginPlay()
 
 void ALevelChangeTrigger::OnTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
-	{
-		if (HasAuthority() && IsActive)
-		{
+	if (!OtherActor->ActorHasTag("Player")) return;
 
+	if (IsActive)
+	{
+		if (HasAuthority())
+		{
 			Server_ChangeLevel();
 		}
-
-		if (!IsActive)
+	}
+	else
+	{
+		if (ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>())
 		{
-			if (ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState()))
-			{
-				gameState->InformCurrentObjectives();
-			}
-			GEngine->AddOnScreenDebugMessage(-1, 30.0f, FColor::Yellow, FString::Printf(TEXT("Objective has not been met.")));
+			GS->InformCurrentObjectives();
 		}
+		GEngine->AddOnScreenDebugMessage(-1, 30.0f, FColor::Yellow, FString::Printf(TEXT("Objective has not been met.")));
 	}
 }
 
@@ -96,11 +96,16 @@ void ALevelChangeTrigger::ChangeLevel()
 {
 	if (!HasAuthority()) return;
 
-	UWorld* world = GetWorld();
-	if (!world) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(World->GetFirstPlayerController());
+	if (!RPC) return;
+
+	RPC->TravelCleanUI();
 
 	FString TravelURL = TargetLevel.ToString() + TEXT("?listen");
-	world->ServerTravel(TravelURL, true);
+	World->ServerTravel(TravelURL, true);
 }
 
 void ALevelChangeTrigger::Server_Activate_Implementation()

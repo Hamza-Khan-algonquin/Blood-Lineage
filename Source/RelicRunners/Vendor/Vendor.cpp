@@ -102,13 +102,20 @@ void AVendor::Interact_Implementation(ARelicRunnersCharacter* Char)
 
 	if (LinkedInventoryWidget)
 	{
-		if (!LinkedInventoryWidget->IsVisible() || !LinkedInventoryWidget->VendorCanvas->IsVisible())
+		if (!LinkedInventoryWidget->IsVisible())
 		{
 			PC->InventoryUI();
 		}
+		if (!LinkedInventoryWidget->VendorCanvas->IsVisible())
+		{
+			LinkedInventoryWidget->ToggleVendorUI(true);
+			LinkedInventoryWidget->DisplaySelectedVendorItems(Stock, this);
+		}
+		else
+		{
+			LinkedInventoryWidget->ToggleVendorUI(false);
+		}
 
-		LinkedInventoryWidget->ToggleVendorUI(true);
-		LinkedInventoryWidget->DisplaySelectedVendorItems(Stock, this);
 	}
 }
 

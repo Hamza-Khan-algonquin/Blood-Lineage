@@ -101,7 +101,7 @@ void APlayerPreview::ClearAllPreviewMeshes()
 UTextureRenderTarget2D* APlayerPreview::CreateRenderTarget()
 {
 	//Create and assign a unique render target
-	UTextureRenderTarget2D* NewRenderTarget = NewObject<UTextureRenderTarget2D>();
+	UTextureRenderTarget2D* NewRenderTarget = NewObject<UTextureRenderTarget2D>(this);
 	NewRenderTarget->RenderTargetFormat = RTF_RGBA16f;
 	NewRenderTarget->InitAutoFormat(300, 500);
 	NewRenderTarget->ClearColor = FLinearColor(0, 0, 0, 0); 

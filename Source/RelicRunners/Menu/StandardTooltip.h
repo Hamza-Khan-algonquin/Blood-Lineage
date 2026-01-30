@@ -16,6 +16,8 @@ class RELICRUNNERS_API UStandardTooltip : public UUserWidget
 public:
 	void Setup(const FText& Title, const FText& Value, const TArray<FText>& NewDescriptions);
 
+	void SetAnchor(FVector2D anchor);
+
 	void SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor);
 
 protected:
@@ -59,4 +61,7 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Description5;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Base;
 };

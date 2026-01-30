@@ -76,7 +76,10 @@ public:
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	class UWidgetAnimation* Timer;
-
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* RightPanelOpen;
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* LeftPanelOpen;
 	void UpdateCountdownUI(int RemainingTime);
 
 	UPROPERTY()

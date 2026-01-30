@@ -167,10 +167,10 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 
 	UE_LOG(LogTemp, Log, TEXT("SERVER: Generating items using PlayerState MeshData."));
 
-	for (int i = 0; i < 50; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		FString RandomType = ItemStats::GetRandomItemType();
-		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, ItemMeshData);
+		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, "Common", ItemMeshData);
 		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
 		if (!Item) continue;
 
@@ -197,6 +197,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	}
 	else
 	{
+		//Fallback for testing
 		StartingWeapon = "Greatsword";
 	}
 	UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData), InventoryComponent);
@@ -421,7 +422,7 @@ void ARelicRunnersPlayerState::Client_OnAbilityPointsUpdated_Implementation(int 
 
 	if (NewAbilityPoints <= 0 && PC->AbilitySelection)
 	{
-		PC->HideUI(PC->AbilitySelection, false);
+		PC->HideUI(PC->AbilitySelection);
 	}
 }
 

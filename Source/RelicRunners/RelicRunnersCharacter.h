@@ -39,6 +39,33 @@ class UInputAction;
 class AAbilityBase;
 struct FInputActionValue;
 
+USTRUCT(BlueprintType)
+struct FEquippedVisuals
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UStaticMesh* Mainhand = nullptr;
+
+	UPROPERTY()
+	UStaticMesh* Offhand = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Upper = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Lower = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Helmet = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Arms = nullptr;
+
+	UPROPERTY()
+	USkeletalMesh* Necklace = nullptr;
+};
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
@@ -66,10 +93,11 @@ public:
 	virtual void GiveUtilityAbilities();
 	virtual void GiveUltimateAbilities();
 	void HealthPotions();
-	void SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
 	void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
+	UFUNCTION()
+	void ResetBasicAttack();
 	UFUNCTION(Server, Reliable)
 	void Server_SpawnDroppedItemWorld(const struct FItemData& Data);
 	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
@@ -77,25 +105,8 @@ public:
 	void UpdateItemVisuals(UObject* MeshAsset, const FString& ItemType);
 	UFUNCTION(BlueprintCallable)
 	void UpdateItemVisuals(class UItemObject* Item);
-	void OnRep_MeshUpdate(UObject* MeshAsset, const FString& ItemType);
-	UFUNCTION()
-	void OnRep_UpperMesh();
-	UFUNCTION()
-	void OnRep_LowerMesh();
-	UFUNCTION()
-	void OnRep_ArmsMesh();
-	UFUNCTION()
-	void OnRep_HelmetMesh();
-	UFUNCTION()
-	void OnRep_NecklaceMesh();
-	UFUNCTION()
-	void OnRep_MainhandMesh();
-	UFUNCTION()
-	void OnRep_OffhandMesh();
 	UFUNCTION(Server, Reliable)
 	void Server_HitEnemy(AActor* HitActor);
-	UFUNCTION(Server, Reliable)
-	void Server_SetReplicatedMeshByItemType(UObject* MeshAsset, const FString& ItemType);
 	UFUNCTION(Server, Reliable)
 	void Server_EquipItemByID(FGuid ID);
 	UFUNCTION(Server, Reliable)
@@ -108,6 +119,7 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const { return AbilitySystem; }
 
 	//Animations
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -134,29 +146,27 @@ public:
 	UStaticMeshComponent* MainhandItemMesh;
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* OffhandItemMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_HelmetMesh)
-	USkeletalMesh* ReplicatedHelmetMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_UpperMesh)
-	USkeletalMesh* ReplicatedUpperMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_LowerMesh)
-	USkeletalMesh* ReplicatedLowerMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_ArmsMesh)
-	USkeletalMesh* ReplicatedArmsMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_NecklaceMesh)
-	USkeletalMesh* ReplicatedNecklaceMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_MainhandMesh)
-	UStaticMesh* ReplicatedMainhandMesh;
-	UPROPERTY(ReplicatedUsing = OnRep_OffhandMesh)
-	UStaticMesh* ReplicatedOffhandMesh;
+
+	UPROPERTY(ReplicatedUsing = OnRep_VisualsChanged)
+	FEquippedVisuals ReplicatedVisuals;
+	UFUNCTION()
+	void OnRep_VisualsChanged();
 
 	//Properties
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool CanBasicAttack = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float BasicAttackCooldown = 0.5f;
 	TSet<AActor*> AlreadyHitActors;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UWidgetComponent* PlayerHUDWorld;
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 	class ARelicRunnersPlayerState* RelicPlayerState;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
+	class USceneCaptureComponent2D* MinimapCaptureComponent;
 
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const { return AbilitySystem; }
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
+	USpringArmComponent* MinimapSpringArm;
 
 protected:
 
@@ -165,8 +175,8 @@ protected:
 
 	//Functions
 	void Tick(float DeltaTime);
-	void InitializeWeaponSockets();
 	void InitializeWorldHUD();
+	void InitializeWeaponSockets();
 	void RegisterDirector();
 
 	//Virtual Functions
@@ -188,6 +198,7 @@ protected:
 	//Timers
 	FTimerHandle HealthRegenTimerHandle;
 	FTimerHandle DelegateBindHandle;
+	FTimerHandle TimerHandle_AttackCooldown;
 
 	//Stored Classes
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
