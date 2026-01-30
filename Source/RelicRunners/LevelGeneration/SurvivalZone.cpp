@@ -100,7 +100,6 @@ void ASurvivalZone::OnTimelineEnd()
 		gameState->Server_DecrementObjective(EObjectiveType::Survival);
 	}
 	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Green, FString::Printf(TEXT("Survived the zone.")));
-	OnFlagObjectiveActivated.Broadcast();
 }
 
 void ASurvivalZone::Multicast_HandleOverlapEnter_Implementation(AActor* OtherActor, bool OnOverlapBegin)
@@ -121,11 +120,6 @@ void ASurvivalZone::Multicast_HandleOverlapEnter_Implementation(AActor* OtherAct
 			SurvivalTimelineComp->Reverse();
 		}
 	}
-}
-
-void ASurvivalZone::Activate()
-{
-	OnFlagObjectiveCreated.Broadcast();
 }
 
 void ASurvivalZone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

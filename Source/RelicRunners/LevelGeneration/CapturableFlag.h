@@ -7,8 +7,6 @@
 #include "RelicRunners/Interact/InteractInterface.h"
 #include "CapturableFlag.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFlagObjectiveCreated);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFlagObjectiveActivated);
 
 UCLASS()
 class RELICRUNNERS_API ACapturableFlag : public AActor, public IInteractInterface
@@ -37,8 +35,6 @@ public:
 
 	void HandleInteracted(class ARelicRunnersCharacter* Character);
 
-	void Activate();
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default Values")
 	class USceneComponent* Origin;
 
@@ -47,9 +43,6 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default Values")
 	class UTextRenderComponent* TextComponent;
-
-	FOnFlagObjectiveCreated OnFlagObjectiveCreated;
-	FOnFlagObjectiveActivated OnFlagObjectiveActivated;
 
 private:
 	UPROPERTY(Replicated)

@@ -51,7 +51,7 @@
 #include "Enemy/Characters/EnemyCharacter.h"
 #include "Enemy/Characters/EnemyCharacterAI.h"
 
-#include "LevelGeneration/CapturableFlag.h"
+#include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -570,7 +570,7 @@ void ARelicRunnersCharacter::Interact()
 					}
 				}
 			}
-			else if (ACapturableFlag* Flag = Cast<ACapturableFlag>(HitActor))
+			else if (ANewCapturableFlag* Flag = Cast<ANewCapturableFlag>(HitActor))
 			{
 				if (APlayerController* PC = Cast<APlayerController>(GetController()))
 				{

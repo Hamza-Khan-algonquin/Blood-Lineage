@@ -6,10 +6,11 @@
 #include "IslandSpawningValuesComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "PackedLevelActor/PackedLevelActor.h"
-#include "CapturableFlag.h"
-#include "EnemyZone.h"
-#include "PayloadActor.h"
-#include "SurvivalZone.h"
+#include "NewObjectives/NewCapturableFlag.h"
+#include "NewObjectives/NewEnemyZone.h"
+#include "NewObjectives/NewPayloadObjective.h"
+#include "NewObjectives/NewSurvivalZone.h"
+#include "IslandBridge.h"
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -32,6 +33,7 @@ AIslandGenerationTest::AIslandGenerationTest()
 	PrimaryActorTick.bCanEverTick = false;
 
 	GenerationValuesComponent = CreateDefaultSubobject<UIslandSpawningValuesComponent>("GenerationValues");
+	GenerationValuesComponent->SetIsReplicated(true);
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -92,6 +94,14 @@ void AIslandGenerationTest::Generate()
 			}
 			//Spawn the floor with the instanced static mesh component.
 			CreateFloor();
+		}
+
+		if (GenerationValuesComponent->IslandStartEnd.BridgePackedActor)
+		{
+			float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+			FVector posOffset = FVector((tileScale * IslandWidth * 4) + tileScale, (tileScale * (IslandDepth - 1) * 4) + tileScale, 0.0f) + GetActorLocation();
+
+			Bridge = GetWorld()->SpawnActor<AIslandBridge>(GenerationValuesComponent->IslandStartEnd.BridgePackedActor, posOffset, FRotator::ZeroRotator);
 		}
 	}
 }
@@ -332,10 +342,13 @@ void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetInde
 
 void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
 {
+	int flagAmount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
+	int enemyZoneAmount = FMath::RandRange(GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMin, GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMax);
+	int survivalZoneAmount = FMath::RandRange(GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMin, GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMax);
+
 	switch (IslandObjective)
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
-		int flagAmount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
 
 		//Override previously initialized tiles with capturable flag tiles
 		for (int i = 0; i < flagAmount; i++)
@@ -367,7 +380,6 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 		}
 		break;
 	case EIslandObjectiveType::DefeatAllEnemies:
-		int enemyZoneAmount = FMath::RandRange(GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMin, GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMax);
 
 		for (int i = 0; i < enemyZoneAmount; i++)
 		{
@@ -407,13 +419,12 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 
 			if (GenerationValuesComponent->PayloadObjectiveValues.Payload != nullptr)
 			{
-				APayloadActor* payload = GetWorld()->SpawnActor<APayloadActor>(GenerationValuesComponent->PayloadObjectiveValues.Payload, FVector::ZeroVector, FRotator::ZeroRotator);
+				//APayloadActor* payload = GetWorld()->SpawnActor<APayloadActor>(GenerationValuesComponent->PayloadObjectiveValues.Payload, FVector::ZeroVector, FRotator::ZeroRotator);
 				//payload->Multicast_Initialize(DeliverySpline, GenerationValuesComponent->PayloadObjectiveValues.PayloadSpeed);
 			}
 		}
 		break;
 	case EIslandObjectiveType::Survival:
-		int survivalZoneAmount = FMath::RandRange(GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMin, GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMax);
 
 		//Override previously initialized tiles with survival zone tiles
 		for (int i = 0; i < survivalZoneAmount; i++)
@@ -885,7 +896,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	case EIslandFloorObstacle::CapturableFlag:
 		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
 		{
-			ACapturableFlag* newFlag = GetWorld()->SpawnActor<ACapturableFlag>(GenerationValuesComponent->FlagObjectiveValues.Flag, posOffset, FRotator(0.0f, yaw, 0.0f));
+			ANewCapturableFlag* newFlag = GetWorld()->SpawnActor<ANewCapturableFlag>(GenerationValuesComponent->FlagObjectiveValues.Flag, posOffset, FRotator(0.0f, yaw, 0.0f));
 			
 			newFlag->OnFlagObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newFlag->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
@@ -963,10 +974,10 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	//	}
 	//	break;
 	case EIslandFloorObstacle::SurvivalZone:
-	 		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
+		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
 		{
-			ASurvivalZone* newZone = GetWorld()->SpawnActor<ASurvivalZone>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZone, posOffset, FRotator(0.0f, yaw, 0.0f));
-			
+			ANewSurvivalZone* newZone = GetWorld()->SpawnActor<ANewSurvivalZone>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZone, posOffset, FRotator(0.0f, yaw, 0.0f));
+
 			newZone->OnFlagObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newZone->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 
@@ -1135,30 +1146,57 @@ void AIslandGenerationTest::CreateFloor()
 void AIslandGenerationTest::IncrementObjective()
 {
 	CurrentObjectives++;
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining flags: %i"), IslandIndex, CurrentObjectives));
+	FString objectiveName = "Nothing";
+
+	switch (IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+		objectiveName = "Flags";
+		break;
+	case EIslandObjectiveType::Survival:
+		objectiveName = "Survival Zones";
+		break;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
 }
 
 void AIslandGenerationTest::DecrementObjective()
 {
 	CurrentObjectives--;
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining flags: %i"), IslandIndex, CurrentObjectives));
+	FString objectiveName = "Nothing";
+
+	switch (IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+		objectiveName = "Flags";
+		break;
+	case EIslandObjectiveType::Survival:
+		objectiveName = "Survival Zones";
+		break;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
 	if (CurrentObjectives <= 0)
 	{
-		//BridgeActor->Activate();
+		if (Bridge)
+		{
+			Bridge->Activate();
+		}
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Bridge Activated")));
 	}
 }
 
 void AIslandGenerationTest::OnRep_FloorValuesArrayChange()
 {
-	//for (int y = 0; y < DepthRange.Final; y++)
-	//{
-	//	for (int x = 0; x < DepthRange.Final; x++)
-	//	{
-	//		CheckFloor(x, y, WidthRange.Final, DepthRange.Final);
-	//	}
-	//}
-	//CreateFloor();
+	for (int y = 0; y < IslandDepth; y++)
+	{
+		for (int x = 0; x < IslandDepth; x++)
+		{
+			CheckFloor(x, y, IslandWidth, IslandDepth);
+		}
+	}
+	CreateFloor();
 }
 
 void AIslandGenerationTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

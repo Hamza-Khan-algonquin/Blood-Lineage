@@ -163,15 +163,11 @@ public:
 
 	uint8 IslandIndex = 0;
 
-	TArray<class ACapturableFlag*> flag;
-	class AEnemyZone* enemyzone;
-	class APayloadActor* payload;
-	class ASurvivalZone* survivalzone;
-
 	FOnObjectiveIslandObjectiveComplete OnObjectiveIslandObjectiveComplete;
 
 	int8 CurrentObjectives = 0;
 
 	EIslandObjectiveType IslandObjective;
 
+	class AIslandBridge* Bridge;
 };

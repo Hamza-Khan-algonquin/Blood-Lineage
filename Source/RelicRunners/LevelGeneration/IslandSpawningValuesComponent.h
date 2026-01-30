@@ -49,7 +49,7 @@ struct FIslandStartAndEndTile
 	TSubclassOf<class APackedLevelActor> LevelEndPackedActor;
 
 	UPROPERTY(EditAnywhere, meta = (ToolTip = "Packed level actor used as the ending point of the level."));
-	TSubclassOf<class APackedLevelActor> BridgePackedActor;
+	TSubclassOf<class AIslandBridge> BridgePackedActor;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Minimum distance the starting and ending tiles can be from each other."))
 	uint8 StartingToEndingMinDistance;
@@ -128,7 +128,7 @@ struct FObjectiveFlagValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ACapturableFlag> Flag;
+	TSubclassOf<class ANewCapturableFlag> Flag;
 
 	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMin = 0;
@@ -144,7 +144,7 @@ struct FObjectiveEnemyZoneValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AEnemyZone> EnemyZone;
+	TSubclassOf<class ANewEnemyZone> EnemyZone;
 
 	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMin = 0;
@@ -160,7 +160,7 @@ struct FObjectivePayloadValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf <class APayloadActor> Payload;
+	TSubclassOf <class ANewPayloadObjective> Payload;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "1", UIMin = "1", ToolTip = "Speed at which the payload moves towards the target."))
 	float PayloadSpeed = 1.0f;
@@ -173,7 +173,7 @@ struct FSurvivalZoneValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf <class ASurvivalZone> SurvivalZone;
+	TSubclassOf <class ANewSurvivalZone> SurvivalZone;
 
 	UPROPERTY(EditAnywhere)
 	uint8 ZoneAmountMin = 0;
@@ -202,13 +202,7 @@ public:
 	// Sets default values for this component's properties
 	UIslandSpawningValuesComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
 public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UPROPERTY(EditAnywhere)
 	FIslandValues IslandValues;

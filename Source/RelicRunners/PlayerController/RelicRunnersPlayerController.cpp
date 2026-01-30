@@ -27,7 +27,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
-#include "RelicRunners/LevelGeneration/CapturableFlag.h"
+#include "RelicRunners/LevelGeneration/NewObjectives/NewCapturableFlag.h"
 
 #include "RelicRunners/Item/ItemActor.h"
 #include "RelicRunners/Item/ItemStats.h"
@@ -428,7 +428,7 @@ void ARelicRunnersPlayerController::Server_RequestPickup_Implementation(AItemAct
 	if (Item) Item->HandlePickup(Cast<ARelicRunnersCharacter>(GetPawn()));
 }
 
-void ARelicRunnersPlayerController::Server_RequestFlagActivation_Implementation(ACapturableFlag* Flag)
+void ARelicRunnersPlayerController::Server_RequestFlagActivation_Implementation(ANewCapturableFlag* Flag)
 {
 	if (Flag) Flag->HandleInteracted(Cast<ARelicRunnersCharacter>(GetPawn()));
 }

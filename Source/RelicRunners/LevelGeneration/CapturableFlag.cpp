@@ -94,12 +94,6 @@ void ACapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
 
 	BeaconMesh->SetVisibility(false);
-	OnFlagObjectiveActivated.Broadcast();
-}
-
-void ACapturableFlag::Activate()
-{
-	OnFlagObjectiveCreated.Broadcast();
 }
 
 void ACapturableFlag::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
