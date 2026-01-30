@@ -208,15 +208,15 @@ void UInventorySlotsEntry::OnEntryClicked()
     {
         if (TileView->GetName() == "InventorySlots")
         {
-            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItemWithForge());
+            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItemWithForge(), GetCachedGeometry());
         }
         else if (TileView->GetName() == "VendorSlots")
         {
-            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::VendorItem());
+            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::VendorItem(), GetCachedGeometry());
         }
     }
     else
     {
-        ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItem());
+        ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItem(), GetCachedGeometry());
     }
 }

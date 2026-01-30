@@ -48,6 +48,7 @@
 #include "InventoryDragOperation.h"
 #include "InventorySlotsEntry.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
+#include <Blueprint/SlateBlueprintLibrary.h>
 
 void UInventory::NativeConstruct()
 {
@@ -80,7 +81,7 @@ FEventReply UInventory::OnForgeItem1Clicked(FGeometry MyGeometry, const FPointer
 {
     if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && ForgeItemLeft)
     {
-        CreateItemOptionsPopup(ForgeItemLeft, FItemOptionsUIConfig::ForgeItem());
+        CreateItemOptionsPopup(ForgeItemLeft, FItemOptionsUIConfig::ForgeItem(), MyGeometry);
         return UWidgetBlueprintLibrary::Handled();
     }
 
@@ -93,7 +94,7 @@ FEventReply UInventory::OnForgeItem2Clicked(FGeometry MyGeometry, const FPointer
 
     if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && ForgeItemRight)
     {
-        CreateItemOptionsPopup(ForgeItemRight, FItemOptionsUIConfig::ForgeItem());
+        CreateItemOptionsPopup(ForgeItemRight, FItemOptionsUIConfig::ForgeItem(), MyGeometry);
         return UWidgetBlueprintLibrary::Handled();
     }
 
@@ -106,7 +107,7 @@ FEventReply UInventory::OnForgeItemResultClicked(FGeometry MyGeometry, const FPo
 
     if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && ForgeItemResult)
     {
-        CreateItemOptionsPopup(ForgeItemResult, FItemOptionsUIConfig::ForgeResultItem());
+        CreateItemOptionsPopup(ForgeItemResult, FItemOptionsUIConfig::ForgeResultItem(), MyGeometry);
         return UWidgetBlueprintLibrary::Handled();
     }
 
@@ -154,12 +155,14 @@ void UInventory::ToggleShopUI(bool value)
     else
     {
         ShopCanvas->SetVisibility(ESlateVisibility::Visible);
+
+        if (ForgeCanvas->IsVisible()) ToggleForgeUI(false);
     }
 }
 
 void UInventory::ToggleForgeUI(bool value)
 {
-    if (!ShopCanvas) return;
+    if (!ForgeCanvas) return;
 
     if (!value)
     {
@@ -178,14 +181,14 @@ void UInventory::ToggleForgeUI(bool value)
         ForgeCanvas->SetVisibility(ESlateVisibility::Visible);
 
         UpdateForgeUI();
+
+        if (ShopCanvas->IsVisible()) ToggleShopUI(false);
     }
 }
 
 void UInventory::DisplaySelectedVendorItems(const TArray<FItemData>& Items, AVendor* Vendor)
 {
     if (!Vendor || !VendorSlots) return;
-
-    CurrentVendor = Vendor;
 
     //Reserving array space
     TArray<UItemObject*> VendorItems;
@@ -436,7 +439,8 @@ void UInventory::BuyItem(UItemObject* Item)
 
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
-        PS->Server_BuyItem(Item->ItemData, CurrentVendor);
+        AVendor* Shop = Cast<AVendor>(CurrentVendor);
+        PS->Server_BuyItem(Item->ItemData, Shop);
     }
 }
 
@@ -446,7 +450,8 @@ void UInventory::SellItem(UItemObject* Item)
 
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
-        PS->Server_SellItem(Item->ItemData, CurrentVendor);
+        AVendor* Shop = Cast<AVendor>(CurrentVendor);
+        PS->Server_SellItem(Item->ItemData, Shop);
     }
 }
 
@@ -666,27 +671,42 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
 void UInventory::HelmetSlotClicked()
 {
-    OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Helmet"));
+    if (B_Helmet)
+    {
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Helmet"), B_Helmet->GetCachedGeometry());
+    }
 }
 
 void UInventory::ArmsSlotClicked()
 {
-    OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Arms"));
+    if (B_Arms)
+    {
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Arms"), B_Arms->GetCachedGeometry());
+    }
 }
 
 void UInventory::UpperSlotClicked()
 {
-    OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Upper"));
+    if (B_Upper)
+    {
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Upper"), B_Upper->GetCachedGeometry());
+    }
 }
 
 void UInventory::LowerSlotClicked()
 {
-    OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Lower"));
+    if (B_Lower)
+    {
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Lower"), B_Lower->GetCachedGeometry());
+    }
 }
 
 void UInventory::NecklaceSlotClicked()
 {
-    OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Necklace"));
+    if (B_Necklace)
+    {
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Necklace"), B_Necklace->GetCachedGeometry());
+    }
 }
 
 void UInventory::MainhandSlotClicked()
@@ -719,28 +739,33 @@ void UInventory::SortingTypeClicked()
     }
 }
 
-void UInventory::OnEquippedSlotClick(UItemObject* EquippedItem)
+void UInventory::OnEquippedSlotClick(UItemObject* EquippedItem, const FGeometry& SlotGeometry)
 {
     UInventorySortingOptions::CloseAnyOpenPopup();
     UInventoryItemOptions::CloseAnyOpenPopup();
+
     if (EquippedItem)
     {
-        CreateItemOptionsPopup(EquippedItem, FItemOptionsUIConfig::EquippedItem());
+        CreateItemOptionsPopup(EquippedItem, FItemOptionsUIConfig::EquippedItem(), SlotGeometry);
     }
 }
 
-void UInventory::CreateItemOptionsPopup(UItemObject* Item, const FItemOptionsUIConfig& Config)
+void UInventory::CreateItemOptionsPopup(UItemObject* Item, const FItemOptionsUIConfig& Config, const FGeometry& InGeometry)
 {
     UInventoryItemOptions* Popup = CreateWidget<UInventoryItemOptions>(GetWorld(), InventoryItemOptionsClass);
+
     if (Popup)
     {
-        Popup->AddToViewport();
         Popup->Setup(Item);
         Popup->ApplyConfig(Config);
+        Popup->AddToViewport();
 
-        FVector2D ScreenPosition;
-        UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
-        Popup->SetPositionInViewport(ScreenPosition, false);
+        FVector2D PixelPos;
+        FVector2D ViewportPos;
+
+        USlateBlueprintLibrary::LocalToViewport(GetWorld(), InGeometry, FVector2D(0.f, 0.f), PixelPos, ViewportPos);
+        Popup->SetPositionInViewport(PixelPos, true);
+        Popup->SetAlignmentInViewport(FVector2D(0.f, 0.f));
     }
 }
 

@@ -131,7 +131,7 @@ public:
 	class UInventorySortingOptions* InventorySortingOptions = nullptr;
 	UPROPERTY()
 	class ARelicRunnersCharacter* OwningCharacter;
-	class AVendor* CurrentVendor;
+	class ACharacter* CurrentVendor;
 	UPROPERTY()
 	class UItemObject* ForgeItemLeft = nullptr;
 	UPROPERTY()
@@ -147,7 +147,7 @@ public:
 	class UBorder* CurrentHoveredBorder;
 
 	//Functions
-	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, AVendor* Vendor);
+	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
 	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
 	FString RollForgeRarity(const FString R1, float C1, const FString R2, float C2, const FString R3, float C3);
@@ -163,8 +163,8 @@ public:
 	void DropItem(class UItemObject* Item);
 	void BuyItem(class UItemObject* Item);
 	void SellItem(class UItemObject* Item);
-	void OnEquippedSlotClick(class UItemObject* EquippedItem);
-	void CreateItemOptionsPopup(UItemObject* Item, const struct FItemOptionsUIConfig& Config);
+	void OnEquippedSlotClick(UItemObject* EquippedItem, const FGeometry& SlotGeometry);
+	void CreateItemOptionsPopup(UItemObject* Item, const FItemOptionsUIConfig& Config, const FGeometry& InGeometry);
 	void ClearForgeItemLeft();
 	void ClearForgeItemRight();
 	void ClearForgeItemResult();
