@@ -33,19 +33,19 @@ public:
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
 	EEnemyType TypeOfEnemy = EEnemyType::LIGHT;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyLODSkeletalMeshComponent> SkeletalMesh;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyLODStaticMeshComponent> StaticMesh;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyLODComponent> LODComponent;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyBoidMovementComponent> MovementComponent;
 
 protected:

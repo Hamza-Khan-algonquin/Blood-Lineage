@@ -4,8 +4,33 @@
 #include "EnemyBoidMovementComponent.h"
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
+#include "NavigationSystem.h"
 
-void UEnemyBoidMovementComponent::CalculateDirection()
+UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
+{
+	PrimaryComponentTick.bCanEverTick = true;
+	VisualRange = 1000.f;
+	FeildOfView = 180.f;
+	SeparationRange = 200.f;
+	MaxTurnSpeed = 500.f;
+	MaxSpeed = 600.f;
+	CoherenceWeight = 1.f;
+	SeparationWeight = 1.5f;
+	AlignmentWeight = 1.f;
+	TargetWeight = 2.f;
+	Velocity = { 0,0,0 };
+	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
+}
+
+void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	CalculateDirection(DeltaTime);
+	MoveInDirection(DeltaTime);
+	GroundSnap();
+}
+
+void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 {
 	//set up variables for each of the influncers on the birds direction
 	//The unit vector towards average position of all boids
@@ -101,14 +126,62 @@ void UEnemyBoidMovementComponent::CalculateDirection()
 	}
 
 	finalInflunceVector /= totalWeight;
+	finalInflunceVector.Normalize();
 
-	//calculate the force to add then add it
+	FVector desiredVelocity = finalInflunceVector * MaxSpeed;
 
-	//APawn* pawn = StaticCastPtr<APawn, AActor>(GetOwner());
+	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
-	FVector turnSpeed = (finalInflunceVector * MaxSpeed) - CurrentVelocity;
+	Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
+}
 
-	CurrentVelocity = turnSpeed.GetClampedToMaxSize(MaxSpeed);
+bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement, FVector& out)
+{
+	FNavLocation navLocation;
+	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+
+	if (navSys && navSys->ProjectPointToNavigation(DesiredMovement, navLocation, NavMeshClampExtent))
+	{
+		out = navLocation.Location;
+		return true;
+	}
+
+	return false;
+}
+
+void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
+{
+	FVector desiredMovement = Velocity * DeltaTime;
+	FVector finalMovement = FVector::Zero();
+	FHitResult hit;
+
+	ClampToNavMesh(GetOwner()->GetActorLocation() + desiredMovement, finalMovement);
+
+	GetOwner()->SetActorLocation(finalMovement);
+
+
+	/*SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), false, hit);
+
+	if (hit.IsValidBlockingHit())
+	{
+		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
+	}*/
+	
+}
+
+void UEnemyBoidMovementComponent::GroundSnap()
+{
+	FVector start = GetOwner()->GetActorLocation();
+	FVector end = start - FVector(0, 0, 1000.f);
+	FHitResult hit;
+	FCollisionQueryParams params;
+	params.AddIgnoredActor(GetOwner());
+	bool bHit = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECC_WorldStatic, params);
+	if (bHit)
+	{
+		FVector newLocation = hit.Location;
+		GetOwner()->SetActorLocation(newLocation);
+	}
 }
 
 bool UEnemyBoidMovementComponent::CanSeeOtherBoid(APawn* otherBoid, FVector& directionToBoid, float& distanceToBoid)
@@ -127,7 +200,7 @@ bool UEnemyBoidMovementComponent::CanSeeOtherBoid(APawn* otherBoid, FVector& dir
 
 	if (distanceToBoid <= VisualRange)
 	{
-		float angle = directionToBoid.Dot(CurrentVelocity) / (CurrentVelocity.Length() * directionToBoid.Length());
+		float angle = directionToBoid.Dot(Velocity) / (Velocity.Length() * directionToBoid.Length());
 
 		return angle <= FeildOfView;
 	}
@@ -137,5 +210,5 @@ bool UEnemyBoidMovementComponent::CanSeeOtherBoid(APawn* otherBoid, FVector& dir
 
 const FVector UEnemyBoidMovementComponent::GetVelocity()
 {
-	return CurrentVelocity;
+	return Velocity;
 }
