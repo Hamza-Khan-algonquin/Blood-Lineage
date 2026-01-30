@@ -159,6 +159,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	GetOwner()->SetActorLocation(finalMovement);
 
+
 	/*SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), false, hit);
 
 	if (hit.IsValidBlockingHit())
