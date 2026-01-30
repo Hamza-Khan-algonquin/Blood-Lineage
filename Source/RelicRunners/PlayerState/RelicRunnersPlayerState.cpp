@@ -330,8 +330,17 @@ void ARelicRunnersPlayerState::OnLevelUp()
 		StartingWeapon = "Sword";
 		DexterityIncrease = 3;
 	}
+	else
+	{
+		StartingWeapon = "Greatsword";
+		HealthIncrease = 5;
+		ArmorIncrease = 2;
+		StrengthIncrease = 1;
+	}
+
 	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(StartingWeapon);
 	Item->ItemData.Level++;
+
 	if (Item->ItemData.Level >= 3 && Item->ItemData.Rarity == "Common")
 	{
 		Item->ItemData.Rarity = "Uncommon";
