@@ -27,7 +27,7 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	CalculateDirection(DeltaTime);
 	MoveInDirection(DeltaTime);
-	GroundSnap();
+	//GroundSnap();
 }
 
 void UEnemyBoidMovementComponent::CalculateDirection(float delta)
@@ -157,7 +157,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	ClampToNavMesh(GetOwner()->GetActorLocation() + desiredMovement, finalMovement);
 
-	GetOwner()->SetActorLocation(finalMovement);
+	//GetOwner()->SetActorLocation(finalMovement);
 
 
 	/*SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), false, hit);
@@ -180,7 +180,10 @@ void UEnemyBoidMovementComponent::GroundSnap()
 	if (bHit)
 	{
 		FVector newLocation = hit.Location;
-		GetOwner()->SetActorLocation(newLocation);
+		FVector offset;
+		FVector standIn;
+		GetOwner()->GetActorBounds(false, standIn, offset, false);
+		GetOwner()->SetActorLocation(newLocation + FVector(0,0, offset.Z));
 	}
 }
 
