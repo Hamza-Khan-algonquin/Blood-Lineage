@@ -9,6 +9,7 @@
 #include "Navigation/PathFollowingComponent.h"
 #include "NavigationSystem.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
+#include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 
 ACommanderController::ACommanderController()
 {
@@ -101,6 +102,7 @@ void ACommanderController::SpawnPawnEnemy()
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
 	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
+	newEnemy->MovementComponent->Commander = this;
 	AddPawnEnemy(newEnemy);
 }
 

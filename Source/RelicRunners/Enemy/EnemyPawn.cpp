@@ -14,6 +14,7 @@
 #include "RelicRunners/Enemy/LOD Wrapper Components/EnemyLODSkeletalMeshComponent.h"
 #include "RelicRunners/Enemy/LOD Wrapper Components/EnemyLODStaticMeshComponent.h"
 #include "RelicRunners/Enemy/EnemyLODComponent.h"
+#include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 
 
 // Sets default values
@@ -36,6 +37,8 @@ AEnemyPawn::AEnemyPawn()
 	StaticMesh = CreateDefaultSubobject<UEnemyLODStaticMeshComponent>("Static Mesh");
 	StaticMesh->SetupAttachment(RootComponent);
 	LODComponent->OnUpdateLODEvent.AddDynamic(StaticMesh, &UEnemyLODStaticMeshComponent::LODUpdate);
+
+	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 }
 
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
