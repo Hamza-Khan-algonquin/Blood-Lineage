@@ -6,6 +6,11 @@
 #include "IslandSpawningValuesComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "PackedLevelActor/PackedLevelActor.h"
+#include "NewObjectives/NewCapturableFlag.h"
+#include "NewObjectives/NewEnemyZone.h"
+#include "NewObjectives/NewPayloadObjective.h"
+#include "NewObjectives/NewSurvivalZone.h"
+#include "IslandBridge.h"
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -28,6 +33,7 @@ AIslandGenerationTest::AIslandGenerationTest()
 	PrimaryActorTick.bCanEverTick = false;
 
 	GenerationValuesComponent = CreateDefaultSubobject<UIslandSpawningValuesComponent>("GenerationValues");
+	GenerationValuesComponent->SetIsReplicated(true);
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -71,6 +77,8 @@ void AIslandGenerationTest::Generate()
 			FindStartToEndPath(startingIndex, endingIndex, IslandWidth, true);
 		}
 
+		InitializeObjectives(startingIndex, endingIndex);
+
 		if (!FloorValuesArray.IsEmpty())
 		{
 			for (int y = 0; y < IslandDepth; y++)
@@ -87,13 +95,23 @@ void AIslandGenerationTest::Generate()
 			//Spawn the floor with the instanced static mesh component.
 			CreateFloor();
 		}
+
+		if (GenerationValuesComponent->IslandStartEnd.BridgePackedActor)
+		{
+			float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+			FVector posOffset = FVector((tileScale * IslandWidth * 4) + tileScale, (tileScale * (IslandDepth - 1) * 4) + tileScale, 0.0f) + GetActorLocation();
+
+			Bridge = GetWorld()->SpawnActor<AIslandBridge>(GenerationValuesComponent->IslandStartEnd.BridgePackedActor, posOffset, FRotator::ZeroRotator);
+		}
 	}
 }
 
-void AIslandGenerationTest::InitializeValues()
+void AIslandGenerationTest::InitializeValues(EIslandObjectiveType islandObjective)
 {
 	IslandDepth = FMath::RandRange(GenerationValuesComponent->IslandValues.DepthMin, GenerationValuesComponent->IslandValues.DepthMax);
 	IslandWidth = FMath::RandRange(GenerationValuesComponent->IslandValues.WidthMin, GenerationValuesComponent->IslandValues.WidthMax);
+
+	IslandObjective = islandObjective;
 }
 
 void AIslandGenerationTest::GenerateFloor(int x, int y)
@@ -147,6 +165,38 @@ void AIslandGenerationTest::SetStartingAndEndingPoints(int startingIndex, int en
 	FloorValuesArray[endingIndex].IslandFloorObstacle = EIslandFloorObstacle::End;
 	FloorValuesArray[endingIndex].randomFloorToSpawn = 0;
 	FloorValuesArray[endingIndex].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetFlagTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::CapturableFlag;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetEnemyZoneTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::EnemyZone;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetSurvivalZoneTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::SurvivalZone;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetVantagePointTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::Vantage;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
 }
 
 void AIslandGenerationTest::InitializeFloor()
@@ -288,6 +338,124 @@ void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetInde
 
 void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetIndex, int width, bool implementSpline)
 {
+}
+
+void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
+{
+	int flagAmount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
+	int enemyZoneAmount = FMath::RandRange(GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMin, GenerationValuesComponent->EnemyZoneObjectiveValues.FlagAmountMax);
+	int survivalZoneAmount = FMath::RandRange(GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMin, GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMax);
+
+	switch (IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+
+		//Override previously initialized tiles with capturable flag tiles
+		for (int i = 0; i < flagAmount; i++)
+		{
+			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+			int whileLoopLimit = 0;
+
+			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Basic)
+			{
+				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+				whileLoopLimit++;
+
+				if (whileLoopLimit >= 10)
+				{
+					break;
+				}
+			}
+
+			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+			if (whileLoopLimit < 10)
+			{
+				SetFlagTile(keyTileIndex);
+
+				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
+			}
+		}
+		break;
+	case EIslandObjectiveType::DefeatAllEnemies:
+
+		for (int i = 0; i < enemyZoneAmount; i++)
+		{
+			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+			int whileLoopLimit = 0;
+
+			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Basic)
+			{
+				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+				whileLoopLimit++;
+
+				if (whileLoopLimit >= 10)
+				{
+					break;
+				}
+			}
+
+			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+			if (whileLoopLimit < 10)
+			{
+				SetEnemyZoneTile(keyTileIndex);
+
+				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
+			}
+		}
+		break;
+	case EIslandObjectiveType::MoveThePayload:
+		if (IslandDepth * IslandWidth > 1)
+		{
+			//Override starting and ending tiles initialized above and create a path from one to the other.
+			SetStartingAndEndingPoints(startingIndex, endingIndex);
+
+			FindStartToEndPath(startingIndex, endingIndex, IslandWidth, true);
+
+			if (GenerationValuesComponent->PayloadObjectiveValues.Payload != nullptr)
+			{
+				//APayloadActor* payload = GetWorld()->SpawnActor<APayloadActor>(GenerationValuesComponent->PayloadObjectiveValues.Payload, FVector::ZeroVector, FRotator::ZeroRotator);
+				//payload->Multicast_Initialize(DeliverySpline, GenerationValuesComponent->PayloadObjectiveValues.PayloadSpeed);
+			}
+		}
+		break;
+	case EIslandObjectiveType::Survival:
+
+		//Override previously initialized tiles with survival zone tiles
+		for (int i = 0; i < survivalZoneAmount; i++)
+		{
+			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+			int whileLoopLimit = 0;
+
+			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Basic)
+			{
+				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+				whileLoopLimit++;
+
+				if (whileLoopLimit >= 10)
+				{
+					break;
+				}
+			}
+
+			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+			if (whileLoopLimit < 10)
+			{
+				SetSurvivalZoneTile(keyTileIndex);
+
+				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
+			}
+		}
+		break;
+	}
 }
 
 void AIslandGenerationTest::CheckFloor(int x, int y, int width, int depth)
@@ -629,6 +797,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	FVector posOffset = FVector((tileScale * x * 4) + tileScale, (tileScale * y * 4) + tileScale, 0.0f) + GetActorLocation();
 
 	TArray<TSubclassOf<APackedLevelActor>> actorArray = GenerationValuesComponent->ObstacleValues.ObstacleActor.Array();
+	TArray<TSubclassOf<APackedLevelActor>> vantageArray = GenerationValuesComponent->VantageValues.VantageActor.Array();
 
 	switch (FloorValuesArray[index].IslandFloorObstacle)
 	{
@@ -684,18 +853,23 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	//		}
 	//	}
 	//	break;
-	//case EFloorObstacle::Vantage:
-	//	if (!VantagePackedActorArray.IsEmpty())
-	//	{
-	//		int randIndex = FMath::RandRange(0, VantagePackedActorArray.Num() - 1);
+	case EIslandFloorObstacle::Vantage:
+		if (vantageArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
+		{
+			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(vantageArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, yaw, 0.0f));
+		}
 
-	//		if (VantagePackedActorArray.IsValidIndex(randIndex))
-	//		{
-	//			if (VantagePackedActorArray[randIndex])
-	//			{
-	//				APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(VantagePackedActorArray[randIndex], posOffset, FRotator(0.0f, yaw, 0.0f));
-	//			}
-	//		}
+		//if (!VantagePackedActorArray.IsEmpty())
+		//{
+		//	int randIndex = FMath::RandRange(0, VantagePackedActorArray.Num() - 1);
+
+		//	if (VantagePackedActorArray.IsValidIndex(randIndex))
+		//	{
+		//		if (VantagePackedActorArray[randIndex])
+		//		{
+		//			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(VantagePackedActorArray[randIndex], posOffset, FRotator(0.0f, yaw, 0.0f));
+		//		}
+		//	}
 
 	//		if (PackedActorBasicWall != nullptr)
 	//		{
@@ -717,9 +891,19 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	//			}
 	//		}
 	//	}
-	//	break;
+		break;
 
-	//case EFloorObstacle::CapturableFlag:
+	case EIslandFloorObstacle::CapturableFlag:
+		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
+		{
+			ANewCapturableFlag* newFlag = GetWorld()->SpawnActor<ANewCapturableFlag>(GenerationValuesComponent->FlagObjectiveValues.Flag, posOffset, FRotator(0.0f, yaw, 0.0f));
+			
+			newFlag->OnFlagObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
+			newFlag->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+
+			newFlag->Activate();
+		}
+
 	//	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::CaptureTheFlag))
 	//	{
 	//		if (!CapturableFlagPackedActorArray.IsEmpty())
@@ -753,7 +937,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	//		}
 
 	//	}
-	//	break;
+		break;
 	//case EFloorObstacle::EnemyZone:
 	//	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::DefeatAllEnemies))
 	//	{
@@ -789,7 +973,17 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 	//	}
 	//	break;
-	//case EFloorObstacle::SurvivalZone:
+	case EIslandFloorObstacle::SurvivalZone:
+		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
+		{
+			ANewSurvivalZone* newZone = GetWorld()->SpawnActor<ANewSurvivalZone>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZone, posOffset, FRotator(0.0f, yaw, 0.0f));
+
+			newZone->OnFlagObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
+			newZone->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+
+			newZone->Activate();
+		}
+
 	//	if (EnumHasAnyFlags(static_cast<EObjectiveType>(ObjectiveType), EObjectiveType::Survival))
 	//	{
 	//		if (!SurvivalZonePackedActorArray.IsEmpty())
@@ -823,7 +1017,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	//		}
 
 	//	}
-	//	break;
+		break;
 	case EIslandFloorObstacle::Start:
 		if (GenerationValuesComponent->IslandStartEnd.LevelStartPackedActor != nullptr && IslandIndex == 0)
 		{
@@ -949,16 +1143,60 @@ void AIslandGenerationTest::CreateFloor()
 	}
 }
 
+void AIslandGenerationTest::IncrementObjective()
+{
+	CurrentObjectives++;
+	FString objectiveName = "Nothing";
+
+	switch (IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+		objectiveName = "Flags";
+		break;
+	case EIslandObjectiveType::Survival:
+		objectiveName = "Survival Zones";
+		break;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
+}
+
+void AIslandGenerationTest::DecrementObjective()
+{
+	CurrentObjectives--;
+	FString objectiveName = "Nothing";
+
+	switch (IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+		objectiveName = "Flags";
+		break;
+	case EIslandObjectiveType::Survival:
+		objectiveName = "Survival Zones";
+		break;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
+	if (CurrentObjectives <= 0)
+	{
+		if (Bridge)
+		{
+			Bridge->Activate();
+		}
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Bridge Activated")));
+	}
+}
+
 void AIslandGenerationTest::OnRep_FloorValuesArrayChange()
 {
-	//for (int y = 0; y < DepthRange.Final; y++)
-	//{
-	//	for (int x = 0; x < DepthRange.Final; x++)
-	//	{
-	//		CheckFloor(x, y, WidthRange.Final, DepthRange.Final);
-	//	}
-	//}
-	//CreateFloor();
+	for (int y = 0; y < IslandDepth; y++)
+	{
+		for (int x = 0; x < IslandDepth; x++)
+		{
+			CheckFloor(x, y, IslandWidth, IslandDepth);
+		}
+	}
+	CreateFloor();
 }
 
 void AIslandGenerationTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

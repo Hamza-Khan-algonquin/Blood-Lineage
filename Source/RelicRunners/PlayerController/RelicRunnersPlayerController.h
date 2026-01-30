@@ -62,7 +62,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SendPlayerInfo(const FString& PlayerName, const FName& SelectedClass);
 	UFUNCTION(Server, Reliable)
-	void Server_RequestFlagActivation(class ACapturableFlag* Flag);
+	void Server_RequestFlagActivation(class ANewCapturableFlag* Flag);
 	UFUNCTION(Server, Reliable)
 	void Server_RequestPickup(class AItemActor* Item);
 	UFUNCTION(Client, Reliable)

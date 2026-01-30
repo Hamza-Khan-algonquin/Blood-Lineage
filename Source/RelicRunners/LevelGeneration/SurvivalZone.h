@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "SurvivalZone.generated.h"
 
+
 UCLASS()
 class RELICRUNNERS_API ASurvivalZone : public AActor
 {

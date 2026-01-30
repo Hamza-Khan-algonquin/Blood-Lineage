@@ -7,6 +7,7 @@
 #include "RelicRunners/Interact/InteractInterface.h"
 #include "CapturableFlag.generated.h"
 
+
 UCLASS()
 class RELICRUNNERS_API ACapturableFlag : public AActor, public IInteractInterface
 {
@@ -15,6 +16,9 @@ class RELICRUNNERS_API ACapturableFlag : public AActor, public IInteractInterfac
 public:	
 	// Sets default values for this actor's properties
 	ACapturableFlag();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* BeaconMesh;
 
 protected:
 	// Called when the game starts or when spawned

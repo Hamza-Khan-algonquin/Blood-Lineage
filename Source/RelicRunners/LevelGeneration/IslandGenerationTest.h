@@ -6,6 +6,10 @@
 #include "GameFramework/Actor.h"
 #include "IslandGenerationTest.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnObjectiveIslandObjectiveComplete);
+
+enum class EIslandObjectiveType : uint8;
+
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
 enum class EIslandFloorNeighbours : uint8
 {
@@ -72,7 +76,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
 
-	void InitializeValues();
+	void InitializeValues(EIslandObjectiveType islandObjective);
 
 	void Generate();
 
@@ -94,21 +98,24 @@ public:
 	//Finds the starting and ending indexes and sets them accordingly.
 	void SetStartingAndEndingPoints(int startingIndex, int endingIndex);
 
-	////Overrides tiles set by *InitializeFloor()* and sets them as Capturable Flag Tiles.
-	//void SetFlagTile(int index);
+	//Overrides tiles set by *InitializeFloor()* and sets them as Capturable Flag Tiles.
+	void SetFlagTile(int index);
 
 	////Overrides tiles set by *InitializeFloor()* and sets them as Enemy Zone Tiles.
-	//void SetEnemyZoneTile(int index);
+	void SetEnemyZoneTile(int index);
 
 	////Overrides tiles set by *InitializeFloor()* and sets them as Survival Zone Tiles.
-	//void SetSurvivalZoneTile(int index);
+	void SetSurvivalZoneTile(int index);
 
 	////Overrides tiles set by *InitializeFloor()* and sets them as Vantage Point Tiles.
-	//void SetVantagePointTile(int index);
+	void SetVantagePointTile(int index);
 
 	//Creates a path from *startingIndex* to *targetIndex* by setting those tiles to walkable.
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width);
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width, bool implementSpline);
+
+	//Initializes the objective
+	void InitializeObjectives(int startingIndex, int endingIndex);
 
 	//Checks the neighbours of each tile to determine what mesh should be used for each quarter tile.
 	//Calls FloorCheckTopNeighbours, FloorCheckMiddleNeighbours and FloorCheckBottomNeighbours
@@ -135,6 +142,10 @@ public:
 	//Spawns the appropriate mesh into an instanced static mesh component based on the tile's neighbours.
 	void CreateFloor();
 
+	UFUNCTION()
+	void IncrementObjective();
+	UFUNCTION()
+	void DecrementObjective();
 public:
 	//Client only. Used to replicate the array of floor values.
 	UFUNCTION()
@@ -152,4 +163,11 @@ public:
 
 	uint8 IslandIndex = 0;
 
+	FOnObjectiveIslandObjectiveComplete OnObjectiveIslandObjectiveComplete;
+
+	int8 CurrentObjectives = 0;
+
+	EIslandObjectiveType IslandObjective;
+
+	class AIslandBridge* Bridge;
 };

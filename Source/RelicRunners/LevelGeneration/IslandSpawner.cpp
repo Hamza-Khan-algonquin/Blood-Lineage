@@ -5,13 +5,15 @@
 #include "IslandGenerationTest.h"
 #include "LevelGenerator.h"
 #include "IslandSpawningValuesComponent.h"
+#include "PayloadActor.h"
+
 
 // Sets default values
 AIslandSpawner::AIslandSpawner():
-	ObjectiveType(0),
-	NumIslands(0),
-	TileScale(0.0f),
 	IslandGenerationTestTemplate(nullptr),
+	NumIslands(0),
+	ObjectiveType(0),
+	TileScale(0.0f),
 	WidthMin(1),
 	WidthMax(1),
 	DepthMin(1),
@@ -30,46 +32,69 @@ void AIslandSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (IslandGenerationTestTemplate != nullptr)
+	if (HasAuthority())
 	{
 
-		for (int i = 0; i < NumIslands; i++)
+		if (IslandGenerationTestTemplate != nullptr)
 		{
-			AIslandGenerationTest* newIsland = GetWorld()->SpawnActor<AIslandGenerationTest>(IslandGenerationTestTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
 
-			newIsland->IslandIndex = i;
-
-			newIsland->GenerationValuesComponent->SetIslandValues(GenerationValuesComponent->IslandValues);
-			newIsland->GenerationValuesComponent->SetIslandStartAndEndValues(GenerationValuesComponent->IslandStartEnd);
-			newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
-			newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
-
-			newIsland->InitializeValues();
-
-			Islands.Add(newIsland);
-		}
-
-
-		for (int i = 0; i < NumIslands; i++)
-		{
-			FVector offsetVec = FVector::ZeroVector;
-			float offset = 0;
-
-			int offsetX = 0;
-			int offsetY = 0;
-
-			for (int j = 0; j < i; j++)
+			for (int i = 0; i < NumIslands; i++)
 			{
-				offsetX = offsetX + (Islands[j]->IslandWidth * GenerationValuesComponent->IslandValues.TileScale * 4) + (GenerationValuesComponent->IslandValues.TileScale * 4);
-				offsetY = FMath::FRandRange(0.0f, Islands[j]->IslandDepth) * GenerationValuesComponent->IslandValues.TileScale * 4;
+				AIslandGenerationTest* newIsland = GetWorld()->SpawnActor<AIslandGenerationTest>(IslandGenerationTestTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
+
+				newIsland->IslandIndex = i;
+
+				newIsland->GenerationValuesComponent->SetIslandValues(GenerationValuesComponent->IslandValues);
+				newIsland->GenerationValuesComponent->SetIslandStartAndEndValues(GenerationValuesComponent->IslandStartEnd);
+				newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
+				newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
+				newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
+				newIsland->GenerationValuesComponent->SetSurvivalZoneObjectiveValues(GenerationValuesComponent->SurvivalZoneObjectiveValues);
+
+				EIslandObjectiveType islandObjective = EIslandObjectiveType::None;
+				TArray<EIslandObjectiveType> ActiveFlags;
+				for (int32 j = 0; j < 8; ++j)
+				{
+					uint8 FlagValue = 1 << j;
+					if ((GenerationValuesComponent->IslandValues.Objectives & FlagValue) != 0 && FlagValue != (uint8)EIslandObjectiveType::None)
+					{
+						ActiveFlags.Add((EIslandObjectiveType)FlagValue);
+					}
+				}
+
+				if (ActiveFlags.Num() > 0)
+				{
+					int32 RandomIndex = FMath::RandRange(0, ActiveFlags.Num() - 1);
+					islandObjective = ActiveFlags[RandomIndex];
+				}
+
+				newIsland->InitializeValues(islandObjective);
+
+				Islands.Add(newIsland);
 			}
 
-			Islands[i]->SetActorLocation(FVector(offsetX, offsetY, Islands[i]->GetActorLocation().Z));
-		}
 
-		for (int i = 0; i < NumIslands; i++)
-		{
-			Islands[i]->Generate();
+			for (int i = 0; i < NumIslands; i++)
+			{
+				FVector offsetVec = FVector::ZeroVector;
+				float offset = 0;
+
+				int offsetX = 0;
+				int offsetY = 0;
+
+				for (int j = 0; j < i; j++)
+				{
+					offsetX = offsetX + (Islands[j]->IslandWidth * GenerationValuesComponent->IslandValues.TileScale * 4) + (GenerationValuesComponent->IslandValues.TileScale * 4);
+					offsetY = FMath::FRandRange(0.0f, Islands[j]->IslandDepth) * GenerationValuesComponent->IslandValues.TileScale * 4;
+				}
+
+				Islands[i]->SetActorLocation(FVector(offsetX, offsetY, Islands[i]->GetActorLocation().Z));
+			}
+
+			for (int i = 0; i < NumIslands; i++)
+			{
+				Islands[i]->Generate();
+			}
 		}
 	}
 }
