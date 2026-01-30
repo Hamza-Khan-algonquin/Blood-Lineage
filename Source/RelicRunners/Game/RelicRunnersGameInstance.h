@@ -76,7 +76,7 @@ public:
     //Savefiles
     UFUNCTION(BlueprintCallable)
     class USaveFileListData* CreateSaveFromData(const struct FSaveData& SaveData, UObject* Outer);
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     TArray<class USaveFileListData*> SaveSlots;
     UFUNCTION(BlueprintCallable)
     void AddSaveSlot(USaveFileListData* NewSave, UModeSelectionWidget* ParentWidget) {NewSave->IsEmptySlot = false, NewSave->SetParentWidget(ParentWidget); SaveSlots.Add(NewSave); }
