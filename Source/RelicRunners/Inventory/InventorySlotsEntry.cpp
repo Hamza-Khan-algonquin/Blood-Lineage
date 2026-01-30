@@ -196,7 +196,7 @@ void UInventorySlotsEntry::OnEntryClicked()
     bool VendorActive = false;
     if (ParentInventory)
     {
-        if (ParentInventory->VendorCanvas->IsVisible())
+        if (ParentInventory->ShopCanvas->IsVisible())
         {
             VendorActive = true;
         }

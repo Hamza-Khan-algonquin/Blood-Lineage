@@ -67,7 +67,8 @@ void UInventory::NativeConstruct()
     if (B_SortingType) B_SortingType->OnClicked.AddDynamic(this, &UInventory::SortingTypeClicked);
     
     //Vendor
-    if (VendorCanvas) VendorCanvas->SetVisibility(ESlateVisibility::Collapsed);
+    if (ShopCanvas) ShopCanvas->SetVisibility(ESlateVisibility::Collapsed);
+    if (ForgeCanvas) ForgeCanvas->SetVisibility(ESlateVisibility::Collapsed);
     if (VendorSlots) VendorSlots->ClearListItems();
     if (FuseButton) FuseButton->OnClicked.AddDynamic(this, &UInventory::OnFuseButtonPressed);
     if (B_ForgeItem1) B_ForgeItem1->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItem1Clicked");
@@ -140,15 +141,29 @@ void UInventory::ClearForgeItemResult()
     }
 }
 
-void UInventory::ToggleVendorUI(bool value)
+void UInventory::ToggleShopUI(bool value)
 {
-    if (!VendorCanvas) return;
+    if (!ShopCanvas) return;
 
     if (!value)
     {
-        VendorCanvas->SetVisibility(ESlateVisibility::Collapsed);
         ShopCanvas->SetVisibility(ESlateVisibility::Collapsed);
         VendorSlots->ClearListItems();
+        CurrentVendor = nullptr;
+    }
+    else
+    {
+        ShopCanvas->SetVisibility(ESlateVisibility::Visible);
+    }
+}
+
+void UInventory::ToggleForgeUI(bool value)
+{
+    if (!ShopCanvas) return;
+
+    if (!value)
+    {
+        ForgeCanvas->SetVisibility(ESlateVisibility::Collapsed);
         CurrentVendor = nullptr;
 
         ClearForgeItemLeft();
@@ -160,8 +175,7 @@ void UInventory::ToggleVendorUI(bool value)
     }
     else
     {
-        VendorCanvas->SetVisibility(ESlateVisibility::Visible);
-        ShopCanvas->SetVisibility(ESlateVisibility::Visible);
+        ForgeCanvas->SetVisibility(ESlateVisibility::Visible);
 
         UpdateForgeUI();
     }
@@ -472,12 +486,14 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 
         if (Dist > VendorMaxDistance)
         {
-            ToggleVendorUI(false);
+            ToggleShopUI(false);
+            ToggleForgeUI(false);
         }
     }
     else
     {
-        ToggleVendorUI(false);
+        ToggleShopUI(false);
+        ToggleForgeUI(false);
     }
 }
 
@@ -786,11 +802,11 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     {
         EquipItem(DraggedItem);
     }
-    else if (InsideForge && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
         ForgeItem(DraggedItem);
     }
-    else if (InsideShop && VendorCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideShop && ShopCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
         SellItem(DraggedItem);
     }
@@ -812,7 +828,7 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 
 void UInventory::ForgeItem(UItemObject* Item)
 {
-    if (!VendorCanvas->IsVisible()) return;
+    if (!ForgeCanvas->IsVisible()) return;
     if (Item->GetRarity() == "Relic") return;
 
     ClearForgeItemResult();
@@ -1154,6 +1170,10 @@ void UInventory::OnEquippedStatsUpdated(const FEquippedStatsSummary& Stats)
         if (TB_Gold)
         {
             TB_Gold->SetText(FText::AsNumber(PS->GetPlayerGold()));
+        }
+        if (TB_Gold_Armory)
+        {
+            TB_Gold_Armory->SetText(FText::AsNumber(PS->GetPlayerGold()));
         }
         if (TB_Username)
         {

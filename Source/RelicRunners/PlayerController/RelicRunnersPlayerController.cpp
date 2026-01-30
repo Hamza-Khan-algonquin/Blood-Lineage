@@ -665,7 +665,8 @@ void ARelicRunnersPlayerController::InventoryUI()
 {
 	if (!Inventory) return;
 	FSlateApplication::Get().CancelDragDrop();
-	Inventory->ToggleVendorUI(false);
+	Inventory->ToggleShopUI(false);
+	Inventory->ToggleForgeUI(false);
 	ToggleUI(Inventory);
 }
 

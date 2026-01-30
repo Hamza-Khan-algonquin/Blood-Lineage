@@ -147,7 +147,6 @@ public:
 	class UBorder* CurrentHoveredBorder;
 
 	//Functions
-	void ToggleVendorUI(bool value);
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, AVendor* Vendor);
 	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
@@ -169,6 +168,8 @@ public:
 	void ClearForgeItemLeft();
 	void ClearForgeItemRight();
 	void ClearForgeItemResult();
+	void ToggleShopUI(bool value);
+	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 
 	UFUNCTION()
@@ -229,7 +230,7 @@ public:
 	class UTileView* VendorSlots;
 
 	UPROPERTY(meta = (BindWidget))
-	class UCanvasPanel* VendorCanvas;
+	class UCanvasPanel* ForgeCanvas;
 
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* ShopCanvas;
@@ -249,6 +250,9 @@ public:
 	class UHorizontalBox* InventoryBox;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* FuseButton;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Gold_Armory;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_ForgeItemLevel1;
