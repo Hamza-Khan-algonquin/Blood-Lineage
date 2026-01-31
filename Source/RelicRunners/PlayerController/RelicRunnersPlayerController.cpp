@@ -626,6 +626,8 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 		UInventorySortingOptions::CloseAnyOpenPopup();
 
 		Inventory->PlayAnimation(Inventory->InventoryClose);
+		Inventory->ToggleShopUI(false);
+		Inventory->ToggleForgeUI(false);
 
 		float AnimDelay = 0.25f;
 		GetWorld()->GetTimerManager().SetTimer(DisableUITimer, this, &ARelicRunnersPlayerController::DisableInventoryUIFromTimer, AnimDelay, false);

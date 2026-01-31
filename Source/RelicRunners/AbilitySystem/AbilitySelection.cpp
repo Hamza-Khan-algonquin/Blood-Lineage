@@ -4,10 +4,12 @@
 #include "AbilitySelection.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include <RelicRunners/Item/ItemStats.h>
 
 
 void UAbilitySelection::NativeConstruct()
@@ -96,25 +98,34 @@ UAbilitySelection::StatBuff UAbilitySelection::RandomStatBuff()
     //Pick random stat and buff value
     RandomStatBuff.Percentage = FMath::RandRange(3, 5);
     RandomStatBuff.StatType = static_cast<UAbilitySelection::EStats>(FMath::RandRange(0, 4));
-    RandomStatBuff.StatImage = nullptr;
 
     //text display UI on buttons 
     switch (RandomStatBuff.StatType)
     {
     case EStats::Health:
-        RandomStatBuff.StatText = FString::Printf(TEXT("+%d Health"), RandomStatBuff.Percentage);
+        RandomStatBuff.StatText = FString::Printf(TEXT("+%d"), RandomStatBuff.Percentage);
+        RandomStatBuff.Icon = ItemStats::LoadIcon("HealthIcon");
+        RandomStatBuff.Color = ItemStats::GetIconColor("Health");
         break;
     case EStats::Armor:
-        RandomStatBuff.StatText = FString::Printf(TEXT("+%d Armor"), RandomStatBuff.Percentage);
+        RandomStatBuff.StatText = FString::Printf(TEXT("+%d"), RandomStatBuff.Percentage);
+        RandomStatBuff.Icon = ItemStats::LoadIcon("DefenceIcon");
+        RandomStatBuff.Color = ItemStats::GetIconColor("Defence");
         break;
     case EStats::Dexterity:
-        RandomStatBuff.StatText = FString::Printf(TEXT("+%d Dexterity"), RandomStatBuff.Percentage);
+        RandomStatBuff.StatText = FString::Printf(TEXT("+%d"), RandomStatBuff.Percentage);
+        RandomStatBuff.Icon = ItemStats::LoadIcon("AgilityIcon");
+        RandomStatBuff.Color = ItemStats::GetIconColor("Agility");
         break;
     case EStats::Intelligence:
-        RandomStatBuff.StatText = FString::Printf(TEXT("+%d Intelligence"), RandomStatBuff.Percentage);
+        RandomStatBuff.StatText = FString::Printf(TEXT("+%d"), RandomStatBuff.Percentage);
+        RandomStatBuff.Icon = ItemStats::LoadIcon("IntelligenceIcon");
+        RandomStatBuff.Color = ItemStats::GetIconColor("Intelligence");
         break;
     case EStats::Strength:
-        RandomStatBuff.StatText = FString::Printf(TEXT("+%d Strength"), RandomStatBuff.Percentage);
+        RandomStatBuff.StatText = FString::Printf(TEXT("+%d"), RandomStatBuff.Percentage);
+        RandomStatBuff.Icon = ItemStats::LoadIcon("StrengthIcon");
+        RandomStatBuff.Color = ItemStats::GetIconColor("Strength");
         break;
     default:
         break;
@@ -133,15 +144,23 @@ void UAbilitySelection::RefreshUpgrades()
 
     Buff1 = RandomStatBuff();
     TB_Upgrade1->SetText(FText::FromString(Buff1.StatText));
+    Icon_0->SetBrushFromTexture(Buff1.Icon);
+    Icon_0->SetColorAndOpacity(Buff1.Color);
 
     Buff2 = RandomStatBuff();
     TB_Upgrade2->SetText(FText::FromString(Buff2.StatText));
+    Icon_1->SetBrushFromTexture(Buff2.Icon);
+    Icon_1->SetColorAndOpacity(Buff2.Color);
 
     Buff3 = RandomStatBuff();
     TB_Upgrade3->SetText(FText::FromString(Buff3.StatText));
+    Icon_2->SetBrushFromTexture(Buff3.Icon);
+    Icon_2->SetColorAndOpacity(Buff3.Color);
 
     Buff4 = RandomStatBuff();
     TB_Upgrade4->SetText(FText::FromString(Buff4.StatText));
+    Icon_3->SetBrushFromTexture(Buff4.Icon);
+    Icon_3->SetColorAndOpacity(Buff4.Color);
 }
 
 

@@ -62,13 +62,21 @@ struct FItemOptionsUIConfig
 		return Config;
 	}
 
+	static FItemOptionsUIConfig InventoryItemWithShop()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowEquip = true;
+		Config.ShowDrop = true;
+		Config.ShowSell = true;
+		return Config;
+	}
+
 	static FItemOptionsUIConfig InventoryItemWithForge()
 	{
 		FItemOptionsUIConfig Config;
 		Config.ShowEquip = true;
 		Config.ShowDrop = true;
 		Config.ShowForge = true;
-		Config.ShowSell = true;
 		return Config;
 	}
 

@@ -42,6 +42,18 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Upgrade4;
 
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon_0;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon_2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon_3;
+
 	UPROPERTY()
 	class ARelicRunnersCharacter* OwningCharacter;
 
@@ -71,8 +83,9 @@ public:
 	{
 		int Percentage;
 		EStats StatType;
-		class UImage* StatImage;
 		FString StatText;
+		UTexture2D* Icon;
+		FLinearColor Color;
 	};
 
 
