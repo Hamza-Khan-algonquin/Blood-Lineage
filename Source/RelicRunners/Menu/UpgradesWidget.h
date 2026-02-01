@@ -20,7 +20,22 @@ public:
 	class UButton* BackButton = nullptr;
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* IconHP = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* IconDEF = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* IconLUCK = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* IconSTR = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* IconAGI = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* IconINT = nullptr;
 protected:
 	UFUNCTION()
 	void BackButtonClicked();
+
+
 };

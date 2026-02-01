@@ -476,14 +476,33 @@ void ARelicRunnersPlayerController::TrySetupMinimap()
 
 	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
 
-	if (!MinimapWidget || !Char || !Char->MinimapCaptureComponent)
+	if (!Char)
 	{
-		FTimerHandle RetryHandle;
-		GetWorldTimerManager().SetTimer(RetryHandle, this, &ARelicRunnersPlayerController::TrySetupMinimap, 0.1f, false);
+		UE_LOG(LogTemp, Error, TEXT("Minimap Setup Failed: Pawn is null. Retrying..."));
+		RetrySetup();
+		return;
+	}
+
+	if (!MinimapWidget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Minimap Setup Failed: Widget is null. Retrying..."));
+		RetrySetup();
+		return;
+	}
+
+	if (!Char->MinimapCaptureComponent)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Minimap Setup Failed: Component missing!"));
 		return;
 	}
 
 	SetupMinimapRenderTarget();
+}
+
+void ARelicRunnersPlayerController::RetrySetup()
+{
+	FTimerHandle RetryHandle;
+	GetWorldTimerManager().SetTimer(RetryHandle, this, &ARelicRunnersPlayerController::TrySetupMinimap, 0.2f, false);
 }
 
 void ARelicRunnersPlayerController::SetupMinimapRenderTarget()
@@ -837,7 +856,7 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 		}
 
 		SetViewTargetWithBlend(Cameras[1], 0.0f);
-		SetViewTargetWithBlend(Cameras[0], 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
+		SetViewTargetWithBlend(Cameras[0], 1.5f, EViewTargetBlendFunction::VTBlend_Cubic);
 	}
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{

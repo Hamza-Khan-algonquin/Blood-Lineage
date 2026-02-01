@@ -952,6 +952,8 @@ void UInventory::CycleRarityVisuals()
 
 void UInventory::CompleteForgeSequence()
 {
+    if (!ForgeItemResult) return;
+
     FLinearColor FinalColor = ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color;
 
     UpdateForgeUI();
@@ -960,19 +962,19 @@ void UInventory::CompleteForgeSequence()
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Brittled"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Brittled"))));
     }
     if (ForgeItemResult->ItemData.Rarity == ForgeRarity2)
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Tempered"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Unaffected"))));
     }
     if (ForgeItemResult->ItemData.Rarity == ForgeRarity3)
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Fortified"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Polished"))));
     }
 
     TB_Odds1->SetVisibility(ESlateVisibility::Visible);
