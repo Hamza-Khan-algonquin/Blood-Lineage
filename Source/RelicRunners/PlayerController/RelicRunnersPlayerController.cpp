@@ -377,12 +377,18 @@ void ARelicRunnersPlayerController::HandleLevelUpVisuals()
 {
 	if (!IsLocalController()) return;
 
+	if (LevelUpHUD)
+	{
+		LevelUpHUD->RemoveFromParent();
+		LevelUpHUD = nullptr;
+	}
+
 	if (LevelUpHUDClass)
 	{
-		ULevelUpHUD* LevelUpWidget = CreateWidget<ULevelUpHUD>(this, LevelUpHUDClass);
-		if (LevelUpWidget)
+		LevelUpHUD = CreateWidget<ULevelUpHUD>(this, LevelUpHUDClass);
+		if (LevelUpHUD)
 		{
-			LevelUpWidget->AddToViewport();
+			LevelUpHUD->AddToViewport();
 		}
 	}
 

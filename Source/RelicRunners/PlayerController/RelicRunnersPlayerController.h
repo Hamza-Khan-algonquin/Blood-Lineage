@@ -90,6 +90,8 @@ public:
 	void TrySetupPreviewRenderTarget();
 	UFUNCTION()
 	void SetupPreviewRenderTarget(APlayerPreview* Preview);
+	UFUNCTION()
+	void TrySetupMinimap();
 
 	//Getters
 	UFUNCTION(BlueprintCallable, Category = "Input")
@@ -146,6 +148,7 @@ public:
 	class UMainMenuWidget* MainMenuWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UInventory* Inventory;
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)
@@ -193,8 +196,6 @@ protected:
 	void HealthPotion();
 	void BasicAttack();
 	void SetupMinimapRenderTarget();
-	UFUNCTION()
-	void TrySetupMinimap();
 	void RetrySetup();
 
 	//Virtual Functions
