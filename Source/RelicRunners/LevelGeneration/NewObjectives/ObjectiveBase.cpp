@@ -36,6 +36,6 @@ void AObjectiveBase::Tick(float DeltaTime)
 
 void AObjectiveBase::Activate()
 {
-	OnFlagObjectiveCreated.Broadcast();
+	OnObjectiveCreated.Broadcast();
 }
 

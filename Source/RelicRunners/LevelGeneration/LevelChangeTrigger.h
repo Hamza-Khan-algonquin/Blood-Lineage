@@ -36,7 +36,7 @@ public:
 	class UTextRenderComponent* LevelTargetTextRender; //For debugging to make sure the box will send players to the right level
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Default Values")
-	FName TargetLevel; //Level name players will be sent to. Recieved from the level generator.
+	FString TargetLevel; //Level name players will be sent to. Recieved from the level generator.
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetTargetLevel(FName newTargetLevel);

@@ -2,15 +2,24 @@
 
 
 #include "IslandBridge.h"
+#include <Net/UnrealNetwork.h>
 
 // Sets default values
-AIslandBridge::AIslandBridge()
+AIslandBridge::AIslandBridge():
+	IsBlocked(true)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	Bridge = CreateDefaultSubobject<UStaticMeshComponent>("Bridge Mesh");
 	Bridge->SetupAttachment(RootComponent);
+
+	Barrier = CreateDefaultSubobject<UStaticMeshComponent>("Barrier Mesh");
+	Barrier->SetupAttachment(Bridge);
+	Barrier->SetIsReplicated(true);
+
+	bReplicates = true;
+	bAlwaysRelevant = true;
 }
 
 // Called when the game starts or when spawned
@@ -18,21 +27,29 @@ void AIslandBridge::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Bridge->SetVisibility(false);
-	Bridge->SetCollisionProfileName("NoCollision");
-
-}
-
-// Called every frame
-void AIslandBridge::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
+	Barrier->SetVisibility(true);
+	Barrier->SetCollisionProfileName("BlockAll");
 }
 
 void AIslandBridge::Activate()
 {
-	Bridge->SetVisibility(true);
-	Bridge->SetCollisionProfileName("BlockAll");
+	if (HasAuthority())
+	{
+		IsBlocked = false;
+		Barrier->SetVisibility(IsBlocked);
+		Barrier->SetCollisionProfileName("NoCollision");
+	}
 }
 
+void AIslandBridge::OnRep_OnBlockedChange()
+{
+	Barrier->SetVisibility(false);
+	Barrier->SetCollisionProfileName("NoCollision");
+}
+
+void AIslandBridge::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AIslandBridge, IsBlocked);
+}

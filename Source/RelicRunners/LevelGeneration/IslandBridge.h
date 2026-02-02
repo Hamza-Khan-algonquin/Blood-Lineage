@@ -18,14 +18,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* Bridge;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* Barrier;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	void Activate();
 
+	UFUNCTION()
+	void OnRep_OnBlockedChange();
+
+	UPROPERTY(ReplicatedUsing = OnRep_OnBlockedChange)
+	bool IsBlocked;
 };

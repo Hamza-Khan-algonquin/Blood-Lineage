@@ -24,6 +24,9 @@ ANewCapturableFlag::ANewCapturableFlag()
 	TextComponent = CreateDefaultSubobject<UTextRenderComponent>("TextComponent");
 	TextComponent->SetupAttachment(Origin);
 	TextComponent->SetText(FText::FromString("Press E to Interact"));
+
+	bReplicates = true;
+	bAlwaysRelevant = true;
 }
 
 void ANewCapturableFlag::Interact_Implementation(ARelicRunnersCharacter* Char)
@@ -52,7 +55,7 @@ void ANewCapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
 
 	BeaconMesh->SetVisibility(false);
-	OnFlagObjectiveActivated.Broadcast();
+	OnObjectiveActivated.Broadcast();
 }
 
 void ANewCapturableFlag::OnActiveChange()
@@ -65,7 +68,7 @@ void ANewCapturableFlag::OnActiveChange()
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
 
 	BeaconMesh->SetVisibility(false);
-	OnFlagObjectiveActivated.Broadcast();
+	OnObjectiveActivated.Broadcast();
 }
 
 void ANewCapturableFlag::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

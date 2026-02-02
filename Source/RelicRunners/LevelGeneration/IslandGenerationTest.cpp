@@ -2,6 +2,7 @@
 
 
 #include "IslandGenerationTest.h"
+#include "Net/UnrealNetwork.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "IslandSpawningValuesComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -11,6 +12,8 @@
 #include "NewObjectives/NewPayloadObjective.h"
 #include "NewObjectives/NewSurvivalZone.h"
 #include "IslandBridge.h"
+#include "LevelChangeTrigger.h"
+#include "Components/SplineComponent.h"
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -26,14 +29,21 @@ Spawn regular obstacles at their appropriate location + Spawn their appropriate 
 
 */
 
-
 // Sets default values
-AIslandGenerationTest::AIslandGenerationTest()
+AIslandGenerationTest::AIslandGenerationTest() :
+	IslandWidth(2),
+	IslandDepth(2),
+	IslandIndex(0),
+	CurrentObjectives(0),
+	isFinalIsland(false)
 {
 	PrimaryActorTick.bCanEverTick = false;
 
 	GenerationValuesComponent = CreateDefaultSubobject<UIslandSpawningValuesComponent>("GenerationValues");
 	GenerationValuesComponent->SetIsReplicated(true);
+
+	SplinePath = CreateDefaultSubobject<USplineComponent>("SplinePath");
+
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -50,15 +60,14 @@ void AIslandGenerationTest::Generate()
 		//}
 			
 		//Initialize the starting and ending tiles.
-		int startingIndex = 0, endingIndex = 0;
+		int startingIndex = 0, endingIndex = (IslandDepth * IslandWidth) - 1;
 
 		//If somehow both are at the exact same index, reinitialize starting and ending tiles
-		do
-		{
-			startingIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
-			endingIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+		//do
+		//{
+		//	startingIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
 
-		} while (CalculateDistanceBetweenTiles(startingIndex, endingIndex) || startingIndex == endingIndex);
+		//} while (CalculateDistanceBetweenTiles(startingIndex, endingIndex) || startingIndex == endingIndex);
 
 		for (int y = 0; y < IslandDepth; y++)
 		{
@@ -74,7 +83,7 @@ void AIslandGenerationTest::Generate()
 			//Override starting and ending tiles initialized above and create a path from one to the other.
 			SetStartingAndEndingPoints(startingIndex, endingIndex);
 
-			FindStartToEndPath(startingIndex, endingIndex, IslandWidth, true);
+			FindStartToEndPath(startingIndex, endingIndex, IslandWidth);
 		}
 
 		InitializeObjectives(startingIndex, endingIndex);
@@ -102,6 +111,13 @@ void AIslandGenerationTest::Generate()
 			FVector posOffset = FVector((tileScale * IslandWidth * 4) + tileScale, (tileScale * (IslandDepth - 1) * 4) + tileScale, 0.0f) + GetActorLocation();
 
 			Bridge = GetWorld()->SpawnActor<AIslandBridge>(GenerationValuesComponent->IslandStartEnd.BridgePackedActor, posOffset, FRotator::ZeroRotator);
+
+
+			if (GenerationValuesComponent->IslandValues.LevelChangeTrigger && isFinalIsland)
+			{
+				ALevelChangeTrigger* levelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
+				levelTrigger->Server_SetTargetLevel(FName(GenerationValuesComponent->IslandValues.TargetLevel));
+			}
 		}
 	}
 }
@@ -222,22 +238,31 @@ void AIslandGenerationTest::InitializeFloor()
 	FloorValuesArray.Add(newFloorValues);
 }
 
-void AIslandGenerationTest::ForceFloorBool(bool forcedFloor, int x, int y, int width)
+void AIslandGenerationTest::ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle)
 {
 	int index = x + (y * width);
 
-	if (!EnumHasAnyFlags(FloorValuesArray[index].IslandFloorObstacle, EIslandFloorObstacle::Hole))
-	{
-		FloorValuesArray[index].IsFullTile = forcedFloor;
+	if (EnumHasAnyFlags(FloorValuesArray[index].IslandFloorObstacle, EIslandFloorObstacle::Hole))
+		return;
 
-		if (forcedFloor)
-		{
-			if (FloorValuesArray[index].IslandFloorObstacle == EIslandFloorObstacle::None)
-			{
-				InitializeModularObstacle(FloorValuesArray[index], false);
-			}
-		}
+	FloorValuesArray[index].IsFullTile = forcedFloor;
+
+	if (!forcedFloor)
+		return;
+
+	if (FloorValuesArray[index].IslandFloorObstacle == EIslandFloorObstacle::None)
+		return;
+
+	if (FloorValuesArray[index].IslandFloorObstacle >= EIslandFloorObstacle::Start)
+		return;
+
+	if (!canSpawnObstacle)
+	{
+		FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::None;
+		return;
 	}
+
+	InitializeModularObstacle(FloorValuesArray[index], false);
 }
 
 void AIslandGenerationTest::InitializeModularObstacle(FSIslandFloorValues& floorValue, bool canGenerateHoles) const
@@ -331,13 +356,73 @@ void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetInde
 		bReachEndY = currentY == targetY;
 		if (!(bReachEndX && bReachEndY))
 		{
-			ForceFloorBool(true, currentX, currentY, width);
+			ForceFloorBool(true, currentX, currentY, width, true);
 		}
 	}
 }
 
-void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetIndex, int width, bool implementSpline)
+void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int targetIndex, int width, ANewPayloadObjective* payloadActor)
 {
+	int currentX = startingIndex % width;
+	int currentY = startingIndex / width;
+
+	int targetX = targetIndex % width;
+	int targetY = targetIndex / width;
+
+	bool bReachEndX = currentX == targetX;
+
+	bool bReachEndY = currentY == targetY;
+
+	bool bValueHasChanged = false;
+	//To avoid repetition, randomly picks between moving horizontally or vertically closer to the target
+	while (!(bReachEndX && bReachEndY))
+	{
+		float random = FMath::FRandRange(0.0f, 100.0f);
+
+		if (random >= 50.0f)
+		{
+			if (currentX > targetX)
+			{
+				currentX--;
+				bValueHasChanged = true;
+			}
+			else if (currentX < targetX)
+			{
+				currentX++;
+				bValueHasChanged = true;
+			}
+		}
+		else
+		{
+			if (currentY > targetY)
+			{
+				currentY--;
+				bValueHasChanged = true;
+			}
+			else if (currentY < targetY)
+			{
+				currentY++;
+				bValueHasChanged = true;
+			}
+		}
+
+		if (!(bReachEndX && bReachEndY))
+		{
+			ForceFloorBool(true, currentX, currentY, width, false);
+
+			if (payloadActor && bValueHasChanged)
+			{
+				float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+				FVector pointPos = FVector((tileScale * currentX * 4) + tileScale, (tileScale * currentY * 4) + tileScale, 0.0f) + GetActorLocation();
+
+				SplinePath->AddSplinePoint(pointPos, ESplineCoordinateSpace::World, true);
+
+				bValueHasChanged = false;
+			}
+		}
+		bReachEndX = currentX == targetX;
+		bReachEndY = currentY == targetY;
+	}
 }
 
 void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
@@ -410,19 +495,34 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 		}
 		break;
 	case EIslandObjectiveType::MoveThePayload:
-		if (IslandDepth * IslandWidth > 1)
+		if (IslandObjective == EIslandObjectiveType::MoveThePayload)
 		{
-			//Override starting and ending tiles initialized above and create a path from one to the other.
-			SetStartingAndEndingPoints(startingIndex, endingIndex);
-
-			FindStartToEndPath(startingIndex, endingIndex, IslandWidth, true);
-
-			if (GenerationValuesComponent->PayloadObjectiveValues.Payload != nullptr)
+			if (IslandDepth * IslandWidth > 1)
 			{
-				//APayloadActor* payload = GetWorld()->SpawnActor<APayloadActor>(GenerationValuesComponent->PayloadObjectiveValues.Payload, FVector::ZeroVector, FRotator::ZeroRotator);
-				//payload->Multicast_Initialize(DeliverySpline, GenerationValuesComponent->PayloadObjectiveValues.PayloadSpeed);
+				if (GenerationValuesComponent->PayloadObjectiveValues.Payload != nullptr)
+				{
+					SplinePath->SetLocationAtSplinePoint(0, GetActorLocation(), ESplineCoordinateSpace::World, true);
+
+					float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+					int x = startingIndex % IslandWidth;
+					int y = startingIndex / IslandWidth;
+
+					FVector posOffset = FVector((tileScale * x * 4) + tileScale, (tileScale * y * 4) + tileScale, 0.0f) + GetActorLocation();
+
+					ANewPayloadObjective* payload = GetWorld()->SpawnActor<ANewPayloadObjective>(GenerationValuesComponent->PayloadObjectiveValues.Payload, posOffset, FRotator::ZeroRotator);
+					CreateSplinePathStartToEnd(startingIndex, endingIndex, IslandWidth, payload);
+
+					FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
+
+					payload->Initialize(val.PayloadSpeed, val.Acceleration, val.Deceleration, SplinePath);
+
+					payload->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
+					payload->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+					payload->Activate();
+				}
 			}
 		}
+
 		break;
 	case EIslandObjectiveType::Survival:
 
@@ -796,8 +896,8 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	float yaw = FloorValuesArray[index].obstacleYaw;
 	FVector posOffset = FVector((tileScale * x * 4) + tileScale, (tileScale * y * 4) + tileScale, 0.0f) + GetActorLocation();
 
-	TArray<TSubclassOf<APackedLevelActor>> actorArray = GenerationValuesComponent->ObstacleValues.ObstacleActor.Array();
-	TArray<TSubclassOf<APackedLevelActor>> vantageArray = GenerationValuesComponent->VantageValues.VantageActor.Array();
+	TArray<TSubclassOf<APackedLevelActor>> actorArray = GenerationValuesComponent->ObstacleValues.ObstacleActor;
+	TArray<TSubclassOf<APackedLevelActor>> vantageArray = GenerationValuesComponent->VantageValues.VantageActor;
 
 	switch (FloorValuesArray[index].IslandFloorObstacle)
 	{
@@ -898,8 +998,8 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 		{
 			ANewCapturableFlag* newFlag = GetWorld()->SpawnActor<ANewCapturableFlag>(GenerationValuesComponent->FlagObjectiveValues.Flag, posOffset, FRotator(0.0f, yaw, 0.0f));
 			
-			newFlag->OnFlagObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
-			newFlag->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+			newFlag->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
+			newFlag->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 
 			newFlag->Activate();
 		}
@@ -978,8 +1078,8 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 		{
 			ANewSurvivalZone* newZone = GetWorld()->SpawnActor<ANewSurvivalZone>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZone, posOffset, FRotator(0.0f, yaw, 0.0f));
 
-			newZone->OnFlagObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
-			newZone->OnFlagObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+			newZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
+			newZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 
 			newZone->Activate();
 		}
@@ -1153,6 +1253,9 @@ void AIslandGenerationTest::IncrementObjective()
 	case EIslandObjectiveType::CaptureTheFlag:
 		objectiveName = "Flags";
 		break;
+	case EIslandObjectiveType::MoveThePayload:
+		objectiveName = "Payload";
+		break;
 	case EIslandObjectiveType::Survival:
 		objectiveName = "Survival Zones";
 		break;
@@ -1171,6 +1274,9 @@ void AIslandGenerationTest::DecrementObjective()
 	case EIslandObjectiveType::CaptureTheFlag:
 		objectiveName = "Flags";
 		break;
+	case EIslandObjectiveType::MoveThePayload:
+		objectiveName = "Payload";
+		break;
 	case EIslandObjectiveType::Survival:
 		objectiveName = "Survival Zones";
 		break;
@@ -1182,8 +1288,10 @@ void AIslandGenerationTest::DecrementObjective()
 		if (Bridge)
 		{
 			Bridge->Activate();
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Bridge Activated")));
 		}
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Bridge Activated")));
+
+		OnObjectiveIslandObjectiveComplete.Broadcast();
 	}
 }
 
@@ -1191,7 +1299,7 @@ void AIslandGenerationTest::OnRep_FloorValuesArrayChange()
 {
 	for (int y = 0; y < IslandDepth; y++)
 	{
-		for (int x = 0; x < IslandDepth; x++)
+		for (int x = 0; x < IslandWidth; x++)
 		{
 			CheckFloor(x, y, IslandWidth, IslandDepth);
 		}
@@ -1204,4 +1312,7 @@ void AIslandGenerationTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AIslandGenerationTest, FloorValuesArray);
+	DOREPLIFETIME(AIslandGenerationTest, IslandWidth);
+	DOREPLIFETIME(AIslandGenerationTest, IslandDepth);
+	DOREPLIFETIME(AIslandGenerationTest, GenerationValuesComponent);
 }

@@ -12,13 +12,7 @@
 AIslandSpawner::AIslandSpawner():
 	IslandGenerationTestTemplate(nullptr),
 	NumIslands(0),
-	ObjectiveType(0),
-	TileScale(0.0f),
-	WidthMin(1),
-	WidthMax(1),
-	DepthMin(1),
-	DepthMax(1)
-
+	CurrentSpawnedIsland(0)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
@@ -49,7 +43,10 @@ void AIslandSpawner::BeginPlay()
 				newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
 				newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
 				newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
+				newIsland->GenerationValuesComponent->SetPayloadObjectiveValues(GenerationValuesComponent->PayloadObjectiveValues);
 				newIsland->GenerationValuesComponent->SetSurvivalZoneObjectiveValues(GenerationValuesComponent->SurvivalZoneObjectiveValues);
+
+				newIsland->OnObjectiveIslandObjectiveComplete.AddDynamic(this, &AIslandSpawner::GenerateNewIsland);
 
 				EIslandObjectiveType islandObjective = EIslandObjectiveType::None;
 				TArray<EIslandObjectiveType> ActiveFlags;
@@ -76,32 +73,48 @@ void AIslandSpawner::BeginPlay()
 
 			for (int i = 0; i < NumIslands; i++)
 			{
-				FVector offsetVec = FVector::ZeroVector;
-				float offset = 0;
 
 				int offsetX = 0;
 				int offsetY = 0;
 
 				for (int j = 0; j < i; j++)
 				{
-					offsetX = offsetX + (Islands[j]->IslandWidth * GenerationValuesComponent->IslandValues.TileScale * 4) + (GenerationValuesComponent->IslandValues.TileScale * 4);
-					offsetY = FMath::FRandRange(0.0f, Islands[j]->IslandDepth) * GenerationValuesComponent->IslandValues.TileScale * 4;
+					float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+
+					offsetX = offsetX + ((Islands[j]->IslandWidth + 1) * tileScale * 4);
+					offsetY = offsetY + ((Islands[j]->IslandDepth - 1) * tileScale * 4);
+					//offsetY = FMath::FRandRange(0.0f, Islands[j]->IslandDepth) * GenerationValuesComponent->IslandValues.TileScale * 4;
 				}
 
 				Islands[i]->SetActorLocation(FVector(offsetX, offsetY, Islands[i]->GetActorLocation().Z));
 			}
 
+			/*
 			for (int i = 0; i < NumIslands; i++)
 			{
+				if (i == NumIslands-1)
+				{
+					Islands[i]->SetFinalIsland(true);
+				}
+
 				Islands[i]->Generate();
 			}
+			*/
+			Islands[CurrentSpawnedIsland]->Generate();
 		}
 	}
 }
 
-int AIslandSpawner::GetObjectiveValue()
+void AIslandSpawner::GenerateNewIsland()
 {
-	ObjectiveType = FMath::RandRange(0, 4);
+	CurrentSpawnedIsland++;
+	if (Islands.IsValidIndex(CurrentSpawnedIsland))
+	{
+		if (CurrentSpawnedIsland == NumIslands - 1)
+		{
+			Islands[CurrentSpawnedIsland]->SetFinalIsland(true);
+		}
 
-	return ObjectiveType;
+		Islands[CurrentSpawnedIsland]->Generate();
+	}
 }

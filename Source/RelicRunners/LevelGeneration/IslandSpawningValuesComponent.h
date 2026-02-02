@@ -35,6 +35,12 @@ struct FIslandValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 DepthMax = 2;
 
+	UPROPERTY(EditAnywhere)
+	FString TargetLevel;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ALevelChangeTrigger> LevelChangeTrigger;
+
 };
 
 USTRUCT()
@@ -79,10 +85,10 @@ struct FNormalObstacleValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSet<TSubclassOf<class APackedLevelActor>> ObstacleActor;
+	TArray<TSubclassOf<class APackedLevelActor>> ObstacleActor;
 
 	UPROPERTY(EditAnywhere)
-	TSet<UStaticMesh*> WallMesh;
+	TArray<UStaticMesh*> WallMesh;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float ObstaclePercentage;
@@ -94,10 +100,10 @@ struct FHoleObstacleValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSet<TSubclassOf<class APackedLevelActor>> HoleTileActor;
+	TArray<TSubclassOf<class APackedLevelActor>> HoleTileActor;
 
 	UPROPERTY(EditAnywhere)
-	TSet<UStaticMesh*> HoleWallMesh;
+	TArray<UStaticMesh*> HoleWallMesh;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float HolePercentage = 0.0f;
@@ -109,10 +115,10 @@ struct FVantagePointValues
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSet<TSubclassOf<class APackedLevelActor>> VantageActor;
+	TArray<TSubclassOf<class APackedLevelActor>> VantageActor;
 
 	UPROPERTY(EditAnywhere)
-	TSet<UStaticMesh*> VantageWallMesh;
+	TArray<UStaticMesh*> VantageWallMesh;
 
 	UPROPERTY(EditAnywhere)
 	uint8 MaxVantageAmountMin = 0;
@@ -165,6 +171,12 @@ struct FObjectivePayloadValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "1", UIMin = "1", ToolTip = "Speed at which the payload moves towards the target."))
 	float PayloadSpeed = 1.0f;
 
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000"))
+	float Acceleration = 1.0f;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000"))
+	float Deceleration = 1.0f;
+
 };
 
 USTRUCT()
@@ -204,52 +216,52 @@ public:
 
 public:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FIslandValues IslandValues;
 
 	void SetIslandValues(FIslandValues newValues) { IslandValues = newValues; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FIslandStartAndEndTile IslandStartEnd;
 
 	void SetIslandStartAndEndValues(FIslandStartAndEndTile newIslandStartEnd) { IslandStartEnd = newIslandStartEnd; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FIslandFloorMeshes FloorMeshes;
 
 	void SetFloorMeshes(FIslandFloorMeshes newFloorMeshes) { FloorMeshes = newFloorMeshes; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FNormalObstacleValues ObstacleValues;
 
 	void SetObstacleValues(FNormalObstacleValues newObstacles) { ObstacleValues = newObstacles; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FHoleObstacleValues HoleValues;
 
 	void SetHoleValues(FHoleObstacleValues newHoleValues) { HoleValues = newHoleValues; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FVantagePointValues VantageValues;
 
 	void SetVantagePointValues(FVantagePointValues newVantageValues) { VantageValues = newVantageValues; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FObjectiveFlagValues FlagObjectiveValues;
 
 	void SetFlagObjectiveValues(FObjectiveFlagValues newFlagObjectiveValues) { FlagObjectiveValues = newFlagObjectiveValues; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FObjectiveEnemyZoneValues EnemyZoneObjectiveValues;
 
 	void SetEnemyZoneObjectiveValues(FObjectiveEnemyZoneValues newEnemyZoneObjectiveValues) { EnemyZoneObjectiveValues = newEnemyZoneObjectiveValues; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FObjectivePayloadValues PayloadObjectiveValues;
 
 	void SetPayloadObjectiveValues(FObjectivePayloadValues newPayloadObjectiveValues) { PayloadObjectiveValues = newPayloadObjectiveValues; }
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	FSurvivalZoneValues SurvivalZoneObjectiveValues;
 
 	void SetSurvivalZoneObjectiveValues(FSurvivalZoneValues newSurvivalZoneObjectiveValues) { SurvivalZoneObjectiveValues = newSurvivalZoneObjectiveValues; }
