@@ -142,7 +142,10 @@ bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement,
 
 	if (navSys && navSys->ProjectPointToNavigation(DesiredMovement, navLocation, NavMeshClampExtent))
 	{
-		out = navLocation.Location;
+		FVector offset;
+		FVector standIn;
+		GetOwner()->GetActorBounds(false, standIn, offset, false);
+		out = navLocation.Location + FVector(0,0, offset.Z - 5.5);
 		return true;
 	}
 
@@ -157,7 +160,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	ClampToNavMesh(GetOwner()->GetActorLocation() + desiredMovement, finalMovement);
 
-	//GetOwner()->SetActorLocation(finalMovement);
+	GetOwner()->SetActorLocation(finalMovement);
 
 
 	/*SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), false, hit);
