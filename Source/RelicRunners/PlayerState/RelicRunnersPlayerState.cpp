@@ -52,7 +52,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	//Health
 	PlayerStartingMaxHealth = 100;
 	PlayerMaxHealth = PlayerStartingMaxHealth;
-	PlayerHealth = PlayerMaxHealth;
+	PlayerHealth = 20;
 
 	//Resource
 	PlayerStartingMaxResource = 100;
@@ -262,11 +262,16 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 
 	if (HealthPotionCount > 0 && PlayerHealth < PlayerMaxHealth)
 	{
-		HealthPotionCount--;
-		PlayerHealth = FMath::Clamp(PlayerHealth + (int)HealthGranted, 0, PlayerMaxHealth);
-
+		if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetPlayerController()))
+		{
+			if (PC->PlayerHUD)
+			{
+				PC->PlayerHUD->OnHealthPotionClicked(PlayerHealth, PlayerMaxHealth, HealthPotionCount, HealthGranted);
+			}
+		}
 		//For server
 		UpdateRemoteHUDHealth();
+
 	}
 }
 

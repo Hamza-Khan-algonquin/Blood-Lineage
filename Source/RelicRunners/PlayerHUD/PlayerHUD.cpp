@@ -143,6 +143,7 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, CooldownText, &RemainingTime, &TimerHandle]()
 		{
 			RemainingTime -= 1.0f;
+			if (!CooldownText) return;
 
 			if (RemainingTime <= 0.f)
 			{
