@@ -82,7 +82,7 @@ void UInventoryItemOptions::NativeTick(const FGeometry& MyGeometry, float InDelt
     FVector2D CurrentMousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
     float Distance = FVector2D::Distance(CurrentMousePos, InitialScreenPosition);
 
-    float PixelDistance = 100.0f;
+    float PixelDistance = 400.0f;
     if (Distance > PixelDistance)
     {
         ClosePopup();

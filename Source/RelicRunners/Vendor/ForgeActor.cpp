@@ -10,6 +10,7 @@
 #include "RelicRunners/Inventory/Inventory.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AForgeActor::AForgeActor()
@@ -20,13 +21,15 @@ AForgeActor::AForgeActor()
 	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
 	{
 		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+		Capsule->SetSimulatePhysics(false);
+		Capsule->SetEnableGravity(false);
 	}
 
 	if (GetMesh())
 	{
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	}
 }
 
@@ -71,8 +74,8 @@ void AForgeActor::Interact_Implementation(ARelicRunnersCharacter* Char)
 		}
 		if (!LinkedInventoryWidget->ForgeCanvas->IsVisible())
 		{
-			LinkedInventoryWidget->CurrentVendor = this;
 			LinkedInventoryWidget->ToggleForgeUI(true);
+			LinkedInventoryWidget->CurrentVendor = this;
 		}
 		else
 		{

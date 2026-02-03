@@ -55,6 +55,7 @@
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include <RelicRunners/Menu/LobbyGameMode.h>
 #include "RelicRunners/Minimap/Minimap.h"
+#include "RelicRunners/Menu/StandardTooltip.h"
 
 #include "Components/SceneCaptureComponent2D.h"
 
@@ -656,6 +657,8 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 
 		float AnimDelay = 0.25f;
 		GetWorld()->GetTimerManager().SetTimer(DisableUITimer, this, &ARelicRunnersPlayerController::DisableInventoryUIFromTimer, AnimDelay, false);
+
+		if (Inventory->StandardTooltip) Inventory->StandardTooltip->RemoveFromParent(); Inventory->StandardTooltip = nullptr;
 	}
 	else
 	{

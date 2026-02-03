@@ -484,7 +484,7 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 
     float VendorMaxDistance = 500.f;
     APawn* OwningPawn = GetOwningPlayerPawn();
-
+    
     if (OwningPawn)
     {
         float Dist = FVector::Dist(OwningPawn->GetActorLocation(), CurrentVendor->GetActorLocation());
@@ -731,10 +731,14 @@ void UInventory::SortingTypeClicked()
             InventorySortingOptions->OnSortingSelected.AddDynamic(this, &UInventory::HandleSortSelected);
 
             InventorySortingOptions->Setup();
-            FVector2D ScreenPosition;
-            UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
+            const FGeometry& ButtonGeometry = B_SortingType->GetCachedGeometry();
+            FVector2D PixelPos;
+            FVector2D ViewportPos;
+            FVector2D Offset = FVector2D(0,60);
             InventorySortingOptions->AddToViewport();
-            InventorySortingOptions->SetPositionInViewport(ScreenPosition + FVector2D(0, 30.f), false);
+            USlateBlueprintLibrary::LocalToViewport(GetWorld(), ButtonGeometry, FVector2D(0.f, 0.f), PixelPos, ViewportPos);
+            InventorySortingOptions->SetPositionInViewport(PixelPos + Offset, true);
+            InventorySortingOptions->SetAlignmentInViewport(FVector2D(0.0f, 0.f));
         }
     }
 }
@@ -915,7 +919,7 @@ void UInventory::OnFuseButtonPressed()
 
     CycleCount = 0;
 
-    GetWorld()->GetTimerManager().SetTimer(FuseTimerHandle, this, &UInventory::CycleRarityVisuals, 0.1f, true);
+    GetWorld()->GetTimerManager().SetTimer(FuseTimerHandle, this, &UInventory::CycleRarityVisuals, 0.2f, true);
 }
 
 void UInventory::CycleRarityVisuals()
@@ -923,27 +927,48 @@ void UInventory::CycleRarityVisuals()
     CycleCount++;
 
     FString DisplayRarity;
+    FString DisplayRarityLight1;
+    FString DisplayRarityLight2;
+    FString DisplayRarityLight3;
     float Roll = FMath::FRandRange(0.f, 100.f);
+    float RollLight1 = FMath::FRandRange(0.f, 100.f);
+    float RollLight2 = FMath::FRandRange(0.f, 100.f);
+    float RollLight3 = FMath::FRandRange(0.f, 100.f);
 
-    if (Roll <= ForgeChance1)
-    {
-        DisplayRarity = ForgeRarity1;
-    }
-    else if (Roll <= (ForgeChance1 + ForgeChance2))
-    {
-        DisplayRarity = ForgeRarity2;
-    }
-    else
-    {
-        DisplayRarity = ForgeRarity3;
-    }
+    //(Main Item)
+    if (Roll <= ForgeChance1) DisplayRarity = ForgeRarity1;
+    else if (Roll <= (ForgeChance1 + ForgeChance2)) DisplayRarity = ForgeRarity2;
+    else DisplayRarity = ForgeRarity3;
 
-    FLinearColor CycleColor = ItemStats::GetRarityDataMap()[DisplayRarity].Color;
+    FLinearColor Color0 = ItemStats::GetRarityDataMap()[DisplayRarity].Color;
+    if (ItemFrame_2) ItemFrame_2->SetBrushTintColor(Color0);
+    if (B_ForgeItemResult) B_ForgeItemResult->SetBrushColor(Color0);
 
-    if (ItemFrame_2) ItemFrame_2->SetBrushTintColor(CycleColor);
-    if (B_ForgeItemResult) B_ForgeItemResult->SetBrushColor(CycleColor);
+    //(LightBeam)
+    if (RollLight1 <= ForgeChance1) DisplayRarityLight1 = ForgeRarity1;
+    else if (RollLight1 <= (ForgeChance1 + ForgeChance2)) DisplayRarityLight1 = ForgeRarity2;
+    else DisplayRarityLight1 = ForgeRarity3;
 
-    if (CycleCount >= 10)
+    FLinearColor Color1 = ItemStats::GetRarityDataMap()[DisplayRarityLight1].Color;
+    if (LightBeam) LightBeam->SetBrushTintColor(Color1);
+
+    //(LightBeam_1)
+    if (RollLight2 <= ForgeChance1) DisplayRarityLight2 = ForgeRarity1;
+    else if (RollLight2 <= (ForgeChance1 + ForgeChance2)) DisplayRarityLight2 = ForgeRarity2;
+    else DisplayRarityLight2 = ForgeRarity3;
+
+    FLinearColor Color2 = ItemStats::GetRarityDataMap()[DisplayRarityLight2].Color;
+    if (LightBeam_1) LightBeam_1->SetBrushTintColor(Color2);
+
+    //(LightBeam_2)
+    if (RollLight3 <= ForgeChance1) DisplayRarityLight3 = ForgeRarity1;
+    else if (RollLight3 <= (ForgeChance1 + ForgeChance2)) DisplayRarityLight3 = ForgeRarity2;
+    else DisplayRarityLight3 = ForgeRarity3;
+
+    FLinearColor Color3 = ItemStats::GetRarityDataMap()[DisplayRarityLight3].Color;
+    if (LightBeam_2) LightBeam_2->SetBrushTintColor(Color3);
+
+    if (CycleCount >= 5)
     {
         GetWorld()->GetTimerManager().ClearTimer(FuseTimerHandle);
         CompleteForgeSequence();

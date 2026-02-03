@@ -35,7 +35,7 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 
 	RenderTarget = NewObject<UTextureRenderTarget2D>(this, FName(*UniqueNameStr));
 	RenderTarget->RenderTargetFormat = RTF_RGBA16f;
-	RenderTarget->InitAutoFormat(200, 200);
+	RenderTarget->InitAutoFormat(2000, 2000);
 	RenderTarget->ClearColor = FLinearColor(0,0,0,0);
 	RenderTarget->bAutoGenerateMips = false;
 	RenderTarget->UpdateResourceImmediate(true);
