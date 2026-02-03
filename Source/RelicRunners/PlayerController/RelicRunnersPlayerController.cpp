@@ -300,6 +300,14 @@ void ARelicRunnersPlayerController::UpdateHUDHealth(float CurrentHealth, float M
 	}
 }
 
+void ARelicRunnersPlayerController::UpdateHUDHealthPotions(int HealthPotions)
+{
+	if (IsLocalController() && PlayerHUD)
+	{
+		PlayerHUD->UpdateHUDHealthPotions(HealthPotions);
+	}
+}
+
 void ARelicRunnersPlayerController::UpdateHUDResource(float CurrentResource, float MaxResource)
 {
 	if (IsLocalController() && PlayerHUD)

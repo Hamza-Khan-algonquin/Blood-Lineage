@@ -54,6 +54,11 @@ void UPlayerHUD::UpdateHUDAbilityPoints(int AbilityPoints)
 	TB_AbilityPoints->SetText(FText::FromString(FString::Printf(TEXT("%d"), AbilityPoints)));
 }
 
+void UPlayerHUD::UpdateHUDHealthPotions(int HealthPotions)
+{
+	TB_HealthPotion->SetText(FText::FromString(FString::Printf(TEXT("%d"), HealthPotions)));
+}
+
 void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 {
 	float HealthPercent = MaxHealth > 0 ? CurrentHealth / MaxHealth : 0.f;
@@ -79,29 +84,6 @@ void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
 	TB_Experience->SetText(FText::FromString(FString::Printf(TEXT("%d / %d XP"), FMath::RoundToInt(CurrentXP), FMath::RoundToInt(XPToLevel))));
 }
 
-void UPlayerHUD::OnHealthPotionClicked(int& PlayerHealth, int MaxHealth, int& HealthPotionAmount, float HealthPercent)
-{
-	// use potion if player has one and isn’t at full health
-	if (HealthPotionAmount > 0 && PlayerHealth < MaxHealth)
-	{
-		// Heal player by a percentage of max health
-		int HealthToGrant = FMath::RoundToInt(MaxHealth * HealthPercent);
-		PlayerHealth += HealthToGrant;
-		HealthPotionAmount--;
-
-		// if the player’s health exceeds max health, set it to max health
-		if (PlayerHealth > MaxHealth)
-		{
-			PlayerHealth = MaxHealth;
-		}
-
-		// Update potion count UI
-		if (TB_HealthPotion)
-		{
-			TB_HealthPotion->SetText(FText::AsNumber(HealthPotionAmount));
-		}
-	}
-}
 
 void UPlayerHUD::UpdateBindText()
 {

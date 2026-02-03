@@ -32,6 +32,7 @@ public:
 
 	//Functions
 	void UpdateHUDHealth(float CurrentHealth, float MaxHealth);
+	void UpdateHUDHealthPotions(int HealthPotions);
 	void UpdateHUDResource(float CurrentResource, float MaxResource);
 	void UpdateHUDXP(int Level, float CurrentXP, float MaxXP);
 	void UpdateHUDAbilityPoints(int Points);

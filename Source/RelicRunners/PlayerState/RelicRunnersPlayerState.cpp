@@ -260,20 +260,28 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 {
 	if (!HasAuthority()) return;
 
+	// use potion if player has one and isn’t at full health
 	if (HealthPotionCount > 0 && PlayerHealth < PlayerMaxHealth)
 	{
-		if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetPlayerController()))
-		{
-			if (PC->PlayerHUD)
-			{
-				PC->PlayerHUD->OnHealthPotionClicked(PlayerHealth, PlayerMaxHealth, HealthPotionCount, HealthGranted);
-			}
-		}
-		//For server
-		UpdateRemoteHUDHealth();
+		// Heal player by a percentage of max health
+		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * HealthGranted);
 
+		PlayerHealth += HealthToGrant;
+		HealthPotionCount--;
+
+		// if the player’s health exceeds max health, set it to max health
+		if (PlayerHealth > PlayerMaxHealth)
+		{
+			PlayerHealth = PlayerMaxHealth;
+		}
+
+		// Notify owning client to update HUD
+		UpdateRemoteHUDHealth();
+		UpdateRemoteHUDHealthPotions();
 	}
 }
+
+
 
 void ARelicRunnersPlayerState::OnLevelUp()
 {
@@ -629,6 +637,14 @@ void ARelicRunnersPlayerState::UpdateRemoteHUDHealth()
 	}
 }
 
+void ARelicRunnersPlayerState::UpdateRemoteHUDHealthPotions()
+{
+	if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetPlayerController()))
+	{
+		PC->UpdateHUDHealthPotions(HealthPotionCount);
+	}
+}
+
 void ARelicRunnersPlayerState::UpdateRemoteHUDResource()
 {
 	if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetPlayerController()))
@@ -658,6 +674,11 @@ void ARelicRunnersPlayerState::OnRep_Health()
 	UpdateRemoteHUDHealth();
 }
 
+void ARelicRunnersPlayerState::OnRep_HealthPotions()
+{
+	UpdateRemoteHUDHealthPotions();
+}
+
 void ARelicRunnersPlayerState::OnRep_Resource()
 {
 	UpdateRemoteHUDResource();
@@ -683,6 +704,7 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ARelicRunnersPlayerState, SelectedClass);
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerHealth);
+	DOREPLIFETIME(ARelicRunnersPlayerState, HealthPotionCount);
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerMaxHealth);
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerResource);
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerMaxResource);

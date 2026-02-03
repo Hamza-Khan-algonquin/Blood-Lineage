@@ -88,11 +88,14 @@ public:
 
 	//Stats
 	void UpdateRemoteHUDHealth();
+	void UpdateRemoteHUDHealthPotions();
 	void UpdateRemoteHUDResource();
 	void UpdateRemoteHUDExperience();
 	void UpdateRemoteHUDAbility();
 	UFUNCTION()
 	void OnRep_Health();
+	UFUNCTION()
+	void OnRep_HealthPotions();
 	UFUNCTION()
 	void OnRep_Resource();
 	UFUNCTION()
@@ -113,6 +116,8 @@ public:
 	int PlayerHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
 	int PlayerMaxHealth;
+	UPROPERTY(ReplicatedUsing = OnRep_HealthPotions)
+	int HealthPotionCount;
 	UPROPERTY(ReplicatedUsing = OnRep_Resource)
 	int PlayerResource;
 	UPROPERTY(ReplicatedUsing = OnRep_Resource)
@@ -149,8 +154,6 @@ public:
 	int PlayerStartingIntelligence;
 	UPROPERTY()
 	int PlayerStartingGold;
-	UPROPERTY()
-	int HealthPotionCount;
 	UPROPERTY()
 	float HealthGranted;
 

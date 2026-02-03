@@ -36,6 +36,8 @@ public:
 
 	void UpdateHUDAbilityPoints(int AbilityPoints);
 
+	void UpdateHUDHealthPotions(int HealthPotions);
+
 	void UpdateHUDHealth(float CurrentHealth, float MaxHealth);
 
 	void UpdateHUDResource(float CurrentResource, float MaxResource);
@@ -119,5 +121,4 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartUltimateCooldown(float CooldownTime);
 
-	void OnHealthPotionClicked(int& PlayerHealth, int MaxHealth, int& HealthPotionAmount, float HealthPercent);
 };
