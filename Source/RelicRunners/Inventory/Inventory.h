@@ -329,6 +329,10 @@ public:
 	class UImage* LightBeam_2;
 
 	UPROPERTY(meta = (BindWidget))
+
+	class UImage* LightBeam_3;
+
+	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_ForgeItem1;
 
 	UPROPERTY(meta = (BindWidget))
