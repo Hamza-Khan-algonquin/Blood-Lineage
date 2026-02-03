@@ -727,7 +727,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		{
 			LoadingScreen->AddToViewport();
 			HideMiniMap(true);
-			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 10.0f, false);
+			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 0.5f, false);
 		}
 	}
 
