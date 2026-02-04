@@ -400,6 +400,8 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
         }
     }
 
+
+
     return Summary;
 }
 

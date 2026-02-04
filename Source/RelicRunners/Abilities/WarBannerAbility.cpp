@@ -1,112 +1,182 @@
 #include "WarBannerAbility.h"
-#include "WarBanner.h"
-#include "Net/UnrealNetwork.h"
-#include "../RelicRunnersCharacter.h"
+#include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "DrawDebugHelpers.h"
+#include "TimerManager.h"
 
 UWarBannerAbility::UWarBannerAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
-   /* bIsOnCooldown = false;
-    Cooldown = 0.f;
-    Duration = 10.f;
-    DamageAmount = 0.f;
+
+    Duration = 5.f;
+    LastUseTime = -100.f;
+    CooldownTimer = 10.f;
+    Cost = 50;
     AreaRadius = 500.f;
-    ConeAngle = 0.f;
-    AbilityName = "War Banner";
-    AbilityCategory = EAbilityCategory::Utility;
-    TargetType = EAbilityTargetType::Cone;
-    OwnerActor = nullptr;
-    BannerSilhouetteMesh = nullptr;
-    WarBannerTemplate = nullptr;
-    WarBanner = nullptr;
-
-    BannerSilhouetteMesh = CreateDefaultSubobject<UStaticMeshComponent>("BannerSilhouetteMesh");
-    RootComponent = BannerSilhouetteMesh;
-
-    SetReplicates(true);*/
 }
 
-//void WarBannerAbility::Server_Initialize_Implementation(AActor* newOwner)
-//{
-//    OwnerActor = newOwner;
-//
-//    if (BannerSilhouetteMesh == nullptr)
-//        return;
-//
-//    BannerSilhouetteMesh->SetVisibility(false);
-//
-//    if (WarBannerTemplate != nullptr && GetWorld())
-//    {
-//        WarBanner = GetWorld()->SpawnActor<AWarBanner>(WarBannerTemplate, GetActorLocation(), GetActorRotation());
-//        if (WarBanner)
-//        {
-//            WarBanner->Initialize(this);
-//        }
-//    }
-//}
 
 void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
-   /* if (!CanActivate() || OwnerActor == nullptr || WarBannerTemplate == nullptr)
+    Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    float CurrentTime = ActorInfo->AvatarActor->GetWorld()->GetTimeSeconds();
+
+    if (CurrentTime - LastUseTime < CooldownTimer)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
+    }
 
-    if (BannerSilhouetteMesh == nullptr)
+
+    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
+    if (!AvatarActor) // If no valid actor
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // End the ability
         return;
+    }
 
-    BannerSilhouetteMesh->SetVisibility(true);*/
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
 
-    /*
-    Transparent version of a banner appears to indicate where it will spawn when the player presses left click button when started
-    Position of the banner is a line trace from the position of the camera to a certain distance away from the player
+    if (!CommitAbility(Handle, ActorInfo, ActivationInfo)) // Try to commit the ability
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // If commit fails, end the ability 
+        return; // Exit early
+    }
 
-    When you click the left mouse button when the transparent version is visible, Startup delay before the banner itself spawns
-    When the delay is complete, Spawn the banner exactly where it was shown.
+    // Get PlayerState safely
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
 
-    Banner lasts 20 seconds | Radius is 100 meters | Banner can take damage and decreases lifespan when damaged | Players in banner radius get a stat bonus
-    When the banner's life has ended tells the ability to start decreasing it's own cooldown timer
+    // Must have PlayerState and enough resource
+    if (!PS || PS->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
 
-    Order of operation
-    Press ability input
-    Aim the banner
-    Press left mouse button
-    Wait for the initial delay to end
-    Spawn the actual banner
-    Banner's life decreases overtime | If the banner takes damage, increase rate at which life decreases | Players in banner radius get a stat bonus
-    Banner dies and tells ability to begin it's own cooldown timer
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->UpdateRemoteHUDResource();
 
-    Upgrades increase spawn distance + Banner Life + Banner Radius
-    */
+    FVector BannerLocation = GetBannerLocation();
+
+    SpawnBanner();
+
+    ApplyAllyBuffs(BannerLocation);
+
+    PS->SetPlayerStrength(PS->PlayerStrength * BuffAmount);
 }
+
+void UWarBannerAbility::SpawnBanner()
+{
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!AvatarActor) return;
+
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World) return;
+
+    APawn* OwnerPawn = Cast<APawn>(AvatarActor);
+    if (!OwnerPawn) return;
+
+    const FVector PawnLocation = OwnerPawn->GetActorLocation();
+    const FVector ForwardVector = OwnerPawn->GetActorForwardVector();
+
+    // Final spawn location
+    const FVector BannerLocation = PawnLocation + ForwardVector * SpawnDistance + FVector(0.f, 0.f, 20.f);
+
+    // Small sphere where the banner would spawn
+    DrawDebugSphere(World,BannerLocation,25.f,12,FColor::Red,false,3.f);
+
+    // Circle to show buff radius
+    DrawDebugCircle(World,BannerLocation,AreaRadius,64,FColor::Green,false,3.f,0,2.f,OwnerPawn->GetActorRightVector(),OwnerPawn->GetActorForwardVector(),false);
+
+}
+
+
+void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
+{
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    TArray<AActor*> OverlappingActors;
+
+    // Object types to consider
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+    // Actors to ignore
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(GetAvatarActorFromActorInfo());
+
+    // Perform the sphere overlap
+    bool bHit = UKismetSystemLibrary::SphereOverlapActors(World,BannerLocation,AreaRadius,ObjectTypes,ACharacter::StaticClass(),ActorsToIgnore,OverlappingActors);
+
+    if (!bHit) return;
+
+    for (AActor* Actor : OverlappingActors)
+    {
+        ACharacter* Character = Cast<ACharacter>(Actor);
+        if (!Character) continue; // skip if not a character
+
+        //if (ActiveBuffs.Contains(Character)) continue;
+
+        if (!Actor->Tags.Contains("Player")) continue;
+
+
+        UE_LOG(LogTemp, Log, TEXT("Buff applied to %s"), *Character->GetName());
+
+    }
+
+}
+
+FVector UWarBannerAbility::GetBannerLocation() const
+{
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!AvatarActor) return FVector::ZeroVector;
+
+    return AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * SpawnDistance + FVector(0.f, 0.f, 20.f);
+}
+
 
 void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-    /*ARelicRunnersCharacter* character = Cast<ARelicRunnersCharacter>(OwnerActor);
-    if (!character)
-        return;
+    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
-    bIsActive = false;
-    bIsOnCooldown = false;*/
+
+    if (ActorInfo && ActorInfo->AvatarActor.IsValid())
+    {
+        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
+
+        UWorld* World = ActorInfo->AvatarActor->GetWorld();
+        if (World)
+        {
+            /*World->GetTimerManager().ClearTimer(AttractTimer);
+            World->GetTimerManager().ClearTimer(ExplosionTimer);*/
+
+            if (!bWasCancelled)
+            {
+                LastUseTime = World->GetTimeSeconds();
+
+                if (ActorInfo->IsLocallyControlled())
+                {
+                    if (RPC)
+                    {
+                        RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
+
+                    }
+                }
+            }
+        }
+    }
 }
-
-//void WarBannerAbility::CancelAbility()
-//{
-//    if (BannerSilhouetteMesh)
-//        BannerSilhouetteMesh->SetVisibility(false);
-//}
-
-void UWarBannerAbility::SpawnBanner(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo)
-{
-    /*if (!WarBanner)
-        return;
-
-    bIsOnCooldown = true;
-
-    WarBanner->Server_Spawn(Duration, DamageAmount, AreaRadius);
-    WarBanner->SetActorLocation(GetActorLocation());
-    WarBanner->SetActorRotation(GetActorRotation());
-
-    CancelAbility();*/
-}
-
-
-

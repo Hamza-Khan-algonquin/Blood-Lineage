@@ -25,6 +25,8 @@
 #include "Abilities/ImpunityAbility.h"
 #include "Abilities/EarthquakeAbility.h"
 #include "Abilities/BundleOfJoy.h"
+#include "Abilities/MarkOfTheHunt.h"
+#include "Abilities/RageOfTheGods.h"
 #include "Abilities/VengefulDance.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"

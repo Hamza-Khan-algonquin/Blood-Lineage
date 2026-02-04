@@ -2,7 +2,6 @@
 
 
 #include "AresCharacter.h"
-//#include "RelicRunners/AbilitySystem/AbilityPointCounter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "RelicRunners/Inventory/InventoryComponent.h"
@@ -22,19 +21,10 @@ void AAresCharacter::BeginPlay()
 		// Give Earthquake ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UEarthquakeAbility::StaticClass(), 1, 0));
 
+		// Give War Banner ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UWarBannerAbility::StaticClass(), 1, 0));
 	}
 
-	//if (ClassInfo)
-	//{
-	//	FClassData Stats = ClassInfo->GetStats("Ares");
-	//	SetPlayerStartingHealth(Stats.Health);
-	//	PlayerMaxHealth = Stats.Health;
-	//	PlayerHealth = Stats.Health;
-	//	SetPlayerStartingArmor(Stats.Armor);
-	//	SetPlayerStartingStrength(Stats.Strength);
-	//	SetPlayerStartingDexterity(Stats.Dexterity);
-	//	SetPlayerStartingIntelligence(Stats.Intelligence);
-	//}
 }
 
 // Called when player takes control of this character
@@ -95,58 +85,10 @@ void AAresCharacter::GiveUtilityAbilities()
 {
 	Super::GiveUtilityAbilities();
 
-	//press ability key
-	//IsWarBannerActive = !IsWarBannerActive;
-
-	//if (WarBannerAbility == nullptr)
-	//	return;
-
-	//if (IsWarBannerActive)
-	//{
-	//	WarBannerAbility->ActivateAbility();
-	//}
-	//else
-	//{
-	//	WarBannerAbility->CancelAbility();
-	//}
-
-	//// aiming with the mouse
-	//if (IsWarBannerActive)
-	//{
-	//	FHitResult HitResult;
-	//	FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true, this);
-
-	//	bool bHit = GetWorld()->LineTraceSingleByChannel(
-	//		HitResult,
-	//		PlayerLocation,
-	//		PlayerLocation + (PlayerForward * 1000.0f),
-	//		ECC_Visibility,
-	//		TraceParams);
-
-	//	FVector targetPosition = bHit ? HitResult.Location : PlayerLocation + (PlayerForward * 1000.0f);
-
-	//	DrawDebugLine(GetWorld(), PlayerLocation, targetPosition, FColor::Blue);
-	//	WarBannerAbility->SetActorLocation(targetPosition);
-	//	WarBannerAbility->SetActorRotation(FRotator(0.0f, GetControlRotation().Yaw, 0.0f));
-
-	//	//on let click
-	//	if (IsWarBannerActive && WarBannerAbility != nullptr)
-	//	{
-	//		WarBannerAbility->Server_SpawnBanner();
-	//	}
-	//}
-
-	//spawning the actor
-	//if (WarBannerAbilityTemplate != nullptr)
-	//{
-	//	WarBannerAbility = GetWorld()->SpawnActor<AWarBannerAbility>(WarBannerAbilityTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
-	//	WarBannerAbility->Server_Initialize(this);
-	//}
-
 	if (AbilitySystem)
 	{
 		//start ability cooldown
-		//AbilityPointCounter->StartUtilityCooldown(UtilityCooldown);
+		AbilitySystem->TryActivateAbilityByClass(UWarBannerAbility::StaticClass());
 	}
 }
 

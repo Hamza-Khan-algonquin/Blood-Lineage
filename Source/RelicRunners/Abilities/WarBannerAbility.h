@@ -16,18 +16,25 @@ public:
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
     virtual FName GetAbilityName() const override { return FName("War Banner"); }
 
-protected:
-    //UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WarBanner")
-    //TSubclassOf<class AWarBanner> WarBannerTemplate;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "WarBanner")
-    class UStaticMeshComponent* BannerSilhouetteMesh;
-
 private:
     FTimerHandle BannerDurationTimer;
 
-    //UPROPERTY()
-    //class AWarBanner* WarBanner;
+    void SpawnBanner();
+    void ApplyAllyBuffs(const FVector& BannerLocation);
+    FVector GetBannerLocation() const;
+    void RemoveBuff(APawn* Pawn);
 
-    void SpawnBanner(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo);
+    // War Banner properties
+    UPROPERTY(EditDefaultsOnly, Category = "War Banner")
+    float SpawnDistance = 200.f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "War Banner")
+    float BuffAmount = 2.0f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "War Banner")
+    float BuffDuration = 5.f;
+
+    // Track who is currently buffed
+    //TMap<APawn*, FTimerHandle> ActiveBuffs;
+
 };
