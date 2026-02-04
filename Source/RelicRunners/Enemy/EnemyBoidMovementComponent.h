@@ -26,6 +26,8 @@ protected:
 	float MaxTurnSpeed;
 	UPROPERTY(EditAnywhere)
 	float MaxSpeed;
+	UPROPERTY(EditAnywhere)
+	float TargetRadius;
 
 	UPROPERTY(EditAnywhere)
 	float CoherenceWeight;
@@ -35,6 +37,11 @@ protected:
 	float AlignmentWeight;
 	UPROPERTY(EditAnywhere)
 	float TargetWeight;
+	UPROPERTY(EditAnywhere)
+	float MaxTargetDistanceWeight;
+
+	UPROPERTY(EditAnywhere)
+	float OrbitWeight;
 	
 	UPROPERTY(EditAnywhere)
 	FVector NavMeshClampExtent;

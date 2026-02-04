@@ -76,11 +76,11 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 					//add the alignment of the boid
 					alignmentVector += boidMovement->GetVelocity();
 
-					//check if boid is in range for separation
-					if (distanceToBoid < SeparationRange)
+					//check if boid is in range for separation. distanceToBoid > 0 make sure we are not going into inf
+					if (distanceToBoid < SeparationRange && distanceToBoid > 0 && boidsInFlock[i]->MovementComponent != this)
 					{
 						//add the oppisite of the direction vector to the other boid to the separation vector
-						separationVector -= directionToBoid;
+						separationVector -= directionToBoid / (distanceToBoid * distanceToBoid);
 						boidsEffectingSeparation++;
 					}
 				}
@@ -103,48 +103,87 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), coherenceVector.X, coherenceVector.Y, coherenceVector.Z);
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), alignmentVector.X, alignmentVector.Y, alignmentVector.Z);
 	alignmentVector /= pOtherBoidsToCheck.Num();
+	//alignmentVector -= Velocity;
 	alignmentVector.Normalize();
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), alignmentVector.X, alignmentVector.Y, alignmentVector.Z);
-	separationVector /= boidsEffectingSeparation;
-	separationVector.Normalize();
+	//if (boidsEffectingSeparation != 0)
+	//{
+	//	separationVector /= boidsEffectingSeparation;
+	//	//separationVector.Normalize();
+	//}
+	
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), separationVector.X, separationVector.Y, separationVector.Z);
 	if (Commander->TargetPlayer)
 	{
-		targetVector = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
-		targetVector.Normalize();
+		FVector targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
+		float distanceFromTargetRadius = targetDirection.Size() - TargetRadius;
+
+		if (FMath::Abs(distanceFromTargetRadius) > 50)
+		{
+			targetVector = targetDirection.GetSafeNormal() * FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceWeight, MaxTargetDistanceWeight);
+		}
+		else
+		{
+			targetVector = FVector::Zero();
+
+			//target direction is already normalized so don't need to worry about the dividing step in projection
+			targetDirection.Normalize();
+
+			//project alignmentVector on to targetDirection and than subtract that from aligment to get a perpendicular angle to targetDirection that magnitude is the differents in between the project and aligment vectors
+			//Desmos has a 3d graphing calculator now. yaaaaa
+			/*alignmentVector -= targetDirection * FVector::DotProduct(alignmentVector, targetDirection);
+			alignmentVector.Normalize();
+
+			coherenceVector -= targetDirection * FVector::DotProduct(coherenceVector, targetDirection);
+			coherenceVector.Normalize();*/
+
+
+			alignmentVector = FVector::Zero();
+			coherenceVector = FVector::Zero();
+		}
+
+		finalInflunceVector += (targetVector * TargetWeight);
+
+		targetDirection.Normalize();
+		FVector orbitVector = FVector::CrossProduct(targetDirection, FVector::UpVector);
+		//finalInflunceVector += (orbitVector * OrbitWeight);
 	}
 
 
 	//factor in the weights and add them up to get the final direction vector
-	finalInflunceVector = (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight);
-	float totalWeight = (CoherenceWeight + SeparationWeight + AlignmentWeight);
+	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight);
+	//float totalWeight = (CoherenceWeight + SeparationWeight + AlignmentWeight);
 
-	if (Commander->TargetPlayer)
-	{
-		finalInflunceVector += (targetVector * TargetWeight);
-		totalWeight += TargetWeight;
-	}
+	//if (Commander->TargetPlayer)
+	//{
+		//totalWeight += TargetWeight;
+	//}
 
-	finalInflunceVector /= totalWeight;
-	finalInflunceVector.Normalize();
+	//finalInflunceVector /= totalWeight;
+	//finalInflunceVector.Normalize();
 
-	FVector desiredVelocity = finalInflunceVector * MaxSpeed;
+	FVector desiredVelocity = finalInflunceVector.GetSafeNormal() * MaxSpeed;
 
 	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
 	Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
+	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
+	
 }
 
 bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement, FVector& out)
 {
 	FNavLocation navLocation;
 	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	FVector offset;
+	FVector standIn;
+	GetOwner()->GetActorBounds(false, standIn, offset, false);
+	offset.X = 0;
+	offset.Y = 0;
+	FVector actualExtent = NavMeshClampExtent + offset;
 
 	if (navSys && navSys->ProjectPointToNavigation(DesiredMovement, navLocation, NavMeshClampExtent))
 	{
-		FVector offset;
-		FVector standIn;
-		GetOwner()->GetActorBounds(false, standIn, offset, false);
 		out = navLocation.Location + FVector(0,0, offset.Z - 5.5);
 		return true;
 	}
@@ -216,5 +255,10 @@ bool UEnemyBoidMovementComponent::CanSeeOtherBoid(APawn* otherBoid, FVector& dir
 
 const FVector UEnemyBoidMovementComponent::GetVelocity()
 {
+	if (Velocity.ContainsNaN())
+	{
+		Velocity = FVector::ZeroVector;
+	}
+
 	return Velocity;
 }
