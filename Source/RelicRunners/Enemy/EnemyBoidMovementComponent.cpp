@@ -47,7 +47,7 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 
 	FVector finalInflunceVector = { 0,0,0 };
 
-	int boidsEffectingSeparation = 0;
+	//int boidsEffectingSeparation = 0;
 
 	//get a reference to all boids near me
 	TArray<APawn*> pOtherBoidsToCheck;
@@ -79,9 +79,12 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 					//check if boid is in range for separation. distanceToBoid > 0 make sure we are not going into inf
 					if (distanceToBoid < SeparationRange && distanceToBoid > 0 && boidsInFlock[i]->MovementComponent != this)
 					{
+						float linear = distanceToBoid / SeparationRange;
+
+
 						//add the oppisite of the direction vector to the other boid to the separation vector
-						separationVector -= directionToBoid / (distanceToBoid * distanceToBoid);
-						boidsEffectingSeparation++;
+						separationVector -= directionToBoid.GetSafeNormal() * (1 - (linear * linear * (3 - 2 * linear)));
+						//boidsEffectingSeparation++;
 					}
 				}
 			}
@@ -131,22 +134,22 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 
 			//project alignmentVector on to targetDirection and than subtract that from aligment to get a perpendicular angle to targetDirection that magnitude is the differents in between the project and aligment vectors
 			//Desmos has a 3d graphing calculator now. yaaaaa
-			/*alignmentVector -= targetDirection * FVector::DotProduct(alignmentVector, targetDirection);
+			alignmentVector -= targetDirection * FVector::DotProduct(alignmentVector, targetDirection);
 			alignmentVector.Normalize();
 
 			coherenceVector -= targetDirection * FVector::DotProduct(coherenceVector, targetDirection);
-			coherenceVector.Normalize();*/
+			coherenceVector.Normalize();
 
 
-			alignmentVector = FVector::Zero();
-			coherenceVector = FVector::Zero();
+			//alignmentVector = FVector::Zero();
+			//coherenceVector = FVector::Zero();
 		}
 
 		finalInflunceVector += (targetVector * TargetWeight);
 
 		targetDirection.Normalize();
 		FVector orbitVector = FVector::CrossProduct(targetDirection, FVector::UpVector);
-		//finalInflunceVector += (orbitVector * OrbitWeight);
+		finalInflunceVector += (orbitVector * OrbitWeight);
 	}
 
 
