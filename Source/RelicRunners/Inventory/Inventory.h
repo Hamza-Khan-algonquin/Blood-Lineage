@@ -252,6 +252,9 @@ public:
 	class UWidgetAnimation* ForgeCompleted;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	class UWidgetAnimation* ForgeShake;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	class UWidgetAnimation* InventoryOpen;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)

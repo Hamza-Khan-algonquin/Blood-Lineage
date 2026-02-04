@@ -998,6 +998,7 @@ void UInventory::CompleteForgeSequence()
     if (ForgeCompleted)
     {
         PlayAnimation(ForgeCompleted);
+        PlayAnimation(ForgeShake);
     }
 }
 
