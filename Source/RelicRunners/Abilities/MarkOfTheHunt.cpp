@@ -149,7 +149,7 @@ void UMarkOfTheHunt::ScanForEnemies(const FVector& ScanLocation)
             ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 
             // Overlap check every tick
-            UKismetSystemLibrary::SphereOverlapActors(World,\ScanLocation,1000.f, ObjectTypes,nullptr,{},FoundActors);
+            UKismetSystemLibrary::SphereOverlapActors(World,ScanLocation,1000.f, ObjectTypes,nullptr,{},FoundActors);
 
             for (AActor* Actor : FoundActors)
             {

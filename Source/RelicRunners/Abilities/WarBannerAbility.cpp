@@ -75,7 +75,8 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
     ApplyAllyBuffs(BannerLocation);
 
-    PS->SetPlayerStrength(PS->PlayerStrength * BuffAmount);
+    //PS->SetPlayerStrength(PS->PlayerStrength * BuffAmount);
+
 }
 
 void UWarBannerAbility::SpawnBanner()
@@ -138,6 +139,7 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 
     }
 
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 FVector UWarBannerAbility::GetBannerLocation() const

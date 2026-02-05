@@ -22,7 +22,6 @@ private:
     void SpawnBanner();
     void ApplyAllyBuffs(const FVector& BannerLocation);
     FVector GetBannerLocation() const;
-    void RemoveBuff(APawn* Pawn);
 
     // War Banner properties
     UPROPERTY(EditDefaultsOnly, Category = "War Banner")
@@ -30,11 +29,5 @@ private:
 
     UPROPERTY(EditDefaultsOnly, Category = "War Banner")
     float BuffAmount = 2.0f;
-
-    UPROPERTY(EditDefaultsOnly, Category = "War Banner")
-    float BuffDuration = 5.f;
-
-    // Track who is currently buffed
-    //TMap<APawn*, FTimerHandle> ActiveBuffs;
 
 };
