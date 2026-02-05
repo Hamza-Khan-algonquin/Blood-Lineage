@@ -21,7 +21,13 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float FeildOfView;
 	UPROPERTY(EditAnywhere)
-	float SeparationRange;
+	float DefaultSeparationRange;
+	UPROPERTY(EditAnywhere)
+	float MaxSeperationRange;
+	UPROPERTY(EditAnywhere)
+	float MinSeperationRange;
+	UPROPERTY(EditAnywhere)
+	float DistanceForMaxSeperation;
 	UPROPERTY(EditAnywhere)
 	float MaxTurnSpeed;
 	UPROPERTY(EditAnywhere)

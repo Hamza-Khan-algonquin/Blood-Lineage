@@ -11,13 +11,19 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	VisualRange = 1000.f;
 	FeildOfView = 180.f;
-	SeparationRange = 200.f;
-	MaxTurnSpeed = 500.f;
+	DefaultSeparationRange = 200.f;
+	MaxSeperationRange = 800.f;
+	MinSeperationRange = 200.f;
+	DistanceForMaxSeperation = 2000.f;
+	MaxTurnSpeed = 800.0f;
 	MaxSpeed = 600.f;
+	TargetRadius = 300.f;
 	CoherenceWeight = 1.f;
 	SeparationWeight = 1.5f;
 	AlignmentWeight = 1.f;
 	TargetWeight = 2.f;
+	MaxTargetDistanceWeight = 5.f;
+	OrbitWeight = 1.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
 }
@@ -32,11 +38,17 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 {
+	if (!Commander)
+	{
+		return;
+	}
 	//set up variables for each of the influncers on the birds direction
 	//The unit vector towards average position of all boids
 	FVector coherenceVector = { 0,0,0 };
 	//The unit vector of the average oppsite direction to all near by birds
 	FVector separationVector = { 0,0,0 };
+	float currentSeparationDistance = DefaultSeparationRange;
+
 	//The unit vector of the average alignment of all boids
 	FVector alignmentVector = { 0,0,0 };
 
@@ -47,6 +59,9 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 
 	FVector finalInflunceVector = { 0,0,0 };
 
+	FVector targetDirection;
+	float distanceFromTargetRadius;
+
 	//int boidsEffectingSeparation = 0;
 
 	//get a reference to all boids near me
@@ -54,45 +69,52 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 	TArray<APawn*> pOtherBoids;
 
 
-	if (Commander)
+	
+	if (Commander->TargetPlayer)
 	{
-		TArray<AEnemyPawn*> boidsInFlock = Commander->GetPawnEnemies();
+		targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
+		distanceFromTargetRadius = targetDirection.Size() - TargetRadius;
+		
+		currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0, 1) + MinSeperationRange;
+	}
 
-		for (int i = 0; i < boidsInFlock.Num(); i++)
+	TArray<AEnemyPawn*> boidsInFlock = Commander->GetPawnEnemies();
+
+	for (int i = 0; i < boidsInFlock.Num(); i++)
+	{
+		if (boidsInFlock[i])
 		{
-			if (boidsInFlock[i])
+			UEnemyBoidMovementComponent* boidMovement = boidsInFlock[i]->MovementComponent;
+			FVector directionToBoid;
+			float distanceToBoid;
+
+			if (boidMovement && CanSeeOtherBoid(boidsInFlock[i], directionToBoid, distanceToBoid))
 			{
-				UEnemyBoidMovementComponent* boidMovement = boidsInFlock[i]->MovementComponent;
-				FVector directionToBoid;
-				float distanceToBoid;
+				pOtherBoidsToCheck.Add(boidsInFlock[i]);
 
-				if (boidMovement && CanSeeOtherBoid(boidsInFlock[i], directionToBoid, distanceToBoid))
+				//add up the position of the boid for the coherence 
+				coherenceVector += boidsInFlock[i]->GetActorLocation();
+
+				//add the alignment of the boid
+				alignmentVector += boidMovement->GetVelocity();
+
+				//check if boid is in range for separation. distanceToBoid > 0 make sure we are not going into inf
+				if (distanceToBoid < currentSeparationDistance && distanceToBoid > 0 && boidsInFlock[i]->MovementComponent != this)
 				{
-					pOtherBoidsToCheck.Add(boidsInFlock[i]);
-
-					//add up the position of the boid for the coherence 
-					coherenceVector += boidsInFlock[i]->GetActorLocation();
-
-					//add the alignment of the boid
-					alignmentVector += boidMovement->GetVelocity();
-
-					//check if boid is in range for separation. distanceToBoid > 0 make sure we are not going into inf
-					if (distanceToBoid < SeparationRange && distanceToBoid > 0 && boidsInFlock[i]->MovementComponent != this)
-					{
-						float linear = distanceToBoid / SeparationRange;
+					float linear = distanceToBoid / currentSeparationDistance;
 
 
-						//add the oppisite of the direction vector to the other boid to the separation vector
-						separationVector -= directionToBoid.GetSafeNormal() * (1 - (linear * linear * (3 - 2 * linear)));
-						//boidsEffectingSeparation++;
-					}
+					//add the oppisite of the direction vector to the other boid to the separation vector
+					separationVector -= directionToBoid.GetSafeNormal() * (1 - (linear * linear * (3 - 2 * linear)));
+					//boidsEffectingSeparation++;
 				}
 			}
-
 		}
 
-		pOtherBoids = pOtherBoidsToCheck;
 	}
+
+	pOtherBoids = pOtherBoidsToCheck;
+	
 
 
 
@@ -118,9 +140,6 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), separationVector.X, separationVector.Y, separationVector.Z);
 	if (Commander->TargetPlayer)
 	{
-		FVector targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
-		float distanceFromTargetRadius = targetDirection.Size() - TargetRadius;
-
 		if (FMath::Abs(distanceFromTargetRadius) > 50)
 		{
 			targetVector = targetDirection.GetSafeNormal() * FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceWeight, MaxTargetDistanceWeight);
@@ -141,8 +160,8 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 			coherenceVector.Normalize();
 
 
-			//alignmentVector = FVector::Zero();
-			//coherenceVector = FVector::Zero();
+			alignmentVector = FVector::Zero();
+			coherenceVector = FVector::Zero();
 		}
 
 		finalInflunceVector += (targetVector * TargetWeight);
@@ -204,14 +223,13 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	GetOwner()->SetActorLocation(finalMovement);
 
-
+	//fix if we have time
 	/*SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), false, hit);
 
 	if (hit.IsValidBlockingHit())
 	{
 		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
 	}*/
-	
 }
 
 void UEnemyBoidMovementComponent::GroundSnap()
