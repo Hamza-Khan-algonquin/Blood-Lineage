@@ -20,6 +20,7 @@ ACommanderController::ACommanderController()
 	ActiveDistanceFromPlayer = 10000.f;
 	AttackDistanceFromPlayer = 8000.f;
 	EnemiesSetToLowestLOD = false;
+	TimeToAttack = 1;
 }
 
 void ACommanderController::Tick(float DeltaTime)
@@ -32,6 +33,19 @@ void ACommanderController::Tick(float DeltaTime)
 	if (ADirector* dir = ADirector::GetInstance(this))
 	{
 		players = dir->GetPlayers();
+
+		for (auto& elem : RemainingTimeToAttack)
+		{
+			if (!elem.Key)
+			{
+
+			}
+		}
+
+		for (int i = 0; i < players.Num(); i++)
+		{
+			if()
+		}
 	}
 	else
 	{
@@ -43,19 +57,10 @@ void ACommanderController::Tick(float DeltaTime)
 		return;
 	}
 
-	float closeDistance = FVector::Dist(players[0]->GetActorLocation(), pawn->GetActorLocation());
+	
 
-	for (int i = 1; i < players.Num(); i++)
-	{
-		float newDistance = FVector::Dist(players[i]->GetActorLocation(), pawn->GetActorLocation());
-
-		if (closeDistance > newDistance)
-		{
-			closeDistance = newDistance;
-		}
-	}
-
-	UpdateLODs(closeDistance);
+	UpdateLODs(players, pawn->GetActorLocation());
+	AttackCheck(players);
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
@@ -118,8 +123,19 @@ void ACommanderController::OnPossess(APawn* InPawn)
 
 }
 
-void ACommanderController::UpdateLODs(float closestDistance)
+void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLocation)
 {
+	float closestDistance = FVector::Dist(players[0]->GetActorLocation(), refernceLocation);
+
+	for (int i = 1; i < players.Num(); i++)
+	{
+		float newDistance = FVector::Dist(players[i]->GetActorLocation(), refernceLocation);
+
+		if (closestDistance > newDistance)
+		{
+			closestDistance = newDistance;
+		}
+	}
 
 	if (closestDistance > ActiveDistanceFromPlayer && !EnemiesSetToLowestLOD)
 	{
@@ -152,6 +168,29 @@ void ACommanderController::UpdateLODs(float closestDistance)
 			}
 		}
 	}
+}
+
+void ACommanderController::AttackCheck(TArray<APawn*> players)
+{
+	//loop through all players and check to see if they are available to be attack through the member varaible map and it to array
+
+	//loop through all enemies
+
+		//check what the close player to it and if it is in target radius
+
+		//check to see if it is the closest enemy
+
+			//set it as the enemy to attack this time in a map with the key be the players
+
+
+
+	//loop through the array of players
+
+		//check the map to get for the player keyed to a enemy
+
+		//command the enemy to attack
+
+	//rest the remaining time
 }
 
 void ACommanderController::UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer)

@@ -43,6 +43,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	APawn* TargetPlayer;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TMap<TObjectPtr<APawn>, float> RemainingTimeToAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TimeToAttack;
+
 protected:
 	
 public: 
@@ -63,7 +68,9 @@ protected:
 	virtual void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateLODs(float closestDistance);
+	void UpdateLODs(TArray<APawn*> players, FVector refernceLocation);
+	UFUNCTION(BlueprintCallable)
+	void AttackCheck(TArray<APawn*> players);
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer);
 };
