@@ -14,6 +14,19 @@ void ANemesisCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+	if (AbilitySystem)
+	{
+        // Give Divine Punishment Dance ability
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UDivinePunishment::StaticClass(), 1, 0));
+
+        // Give Impunity ability
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
+
+        // Give Vengeful Dance ability
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UVengefulDance::StaticClass(), 1, 0));
+
+	}
+
     ////Starting Stats
     //if (ClassInfo)
     //{
@@ -59,17 +72,6 @@ void ANemesisCharacter::OnRep_PlayerState()
     }
 }
 
-//void ANemesisCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
-//{
-//    Super::EndPlay(EndPlayReason);
-//
-//    if (AbilitySystem)
-//    {
-//        AbilitySystem->CancelAllAbilities();
-//        AbilitySystem->RemoveAllGameplayCues();
-//    }
-//}
-
 
 void ANemesisCharacter::GiveDamageAbilities()
 {
@@ -77,8 +79,7 @@ void ANemesisCharacter::GiveDamageAbilities()
 
     if (AbilitySystem)
     {
-        // start ability cooldown
-        //AbilityPointCounter->StartDamageCooldown(DamageCooldown);
+
     }
 }
 
@@ -88,14 +89,10 @@ void ANemesisCharacter::GiveDefenceAbilities()
 
     if (AbilitySystem)
     {
-        // Give Impunity ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
 
         // Activate Impunity ability
         AbilitySystem->TryActivateAbilityByClass(UImpunityAbility::StaticClass());
 
-        // Start ability cooldown
-        //AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
     }
 }
 
@@ -105,15 +102,9 @@ void ANemesisCharacter::GiveUtilityAbilities()
 
     if (AbilitySystem)
     {
-
-        // Give Vengeful Dance ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UVengefulDance::StaticClass(), 1, 0));
-
         // Activate Vengeful Dance ability
         AbilitySystem->TryActivateAbilityByClass(UVengefulDance::StaticClass());
 
-        // Start ability cooldown
-        //AbilityPointCounter->StartUtilityCooldown(UtilityCooldown);
     }
 }
 
@@ -123,7 +114,9 @@ void ANemesisCharacter::GiveUltimateAbilities()
 
     if (AbilitySystem)
     {
-        // Start ability cooldown
-        //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
+
+        // Activate Vengeful Dance ability
+        AbilitySystem->TryActivateAbilityByClass(UDivinePunishment::StaticClass());
+
     }
 }

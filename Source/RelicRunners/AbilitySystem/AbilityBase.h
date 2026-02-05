@@ -6,7 +6,6 @@
 #include "RelicRunners/PlayerHUD/PlayerHUD.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
-#include "CooldownGameplayEffect.h"
 #include "AbilityBase.generated.h"
 
 UENUM(BlueprintType)

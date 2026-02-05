@@ -76,8 +76,7 @@ void AAresCharacter::GiveDefenceAbilities()
 
 	if (AbilitySystem)
 	{
-		// start ability cooldown
-		//AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
+
 	}
 }
 
@@ -98,7 +97,6 @@ void AAresCharacter::GiveUltimateAbilities()
 
 	if (AbilitySystem)
 	{
-		// start ability cooldown
-		//AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
+
 	}
 }

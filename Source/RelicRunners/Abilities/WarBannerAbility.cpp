@@ -10,7 +10,7 @@ UWarBannerAbility::UWarBannerAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Duration = 5.f;
+    Duration = 15.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
     Cost = 50;
@@ -97,10 +97,10 @@ void UWarBannerAbility::SpawnBanner()
     const FVector BannerLocation = PawnLocation + ForwardVector * SpawnDistance + FVector(0.f, 0.f, 20.f);
 
     // Small sphere where the banner would spawn
-    DrawDebugSphere(World,BannerLocation,25.f,12,FColor::Red,false,3.f);
+    DrawDebugSphere(World,BannerLocation,25.f,12,FColor::Red,false,Duration, 0, 2.f);
 
     // Circle to show buff radius
-    DrawDebugCircle(World,BannerLocation,AreaRadius,64,FColor::Green,false,3.f,0,2.f,OwnerPawn->GetActorRightVector(),OwnerPawn->GetActorForwardVector(),false);
+    DrawDebugCircle(World,BannerLocation,AreaRadius,64,FColor::Green,false,Duration,0,2.f,OwnerPawn->GetActorRightVector(),OwnerPawn->GetActorForwardVector(),false);
 
 }
 
@@ -109,6 +109,16 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 {
     UWorld* World = GetWorld();
     if (!World) return;
+
+
+    if (AActor* Owner = GetAvatarActorFromActorInfo())
+    {
+        if (Owner->Tags.Contains("Player"))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Buff applied to SELF: %s"), *Owner->GetName());
+            // Apply self buff here
+        }
+    }
 
     TArray<AActor*> OverlappingActors;
 
@@ -129,8 +139,6 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
     {
         ACharacter* Character = Cast<ACharacter>(Actor);
         if (!Character) continue; // skip if not a character
-
-        //if (ActiveBuffs.Contains(Character)) continue;
 
         if (!Actor->Tags.Contains("Player")) continue;
 
@@ -163,9 +171,6 @@ void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
-            /*World->GetTimerManager().ClearTimer(AttractTimer);
-            World->GetTimerManager().ClearTimer(ExplosionTimer);*/
-
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();

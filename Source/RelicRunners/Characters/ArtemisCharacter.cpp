@@ -17,6 +17,16 @@ void AArtemisCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (AbilitySystem)
+	{
+		// Give Mark of the Hunt ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
+
+		// Give Moonbeam ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
+	}
+
+
 	if (ClassInfo)
 	{
 		//FClassData Stats = ClassInfo->GetStats("Artemis");
@@ -66,8 +76,7 @@ void AArtemisCharacter::GiveDamageAbilities()
 
 	if (AbilitySystem)
 	{
-		// Start ability cooldown
-		//AbilityPointCounter->StartDamageCooldown(DamageCooldown);
+
 	}
 }
 
@@ -87,8 +96,7 @@ void AArtemisCharacter::GiveUtilityAbilities()
 
 	if (AbilitySystem)
 	{
-		// Give Mark of the Hunt ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
+		// Activate Mark of the Hunt
 		AbilitySystem->TryActivateAbilityByClass(UMarkOfTheHunt::StaticClass());
 	}
 }
@@ -99,8 +107,7 @@ void AArtemisCharacter::GiveUltimateAbilities()
 
 	if (AbilitySystem)
 	{
-		// Give Moonbeam ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
+
 
 	}
 

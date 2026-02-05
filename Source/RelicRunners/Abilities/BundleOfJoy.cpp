@@ -19,18 +19,14 @@ UBundleOfJoy::UBundleOfJoy()
     CooldownTimer = 10.f;
     Cost = 60;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
-        TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Attract.NS_BundleOfJoy_Attract")
-    );
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Attract.NS_BundleOfJoy_Attract"));
 
     if (VFXAsset.Succeeded())
     {
         AbilityVFX = VFXAsset.Object;
     }
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset1(
-        TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Explosion.NS_BundleOfJoy_Explosion")
-    );
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset1(TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Explosion.NS_BundleOfJoy_Explosion"));
 
     if (VFXAsset1.Succeeded())
     {
@@ -140,15 +136,7 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
     AActor* Avatar = GetAvatarActorFromActorInfo();
     UWorld* World = Avatar->GetWorld();
 
-    UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-        Avatar->GetWorld(),
-        AbilityVFX,
-        AttractionCenter,
-        FRotator(0, 0, 0),
-        FVector(1.f),
-        true,
-        true
-    );
+    UNiagaraFunctionLibrary::SpawnSystemAtLocation(Avatar->GetWorld(),AbilityVFX,AttractionCenter, FRotator(0, 0, 0),FVector(1.f), true,true);
 
     // start attraction loop
     World->GetTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::Attract, 0.016f, true);
@@ -226,15 +214,7 @@ void UBundleOfJoy::Explode()
 
     //DrawDebugSphere(World, Center, ExplosionRadius, 32, FColor::Red, false, 2.f); // Draw debug sphere for explosion radius
 
-    UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-        AvatarActor->GetWorld(),
-        AbilityVFX1,
-        AttractionCenter,
-        FRotator(0, 0, 0),
-        FVector(2.f),
-        true,
-        true
-    );
+    UNiagaraFunctionLibrary::SpawnSystemAtLocation(AvatarActor->GetWorld(),AbilityVFX1,AttractionCenter, FRotator(0, 0, 0), FVector(2.f),true,true);
 
     // End the ability after explosion
     EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);

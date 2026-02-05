@@ -28,6 +28,7 @@
 #include "Abilities/MarkOfTheHunt.h"
 #include "Abilities/RageOfTheGods.h"
 #include "Abilities/VengefulDance.h"
+#include "Abilities/DivinePunishment.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"

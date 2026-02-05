@@ -16,6 +16,12 @@ void AAphroditeCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (AbilitySystem)
+    {
+        // Give Bundle of Joy ability 
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
+    }
+
  //   //Starting Stats
  //   if (ClassInfo)
  //   {
@@ -68,12 +74,9 @@ void AAphroditeCharacter::GiveDamageAbilities()
 
     if (AbilitySystem)
     {
-		// Give Bundle of Joy ability 
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
 		// Activate Bundle of Joy ability
         AbilitySystem->TryActivateAbilityByClass(UBundleOfJoy::StaticClass());
-		// start ability cooldown
-        //AbilityPointCounter->StartDamageCooldown(DamageCooldown);
+
     }
 }
 void AAphroditeCharacter::GiveDefenceAbilities()
@@ -82,8 +85,7 @@ void AAphroditeCharacter::GiveDefenceAbilities()
 
     if (AbilitySystem)
     {
-		// start ability cooldown
-        //AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
+
     }
 }
 
@@ -93,8 +95,7 @@ void AAphroditeCharacter::GiveUtilityAbilities()
 
     if (AbilitySystem)
     {
-		// start ability cooldown
-        //AbilityPointCounter->StartUtilityCooldown(UtilityCooldown);
+
     }
 }
 
@@ -104,8 +105,7 @@ void AAphroditeCharacter::GiveUltimateAbilities()
 
     if (AbilitySystem)
     {
-		// start ability cooldown
-        //AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
+
     }
 }
 
