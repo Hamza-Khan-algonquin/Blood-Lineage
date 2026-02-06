@@ -38,7 +38,7 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 	RenderTarget->InitAutoFormat(2000, 2000);
 	RenderTarget->ClearColor = FLinearColor(0,0,0,0);
 	RenderTarget->bAutoGenerateMips = false;
-	RenderTarget->UpdateResourceImmediate(true);
+	RenderTarget->UpdateResource();
 
 	Owner->MinimapCaptureComponent->TextureTarget = RenderTarget;
 	Owner->MinimapCaptureComponent->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;

@@ -37,6 +37,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UTextureRenderTarget2D* RenderTarget;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
+	TObjectPtr<UMaterialInterface> BaseMaterial;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
+	TObjectPtr<UMaterialInterface> PostProcessMaterial;
+
 	class UTextureRenderTarget2D* GetRenderTarget() const { return RenderTarget; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
