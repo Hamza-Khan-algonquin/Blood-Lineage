@@ -6,8 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "ObjectiveBase.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFlagObjectiveCreated);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFlagObjectiveActivated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnObjectiveCreated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnObjectiveActivated);
 
 UCLASS()
 class RELICRUNNERS_API AObjectiveBase : public AActor
@@ -34,7 +34,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* BeaconMesh;
 
-	FOnFlagObjectiveCreated OnFlagObjectiveCreated;
-	FOnFlagObjectiveActivated OnFlagObjectiveActivated;
+	FOnObjectiveCreated OnObjectiveCreated;
+	FOnObjectiveActivated OnObjectiveActivated;
 
 };

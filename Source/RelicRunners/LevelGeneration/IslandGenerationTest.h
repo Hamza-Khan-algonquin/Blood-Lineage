@@ -34,6 +34,7 @@ enum class EIslandFloorObstacle : uint8
 	Vantage,
 	CapturableFlag,
 	EnemyZone,
+	DeliveryPath,
 	SurvivalZone,
 	Start,
 	End,
@@ -73,8 +74,11 @@ public:
 	// Sets default values for this actor's properties
 	AIslandGenerationTest();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class USplineComponent* SplinePath;
 
 	void InitializeValues(EIslandObjectiveType islandObjective);
 
@@ -90,7 +94,7 @@ public:
 	void InitializeFloor();
 
 	//If this is called, the tile's *IsFullTile* variable will be set to *forcedFloor* regardless of what *InitializeFloor()* set it to.
-	void ForceFloorBool(bool forcedFloor, int x, int y, int width);
+	void ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle);
 
 	//Sets wether or not the current tile will have a modular obstacle spawned on top of itself.
 	void InitializeModularObstacle(FSIslandFloorValues& floorValue, bool canGenerateHoles) const;
@@ -112,7 +116,8 @@ public:
 
 	//Creates a path from *startingIndex* to *targetIndex* by setting those tiles to walkable.
 	void FindStartToEndPath(int startingIndex, int targetIndex, int width);
-	void FindStartToEndPath(int startingIndex, int targetIndex, int width, bool implementSpline);
+
+	void CreateSplinePathStartToEnd(int startingIndex, int targetIndex, int width, class ANewPayloadObjective* payloadActor);
 
 	//Initializes the objective
 	void InitializeObjectives(int startingIndex, int endingIndex);
@@ -134,6 +139,15 @@ public:
 	void SetBottomLeftFloorShape(int x, int y, int width);
 	void SetBottomRightFloorShape(int x, int y, int width);
 
+	//Sets each tile's shape based on neighbours.
+	//Calls SetTopLeftFloorShape, SetTopRightFloorShape, SetBottomLeftFloorShape and SetBottomRightFloorShape.
+	void SetWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+
+	void SetTopLeftWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+	void SetTopRightWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+	void SetBottomLeftWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+	void SetBottomRightWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+
 	//Spawns the modular obstacles based on previously defined variable.
 	UFUNCTION(Server, Reliable)
 	void Server_SpawnFloorObstacles(int x, int y, int width);
@@ -146,6 +160,8 @@ public:
 	void IncrementObjective();
 	UFUNCTION()
 	void DecrementObjective();
+
+	void SetFinalIsland(bool isFinal) { isFinalIsland = isFinal; }
 public:
 	//Client only. Used to replicate the array of floor values.
 	UFUNCTION()
@@ -158,16 +174,20 @@ public:
 	TArray<FTransform> SideFloorPieceTransforms;
 	TArray<FTransform> ConvexCornerTransforms;
 
-	uint8 IslandWidth = 2;
-	uint8 IslandDepth = 2;
+	UPROPERTY(Replicated)
+	uint8 IslandWidth;
+	UPROPERTY(Replicated)
+	uint8 IslandDepth;
 
-	uint8 IslandIndex = 0;
+	uint8 IslandIndex;
 
 	FOnObjectiveIslandObjectiveComplete OnObjectiveIslandObjectiveComplete;
 
-	int8 CurrentObjectives = 0;
+	int8 CurrentObjectives;
 
 	EIslandObjectiveType IslandObjective;
 
 	class AIslandBridge* Bridge;
+
+	bool isFinalIsland;
 };

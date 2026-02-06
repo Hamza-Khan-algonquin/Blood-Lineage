@@ -15,7 +15,7 @@
 ALevelChangeTrigger::ALevelChangeTrigger():
 	Origin(nullptr),
 	TriggerBox(nullptr),
-	TargetLevel(NAME_None)
+	TargetLevel("")
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -42,7 +42,7 @@ void ALevelChangeTrigger::OnConstruction(const FTransform& transform)
 {
 	TriggerBox->SetRelativeLocation(FVector(0.0f, 0.0f, TriggerBox->GetUnscaledBoxExtent().Z));
 
-	LevelTargetTextRender->SetText(FText::FromString(TargetLevel.ToString()));
+	LevelTargetTextRender->SetText(FText::FromString(TargetLevel));
 }
 
 // Called when the game starts or when spawned
@@ -50,7 +50,7 @@ void ALevelChangeTrigger::BeginPlay()
 {
 	Super::BeginPlay();
 
-	LevelTargetTextRender->SetText(FText::FromString(TargetLevel.ToString()));
+	LevelTargetTextRender->SetText(FText::FromString(TargetLevel));
 
 	if (ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState()))
 	{
@@ -87,9 +87,9 @@ void ALevelChangeTrigger::Server_ChangeLevel_Implementation()
 
 void ALevelChangeTrigger::Server_SetTargetLevel_Implementation(FName newTargetLevel)
 {
-	TargetLevel = newTargetLevel;
+	TargetLevel = newTargetLevel.ToString();
 
-	LevelTargetTextRender->SetText(FText::FromString(TargetLevel.ToString()));
+	LevelTargetTextRender->SetText(FText::FromString(TargetLevel));
 }
 
 void ALevelChangeTrigger::ChangeLevel()
@@ -104,7 +104,7 @@ void ALevelChangeTrigger::ChangeLevel()
 
 	RPC->TravelCleanUI();
 
-	FString TravelURL = TargetLevel.ToString() + TEXT("?listen");
+	FString TravelURL = TargetLevel + TEXT("?listen");
 	World->ServerTravel(TravelURL, true);
 }
 

@@ -86,7 +86,7 @@ void ANewSurvivalZone::OnTimelineEnd()
 	TriggerZone->SetGenerateOverlapEvents(false);
 
 	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Green, FString::Printf(TEXT("Survived the zone.")));
-	OnFlagObjectiveActivated.Broadcast();
+	OnObjectiveActivated.Broadcast();
 }
 
 void ANewSurvivalZone::Multicast_HandleOverlapEnter_Implementation(AActor* OtherActor, bool OnOverlapBegin)
