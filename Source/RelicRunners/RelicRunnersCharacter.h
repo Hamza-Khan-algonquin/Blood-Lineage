@@ -29,6 +29,8 @@
 #include "Abilities/RageOfTheGods.h"
 #include "Abilities/VengefulDance.h"
 #include "Abilities/DivinePunishment.h"
+#include "Abilities/NatureBlessing.h"
+#include "Abilities/KissOfLife.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
