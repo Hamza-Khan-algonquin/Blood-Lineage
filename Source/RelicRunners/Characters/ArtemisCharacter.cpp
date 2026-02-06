@@ -13,6 +13,7 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Net/UnrealNetwork.h"
 
+
 AArtemisCharacter::AArtemisCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -116,11 +117,8 @@ void AArtemisCharacter::GiveUltimateAbilities()
 
 	if (AbilitySystem)
 	{
-
 		// Activate Moonbeam now (fires the beam)
 		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
-
-
 	}
 
 }
