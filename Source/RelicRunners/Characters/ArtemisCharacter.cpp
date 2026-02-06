@@ -2,15 +2,24 @@
 
 
 #include "ArtemisCharacter.h"
-//#include "RelicRunners/AbilitySystem/AbilityPointCounter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
+#include "Net/UnrealNetwork.h"
 
 AArtemisCharacter::AArtemisCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	bProjectileActive = false;
+	ProjectileSpeed = 4000.f;
+	ProjectileLifetime = 2.f;
+
 }
 
 void AArtemisCharacter::BeginPlay()
@@ -111,4 +120,150 @@ void AArtemisCharacter::GiveUltimateAbilities()
 
 	}
 
+}
+
+void AArtemisCharacter::PlayRandomAttackAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance) return;
+
+	TArray<UAnimSequence*> SwordAttacks;
+	if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
+	if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
+	if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
+	if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+
+	if (SwordAttacks.Num() > 0)
+	{
+		int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
+		AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
+	}
+
+}
+
+void AArtemisCharacter::BasicAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+	if (!CanBasicAttack) return;
+	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+
+	CanBasicAttack = false;
+
+	// Spawn projectile
+	bProjectileActive = true;
+	ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+	ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
+	ProjectileElapsed = 0.f;
+
+	PlayRandomAttackAnimation();
+	AlreadyHitActors.Empty();
+
+	// Spawn static mesh
+	if (ProjectileMeshAsset)
+	{
+		if (!ActiveProjectileMesh)
+		{
+			ActiveProjectileMesh = NewObject<UStaticMeshComponent>(this);
+			ActiveProjectileMesh->RegisterComponent();
+			ActiveProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
+			ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
+			ActiveProjectileMesh->SetWorldScale3D(FVector(1.f));
+			ActiveProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+			// Initial rotation based on velocity
+			ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
+		}
+	}
+
+	// Cooldown
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+}
+
+
+void AArtemisCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!bProjectileActive) return;
+
+	ProjectileElapsed += DeltaTime;
+
+	// Apply gravity
+	ProjectileVelocity.Z -= ProjectileGravity * DeltaTime;
+
+	PreviousProjectileLocation = ProjectileLocation;
+	ProjectileLocation += ProjectileVelocity * DeltaTime;
+
+	// Move and rotate the mesh to match velocity
+	if (ActiveProjectileMesh)
+	{
+		ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
+		ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
+	}
+
+	// Collision
+	TArray<FHitResult> Hits;
+	FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
+
+	bool bHit = GetWorld()->SweepMultiByChannel(
+		Hits,
+		PreviousProjectileLocation,
+		ProjectileLocation,
+		FQuat::Identity,
+		ECC_Pawn,
+		Sphere
+	);
+
+	if (bHit)
+	{
+		for (const FHitResult& Hit : Hits)
+		{
+			if (AActor* HitActor = Hit.GetActor())
+			{
+				if (AlreadyHitActors.Contains(HitActor))
+					continue;
+
+				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+				{
+					Server_HitEnemy(Enemy);
+				}
+				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+				{
+					Server_HitEnemy(TEnemy);
+				}
+
+				AlreadyHitActors.Add(HitActor);
+
+				// Stop projectile on hit
+				bProjectileActive = false;
+
+				if (ActiveProjectileMesh)
+				{
+					ActiveProjectileMesh->DestroyComponent();
+					ActiveProjectileMesh = nullptr;
+				}
+				break;
+			}
+		}
+	}
+
+	// Stop projectile after lifetime
+	if (ProjectileElapsed >= ProjectileLifetime)
+	{
+		bProjectileActive = false;
+		if (ActiveProjectileMesh)
+		{
+			ActiveProjectileMesh->DestroyComponent();
+			ActiveProjectileMesh = nullptr;
+		}
+	}
+}
+
+
+void AArtemisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+{
+	if (HitActor)
+	{
+		UGameplayStatics::ApplyDamage(HitActor, 70.f, GetController(), this, nullptr);
+	}
 }

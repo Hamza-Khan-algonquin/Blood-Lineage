@@ -31,4 +31,7 @@ protected:
 	virtual void GiveDefenceAbilities() override;
 	virtual void GiveUtilityAbilities() override;
 	virtual void GiveUltimateAbilities() override;
+
+	virtual void PlayRandomAttackAnimation() override;
+	virtual void BasicAttack() override;
 };

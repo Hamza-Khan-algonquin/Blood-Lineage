@@ -81,9 +81,9 @@ public:
 	//Functions
 	ARelicRunnersCharacter();
 	void Die();
-	void PlayRandomAttackAnimation();
+	virtual void PlayRandomAttackAnimation();
 	bool HasValidWeaponEquipped(class UInventoryComponent* InvComp) const;
-	void BasicAttack();
+	virtual void BasicAttack();
 	void MoveInDirection(EAxis::Type Axis, float Value);
 	void Look(const FInputActionValue& Value);
 	void Interact();
@@ -100,7 +100,7 @@ public:
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
 	UFUNCTION()
-	void ResetBasicAttack();
+    void ResetBasicAttack();
 	UFUNCTION(Server, Reliable)
 	void Server_SpawnDroppedItemWorld(const struct FItemData& Data);
 	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
@@ -109,7 +109,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateItemVisuals(class UItemObject* Item);
 	UFUNCTION(Server, Reliable)
-	void Server_HitEnemy(AActor* HitActor);
+	virtual void Server_HitEnemy(AActor* HitActor);
 	UFUNCTION(Server, Reliable)
 	void Server_EquipItemByID(FGuid ID);
 	UFUNCTION(Server, Reliable)
@@ -206,5 +206,7 @@ protected:
 	//Stored Classes
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
+
+
 };
 

@@ -100,3 +100,36 @@ void AAresCharacter::GiveUltimateAbilities()
 
 	}
 }
+
+void AAresCharacter::PlayRandomAttackAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance) return;
+
+	TArray<UAnimSequence*> SwordAttacks;
+	if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
+	if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
+	if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
+	if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+
+	if (SwordAttacks.Num() > 0)
+	{
+		int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
+		AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
+	}
+}
+
+void AAresCharacter::BasicAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+	if (!CanBasicAttack) return;
+	CanBasicAttack = false;
+
+	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+	{
+		PlayRandomAttackAnimation();
+	}
+
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&ARelicRunnersCharacter::ResetBasicAttack,BasicAttackCooldown,false);
+}

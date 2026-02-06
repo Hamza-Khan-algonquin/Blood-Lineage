@@ -7,9 +7,19 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
+#include "Net/UnrealNetwork.h"
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
+    PrimaryActorTick.bCanEverTick = true;
+    bProjectileActive = false;
+    ProjectileSpeed = 1200.f;
+    ProjectileLifetime = 2.f;
+
 }
 
 void AAphroditeCharacter::BeginPlay()
@@ -108,5 +118,115 @@ void AAphroditeCharacter::GiveUltimateAbilities()
 
     }
 }
+
+void AAphroditeCharacter::PlayRandomAttackAnimation()
+{
+    UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+    if (!AnimInstance) return;
+
+    TArray<UAnimSequence*> SwordAttacks;
+    if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
+    if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
+    if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
+    if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+
+    if (SwordAttacks.Num() > 0)
+    {
+        int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
+        AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
+    }
+}
+
+void AAphroditeCharacter::BasicAttack()
+{
+    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+    if (!CanBasicAttack) return;
+    CanBasicAttack = false;
+
+    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+
+    // Spawn projectile
+    bProjectileActive = true;
+    ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
+    ProjectileElapsed = 0.f;
+
+     PlayRandomAttackAnimation();
+
+     AlreadyHitActors.Empty();
+
+    // Cooldown
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AAphroditeCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+}
+
+void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+{
+    if (HitActor)
+    {
+        UGameplayStatics::ApplyDamage(HitActor, 90.f, GetController(), this, nullptr);
+    }
+}
+
+void AAphroditeCharacter::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    if (!bProjectileActive) return;
+
+    ProjectileElapsed += DeltaTime;
+
+    PreviousProjectileLocation = ProjectileLocation;
+    ProjectileLocation += ProjectileVelocity * DeltaTime;
+
+    DrawDebugSphere(GetWorld(), ProjectileLocation, 15.f, 12, FColor::Red, false, 0.f);
+
+    TArray<FHitResult> Hits;
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
+
+    bool bHit = GetWorld()->SweepMultiByChannel(
+        Hits,
+        PreviousProjectileLocation,
+        ProjectileLocation,
+        FQuat::Identity,
+        ECC_Pawn,
+        Sphere
+    );
+
+    if (bHit)
+    {
+        for (const FHitResult& Hit : Hits)
+        {
+            if (AActor* HitActor = Hit.GetActor())
+            {
+                if (AlreadyHitActors.Contains(HitActor))
+                    continue;
+
+                if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+                {
+                    Server_HitEnemy(Enemy);
+                }
+                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                {
+                    Server_HitEnemy(TEnemy);
+                }
+
+                AlreadyHitActors.Add(HitActor);
+
+                bProjectileActive = false;
+                break;
+            }
+        }
+    }
+
+    if (ProjectileElapsed >= ProjectileLifetime)
+    {
+        bProjectileActive = false;
+    }
+}
+
+
+
+
 
 

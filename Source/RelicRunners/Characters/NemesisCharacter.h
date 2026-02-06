@@ -19,8 +19,6 @@ public:
     virtual void PossessedBy(AController* NewController) override;
     virtual void OnRep_PlayerState() override;
 
-    //void EndPlay(const EEndPlayReason::Type EndPlayReason);
-
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     class UClassInfo* ClassInfo;
 
@@ -32,6 +30,6 @@ protected:
     virtual void GiveUtilityAbilities() override;
     virtual void GiveUltimateAbilities() override;
 
-    UPROPERTY(EditAnywhere, Category = "Abilities")
-    TSubclassOf<UGameplayAbility> VengefulDanceAbilityBP;
+    virtual void PlayRandomAttackAnimation() override;
+    virtual void BasicAttack() override;
 };
