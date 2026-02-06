@@ -19,6 +19,7 @@
 #include "Inventory.h"
 #include "InventorySortingOptions.h"
 #include "RelicRunners/Item/ItemData.h"
+#include "RelicRunners/Item/ItemMeshData.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Engine/ActorChannel.h"
@@ -30,6 +31,17 @@ UInventoryComponent::UInventoryComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
     SetIsReplicatedByDefault(true);
+
+    static ConstructorHelpers::FObjectFinder<UItemMeshData> MeshDataObject(TEXT("/Game/Enemy/ItemForItemPool/ItemMeshData.ItemMeshData"));
+
+    if (MeshDataObject.Succeeded())
+    {
+        ItemMeshData = MeshDataObject.Object;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("InventoryComponent: Failed to find ItemMeshData at path!"));
+    }
 }
 
 void UInventoryComponent::BeginPlay()
@@ -59,12 +71,23 @@ bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch*
         }
     }
 
+    if (ForgeItemLeft)  WroteSomething |= Channel->ReplicateSubobject(ForgeItemLeft, *Bunch, *RepFlags);
+    if (ForgeItemRight) WroteSomething |= Channel->ReplicateSubobject(ForgeItemRight, *Bunch, *RepFlags);
+    if (ForgeItemResult) WroteSomething |= Channel->ReplicateSubobject(ForgeItemResult, *Bunch, *RepFlags);
+
     return WroteSomething;
 }
 
 void UInventoryComponent::AddItem(UItemObject* Item)
 {
     if (!Item) return;
+    if (!GetOwner()->HasAuthority()) return;
+
+    if (InventoryItems.Contains(Item))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Attempted to add duplicate item! Blocked."));
+        return;
+    }
 
     InventoryItems.Add(Item);
     SortInventoryByCurrentMethod();
@@ -185,6 +208,28 @@ void UInventoryComponent::HandleSortingNow()
     OnInventoryChanged.Broadcast();
 }
 
+void UInventoryComponent::Server_ClearAllForgeSlots_Implementation()
+{
+    if (ForgeItemLeft)
+    {
+        AddItem(ForgeItemLeft);
+        ForgeItemLeft = nullptr;
+    }
+    if (ForgeItemRight)
+    {
+        AddItem(ForgeItemRight);
+        ForgeItemRight = nullptr;
+    }
+    if (ForgeItemResult)
+    {
+        AddItem(ForgeItemResult);
+        ForgeItemResult = nullptr;
+    }
+
+    //For server
+    OnRep_ForgeItems();
+}
+
 void UInventoryComponent::EquipItem(UItemObject* Item, ARelicRunnersPlayerController* RPC)
 {
     if (!Item) return;
@@ -192,6 +237,7 @@ void UInventoryComponent::EquipItem(UItemObject* Item, ARelicRunnersPlayerContro
     const FString Slot = Item->ItemData.ItemType;
     bool Found = false;
     
+    //Check other EquippedItems
     for (FEquippedItemEntry& Entry : EquippedItems)
     {
         if (Entry.ItemType == Slot)
@@ -205,21 +251,23 @@ void UInventoryComponent::EquipItem(UItemObject* Item, ARelicRunnersPlayerContro
             break;
         }
     }
-
     if (!Found)
     {
         EquippedItems.Add(FEquippedItemEntry(Slot, Item));
     }
-
+    //Check if it was part of InventoryItems items
     int Index = InventoryItems.IndexOfByPredicate([&](const UItemObject* OtherItem)
     {
         return OtherItem && OtherItem->ItemData.UniqueID == Item->ItemData.UniqueID;
     });
-
     if (Index != INDEX_NONE)
     {
         InventoryItems.RemoveAt(Index);
     }
+    //Check if it was part of the forge items
+    if (ForgeItemLeft && ForgeItemLeft->GetUniqueID() == Item->GetUniqueID()) ForgeItemLeft = nullptr;
+    if (ForgeItemRight && ForgeItemRight->GetUniqueID() == Item->GetUniqueID()) ForgeItemRight = nullptr;
+    if (ForgeItemResult && ForgeItemResult->GetUniqueID() == Item->GetUniqueID()) ForgeItemResult = nullptr;
 
     OnEquipmentChanged.Broadcast();
     OnInventoryChanged.Broadcast();
@@ -339,10 +387,15 @@ void UInventoryComponent::SwapItems(UItemObject* ItemA, UItemObject* ItemB)
 
 UItemObject* UInventoryComponent::FindItemByID(FGuid ID) const
 {
+    //Check forge items
+    if (ForgeItemLeft && ForgeItemLeft->GetUniqueID() == ID) return ForgeItemLeft;
+    if (ForgeItemRight && ForgeItemRight->GetUniqueID() == ID) return ForgeItemRight;
+    if (ForgeItemResult && ForgeItemResult->GetUniqueID() == ID) return ForgeItemResult;
+
     //Check inventory items
     for (UItemObject* Item : InventoryItems)
     {
-        if (Item && Item->ItemData.UniqueID == ID)
+        if (Item && Item->GetUniqueID() == ID)
         {
             return Item;
         }
@@ -351,13 +404,92 @@ UItemObject* UInventoryComponent::FindItemByID(FGuid ID) const
     //Check equipped items
     for (const FEquippedItemEntry& Entry : EquippedItems)
     {
-        if (Entry.Item && Entry.Item->ItemData.UniqueID == ID)
+        if (Entry.Item && Entry.Item->GetUniqueID() == ID)
         {
             return Entry.Item;
         }
     }
 
     return nullptr;
+}
+
+void UInventoryComponent::OnRep_ForgeItems()
+{
+    if (!LinkedInventory) return;
+
+    LinkedInventory->UpdateForgeUI();
+}
+
+void UInventoryComponent::Server_RemoveForgeItem_Implementation(FGuid ItemID)
+{
+    UItemObject* ItemToRemove = FindItemByID(ItemID);
+
+    if (!ItemToRemove)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Server could not find item with ID: %s"), *ItemID.ToString());
+        return;
+    }
+
+    if (ForgeItemLeft == ItemToRemove) ForgeItemLeft = nullptr;
+    else if (ForgeItemRight == ItemToRemove) ForgeItemRight = nullptr;
+    else if (ForgeItemResult == ItemToRemove) ForgeItemResult = nullptr;
+
+    AddItem(ItemToRemove);
+
+    //For server
+    OnRep_ForgeItems();
+}
+
+void UInventoryComponent::Server_AddToForge_Implementation(FGuid ItemID)
+{
+    UItemObject* Item = FindItemByID(ItemID);
+    if (!Item) return;
+
+    bool Changed = false;
+    if (!ForgeItemLeft)
+    {
+        ForgeItemLeft = Item;
+        Changed = true;
+    }
+    else if (!ForgeItemRight)
+    {
+        ForgeItemRight = Item;
+        Changed = true;
+    }
+
+    if (Changed)
+    {
+        InventoryItems.Remove(Item);
+
+        OnRep_ForgeItems();
+        OnInventoryChanged.Broadcast();
+    }
+}
+
+void UInventoryComponent::Server_FuseItems_Implementation()
+{
+    if (!ForgeItemLeft || !ForgeItemRight) return;
+
+    FForgeResultOdds Odds = ItemStats::CalculateForgeOdds(ForgeItemLeft->ItemData.ItemType, ForgeItemRight->ItemData.ItemType);
+    FString NewRarity = ItemStats::RollForgeRarity(Odds);
+    FString NewType = FMath::RandBool() ? ForgeItemLeft->ItemData.ItemType : ForgeItemRight->ItemData.ItemType;
+    int NewLevel = FMath::RandRange(ForgeItemLeft->ItemData.Level, ForgeItemRight->ItemData.Level);
+    if (ItemMeshData)
+    {
+        FItemData NewItemData = ItemStats::CreateSpecificItemData(
+            NewLevel,
+            NewType,
+            NewRarity,
+            ItemMeshData
+        );
+
+        ForgeItemResult = ItemStats::CreateItemFromData(NewItemData, this);
+    }
+
+    ForgeItemLeft = nullptr;
+    ForgeItemRight = nullptr;
+
+    OnRep_ForgeItems();
 }
 
 void UInventoryComponent::RemoveItemByID(FGuid ItemID)
@@ -414,4 +546,7 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(UInventoryComponent, InventoryItems);
     DOREPLIFETIME(UInventoryComponent, EquippedItems);
     DOREPLIFETIME(UInventoryComponent, CurrentSortingMethod);
+    DOREPLIFETIME(UInventoryComponent, ForgeItemLeft);
+    DOREPLIFETIME(UInventoryComponent, ForgeItemRight);
+    DOREPLIFETIME(UInventoryComponent, ForgeItemResult);
 }

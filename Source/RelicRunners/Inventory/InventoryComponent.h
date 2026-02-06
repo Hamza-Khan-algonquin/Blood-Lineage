@@ -76,6 +76,16 @@ public:
     TArray<FEquippedItemEntry> EquippedItems;
     UPROPERTY(ReplicatedUsing = OnRep_SortingMethod)
     EInventorySorting CurrentSortingMethod;
+    UPROPERTY(ReplicatedUsing = OnRep_ForgeItems)
+    class UItemObject* ForgeItemLeft = nullptr;
+    UPROPERTY(ReplicatedUsing = OnRep_ForgeItems)
+    class UItemObject* ForgeItemRight = nullptr;
+    UPROPERTY(ReplicatedUsing = OnRep_ForgeItems)
+    class UItemObject* ForgeItemResult = nullptr;
+    UPROPERTY()
+    class UInventory* LinkedInventory = nullptr;
+    UPROPERTY()
+    class UItemMeshData* ItemMeshData;
 
     //Functions
     UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -89,6 +99,8 @@ public:
     void Server_SortInventory(EInventorySorting NewMethod);
     void SetSortingMethod(EInventorySorting NewMethod);
     void HandleSortingNow();
+    UFUNCTION(Server, Reliable)
+    void Server_ClearAllForgeSlots();
     UFUNCTION(BlueprintCallable)
     void EquipItem(class UItemObject* Item, class ARelicRunnersPlayerController* RPC);
     UFUNCTION(BlueprintCallable)
@@ -104,6 +116,14 @@ public:
     FEquippedStatsSummary CachedEquippedStats;
     UFUNCTION()
     void OnRep_SortingMethod();
+    UFUNCTION()
+    void OnRep_ForgeItems();
+    UFUNCTION(Server, Reliable)
+    void Server_RemoveForgeItem(FGuid ItemID);
+    UFUNCTION(Server, Reliable)
+    void Server_AddToForge(FGuid ItemID);
+    UFUNCTION(Server, Reliable)
+    void Server_FuseItems();
 
     //Getters and Setters
     TArray<FEquippedItemEntry> GetEquippedItems() { return EquippedItems; };
@@ -113,6 +133,7 @@ public:
     UItemObject*& GetEquippedItemReference(const FString& ItemType);
     FEquippedStatsSummary GetCachedEquippedStats() { return CachedEquippedStats; }
     EInventorySorting GetCurrentSortingMethod() { return CurrentSortingMethod; }
+    void SetInventoryWidget(class UInventory* InventoryWidget) { LinkedInventory = InventoryWidget; }
 
     // Delegates
     DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatsChanged, const FEquippedStatsSummary&, NewStats);

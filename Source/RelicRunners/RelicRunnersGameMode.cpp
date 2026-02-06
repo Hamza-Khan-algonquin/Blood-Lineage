@@ -73,14 +73,11 @@ APawn* ARelicRunnersGameMode::SpawnDefaultPawnFor_Implementation(AController* Ne
 
     TSubclassOf<APawn> PawnClassToSpawn = nullptr;
 
-    if (PS->SelectedClass == "Nemesis")
-        PawnClassToSpawn = NemesisCharacterClass;
-    else if (PS->SelectedClass == "Aphrodite")
-        PawnClassToSpawn = AphroditeCharacterClass;
-    else if (PS->SelectedClass == "Artemis")
-        PawnClassToSpawn = ArtemisCharacterClass;
-    else if (PS->SelectedClass == "Ares")
-        PawnClassToSpawn = AresCharacterClass;
+    if (PS->SelectedClass == "Nemesis")         PawnClassToSpawn = NemesisCharacterClass;
+    else if (PS->SelectedClass == "Aphrodite")  PawnClassToSpawn = AphroditeCharacterClass;
+    else if (PS->SelectedClass == "Artemis")    PawnClassToSpawn = ArtemisCharacterClass;
+    else if (PS->SelectedClass == "Ares")       PawnClassToSpawn = AresCharacterClass;
+    else                                        PawnClassToSpawn = AresCharacterClass;
 
     if (!PawnClassToSpawn)
     {

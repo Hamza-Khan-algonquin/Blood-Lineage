@@ -20,6 +20,27 @@
 #include "ItemData.h"
 #include "ItemMeshData.h"
 
+struct FForgeResultOdds
+{
+public:
+    FForgeResultOdds() {}
+
+    UPROPERTY() 
+    FString Rarity1;
+    UPROPERTY() 
+    float Chance1 = 0.f;
+
+    UPROPERTY() 
+    FString Rarity2;
+    UPROPERTY() 
+    float Chance2 = 0.f;
+
+    UPROPERTY() 
+    FString Rarity3;
+    UPROPERTY() 
+    float Chance3 = 0.f;
+};
+
 class RELICRUNNERS_API ItemStats
 {
 public:
@@ -254,6 +275,68 @@ public:
         float Percent = Value / 2.7;
 
         return RoundToDecimal(Percent, 1);
+    }
+
+    static FForgeResultOdds CalculateForgeOdds(const FString& LeftRarity, const FString& RightRarity)
+    {
+        static const TArray<FString> RarityOrder = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic" };
+        static const float UpgradeSameTier[7] = { 90.f, 80.f, 70.f, 60.f, 50.f, 40.f, 0.f };
+
+        auto GetIndex = [&](const FString& R) {
+            int FoundIndex = RarityOrder.IndexOfByKey(R);
+            return (FoundIndex == INDEX_NONE) ? 0 : FoundIndex;
+            };
+
+        int IndexA = GetIndex(LeftRarity);
+        int IndexB = GetIndex(RightRarity);
+
+        int Highest = FMath::Max(IndexA, IndexB);
+        int Lowest = FMath::Min(IndexA, IndexB);
+        int Distance = FMath::Max(1, Highest - Lowest);
+
+        FForgeResultOdds OutOdds;
+
+        int DownIndex = FMath::Clamp(Highest - 1, 0, RarityOrder.Num() - 1);
+        int MidIndex = FMath::Clamp(Highest, 0, RarityOrder.Num() - 1);
+        int UpIndex = FMath::Clamp(Highest + 1, 0, RarityOrder.Num() - 1);
+
+        OutOdds.Rarity1 = RarityOrder[DownIndex];
+        OutOdds.Rarity2 = RarityOrder[MidIndex];
+        OutOdds.Rarity3 = RarityOrder[UpIndex];
+
+        float Up = 0.f;
+        int TierIndex = FMath::Clamp(Highest, 0, 6);
+
+        if (IndexA == IndexB) {
+            Up = UpgradeSameTier[TierIndex];
+        }
+        else {
+            float Proximity = 1.f / float(Distance);
+            Up = UpgradeSameTier[TierIndex] * Proximity * 0.8f;
+        }
+
+        float Remaining = 100.0f - Up;
+        OutOdds.Chance3 = Up;
+        OutOdds.Chance2 = Remaining * 0.6f;
+        OutOdds.Chance1 = Remaining * 0.4f;
+
+        float Total = OutOdds.Chance1 + OutOdds.Chance2 + OutOdds.Chance3;
+        if (Total > 0.f)
+        {
+            OutOdds.Chance1 = (OutOdds.Chance1 / Total) * 100.f;
+            OutOdds.Chance2 = (OutOdds.Chance2 / Total) * 100.f;
+            OutOdds.Chance3 = (OutOdds.Chance3 / Total) * 100.f;
+        }
+
+        return OutOdds;
+    }
+
+    static FString RollForgeRarity(const FForgeResultOdds& Odds)
+    {
+        float Roll = FMath::FRandRange(0.f, 100.f);
+        if (Roll <= Odds.Chance1) return Odds.Rarity1;
+        if (Roll <= Odds.Chance1 + Odds.Chance2) return Odds.Rarity2;
+        return Odds.Rarity3;
     }
 
     static FItemData CreateRandomItemData(UItemMeshData* MeshData)

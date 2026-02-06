@@ -140,12 +140,6 @@ public:
 	UPROPERTY()
 	class ARelicRunnersCharacter* OwningCharacter;
 	class ACharacter* CurrentVendor;
-	UPROPERTY()
-	class UItemObject* ForgeItemLeft = nullptr;
-	UPROPERTY()
-	class UItemObject* ForgeItemRight = nullptr;
-	UPROPERTY()
-	class UItemObject* ForgeItemResult = nullptr;
 	FString ForgeRarity1;
 	FString ForgeRarity2;
 	FString ForgeRarity3;
@@ -162,7 +156,6 @@ public:
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
 	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
-	FString RollForgeRarity(const FString R1, float C1, const FString R2, float C2, const FString R3, float C3);
 	void UpdateForgeOdds(const FString& LeftRarity, const FString& RightRarity);
 	void UpdateForgeUI();
 	FSlotUIComponents GetUIComponentsForItemType(const FString& ItemType);
@@ -177,9 +170,6 @@ public:
 	void SellItem(class UItemObject* Item);
 	void OnEquippedSlotClick(UItemObject* EquippedItem, const FGeometry& SlotGeometry);
 	void CreateItemOptionsPopup(UItemObject* Item, const FItemOptionsUIConfig& Config, const FGeometry& InGeometry);
-	void ClearForgeItemLeft();
-	void ClearForgeItemRight();
-	void ClearForgeItemResult();
 	void ToggleShopUI(bool value);
 	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
