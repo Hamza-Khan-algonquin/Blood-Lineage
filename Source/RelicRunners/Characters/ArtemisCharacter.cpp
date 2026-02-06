@@ -117,6 +117,9 @@ void AArtemisCharacter::GiveUltimateAbilities()
 	if (AbilitySystem)
 	{
 
+		// Activate Moonbeam now (fires the beam)
+		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
+
 
 	}
 
