@@ -119,7 +119,11 @@ void AObjectPoolManager::AddActor(AActor* actorToAdd, TSubclassOf<AActor> actorT
 
 AActor* AObjectPoolManager::CreateActor(TSubclassOf<AActor> actorType)
 {
-	AActor* newActor = GetWorld()->SpawnActor<AActor>(actorType);
+	FActorSpawnParameters param;
+
+	param.bNoFail = true;
+
+	AActor* newActor = GetWorld()->SpawnActor<AActor>(actorType, param);
 
 	if (!newActor)
 	{
