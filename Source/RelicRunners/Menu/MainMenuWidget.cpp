@@ -6,6 +6,7 @@
 #include "UpgradesWidget.h"
 #include "SettingsWidget.h"
 #include "CreditsWidget.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 void UMainMenuWidget::NativeConstruct()
 {
@@ -60,6 +61,9 @@ void UMainMenuWidget::ShowUpgradesWidget()
     if (WidgetSwitcher && UpgradesWidget)
     {
         WidgetSwitcher->SetActiveWidget(UpgradesWidget);
+
+        URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+        UpgradesWidget->InitializeUpgradeData(GI->SelectedSaveSlot);
     }
 }
 

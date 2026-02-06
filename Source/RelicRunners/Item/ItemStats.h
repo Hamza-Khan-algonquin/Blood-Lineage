@@ -191,6 +191,8 @@ public:
 
         //Meta Stats
         if (StatName == "Luck") Color = FLinearColor(0, 0.35f, 0.237f, 1);
+        if (StatName == "Level") Color = FLinearColor(1, 1, 1, 1);
+        if (StatName == "Resource") Color = FLinearColor(0, 0.723f, 1, 1);
 
         //Enemy Stats
         if (StatName == "EnemyHealth") Color = FLinearColor(0.776f, 0.061f, 0, 1);

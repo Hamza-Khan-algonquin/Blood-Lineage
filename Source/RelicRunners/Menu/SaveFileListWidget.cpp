@@ -56,7 +56,7 @@ void USaveFileListWidget::Setup(USaveFileListData* InData)
     {
         TB_Name->SetText(FText::FromString(SaveFileData->GetName()));
         TB_NumUpgrades->SetVisibility(ESlateVisibility::Visible);
-        TB_NumUpgrades->SetText(FText::FromString(FString::FromInt(SaveFileData->GetNumUpgrades())));
+        TB_NumUpgrades->SetText(FText::FromString(FString::FromInt(SaveFileData->GetMetaLevel())));
         TB_CreateNew->SetText(FText::FromString(""));
         B_Upgrades->SetVisibility(ESlateVisibility::Visible);
         B_Edit->SetVisibility(ESlateVisibility::Visible);
@@ -132,7 +132,7 @@ void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 
     SaveFileData->IsEmptySlot = false;
 
-    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetNumUpgrades(), SaveFileData->GetUniqueID());
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetMetaLevel(), SaveFileData->GetUniqueID());
 
     Setup(SaveFileData);
 }
@@ -141,7 +141,7 @@ void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 void USaveFileListWidget::FinalizeSaveCreation(const FString& PlayerName)
 {
     SaveFileData->IsEmptySlot = false;
-    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, 0, SaveFileData->GetUniqueID());
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, SaveFileData->GetMetaLevel(), SaveFileData->GetUniqueID());
     Setup(SaveFileData);
 
     SpawnEmptySlot();
