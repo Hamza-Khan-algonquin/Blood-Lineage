@@ -102,6 +102,9 @@ void AArtemisCharacter::GiveUltimateAbilities()
 		// Give Moonbeam ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
 
+		// Activate Moonbeam now (fires the beam)
+		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
+
 		// Start ability cooldown
 		//AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
 	}

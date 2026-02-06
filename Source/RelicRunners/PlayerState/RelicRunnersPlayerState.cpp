@@ -183,6 +183,10 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	{
 		StartingWeapon = "Sword";
 	}
+	else
+	{
+		StartingWeapon = "Sword";
+	}
 	UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData), InventoryComponent);
 	InventoryComponent->AddItem(Item);
 	Server_EquipItemByID(Item->ItemData.UniqueID);
