@@ -219,16 +219,6 @@ void ARelicRunnersCharacter::Die()
 	if (RelicPlayerState) RelicPlayerState->ResetHealth();
 }
 
-void ARelicRunnersCharacter::Server_EquipItemByID_Implementation(FGuid ID)
-{
-	if (RelicPlayerState) RelicPlayerState->Server_EquipItemByID(ID);
-}
-
-void ARelicRunnersCharacter::Server_UnequipItemByID_Implementation(FGuid ID)
-{
-	if (RelicPlayerState) RelicPlayerState->Server_UnequipItemByID(ID);
-}
-
 void ARelicRunnersCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();

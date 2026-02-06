@@ -52,11 +52,11 @@ void UInventorySortingOptions::NativeTick(const FGeometry& MyGeometry, float InD
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	// Close if mouse moved too far
+	//Close if mouse moved too far
 	FVector2D CurrentMousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
 	float Distance = FVector2D::Distance(CurrentMousePos, InitialScreenPosition);
 
-	float PixelDistance = 250.0f;
+	float PixelDistance = 400.0f;
 	if (Distance > PixelDistance)
 	{
 		ClosePopup();

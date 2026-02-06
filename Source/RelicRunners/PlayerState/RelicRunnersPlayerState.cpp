@@ -49,40 +49,44 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	InventoryComponent->SetIsReplicated(true);
 	PlayerNumInventorySlots = 20;
 
+	//Level
+	PlayerStartingLevel = 0;
+	PlayerLevel = 1 + PlayerStartingLevel;
+	PlayerXP = 0;
+	PlayerXPToLevel = 100;
+
 	//Health
-	PlayerStartingMaxHealth = 100;
+	PlayerStartingMaxHealth = 100 + PlayerStartingLevel;
 	PlayerMaxHealth = PlayerStartingMaxHealth;
 	PlayerHealth = 20;
 
 	//Resource
-	PlayerStartingMaxResource = 100;
+	PlayerStartingMaxResource = 100 + PlayerStartingLevel;
 	PlayerMaxResource = PlayerStartingMaxResource;
 	PlayerResource = PlayerMaxResource;
-
-	//Level
-	PlayerLevel = 1;
-	PlayerXP = 0;
-	PlayerXPToLevel = 100;
+	PlayerStartingResourceRegen = 5; //Percent
 
 	//Stats
-	PlayerStartingArmor = 0;
-	PlayerStartingDexterity = 0;
-	PlayerStartingStrength = 0;
-	PlayerStartingIntelligence = 0;
-	PlayerArmor = 0;
-	PlayerDexterity = 0;
-	PlayerStrength = 0;
-	PlayerIntelligence = 0;
-	PlayerAbilityPoints = 2;
+	PlayerStartingArmor = PlayerStartingLevel;
+	PlayerStartingDexterity = PlayerStartingLevel;
+	PlayerStartingStrength = PlayerStartingLevel;
+	PlayerStartingIntelligence = PlayerStartingLevel;
+	PlayerStartingLuck = 0;
+	PlayerArmor = PlayerStartingLevel;
+	PlayerDexterity = PlayerStartingLevel;
+	PlayerStrength = PlayerStartingLevel;
+	PlayerIntelligence = PlayerStartingLevel;
 
 	//Gold
 	PlayerStartingGold = 0;
 	PlayerGold = PlayerStartingGold;
 
+	//Abilities
+	PlayerAbilityPoints = 1 + PlayerStartingLevel;
+
 	//Potions
 	HealthPotionCount = 3;
-	HealthGranted = 0.5;
-
+	PlayerStartingPotionEfficiency = 30; //Percent
 }
 
 void ARelicRunnersPlayerState::BeginPlay()
@@ -228,7 +232,7 @@ void ARelicRunnersPlayerState::PassiveResourceRegen()
 
 	if (PlayerResource < PlayerMaxResource)
 	{
-		int RegenAmount = FMath::CeilToInt(PlayerMaxResource * 0.05f);
+		int RegenAmount = FMath::CeilToInt(PlayerMaxResource * (PlayerStartingResourceRegen/100.0f));
 		PlayerResource = FMath::Min(PlayerResource + RegenAmount, PlayerMaxResource);
 
 		//For server
@@ -265,6 +269,7 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 	{
 		// Heal player by a percentage of max health
 		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * HealthGranted);
+
 
 		PlayerHealth += HealthToGrant;
 		HealthPotionCount--;
@@ -303,7 +308,6 @@ void ARelicRunnersPlayerState::OnLevelUp()
 
 	//Current resource / max resource
 	PlayerMaxResource++;
-	//PlayerResource = PlayerMaxResource;
 
 	//Current stats
 	PlayerArmor++;

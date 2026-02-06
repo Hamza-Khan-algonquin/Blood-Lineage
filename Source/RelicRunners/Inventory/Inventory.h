@@ -62,13 +62,21 @@ struct FItemOptionsUIConfig
 		return Config;
 	}
 
+	static FItemOptionsUIConfig InventoryItemWithShop()
+	{
+		FItemOptionsUIConfig Config;
+		Config.ShowEquip = true;
+		Config.ShowDrop = true;
+		Config.ShowSell = true;
+		return Config;
+	}
+
 	static FItemOptionsUIConfig InventoryItemWithForge()
 	{
 		FItemOptionsUIConfig Config;
 		Config.ShowEquip = true;
 		Config.ShowDrop = true;
 		Config.ShowForge = true;
-		Config.ShowSell = true;
 		return Config;
 	}
 
@@ -147,6 +155,8 @@ public:
 	class UBorder* CurrentHoveredBorder;
 	int CycleCount;
 	FTimerHandle FuseTimerHandle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PreviewActor")
+	TObjectPtr<UMaterialInstanceDynamic> PreviewActorMaterial;
 
 	//Functions
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
@@ -244,6 +254,9 @@ public:
 	class UWidgetAnimation* ForgeCompleted;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	class UWidgetAnimation* ForgeShake;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	class UWidgetAnimation* InventoryOpen;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
@@ -307,6 +320,22 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* ItemFrame_2;
+
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* LightBeam;
+
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* LightBeam_1;
+
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* LightBeam_2;
+
+	UPROPERTY(meta = (BindWidget))
+
+	class UImage* LightBeam_3;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_ForgeItem1;

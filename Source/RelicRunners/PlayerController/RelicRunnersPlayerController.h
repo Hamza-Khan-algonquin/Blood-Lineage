@@ -91,6 +91,8 @@ public:
 	void TrySetupPreviewRenderTarget();
 	UFUNCTION()
 	void SetupPreviewRenderTarget(APlayerPreview* Preview);
+	UFUNCTION()
+	void TrySetupMinimap();
 
 	//Getters
 	UFUNCTION(BlueprintCallable, Category = "Input")
@@ -147,6 +149,7 @@ public:
 	class UMainMenuWidget* MainMenuWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UInventory* Inventory;
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)
@@ -194,6 +197,7 @@ protected:
 	void HealthPotion();
 	void BasicAttack();
 	void SetupMinimapRenderTarget();
+	void RetrySetup();
 
 	//Virtual Functions
 	virtual void BeginPlay() override;
@@ -201,7 +205,6 @@ protected:
 	virtual void OnRep_PlayerState() override;
 	virtual void AcknowledgePossession(APawn* Pawn) override;
 	virtual void OnUnPossess() override;
-	void TrySetupMinimap();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnPossess(APawn* aPawn) override;
 	virtual void ClientRestart_Implementation(APawn* NewPawn) override;

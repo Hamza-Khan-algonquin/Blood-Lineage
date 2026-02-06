@@ -297,16 +297,15 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
 {
     if (!PawnOwner) return;
 
-    FEquippedStatsSummary Stats = CalculateEquippedStats();
-    CachedEquippedStats = Stats;
+    CachedEquippedStats = CalculateEquippedStats();
 
     //Player
     if (ARelicRunnersPlayerState* PS = PawnOwner->GetPlayerState<ARelicRunnersPlayerState>())
     {
         if (PS->HasAuthority())
         {
-            PS->SetPlayerMaxHealth(Stats.TotalHealth);
-            PS->Client_UpdateEquippedStats(Stats);
+            PS->SetPlayerMaxHealth(CachedEquippedStats.TotalHealth);
+            PS->Client_UpdateEquippedStats(CachedEquippedStats);
         }
     }
     
@@ -315,12 +314,12 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
     {
         if (Enemy->HasAuthority())
         {
-            Enemy->SetMaxHealth(Stats.TotalHealth);
-            Enemy->Client_UpdateEquippedStats(Stats);
+            Enemy->SetMaxHealth(CachedEquippedStats.TotalHealth);
+            Enemy->Client_UpdateEquippedStats(CachedEquippedStats);
         }
     }
 
-    OnStatsChanged.Broadcast(Stats);
+    OnStatsChanged.Broadcast(CachedEquippedStats);
 }
 
 void UInventoryComponent::SwapItems(UItemObject* ItemA, UItemObject* ItemB)
@@ -386,6 +385,9 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
         Summary.TotalDexterity = PS->GetPlayerStartingDexterity();
         Summary.TotalStrength = PS->GetPlayerStartingStrength();
         Summary.TotalIntelligence = PS->GetPlayerStartingIntelligence();
+        Summary.TotalLuck = PS->GetPlayerStartingLuck();
+        Summary.TotalResourceRegen = PS->GetPlayerStartingResourceRegen();
+        Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
     }
 
     for (const FEquippedItemEntry& Entry : EquippedItems)

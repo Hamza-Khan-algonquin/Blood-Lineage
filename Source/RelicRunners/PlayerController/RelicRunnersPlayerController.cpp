@@ -55,6 +55,7 @@
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include <RelicRunners/Menu/LobbyGameMode.h>
 #include "RelicRunners/Minimap/Minimap.h"
+#include "RelicRunners/Menu/StandardTooltip.h"
 
 #include "Components/SceneCaptureComponent2D.h"
 
@@ -385,12 +386,18 @@ void ARelicRunnersPlayerController::HandleLevelUpVisuals()
 {
 	if (!IsLocalController()) return;
 
+	if (LevelUpHUD)
+	{
+		LevelUpHUD->RemoveFromParent();
+		LevelUpHUD = nullptr;
+	}
+
 	if (LevelUpHUDClass)
 	{
-		ULevelUpHUD* LevelUpWidget = CreateWidget<ULevelUpHUD>(this, LevelUpHUDClass);
-		if (LevelUpWidget)
+		LevelUpHUD = CreateWidget<ULevelUpHUD>(this, LevelUpHUDClass);
+		if (LevelUpHUD)
 		{
-			LevelUpWidget->AddToViewport();
+			LevelUpHUD->AddToViewport();
 		}
 	}
 
@@ -484,14 +491,33 @@ void ARelicRunnersPlayerController::TrySetupMinimap()
 
 	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
 
-	if (!MinimapWidget || !Char || !Char->MinimapCaptureComponent)
+	if (!Char)
 	{
-		FTimerHandle RetryHandle;
-		GetWorldTimerManager().SetTimer(RetryHandle, this, &ARelicRunnersPlayerController::TrySetupMinimap, 0.1f, false);
+		UE_LOG(LogTemp, Error, TEXT("Minimap Setup Failed: Pawn is null. Retrying..."));
+		RetrySetup();
+		return;
+	}
+
+	if (!MinimapWidget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Minimap Setup Failed: Widget is null. Retrying..."));
+		RetrySetup();
+		return;
+	}
+
+	if (!Char->MinimapCaptureComponent)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Minimap Setup Failed: Component missing!"));
 		return;
 	}
 
 	SetupMinimapRenderTarget();
+}
+
+void ARelicRunnersPlayerController::RetrySetup()
+{
+	FTimerHandle RetryHandle;
+	GetWorldTimerManager().SetTimer(RetryHandle, this, &ARelicRunnersPlayerController::TrySetupMinimap, 0.2f, false);
 }
 
 void ARelicRunnersPlayerController::SetupMinimapRenderTarget()
@@ -634,9 +660,13 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 		UInventorySortingOptions::CloseAnyOpenPopup();
 
 		Inventory->PlayAnimation(Inventory->InventoryClose);
+		Inventory->ToggleShopUI(false);
+		Inventory->ToggleForgeUI(false);
 
 		float AnimDelay = 0.25f;
 		GetWorld()->GetTimerManager().SetTimer(DisableUITimer, this, &ARelicRunnersPlayerController::DisableInventoryUIFromTimer, AnimDelay, false);
+
+		if (Inventory->StandardTooltip) Inventory->StandardTooltip->RemoveFromParent(); Inventory->StandardTooltip = nullptr;
 	}
 	else
 	{
@@ -843,7 +873,7 @@ void ARelicRunnersPlayerController::SetupLobbyView()
 		}
 
 		SetViewTargetWithBlend(Cameras[1], 0.0f);
-		SetViewTargetWithBlend(Cameras[0], 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
+		SetViewTargetWithBlend(Cameras[0], 1.5f, EViewTargetBlendFunction::VTBlend_Cubic);
 	}
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{

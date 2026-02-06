@@ -9,28 +9,21 @@
 
 void UMinimap::SetMinimapImage(UTextureRenderTarget2D* NewRenderTarget)
 {
-    if (!NewRenderTarget || !I_Minimap) return;
-    
-    UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Minimap/M_MiniMap_TextureRenderTarget.M_MiniMap_TextureRenderTarget"));
+	if (!NewRenderTarget || !I_Minimap) return;
 
-    if (!BaseMaterial)
-    {
-        UE_LOG(LogTemp, Error, TEXT("[UI-Minimap] Failed to load base material."));
-        return;
-    }
+	if (!MinimapBaseMaterial)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[UI-Minimap] Base Material is null! Assign it in the Widget Blueprint."));
+		return;
+	}
 
-    //Create the dynamic material
-    UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, GetOwningPlayer());
-    if (!DynMaterial)
-    {
-        UE_LOG(LogTemp, Error, TEXT("[UI-Minimap] Failed to create dynamic material."));
-        return;
-    }
-
-    DynMaterial->SetTextureParameterValue(FName("MinimapTexture"), NewRenderTarget);
-    I_Minimap->SetBrushFromMaterial(DynMaterial);
-
-    UE_LOG(LogTemp, Warning, TEXT("[UI-Minimap] Set preview image with RenderTarget: %s"), *GetNameSafe(NewRenderTarget));
+	UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(MinimapBaseMaterial, GetOwningPlayer());
+	if (DynMaterial)
+	{
+		DynMaterial->SetTextureParameterValue(FName("MinimapTexture"), NewRenderTarget);
+		I_Minimap->SetBrushFromMaterial(DynMaterial);
+		UE_LOG(LogTemp, Warning, TEXT("[UI-Minimap] Success! RenderTarget set."));
+	}
 }
 
 UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Owner)
@@ -42,10 +35,10 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 
 	RenderTarget = NewObject<UTextureRenderTarget2D>(this, FName(*UniqueNameStr));
 	RenderTarget->RenderTargetFormat = RTF_RGBA16f;
-	RenderTarget->InitAutoFormat(200, 200);
+	RenderTarget->InitAutoFormat(2000, 2000);
 	RenderTarget->ClearColor = FLinearColor(0,0,0,0);
 	RenderTarget->bAutoGenerateMips = false;
-	RenderTarget->UpdateResourceImmediate(true);
+	RenderTarget->UpdateResource();
 
 	Owner->MinimapCaptureComponent->TextureTarget = RenderTarget;
 	Owner->MinimapCaptureComponent->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;

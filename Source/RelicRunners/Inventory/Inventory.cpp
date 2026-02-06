@@ -372,26 +372,28 @@ void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)
 {
     UE_LOG(LogTemp, Warning, TEXT("[UI] Trying to set preview image with RenderTarget: %s"), *GetNameSafe(RenderTarget));
 
-    if (!RenderTarget || !I_PlayerPreview) return;
-
-    UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ThirdPerson/Blueprints/PlayerPreview/M_PlayerPreview.M_PlayerPreview"));
-
-    if (!BaseMaterial)
+    if (!RenderTarget || !RenderTarget->GetResource())
     {
-        UE_LOG(LogTemp, Error, TEXT("[UI] Failed to load base material."));
+        UE_LOG(LogTemp, Warning, TEXT("[UI] RenderTarget resource not ready yet."));
         return;
     }
 
     //Create the dynamic material
-    UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
-    if (!DynMaterial)
+    if (!PreviewActorMaterial)
     {
-        UE_LOG(LogTemp, Error, TEXT("[UI] Failed to create dynamic material."));
-        return;
+        UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ThirdPerson/Blueprints/PlayerPreview/M_PlayerPreview.M_PlayerPreview"));
+        if (BaseMaterial)
+        {
+            PreviewActorMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+            I_PlayerPreview->SetBrushFromMaterial(PreviewActorMaterial);
+        }
     }
 
-    DynMaterial->SetTextureParameterValue(FName("PreviewTexture"), RenderTarget);
-    I_PlayerPreview->SetBrushFromMaterial(DynMaterial);
+    if (PreviewActorMaterial)
+    {
+        PreviewActorMaterial->SetTextureParameterValue(FName("PreviewTexture"), RenderTarget);
+        I_PlayerPreview->SetBrushFromMaterial(PreviewActorMaterial);
+    }
 
     UE_LOG(LogTemp, Warning, TEXT("[UI] Set preview image with RenderTarget: %s"), *GetNameSafe(RenderTarget));
 }
@@ -408,7 +410,10 @@ void UInventory::EquipItem(UItemObject* Item)
 
     if (OwningCharacter && Item)
     {
-        OwningCharacter->Server_EquipItemByID(Item->ItemData.UniqueID);
+        if (OwningCharacter->RelicPlayerState)
+        {
+            OwningCharacter->RelicPlayerState->Server_EquipItemByID(Item->GetUniqueID());
+        }
     }
 }
 
@@ -416,7 +421,7 @@ void UInventory::UnequipItem(UItemObject* Item)
 {
     if (OwningCharacter && Item)
     {
-        OwningCharacter->Server_UnequipItemByID(Item->ItemData.UniqueID);
+        OwningCharacter->RelicPlayerState->Server_UnequipItemByID(Item->GetUniqueID());
     }
 }
 
@@ -484,7 +489,7 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 
     float VendorMaxDistance = 500.f;
     APawn* OwningPawn = GetOwningPlayerPawn();
-
+    
     if (OwningPawn)
     {
         float Dist = FVector::Dist(OwningPawn->GetActorLocation(), CurrentVendor->GetActorLocation());
@@ -731,10 +736,14 @@ void UInventory::SortingTypeClicked()
             InventorySortingOptions->OnSortingSelected.AddDynamic(this, &UInventory::HandleSortSelected);
 
             InventorySortingOptions->Setup();
-            FVector2D ScreenPosition;
-            UWidgetLayoutLibrary::GetMousePositionScaledByDPI(GetWorld()->GetFirstPlayerController(), ScreenPosition.X, ScreenPosition.Y);
+            const FGeometry& ButtonGeometry = B_SortingType->GetCachedGeometry();
+            FVector2D PixelPos;
+            FVector2D ViewportPos;
+            FVector2D Offset = FVector2D(0,60);
             InventorySortingOptions->AddToViewport();
-            InventorySortingOptions->SetPositionInViewport(ScreenPosition + FVector2D(0, 30.f), false);
+            USlateBlueprintLibrary::LocalToViewport(GetWorld(), ButtonGeometry, FVector2D(0.f, 0.f), PixelPos, ViewportPos);
+            InventorySortingOptions->SetPositionInViewport(PixelPos + Offset, true);
+            InventorySortingOptions->SetAlignmentInViewport(FVector2D(0.0f, 0.f));
         }
     }
 }
@@ -901,7 +910,16 @@ void UInventory::OnFuseButtonPressed()
     if (!ForgeItemLeft || !ForgeItemRight) return;
 
     FString NewRarity = RollForgeRarity(ForgeRarity1, ForgeChance1, ForgeRarity2, ForgeChance2, ForgeRarity3, ForgeChance3);
-    FString NewType = ForgeItemLeft->ItemData.ItemType;
+
+    FString NewType;
+    if (FMath::RandBool())
+    {
+        NewType = ForgeItemLeft->ItemData.ItemType;
+    }
+    else
+    {
+        NewType = ForgeItemRight->ItemData.ItemType;
+    }
     int NewLevel = FMath::RandRange(ForgeItemLeft->ItemData.Level, ForgeItemRight->ItemData.Level);
 
     FItemData NewItemData = ItemStats::CreateSpecificItemData(NewLevel, NewType, NewRarity, OwningCharacter->RelicPlayerState->ItemMeshData);
@@ -925,23 +943,17 @@ void UInventory::CycleRarityVisuals()
     FString DisplayRarity;
     float Roll = FMath::FRandRange(0.f, 100.f);
 
-    if (Roll <= ForgeChance1)
-    {
-        DisplayRarity = ForgeRarity1;
-    }
-    else if (Roll <= (ForgeChance1 + ForgeChance2))
-    {
-        DisplayRarity = ForgeRarity2;
-    }
-    else
-    {
-        DisplayRarity = ForgeRarity3;
-    }
+    if (Roll <= ForgeChance1) DisplayRarity = ForgeRarity1;
+    else if (Roll <= (ForgeChance1 + ForgeChance2)) DisplayRarity = ForgeRarity2;
+    else DisplayRarity = ForgeRarity3;
 
-    FLinearColor CycleColor = ItemStats::GetRarityDataMap()[DisplayRarity].Color;
-
-    if (ItemFrame_2) ItemFrame_2->SetBrushTintColor(CycleColor);
-    if (B_ForgeItemResult) B_ForgeItemResult->SetBrushColor(CycleColor);
+    FLinearColor Color = ItemStats::GetRarityDataMap()[DisplayRarity].Color;
+    if (ItemFrame_2) ItemFrame_2->SetBrushTintColor(Color);
+    if (B_ForgeItemResult) B_ForgeItemResult->SetBrushColor(Color);
+    if (LightBeam) LightBeam->SetBrushTintColor(Color);
+    if (LightBeam_1) LightBeam_1->SetBrushTintColor(Color);
+    if (LightBeam_2) LightBeam_2->SetBrushTintColor(Color);
+    if (LightBeam_3) LightBeam_3->SetBrushTintColor(Color);
 
     if (CycleCount >= 10)
     {
@@ -952,6 +964,8 @@ void UInventory::CycleRarityVisuals()
 
 void UInventory::CompleteForgeSequence()
 {
+    if (!ForgeItemResult) return;
+
     FLinearColor FinalColor = ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color;
 
     UpdateForgeUI();
@@ -960,19 +974,19 @@ void UInventory::CompleteForgeSequence()
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Brittled"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Brittled"))));
     }
     if (ForgeItemResult->ItemData.Rarity == ForgeRarity2)
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Tempered"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Unaffected"))));
     }
     if (ForgeItemResult->ItemData.Rarity == ForgeRarity3)
     {
         TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[ForgeItemResult->ItemData.Rarity].Color);
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Fortified"))));
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Polished"))));
     }
 
     TB_Odds1->SetVisibility(ESlateVisibility::Visible);
@@ -989,6 +1003,7 @@ void UInventory::CompleteForgeSequence()
     if (ForgeCompleted)
     {
         PlayAnimation(ForgeCompleted);
+        PlayAnimation(ForgeShake);
     }
 }
 

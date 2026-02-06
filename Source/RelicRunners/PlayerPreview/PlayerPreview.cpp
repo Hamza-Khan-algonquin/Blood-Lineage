@@ -106,7 +106,7 @@ UTextureRenderTarget2D* APlayerPreview::CreateRenderTarget()
 	NewRenderTarget->InitAutoFormat(300, 500);
 	NewRenderTarget->ClearColor = FLinearColor(0, 0, 0, 0); 
 	NewRenderTarget->bAutoGenerateMips = false;
-	NewRenderTarget->UpdateResourceImmediate(true);
+	NewRenderTarget->UpdateResource();
 
 	SceneCaptureComponent2D->TextureTarget = NewRenderTarget;
 	SceneCaptureComponent2D->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
@@ -114,13 +114,13 @@ UTextureRenderTarget2D* APlayerPreview::CreateRenderTarget()
 	SceneCaptureComponent2D->ShowFlags.SetFog(false);
 	SceneCaptureComponent2D->ShowFlags.SetDynamicShadows(false);
 
-	UMaterialInterface* PostMat = LoadObject<UMaterialInterface>(
+	PostProcessMaterial = LoadObject<UMaterialInterface>(
 		nullptr, TEXT("/Game/ThirdPerson/Blueprints/PlayerPreview/M_PlayerPreviewPostProcess.M_PlayerPreviewPostProcess"));
 
-	if (PostMat)
+	if (PostProcessMaterial)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SceneCapture] Successfully set post process material."));
-		SceneCaptureComponent2D->PostProcessSettings.AddBlendable(PostMat, 1.0f);
+		SceneCaptureComponent2D->PostProcessSettings.AddBlendable(PostProcessMaterial, 1.0f);
 	}
 	else
 	{

@@ -196,7 +196,7 @@ void UInventorySlotsEntry::OnEntryClicked()
     bool VendorActive = false;
     if (ParentInventory)
     {
-        if (ParentInventory->ShopCanvas->IsVisible())
+        if (ParentInventory->ShopCanvas->IsVisible() || ParentInventory->ForgeCanvas->IsVisible())
         {
             VendorActive = true;
         }
@@ -206,7 +206,11 @@ void UInventorySlotsEntry::OnEntryClicked()
 
     if (VendorActive)
     {
-        if (TileView->GetName() == "InventorySlots")
+        if (TileView->GetName() == "InventorySlots" && ParentInventory->ShopCanvas->IsVisible())
+        {
+            ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItemWithShop(), GetCachedGeometry());
+        }
+        else if (TileView->GetName() == "InventorySlots" && ParentInventory->ForgeCanvas->IsVisible())
         {
             ParentInventory->CreateItemOptionsPopup(Item, FItemOptionsUIConfig::InventoryItemWithForge(), GetCachedGeometry());
         }

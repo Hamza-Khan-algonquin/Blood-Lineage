@@ -115,6 +115,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_UnequipItemByID(FGuid ID);
 
+
+
 	//Getters
 	FString GetMeshPathByItemType(const FString& ItemType);
 	USkeletalMeshComponent* GetSkeletalMeshComponentByItemType(const FString& ItemType);

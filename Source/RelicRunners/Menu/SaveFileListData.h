@@ -17,8 +17,35 @@ struct FSaveData
 	UPROPERTY(BlueprintReadWrite)
 	float TimePlayed = 0.0f;
 
+	//Meta
 	UPROPERTY(BlueprintReadWrite)
-	int NumUpgrades = 0;
+	int MetaLevel = 1;
+	UPROPERTY(BlueprintReadWrite)
+	float MetaExperience = 0;
+	UPROPERTY(BlueprintReadWrite)
+	float MetaExperienceToLevel = 50;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaPoints = 1;
+
+	//Meta Stats
+	UPROPERTY(BlueprintReadWrite)
+	int MetaHealth = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaDefence = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaLuck = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaStrength = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaAgility = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaIntelligence = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaStartingLevel = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaPotionEfficiency = 0;
+	UPROPERTY(BlueprintReadWrite)
+	int MetaResourceRegen = 0;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FGuid UniqueID = FGuid::NewGuid();
@@ -42,9 +69,9 @@ public:
 	FGuid GetUniqueID() { return SaveData.UniqueID; }
 
 	UFUNCTION(BlueprintCallable)
-	int GetNumUpgrades() { return SaveData.NumUpgrades; }
+	int GetMetaLevel() { return SaveData.MetaLevel; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int NumUpgrades, FGuid UniqueID);
+    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID);
 
 	UFUNCTION(BlueprintCallable)
 	void SetParentWidget(UModeSelectionWidget* TheParentWidget) { ParentWidget = TheParentWidget; }

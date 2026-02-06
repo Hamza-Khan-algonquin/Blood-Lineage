@@ -12,6 +12,7 @@
 #include "RelicRunners/Item/ItemData.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include "GameFramework/CharacterMovementComponent.h"
 
 AVendor::AVendor()
 {
@@ -22,6 +23,8 @@ AVendor::AVendor()
 	{
 		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		Capsule->SetSimulatePhysics(false);
+		Capsule->SetEnableGravity(false);
 	}
 
 	if (GetMesh())

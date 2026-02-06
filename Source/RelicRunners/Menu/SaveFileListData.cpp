@@ -4,12 +4,12 @@
 #include "SaveFileListData.h"
 #include "ModeSelectionWidget.h"
 
-FSaveData USaveFileListData::MakeSaveData(const FString& Name, float TimePlayed, int NumUpgrades, FGuid UniqueID)
+FSaveData USaveFileListData::MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID)
 {
     FSaveData Data;
     Data.SavefileName = Name;
     Data.TimePlayed = TimePlayed;
-    Data.NumUpgrades = NumUpgrades;
+    Data.MetaLevel = MetaLevel;
     Data.UniqueID = UniqueID;
     return Data;
 }

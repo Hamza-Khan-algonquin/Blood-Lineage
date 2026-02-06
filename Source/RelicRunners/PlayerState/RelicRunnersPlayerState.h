@@ -141,6 +141,8 @@ public:
 	UPROPERTY()
 	int PlayerIntelligence;
 	UPROPERTY()
+	int PlayerStartingLevel = 0;
+	UPROPERTY()
 	int PlayerStartingMaxHealth;
 	UPROPERTY()
 	int PlayerStartingMaxResource;
@@ -155,7 +157,17 @@ public:
 	UPROPERTY()
 	int PlayerStartingGold;
 	UPROPERTY()
+
 	float HealthGranted;
+
+	int PlayerStartingLuck;
+	UPROPERTY()
+	int PlayerStartingResourceRegen;
+	UPROPERTY()
+	int PlayerStartingPotionEfficiency;
+	UPROPERTY()
+	int HealthPotionCount;
+
 
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;
@@ -174,6 +186,12 @@ public:
 	int GetPlayerStartingStrength() const { return PlayerStartingStrength; }
 	UFUNCTION()
 	int GetPlayerStartingIntelligence() const { return PlayerStartingIntelligence; }
+	UFUNCTION()
+	int GetPlayerStartingLuck() const { return PlayerStartingLuck; }
+	UFUNCTION()
+	int GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
+	UFUNCTION()
+	int GetPlayerStartingPotionEfficiency() const { return PlayerStartingPotionEfficiency; }
 	UFUNCTION()
 	int GetPlayerGold() const { return PlayerGold; }
 	int GetPlayerLevel() { return PlayerLevel; };

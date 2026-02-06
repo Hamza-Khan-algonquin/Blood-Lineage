@@ -39,6 +39,12 @@ struct FEquippedStatsSummary
     int TotalStrength = 0;
     UPROPERTY(BlueprintReadOnly) 
     int TotalIntelligence = 0;
+    UPROPERTY(BlueprintReadOnly)
+    int TotalLuck = 0;
+    UPROPERTY(BlueprintReadOnly)
+    float TotalResourceRegen = 0.0f;
+    UPROPERTY(BlueprintReadOnly)
+    float TotalPotionEfficiency = 0.0f;
 };
 
 USTRUCT(BlueprintType)

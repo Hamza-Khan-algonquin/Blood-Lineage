@@ -15,6 +15,7 @@ ADirector::ADirector()
 	MaxSpawnPointActivisionDistance = 10000;
 	SpawnWait = 20;
 	PrimaryActorTick.bCanEverTick = true;
+	bAlwaysRelevant = true;
 	Tags.Add("Director");
 	SetReplicates(true);
 }
