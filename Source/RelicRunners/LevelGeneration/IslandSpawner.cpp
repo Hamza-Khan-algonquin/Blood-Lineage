@@ -101,6 +101,12 @@ void AIslandSpawner::BeginPlay()
 				Islands[i]->Generate();
 			}
 			*/
+
+			if (CurrentSpawnedIsland == NumIslands - 1)
+			{
+				Islands[CurrentSpawnedIsland]->SetFinalIsland(true);
+			}
+
 			Islands[CurrentSpawnedIsland]->Generate();
 		}
 	}
