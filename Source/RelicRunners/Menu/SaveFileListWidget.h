@@ -35,14 +35,12 @@ public:
 	class UModeSelectionWidget* ParentWidget;
 	UPROPERTY(BlueprintReadWrite)
 	class USaveFileListData* SaveFileData;
-	public :
-
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UTextBlock* TB_Name;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_NumUpgrades;
+	class UTextBlock* TB_MetaLevel;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UTextBlock* TB_TimePlayed;

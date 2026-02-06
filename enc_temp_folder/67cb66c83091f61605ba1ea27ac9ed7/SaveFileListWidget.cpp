@@ -55,8 +55,8 @@ void USaveFileListWidget::Setup(USaveFileListData* InData)
     if (SaveFileData)
     {
         TB_Name->SetText(FText::FromString(SaveFileData->GetName()));
-        TB_NumUpgrades->SetVisibility(ESlateVisibility::Visible);
-        TB_NumUpgrades->SetText(FText::FromString(FString::FromInt(SaveFileData->GetMetaLevel())));
+        TB_MetaLevel->SetVisibility(ESlateVisibility::Visible);
+        TB_MetaLevel->SetText(FText::FromString(FString::FromInt(SaveFileData->GetMetaLevel())));
         TB_CreateNew->SetText(FText::FromString(""));
         B_Upgrades->SetVisibility(ESlateVisibility::Visible);
         B_Edit->SetVisibility(ESlateVisibility::Visible);
@@ -95,12 +95,13 @@ void USaveFileListWidget::OnSaveFileButtonClicked()
 void USaveFileListWidget::SetSelected(bool bSelected)
 {
     FLinearColor DelectedColor = FLinearColor(0.062f, 0.049f, 0.031f, 1);
+    FLinearColor MetaColor = FLinearColor(0.0f, 0.309f, 0.753f, 1);
     TB_Name->SetColorAndOpacity(bSelected ? FLinearColor(1,0.5,0,1) : FLinearColor::White);
     TB_TimePlayed->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
-    TB_NumUpgrades->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
+    TB_MetaLevel->SetColorAndOpacity(MetaColor);
     EditIcon->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
     B_SaveFile->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
-    B_Upgrades->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
+    B_Upgrades->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : MetaColor);
     B_Edit->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
     SaveFileButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(1, 1, 1, 1));
     EditButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(1, 1, 1, 1));
@@ -141,7 +142,7 @@ void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 void USaveFileListWidget::FinalizeSaveCreation(const FString& PlayerName)
 {
     SaveFileData->IsEmptySlot = false;
-    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, 0, SaveFileData->GetUniqueID());
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, SaveFileData->GetMetaLevel(), SaveFileData->GetUniqueID());
     Setup(SaveFileData);
 
     SpawnEmptySlot();
