@@ -18,6 +18,10 @@ AIslandBridge::AIslandBridge():
 	Barrier->SetupAttachment(Bridge);
 	Barrier->SetIsReplicated(true);
 
+	BackBarrier = CreateDefaultSubobject<UStaticMeshComponent>("Back Barrier Mesh");
+	BackBarrier->SetupAttachment(Bridge);
+	BackBarrier->SetIsReplicated(true);
+
 	bReplicates = true;
 	bAlwaysRelevant = true;
 }
@@ -41,10 +45,42 @@ void AIslandBridge::Activate()
 	}
 }
 
+void AIslandBridge::SetFinalBridge(bool isFinal)
+{
+	if (HasAuthority())
+	{
+		IsFinalBridge = isFinal;
+		if (IsFinalBridge)
+		{
+			BackBarrier->SetVisibility(true);
+			BackBarrier->SetCollisionProfileName("BlockAll");
+		}
+		else
+		{
+			BackBarrier->SetVisibility(false);
+			BackBarrier->SetCollisionProfileName("NoCollision");
+		}
+	}
+}
+
 void AIslandBridge::OnRep_OnBlockedChange()
 {
 	Barrier->SetVisibility(false);
 	Barrier->SetCollisionProfileName("NoCollision");
+}
+
+void AIslandBridge::OnRep_OnFinalBridgeChange()
+{
+	if (IsFinalBridge)
+	{
+		BackBarrier->SetVisibility(true);
+		BackBarrier->SetCollisionProfileName("BlockAll");
+	}
+	else
+	{
+		Barrier->SetVisibility(false);
+		Barrier->SetCollisionProfileName("NoCollision");
+	}
 }
 
 void AIslandBridge::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -52,4 +88,5 @@ void AIslandBridge::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AIslandBridge, IsBlocked);
+	DOREPLIFETIME(AIslandBridge, IsFinalBridge);
 }

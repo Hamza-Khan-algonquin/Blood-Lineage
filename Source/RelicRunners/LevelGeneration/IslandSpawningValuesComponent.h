@@ -41,6 +41,12 @@ struct FIslandValues
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ALevelChangeTrigger> LevelChangeTrigger;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class APackedLevelActor> BasicWall;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class APackedLevelActor> CornerWall;
+
 };
 
 USTRUCT()
@@ -56,6 +62,9 @@ struct FIslandStartAndEndTile
 
 	UPROPERTY(EditAnywhere, meta = (ToolTip = "Packed level actor used as the ending point of the level."));
 	TSubclassOf<class AIslandBridge> BridgePackedActor;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class APackedLevelActor> StartEndWall;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000", ToolTip = "Minimum distance the starting and ending tiles can be from each other."))
 	uint8 StartingToEndingMinDistance;
@@ -88,7 +97,7 @@ struct FNormalObstacleValues
 	TArray<TSubclassOf<class APackedLevelActor>> ObstacleActor;
 
 	UPROPERTY(EditAnywhere)
-	TArray<UStaticMesh*> WallMesh;
+	TArray<TSubclassOf<class APackedLevelActor>> ObstacleWall;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float ObstaclePercentage;
@@ -103,7 +112,7 @@ struct FHoleObstacleValues
 	TArray<TSubclassOf<class APackedLevelActor>> HoleTileActor;
 
 	UPROPERTY(EditAnywhere)
-	TArray<UStaticMesh*> HoleWallMesh;
+	TArray<TSubclassOf<class APackedLevelActor>> HoleWallMesh;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float HolePercentage = 0.0f;
@@ -118,14 +127,13 @@ struct FVantagePointValues
 	TArray<TSubclassOf<class APackedLevelActor>> VantageActor;
 
 	UPROPERTY(EditAnywhere)
-	TArray<UStaticMesh*> VantageWallMesh;
+	TArray<TSubclassOf<class APackedLevelActor>> VantageWall;
 
 	UPROPERTY(EditAnywhere)
 	uint8 MaxVantageAmountMin = 0;
 
 	UPROPERTY(EditAnywhere)
 	uint8 MaxVantageAmountMax = 0;
-
 };
 
 USTRUCT()
@@ -141,7 +149,6 @@ struct FObjectiveFlagValues
 
 	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMax = 0;
-
 };
 
 USTRUCT()
@@ -157,7 +164,6 @@ struct FObjectiveEnemyZoneValues
 
 	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMax = 0;
-
 };
 
 USTRUCT()
@@ -192,6 +198,7 @@ struct FSurvivalZoneValues
 
 	UPROPERTY(EditAnywhere)
 	uint8 ZoneAmountMax = 0;
+
 };
 
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))

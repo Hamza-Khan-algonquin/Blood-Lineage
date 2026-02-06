@@ -139,6 +139,15 @@ public:
 	void SetBottomLeftFloorShape(int x, int y, int width);
 	void SetBottomRightFloorShape(int x, int y, int width);
 
+	//Sets each tile's shape based on neighbours.
+	//Calls SetTopLeftFloorShape, SetTopRightFloorShape, SetBottomLeftFloorShape and SetBottomRightFloorShape.
+	void SetWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+
+	void SetTopLeftWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+	void SetTopRightWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+	void SetBottomLeftWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+	void SetBottomRightWall(int tileIndex, FVector posOffset, TSubclassOf<class APackedLevelActor> CornerWall, TSubclassOf<class APackedLevelActor> SideWall);
+
 	//Spawns the modular obstacles based on previously defined variable.
 	UFUNCTION(Server, Reliable)
 	void Server_SpawnFloorObstacles(int x, int y, int width);

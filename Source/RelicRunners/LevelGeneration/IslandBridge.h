@@ -21,6 +21,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* Barrier;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* BackBarrier;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -28,9 +31,17 @@ protected:
 public:	
 	void Activate();
 
+	void SetFinalBridge(bool isFinal);
+
 	UFUNCTION()
 	void OnRep_OnBlockedChange();
 
 	UPROPERTY(ReplicatedUsing = OnRep_OnBlockedChange)
 	bool IsBlocked;
+
+	UFUNCTION()
+	void OnRep_OnFinalBridgeChange();
+
+	UPROPERTY(ReplicatedUsing = OnRep_OnFinalBridgeChange)
+	bool IsFinalBridge;
 };
