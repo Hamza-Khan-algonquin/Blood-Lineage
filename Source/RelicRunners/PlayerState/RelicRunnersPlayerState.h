@@ -154,6 +154,12 @@ public:
 	UPROPERTY()
 	float HealthGranted;
 
+	UPROPERTY(Replicated)
+	bool bIsInvincible = false; 
+
+	bool IsInvincible() const { return bIsInvincible; }
+	void SetInvincible(bool bNewInvincible) { bIsInvincible = bNewInvincible; } 
+
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;
     UAttributeSet* GetAttributeSet() const { return AttributeSet; }

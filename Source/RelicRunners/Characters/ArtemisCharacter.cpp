@@ -8,6 +8,7 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
+#include "RelicRunners/Abilities/NatureBlessing.h" 
 
 AArtemisCharacter::AArtemisCharacter()
 {
@@ -16,6 +17,12 @@ AArtemisCharacter::AArtemisCharacter()
 void AArtemisCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (AbilitySystem)
+	{
+		// Give NatureBlessing ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+	}
 
 	if (ClassInfo)
 	{
@@ -79,6 +86,8 @@ void AArtemisCharacter::GiveDefenceAbilities()
 	{
 		// Start ability cooldown
 		//AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
+
+		AbilitySystem->TryActivateAbilityByClass(UNaturesBlessing::StaticClass());
 	}
 }
 

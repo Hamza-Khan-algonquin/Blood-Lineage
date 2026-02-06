@@ -7,6 +7,7 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
+#include "RelicRunners/Abilities/KissOfLife.h" 
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
@@ -15,6 +16,12 @@ AAphroditeCharacter::AAphroditeCharacter()
 void AAphroditeCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (AbilitySystem)
+    {
+        // Give KissOfLife ability
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
+    }
 
  //   //Starting Stats
  //   if (ClassInfo)
@@ -89,12 +96,15 @@ void AAphroditeCharacter::GiveDefenceAbilities()
 
 void AAphroditeCharacter::GiveUtilityAbilities()
 {
-	Super::GiveUtilityAbilities();
+    Super::GiveUtilityAbilities();
 
     if (AbilitySystem)
     {
-		// start ability cooldown
+        // start ability cooldown
         //AbilityPointCounter->StartUtilityCooldown(UtilityCooldown);
+        
+        // Activate KissOfLife ability 
+        AbilitySystem->TryActivateAbilityByClass(UKissOfLife::StaticClass());
     }
 }
 
