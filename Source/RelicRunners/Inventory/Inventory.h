@@ -155,6 +155,8 @@ public:
 	class UBorder* CurrentHoveredBorder;
 	int CycleCount;
 	FTimerHandle FuseTimerHandle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PreviewActor")
+	TObjectPtr<UMaterialInstanceDynamic> PreviewActorMaterial;
 
 	//Functions
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);

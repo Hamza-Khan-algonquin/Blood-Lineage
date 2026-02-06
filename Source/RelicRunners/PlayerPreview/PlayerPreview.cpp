@@ -114,7 +114,6 @@ UTextureRenderTarget2D* APlayerPreview::CreateRenderTarget()
 	SceneCaptureComponent2D->ShowFlags.SetFog(false);
 	SceneCaptureComponent2D->ShowFlags.SetDynamicShadows(false);
 
-
 	PostProcessMaterial = LoadObject<UMaterialInterface>(
 		nullptr, TEXT("/Game/ThirdPerson/Blueprints/PlayerPreview/M_PlayerPreviewPostProcess.M_PlayerPreviewPostProcess"));
 

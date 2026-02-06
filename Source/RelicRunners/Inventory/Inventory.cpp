@@ -372,26 +372,28 @@ void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)
 {
     UE_LOG(LogTemp, Warning, TEXT("[UI] Trying to set preview image with RenderTarget: %s"), *GetNameSafe(RenderTarget));
 
-    if (!RenderTarget || !I_PlayerPreview) return;
-
-    UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ThirdPerson/Blueprints/PlayerPreview/M_PlayerPreview.M_PlayerPreview"));
-
-    if (!BaseMaterial)
+    if (!RenderTarget || !RenderTarget->GetResource())
     {
-        UE_LOG(LogTemp, Error, TEXT("[UI] Failed to load base material."));
+        UE_LOG(LogTemp, Warning, TEXT("[UI] RenderTarget resource not ready yet."));
         return;
     }
 
     //Create the dynamic material
-    UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
-    if (!DynMaterial)
+    if (!PreviewActorMaterial)
     {
-        UE_LOG(LogTemp, Error, TEXT("[UI] Failed to create dynamic material."));
-        return;
+        UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ThirdPerson/Blueprints/PlayerPreview/M_PlayerPreview.M_PlayerPreview"));
+        if (BaseMaterial)
+        {
+            PreviewActorMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+            I_PlayerPreview->SetBrushFromMaterial(PreviewActorMaterial);
+        }
     }
 
-    DynMaterial->SetTextureParameterValue(FName("PreviewTexture"), RenderTarget);
-    I_PlayerPreview->SetBrushFromMaterial(DynMaterial);
+    if (PreviewActorMaterial)
+    {
+        PreviewActorMaterial->SetTextureParameterValue(FName("PreviewTexture"), RenderTarget);
+        I_PlayerPreview->SetBrushFromMaterial(PreviewActorMaterial);
+    }
 
     UE_LOG(LogTemp, Warning, TEXT("[UI] Set preview image with RenderTarget: %s"), *GetNameSafe(RenderTarget));
 }
@@ -408,7 +410,10 @@ void UInventory::EquipItem(UItemObject* Item)
 
     if (OwningCharacter && Item)
     {
-        OwningCharacter->Server_EquipItemByID(Item->ItemData.UniqueID);
+        if (OwningCharacter->RelicPlayerState)
+        {
+            OwningCharacter->RelicPlayerState->Server_EquipItemByID(Item->GetUniqueID());
+        }
     }
 }
 
@@ -416,7 +421,7 @@ void UInventory::UnequipItem(UItemObject* Item)
 {
     if (OwningCharacter && Item)
     {
-        OwningCharacter->Server_UnequipItemByID(Item->ItemData.UniqueID);
+        OwningCharacter->RelicPlayerState->Server_UnequipItemByID(Item->GetUniqueID());
     }
 }
 
