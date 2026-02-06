@@ -165,8 +165,8 @@ public:
 	int PlayerStartingResourceRegen;
 	UPROPERTY()
 	int PlayerStartingPotionEfficiency;
-	UPROPERTY()
-	int HealthPotionCount;
+	//UPROPERTY()
+	//int HealthPotionCount;
 
 
     //Getters

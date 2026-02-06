@@ -110,12 +110,6 @@ public:
 	void UpdateItemVisuals(class UItemObject* Item);
 	UFUNCTION(Server, Reliable)
 	virtual void Server_HitEnemy(AActor* HitActor);
-	UFUNCTION(Server, Reliable)
-	void Server_EquipItemByID(FGuid ID);
-	UFUNCTION(Server, Reliable)
-	void Server_UnequipItemByID(FGuid ID);
-
-
 
 	//Getters
 	FString GetMeshPathByItemType(const FString& ItemType);
