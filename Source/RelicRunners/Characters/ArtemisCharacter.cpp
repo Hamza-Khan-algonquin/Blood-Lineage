@@ -34,8 +34,10 @@ void AArtemisCharacter::BeginPlay()
 
 		// Give Moonbeam ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
-	}
 
+		// Give NatureBlessing ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+	}
 
 	if (ClassInfo)
 	{
@@ -97,6 +99,7 @@ void AArtemisCharacter::GiveDefenceAbilities()
 	if (AbilitySystem)
 	{
 
+		AbilitySystem->TryActivateAbilityByClass(UNaturesBlessing::StaticClass());
 	}
 }
 

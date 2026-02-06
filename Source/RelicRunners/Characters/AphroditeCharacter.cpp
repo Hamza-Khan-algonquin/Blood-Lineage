@@ -30,6 +30,9 @@ void AAphroditeCharacter::BeginPlay()
     {
         // Give Bundle of Joy ability 
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
+        // Give KissOfLife ability
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
+
     }
 
  //   //Starting Stats
@@ -101,11 +104,12 @@ void AAphroditeCharacter::GiveDefenceAbilities()
 
 void AAphroditeCharacter::GiveUtilityAbilities()
 {
-	Super::GiveUtilityAbilities();
+    Super::GiveUtilityAbilities();
 
     if (AbilitySystem)
     {
-
+        // Activate KissOfLife ability 
+        AbilitySystem->TryActivateAbilityByClass(UKissOfLife::StaticClass());
     }
 }
 

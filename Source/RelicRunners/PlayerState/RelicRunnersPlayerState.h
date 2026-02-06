@@ -168,6 +168,11 @@ public:
 	//UPROPERTY()
 	//int HealthPotionCount;
 
+	UPROPERTY(Replicated)
+	bool bIsInvincible = false; 
+
+	bool IsInvincible() const { return bIsInvincible; }
+	void SetInvincible(bool bNewInvincible) { bIsInvincible = bNewInvincible; } 
 
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;

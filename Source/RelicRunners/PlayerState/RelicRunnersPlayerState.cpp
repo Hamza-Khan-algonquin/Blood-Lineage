@@ -618,6 +618,12 @@ void ARelicRunnersPlayerState::ModifyHealth(float Value)
 {
 	if (!HasAuthority()) return;
 
+	//this is where i put the invicibility logic
+	if (bIsInvincible && Value < 0.f)
+	{
+		return;
+	}
+
 	PlayerHealth = FMath::Clamp(PlayerHealth + Value, 0.f, (float)PlayerMaxHealth);
 
 	if (PlayerHealth <= 0)
