@@ -5,24 +5,89 @@
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 //#include "RelicRunners/Enemy/EnemyCharacter.h"
 //#include "RelicRunners/Enemy/EnemyCharacterAI.h"
 
 UMoonbeam::UMoonbeam()
 {
-	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+    InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+
+    Cost = 25;              
+    CooldownDuration = 6.f;   
+    LastUseTime = -100.f;   
 }
 
-void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
 {
+    Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    ACharacter* OwnerChar = nullptr;
+
+    if (ActorInfo && ActorInfo->AvatarActor.IsValid())
+    {
+        OwnerChar = Cast<ACharacter>(ActorInfo->AvatarActor.Get());
+    }
+
+    if (!OwnerChar || !OwnerChar->GetWorld())
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    if (OwnerChar->GetWorld()->GetTimeSeconds() - LastUseTime < CooldownDuration)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    ARelicRunnersPlayerState* PlayerState =
+        OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
+
+    if (!PlayerState || PlayerState->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    if (OwnerChar->HasAuthority())
+    {
+        PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - Cost);
+        PlayerState->UpdateRemoteHUDResource();
+    }
+
+    FVector CamLoc;
+    FRotator ViewRot;
+    if (OwnerChar->GetController())
+    {
+        OwnerChar->GetController()->GetPlayerViewPoint(CamLoc, ViewRot);
+    }
+    else
+    {
+        OwnerChar->GetActorEyesViewPoint(CamLoc, ViewRot);
+    }
+
+    const FVector Start = OwnerChar->GetActorLocation() + FVector(0.f, 0.f, 60.f);
+    const FVector End = Start + ViewRot.Vector() * BeamRange;
+
+    SpawnBeamEffect(Start, End);
+
+    LastUseTime = OwnerChar->GetWorld()->GetTimeSeconds();
+
+    EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
-void UMoonbeam::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+void UMoonbeam::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,bool bReplicateEndAbility,bool bWasCancelled)
 {
+    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
 void UMoonbeam::SpawnBeamEffect(const FVector& Start, const FVector& End)
 {
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    DrawDebugLine(World, Start, End, FColor::Blue, false, BeamDuration, 0, BeamRadius);
 }
 
 /*

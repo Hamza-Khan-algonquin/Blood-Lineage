@@ -8,6 +8,7 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
+#include "RelicRunners/Abilities/Moonbeam.h"
 
 AArtemisCharacter::AArtemisCharacter()
 {
@@ -103,7 +104,7 @@ void AArtemisCharacter::GiveUltimateAbilities()
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
 
 		// Start ability cooldown
-		//AbilityPointCounter->StartUltimateCooldown(UltimateCooldown);
+		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
 	}
 
 }

@@ -21,7 +21,7 @@ protected:
     float BeamRange = 1200.f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
-    float BeamRadius = 200.f;
+    float BeamRadius = 50.f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
     float BeamDuration = 3.f;
