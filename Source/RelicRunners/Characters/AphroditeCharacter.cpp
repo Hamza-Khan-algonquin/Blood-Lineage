@@ -119,6 +119,10 @@ void AAphroditeCharacter::GiveUltimateAbilities()
     }
 }
 
+void AAphroditeCharacter::PerformSwingTrace()
+{
+}
+
 void AAphroditeCharacter::PlayRandomAttackAnimation()
 {
     UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();

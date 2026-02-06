@@ -16,6 +16,7 @@
 
 #include "AnimationNotifyState.h"
 #include <RelicRunners/RelicRunnersCharacter.h>
+#include <RelicRunners/Characters/AresCharacter.h>
 
 void UAnimationNotifyState::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime)
 {

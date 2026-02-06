@@ -33,6 +33,7 @@ protected:
     virtual void GiveUltimateAbilities() override;
    
     virtual void PlayRandomAttackAnimation() override;
+	virtual void PerformSwingTrace() override;
     virtual void BasicAttack() override;
 
 	UPROPERTY()

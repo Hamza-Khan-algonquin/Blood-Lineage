@@ -96,7 +96,7 @@ public:
 	virtual void GiveUtilityAbilities();
 	virtual void GiveUltimateAbilities();
 	void HealthPotions();
-	void PerformSwingTrace();
+	virtual void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
 	UFUNCTION()

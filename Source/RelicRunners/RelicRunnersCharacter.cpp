@@ -356,38 +356,7 @@ void ARelicRunnersCharacter::UpdatePlayerHUDWorldFacing()
 
 void ARelicRunnersCharacter::PerformSwingTrace()
 {
-	FVector Start = GetMesh()->GetSocketLocation("MainhandSocket");
-	FVector End = GetMesh()->GetSocketLocation("TipSocket");
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
-
-	TArray<FHitResult> Hits;
-	GetWorld()->SweepMultiByChannel(
-		Hits, Start, End, FQuat::Identity,
-		ECC_Pawn, FCollisionShape::MakeSphere(100.0f), Params
-	);
-
-	AlreadyHitActors.Empty();
-
-	for (const FHitResult& Hit : Hits)
-	{
-		if (AActor* HitActor = Hit.GetActor())
-		{
-			if (!AlreadyHitActors.Contains(HitActor))
-			{
-				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-				{
-					Server_HitEnemy(Enemy);
-				}
-				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-				{
-					Server_HitEnemy(TEnemy);
-				}
-				AlreadyHitActors.Add(HitActor);
-			}
-		}
-	}
+	
 }
 
 void ARelicRunnersCharacter::ResetBasicAttack()

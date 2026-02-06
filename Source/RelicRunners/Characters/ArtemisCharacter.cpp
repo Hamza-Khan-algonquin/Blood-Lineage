@@ -17,7 +17,7 @@ AArtemisCharacter::AArtemisCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bProjectileActive = false;
-	ProjectileSpeed = 4000.f;
+	ProjectileSpeed = 5000.f;
 	ProjectileLifetime = 2.f;
 
 }
@@ -139,6 +139,10 @@ void AArtemisCharacter::PlayRandomAttackAnimation()
 		AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
 	}
 
+}
+
+void AArtemisCharacter::PerformSwingTrace()
+{
 }
 
 void AArtemisCharacter::BasicAttack()
