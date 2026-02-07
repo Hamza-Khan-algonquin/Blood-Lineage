@@ -165,8 +165,6 @@ public:
 	int PlayerStartingResourceRegen;
 	UPROPERTY()
 	int PlayerStartingPotionEfficiency;
-	//UPROPERTY()
-	//int HealthPotionCount;
 
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
