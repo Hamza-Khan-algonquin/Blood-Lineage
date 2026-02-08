@@ -33,23 +33,6 @@ void ACommanderController::Tick(float DeltaTime)
 	if (ADirector* dir = ADirector::GetInstance(this))
 	{
 		players = dir->GetPlayers();
-
-		for (auto& elem : RemainingTimeToAttack)
-		{
-			if (!elem.Key)
-			{
-
-			}
-		}
-
-		for (int i = 0; i < players.Num(); i++)
-		{
-			if()
-		}
-	}
-	else
-	{
-		return;
 	}
 
 	if (players.Num() <= 0 || !pawn)
@@ -114,6 +97,28 @@ void ACommanderController::SpawnPawnEnemy()
 void ACommanderController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GetWorldTimerManager().SetTimerForNextTick([this]()
+		{
+			ADirector* Director = ADirector::GetInstance(this);
+			if (Director)
+			{
+				TArray<APawn*> players = Director->GetPlayers();
+				for (int i = 0; i < players.Num(); i++)
+				{
+					if (players[i])
+					{
+						RemainingTimeToAttack.Add(players[i], TimeToAttack);
+
+						break;
+					}
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Commander Controller: Missing Director in World!"));
+			}
+		});
 }
 
 void ACommanderController::OnPossess(APawn* InPawn)
