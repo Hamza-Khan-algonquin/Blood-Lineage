@@ -937,7 +937,7 @@ void UInventory::UpdateForgeOdds(const FString& LeftRarity, const FString& Right
 
     if (Odds.Rarity1 == Odds.Rarity2)
     {
-        TB_Odds->SetVisibility(ESlateVisibility::Collapsed);
+        TB_Odds->SetVisibility(ESlateVisibility::Hidden);
         TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity2, Odds.Chance1 + Odds.Chance2)));
         TB_Odds2->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity3, Odds.Chance3)));
     }

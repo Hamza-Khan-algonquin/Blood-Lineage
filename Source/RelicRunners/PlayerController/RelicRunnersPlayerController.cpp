@@ -56,8 +56,14 @@
 #include <RelicRunners/Menu/LobbyGameMode.h>
 #include "RelicRunners/Minimap/Minimap.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
+#include "RelicRunners/Objective/ObjectiveLog.h"
 
 #include "Components/SceneCaptureComponent2D.h"
+#include <RelicRunners/Objective/TitleData.h>
+#include <RelicRunners/Objective/PayloadData.h>
+#include <RelicRunners/Objective/PandoraData.h>
+#include <RelicRunners/Objective/EnemiesData.h>
+#include <RelicRunners/Objective/FlagData.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -744,8 +750,45 @@ void ARelicRunnersPlayerController::ForceGameModeOnly()
 	SetShowMouseCursor(false);
 }
 
+void ARelicRunnersPlayerController::SetupObjectives()
+{
+	if (ObjectiveLogClass && !ObjectiveLog)
+	{
+		ObjectiveLog = CreateWidget<UObjectiveLog>(this, ObjectiveLogClass);
+		ObjectiveLog->AddToViewport();
+
+		UTitleData* LevelTitle = NewObject<UTitleData>(this);
+		LevelTitle->LevelName = FText::FromString("Stage 1");
+		LevelTitle->TotalZones = 5;
+		LevelTitle->CurrentZones = 0;
+
+		UPayloadData* PayloadGoal = NewObject<UPayloadData>(this);
+		PayloadGoal->ProgressFraction = 0.0f;
+		LevelTitle->SubObjectives.Add(PayloadGoal);
+
+		UFlagData* FlagGoal = NewObject<UFlagData>(this);
+		FlagGoal->Flag1Active = false;
+		FlagGoal->Flag2Active = true;
+		FlagGoal->Flag3Active = false;
+		LevelTitle->SubObjectives.Add(FlagGoal);
+
+		UEnemiesData* EnemiesGoal = NewObject<UEnemiesData>(this);
+		EnemiesGoal->EnemiesRemaining = 15;
+		LevelTitle->SubObjectives.Add(EnemiesGoal);
+
+		UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
+		PandoraGoal->Percent = 0.5f;
+		PandoraGoal->TimeRemainingText = "02:30";
+		LevelTitle->SubObjectives.Add(PandoraGoal);
+
+		ObjectiveLog->InitializeObjectives(LevelTitle);
+	}
+}
+
 void ARelicRunnersPlayerController::InitLocalUI()
 {
+	SetupObjectives();
+
 	if (BuildVersion && !BuildVersion->IsInViewport())
 	{
 		BuildVersion->AddToViewport();

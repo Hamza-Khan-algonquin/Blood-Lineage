@@ -122,6 +122,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<class UInventory> InventoryClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UObjectiveLog> ObjectiveLogClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<class UMinimap> MinimapClass;
 	UPROPERTY(EditDefaultsOnly, Category = "Preview")
 	TSubclassOf<class APlayerPreview> PlayerPreviewClass;
@@ -149,6 +151,8 @@ public:
 	class UMainMenuWidget* MainMenuWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UInventory* Inventory;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UObjectiveLog* ObjectiveLog;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
@@ -189,6 +193,7 @@ protected:
 	void AbilitySystemUI();
 	void LoadingScreenUI();
 	void ForceGameModeOnly();
+	void SetupObjectives();
 	void RemoveOtherUI(UUserWidget* KeepAlive);
 	void DamageAbility();
 	void DefenceAbility();
