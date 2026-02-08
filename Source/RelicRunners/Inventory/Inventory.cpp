@@ -315,14 +315,16 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
 
     InventoryComponent = NewComponent;
 
-    // Prevent double binding
+    //Prevent double binding
     InventoryComponent->OnInventoryChanged.RemoveDynamic(this, &UInventory::RefreshInventoryUI);
     InventoryComponent->OnEquipmentChanged.RemoveDynamic(this, &UInventory::RefreshEquippedUI);
     InventoryComponent->OnStatsChanged.RemoveDynamic(this, &UInventory::OnEquippedStatsUpdated);
-    // Add the new binds
+    InventoryComponent->OnForgeUpdated.RemoveDynamic(this, &UInventory::UpdateForgeUI);
+    //Add the new binds
     InventoryComponent->OnInventoryChanged.AddDynamic(this, &UInventory::RefreshInventoryUI);
     InventoryComponent->OnEquipmentChanged.AddDynamic(this, &UInventory::RefreshEquippedUI);
     InventoryComponent->OnStatsChanged.AddDynamic(this, &UInventory::OnEquippedStatsUpdated);
+    InventoryComponent->OnForgeUpdated.AddDynamic(this, &UInventory::UpdateForgeUI);
 
     UE_LOG(LogTemp, Log, TEXT("[UI] InventoryComponent successfully bound to delegates."));
     
@@ -336,8 +338,6 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
 
     InventoryComponent->SetSortingMethod(EInventorySorting::SortByNewest);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());
-
-    InventoryComponent->SetInventoryWidget(this);
 }
 
 void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)

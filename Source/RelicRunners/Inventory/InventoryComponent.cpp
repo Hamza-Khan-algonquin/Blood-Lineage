@@ -415,9 +415,7 @@ UItemObject* UInventoryComponent::FindItemByID(FGuid ID) const
 
 void UInventoryComponent::OnRep_ForgeItems()
 {
-    if (!LinkedInventory) return;
-
-    LinkedInventory->UpdateForgeUI();
+    OnForgeUpdated.Broadcast();
 }
 
 void UInventoryComponent::Server_RemoveForgeItem_Implementation(FGuid ItemID)
@@ -456,7 +454,11 @@ void UInventoryComponent::Server_AddToForge_Implementation(FGuid ItemID)
         ForgeItemRight = Item;
         Changed = true;
     }
-
+    if (ForgeItemResult)
+    {
+        AddItem(ForgeItemResult);
+        ForgeItemResult = nullptr;
+    }
     if (Changed)
     {
         InventoryItems.Remove(Item);
@@ -470,10 +472,14 @@ void UInventoryComponent::Server_FuseItems_Implementation()
 {
     if (!ForgeItemLeft || !ForgeItemRight) return;
 
-    FForgeResultOdds Odds = ItemStats::CalculateForgeOdds(ForgeItemLeft->ItemData.ItemType, ForgeItemRight->ItemData.ItemType);
+    FForgeResultOdds Odds = ItemStats::CalculateForgeOdds(ForgeItemLeft->ItemData.Rarity, ForgeItemRight->ItemData.Rarity);
     FString NewRarity = ItemStats::RollForgeRarity(Odds);
     FString NewType = FMath::RandBool() ? ForgeItemLeft->ItemData.ItemType : ForgeItemRight->ItemData.ItemType;
     int NewLevel = FMath::RandRange(ForgeItemLeft->ItemData.Level, ForgeItemRight->ItemData.Level);
+
+    ForgeItemLeft = nullptr;
+    ForgeItemRight = nullptr;
+
     if (ItemMeshData)
     {
         FItemData NewItemData = ItemStats::CreateSpecificItemData(
@@ -485,9 +491,6 @@ void UInventoryComponent::Server_FuseItems_Implementation()
 
         ForgeItemResult = ItemStats::CreateItemFromData(NewItemData, this);
     }
-
-    ForgeItemLeft = nullptr;
-    ForgeItemRight = nullptr;
 
     OnRep_ForgeItems();
 }

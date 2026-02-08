@@ -60,6 +60,8 @@ struct FEquippedItemEntry
     FEquippedItemEntry(const FString& InItemType, UItemObject* InItem) : ItemType(InItemType), Item(InItem) {}
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnForgeUpdated);
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class RELICRUNNERS_API UInventoryComponent : public UActorComponent
 {
@@ -86,6 +88,8 @@ public:
     class UInventory* LinkedInventory = nullptr;
     UPROPERTY()
     class UItemMeshData* ItemMeshData;
+    UPROPERTY(BlueprintAssignable, Category = "Inventory")
+    FOnForgeUpdated OnForgeUpdated;
 
     //Functions
     UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -133,7 +137,6 @@ public:
     UItemObject*& GetEquippedItemReference(const FString& ItemType);
     FEquippedStatsSummary GetCachedEquippedStats() { return CachedEquippedStats; }
     EInventorySorting GetCurrentSortingMethod() { return CurrentSortingMethod; }
-    void SetInventoryWidget(class UInventory* InventoryWidget) { LinkedInventory = InventoryWidget; }
 
     // Delegates
     DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatsChanged, const FEquippedStatsSummary&, NewStats);
