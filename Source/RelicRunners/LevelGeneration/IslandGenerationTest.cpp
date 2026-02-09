@@ -207,8 +207,8 @@ void AIslandGenerationTest::InitializeValues(EIslandObjectiveType islandObjectiv
 		IslandWidth = FMath::RandRange(ValuesComp->SurvivalZoneObjectiveValues.SurvivalWidthMin, ValuesComp->SurvivalZoneObjectiveValues.SurvivalWidthMax);
 		break;
 	default:
-		IslandDepth = FMath::RandRange(ValuesComp->IslandValues.DepthMin, ValuesComp->IslandValues.DepthMax);
-		IslandWidth = FMath::RandRange(ValuesComp->IslandValues.WidthMin, ValuesComp->IslandValues.WidthMax);
+		IslandDepth = 2;
+		IslandWidth = 2;
 		break;
 	}
 }
@@ -511,8 +511,8 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
 {
 	int flagAmount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
-	int enemyZoneAmount = FMath::RandRange(GenerationValuesComponent->EnemyZoneObjectiveValues.EnemyZoneAmountMin, GenerationValuesComponent->EnemyZoneObjectiveValues.EnemyZoneAmountMax);
-	int survivalZoneAmount = FMath::RandRange(GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMin, GenerationValuesComponent->SurvivalZoneObjectiveValues.ZoneAmountMax);
+	int enemyZoneAmount = 1;
+	int survivalZoneAmount = 1;
 
 	switch (IslandObjective)
 	{

@@ -79,6 +79,9 @@ public:
 	UPROPERTY(Replicated)
 	bool IsActive;
 
+	UPROPERTY(Replicated)
+	float CompletionPercentage;
+
 	UPROPERTY(ReplicatedUsing = OnRep_HasReachedDestination)
 	bool HasReachedDestination;
 

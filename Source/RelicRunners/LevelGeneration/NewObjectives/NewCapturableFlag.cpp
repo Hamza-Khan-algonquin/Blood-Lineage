@@ -49,6 +49,9 @@ void ANewCapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 	if (!Char)
 		return;
 
+	if (isActive)
+		return;
+
 	//Disable further interactions
 	isActive = true;
 

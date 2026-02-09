@@ -23,18 +23,6 @@ struct FIslandValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile spawned is a hole. 100% = All holes, 0% = No holes. Note: All hole tiles will spawn a modular obstacle."))
 	float HolePercentage = 0;
 
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 WidthMin = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 WidthMax = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 DepthMin = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 DepthMax = 2;
-
 	UPROPERTY(EditAnywhere)
 	FString TargetLevel;
 
@@ -172,12 +160,6 @@ struct FObjectiveEnemyZoneValues
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ANewEnemyZone> EnemyZone;
 
-	UPROPERTY(EditAnywhere)
-	uint8 EnemyZoneAmountMin = 0;
-
-	UPROPERTY(EditAnywhere)
-	uint8 EnemyZoneAmountMax = 0;
-
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 EnemyZoneWidthMin = 2;
 
@@ -230,12 +212,6 @@ struct FSurvivalZoneValues
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf <class ANewSurvivalZone> SurvivalZone;
-
-	UPROPERTY(EditAnywhere)
-	uint8 ZoneAmountMin = 0;
-
-	UPROPERTY(EditAnywhere)
-	uint8 ZoneAmountMax = 0;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 SurvivalWidthMin = 2;

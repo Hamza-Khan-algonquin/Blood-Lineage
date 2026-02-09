@@ -76,6 +76,8 @@ void ANewPayloadObjective::Tick(float DeltaTime)
 
 		Distance = FMath::FInterpConstantTo(Distance, SplinePath->GetSplineLength(), DeltaTime, CurrentSpeed);
 
+		CompletionPercentage = (SplinePath->GetSplineLength() / Distance) * 100.0f;
+
 		SetActorTransform(SplinePath->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World));
 
 		if (Distance >= SplinePath->GetSplineLength() && !HasReachedDestination)
@@ -167,6 +169,7 @@ void ANewPayloadObjective::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ANewPayloadObjective, TargetSpeed);
 	DOREPLIFETIME(ANewPayloadObjective, CurrentSpeed);
 	DOREPLIFETIME(ANewPayloadObjective, IsActive);
+	DOREPLIFETIME(ANewPayloadObjective, CompletionPercentage);
 	DOREPLIFETIME(ANewPayloadObjective, HasReachedDestination);
 	DOREPLIFETIME(ANewPayloadObjective, CollidingActors);
 }
