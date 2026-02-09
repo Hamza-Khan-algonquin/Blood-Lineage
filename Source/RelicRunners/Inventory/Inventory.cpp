@@ -315,14 +315,16 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
 
     InventoryComponent = NewComponent;
 
-    // Prevent double binding
+    //Prevent double binding
     InventoryComponent->OnInventoryChanged.RemoveDynamic(this, &UInventory::RefreshInventoryUI);
     InventoryComponent->OnEquipmentChanged.RemoveDynamic(this, &UInventory::RefreshEquippedUI);
     InventoryComponent->OnStatsChanged.RemoveDynamic(this, &UInventory::OnEquippedStatsUpdated);
-    // Add the new binds
+    InventoryComponent->OnForgeUpdated.RemoveDynamic(this, &UInventory::UpdateForgeUI);
+    //Add the new binds
     InventoryComponent->OnInventoryChanged.AddDynamic(this, &UInventory::RefreshInventoryUI);
     InventoryComponent->OnEquipmentChanged.AddDynamic(this, &UInventory::RefreshEquippedUI);
     InventoryComponent->OnStatsChanged.AddDynamic(this, &UInventory::OnEquippedStatsUpdated);
+    InventoryComponent->OnForgeUpdated.AddDynamic(this, &UInventory::UpdateForgeUI);
 
     UE_LOG(LogTemp, Log, TEXT("[UI] InventoryComponent successfully bound to delegates."));
     
@@ -336,8 +338,6 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
 
     InventoryComponent->SetSortingMethod(EInventorySorting::SortByNewest);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());
-
-    InventoryComponent->SetInventoryWidget(this);
 }
 
 void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)
@@ -937,7 +937,7 @@ void UInventory::UpdateForgeOdds(const FString& LeftRarity, const FString& Right
 
     if (Odds.Rarity1 == Odds.Rarity2)
     {
-        TB_Odds->SetVisibility(ESlateVisibility::Collapsed);
+        TB_Odds->SetVisibility(ESlateVisibility::Hidden);
         TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity2, Odds.Chance1 + Odds.Chance2)));
         TB_Odds2->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity3, Odds.Chance3)));
     }

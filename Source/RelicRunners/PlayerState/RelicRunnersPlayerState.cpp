@@ -86,6 +86,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 
 	//Potions
 	HealthPotionCount = 3;
+	HealthGranted = 0.5;
 	PlayerStartingPotionEfficiency = 30; //Percent
 }
 

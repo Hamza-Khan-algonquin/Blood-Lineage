@@ -157,7 +157,6 @@ public:
 	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
 	void UpdateForgeOdds(const FString& LeftRarity, const FString& RightRarity);
-	void UpdateForgeUI();
 	FSlotUIComponents GetUIComponentsForItemType(const FString& ItemType);
 	void UpdateButtonWithTooltip(class UItemObject* Item, const FString& itemType, class UInventoryToolTip* ToolTip, const FLinearColor& Color);
 	void SetInventoryComponent(UInventoryComponent* NewComponent);
@@ -174,6 +173,8 @@ public:
 	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 
+	UFUNCTION()
+	void UpdateForgeUI();
 	UFUNCTION()
 	void RefreshInventoryUI();
 	UFUNCTION()

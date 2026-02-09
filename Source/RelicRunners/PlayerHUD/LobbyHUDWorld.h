@@ -17,8 +17,6 @@ class RELICRUNNERS_API ULobbyHUDWorld : public UUserWidget
 public:
 	void NativeConstruct();
 
-	void UpdateHUDReadyStatus(APlayerState* TargetPS, bool IsReady);
-
 	UFUNCTION()
 	void SetHostIconVisibility(bool IsHost);
 	UFUNCTION()
@@ -36,14 +34,18 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_HostIcon;
 
-	UPROPERTY()
-	TMap<FName, UTexture2D*> IconCache;
+	UPROPERTY(EditAnywhere)
+	UTexture2D* AresIcon;
+	UPROPERTY(EditAnywhere)
+	UTexture2D* NemesisIcon;
+	UPROPERTY(EditAnywhere)
+	UTexture2D* AphroditeIcon;
+	UPROPERTY(EditAnywhere)
+	UTexture2D* ArtemisIcon;
 
 	UPROPERTY()
 	class ALobbyPreview* OwningPreview;
 
 	UFUNCTION()
 	void UpdatePlayerClassDisplay(FName NewClass);
-	
-
 };

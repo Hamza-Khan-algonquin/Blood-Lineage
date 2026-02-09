@@ -29,6 +29,5 @@ public class RelicRunners : ModuleRules
 			"GameplayTags",
             "Niagara"
         });
-
     }
 }

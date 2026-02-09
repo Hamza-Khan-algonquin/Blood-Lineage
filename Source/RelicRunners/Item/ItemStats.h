@@ -296,36 +296,35 @@ public:
 
         FForgeResultOdds OutOdds;
 
-        int DownIndex = FMath::Clamp(Highest - 1, 0, RarityOrder.Num() - 1);
-        int MidIndex = FMath::Clamp(Highest, 0, RarityOrder.Num() - 1);
-        int UpIndex = FMath::Clamp(Highest + 1, 0, RarityOrder.Num() - 1);
+        int UpIndex = FMath::Min(Highest + 1, RarityOrder.Num() - 1);
+        int MidIndex = Highest;
+        int DownIndex = FMath::Max(Highest - 1, 0);
 
-        OutOdds.Rarity1 = RarityOrder[DownIndex];
-        OutOdds.Rarity2 = RarityOrder[MidIndex];
-        OutOdds.Rarity3 = RarityOrder[UpIndex];
+        OutOdds.Rarity1 = RarityOrder[DownIndex]; 
+        OutOdds.Rarity2 = RarityOrder[MidIndex];  
+        OutOdds.Rarity3 = RarityOrder[UpIndex];   
 
-        float Up = 0.f;
+        float UpChance = 0.f;
         int TierIndex = FMath::Clamp(Highest, 0, 6);
 
         if (IndexA == IndexB) {
-            Up = UpgradeSameTier[TierIndex];
+            UpChance = UpgradeSameTier[TierIndex];
         }
         else {
             float Proximity = 1.f / float(Distance);
-            Up = UpgradeSameTier[TierIndex] * Proximity * 0.8f;
+            UpChance = UpgradeSameTier[TierIndex] * Proximity * 0.8f;
         }
 
-        float Remaining = 100.0f - Up;
-        OutOdds.Chance3 = Up;
-        OutOdds.Chance2 = Remaining * 0.6f;
-        OutOdds.Chance1 = Remaining * 0.4f;
+        float Remaining = 100.0f - UpChance;
 
-        float Total = OutOdds.Chance1 + OutOdds.Chance2 + OutOdds.Chance3;
-        if (Total > 0.f)
-        {
-            OutOdds.Chance1 = (OutOdds.Chance1 / Total) * 100.f;
-            OutOdds.Chance2 = (OutOdds.Chance2 / Total) * 100.f;
-            OutOdds.Chance3 = (OutOdds.Chance3 / Total) * 100.f;
+        OutOdds.Chance3 = UpChance;
+        OutOdds.Chance2 = Remaining * 0.7f;
+        OutOdds.Chance1 = Remaining * 0.3f;
+
+        //Special Case: Two Commons
+        if (Highest == 0) {
+            OutOdds.Chance2 += OutOdds.Chance1;
+            OutOdds.Chance1 = 0.f;
         }
 
         return OutOdds;
@@ -334,8 +333,20 @@ public:
     static FString RollForgeRarity(const FForgeResultOdds& Odds)
     {
         float Roll = FMath::FRandRange(0.f, 100.f);
-        if (Roll <= Odds.Chance1) return Odds.Rarity1;
-        if (Roll <= Odds.Chance1 + Odds.Chance2) return Odds.Rarity2;
+
+        UE_LOG(LogTemp, Warning, TEXT("Forge Roll: %.2f | Odds: O1:%.1f O2:%.1f O3:%.1f"),
+            Roll, Odds.Chance1, Odds.Chance2, Odds.Chance3);
+
+        if (Roll <= Odds.Chance1)
+        {
+            return Odds.Rarity1;
+        }
+
+        if (Roll <= (Odds.Chance1 + Odds.Chance2))
+        {
+            return Odds.Rarity2;
+        }
+
         return Odds.Rarity3;
     }
 

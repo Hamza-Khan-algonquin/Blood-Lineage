@@ -14,7 +14,11 @@
 #include "IslandBridge.h"
 #include "LevelChangeTrigger.h"
 #include "Components/SplineComponent.h"
+<<<<<<< HEAD
 #include "NavigationSystem.h"
+=======
+#include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+>>>>>>> d7db5b9c31e23046549c3f392c2b26c07c17133e
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -508,6 +512,33 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 	}
 }
 
+void AIslandGenerationTest::AddObjectiveToAllControllers(EIslandObjectiveType Type)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get());
+
+		if (TargetPC)
+		{
+			switch (Type)
+			{
+			case EIslandObjectiveType::CaptureTheFlag:
+				TargetPC->Client_AddFlagObjective();
+				break;
+			case EIslandObjectiveType::DefeatAllEnemies:
+				TargetPC->Client_AddEnemiesObjective(10);
+				break;
+			case EIslandObjectiveType::Survival:
+				TargetPC->Client_AddPandoraObjective();
+				break;
+			case EIslandObjectiveType::MoveThePayload:
+				TargetPC->Client_AddPayloadObjective();
+				break;
+			}
+		}
+	}
+}
+
 void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
 {
 	int flagAmount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
@@ -517,7 +548,12 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 	switch (IslandObjective)
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
+<<<<<<< HEAD
 		ObjectiveAmount = flagAmount;
+=======
+		
+		AddObjectiveToAllControllers(EIslandObjectiveType::CaptureTheFlag);
+>>>>>>> d7db5b9c31e23046549c3f392c2b26c07c17133e
 
 		//Override previously initialized tiles with capturable flag tiles
 		for (int i = 0; i < ObjectiveAmount; i++)
@@ -551,7 +587,13 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 	case EIslandObjectiveType::DefeatAllEnemies:
 		ObjectiveAmount = enemyZoneAmount;
 
+<<<<<<< HEAD
 		for (int i = 0; i < ObjectiveAmount; i++)
+=======
+		AddObjectiveToAllControllers(EIslandObjectiveType::DefeatAllEnemies);
+
+		for (int i = 0; i < enemyZoneAmount; i++)
+>>>>>>> d7db5b9c31e23046549c3f392c2b26c07c17133e
 		{
 			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
 
@@ -580,6 +622,9 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 		}
 		break;
 	case EIslandObjectiveType::MoveThePayload:
+
+		AddObjectiveToAllControllers(EIslandObjectiveType::MoveThePayload);
+
 		if (IslandObjective == EIslandObjectiveType::MoveThePayload)
 		{
 			if (IslandDepth * IslandWidth > 1)
@@ -611,6 +656,8 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 		break;
 	case EIslandObjectiveType::Survival:
 		ObjectiveAmount = survivalZoneAmount;
+
+		AddObjectiveToAllControllers(EIslandObjectiveType::Survival);
 
 		//Override previously initialized tiles with survival zone tiles
 		for (int i = 0; i < ObjectiveAmount; i++)
