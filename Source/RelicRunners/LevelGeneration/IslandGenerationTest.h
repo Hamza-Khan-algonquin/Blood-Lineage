@@ -190,4 +190,9 @@ public:
 	class AIslandBridge* Bridge;
 
 	bool isFinalIsland;
+
+	int ObjectiveAmount;
+
+	class AActor* CameraActor;
+
 };

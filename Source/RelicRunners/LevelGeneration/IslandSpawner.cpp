@@ -44,8 +44,12 @@ void AIslandSpawner::BeginPlay()
 				newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
 				newIsland->GenerationValuesComponent->SetVantagePointValues(GenerationValuesComponent->VantageValues);
 				newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
+				newIsland->GenerationValuesComponent->SetEnemyZoneObjectiveValues(GenerationValuesComponent->EnemyZoneObjectiveValues);
 				newIsland->GenerationValuesComponent->SetPayloadObjectiveValues(GenerationValuesComponent->PayloadObjectiveValues);
 				newIsland->GenerationValuesComponent->SetSurvivalZoneObjectiveValues(GenerationValuesComponent->SurvivalZoneObjectiveValues);
+
+				if (CameraActor)
+					newIsland->CameraActor = CameraActor;
 
 				newIsland->OnObjectiveIslandObjectiveComplete.AddDynamic(this, &AIslandSpawner::GenerateNewIsland);
 

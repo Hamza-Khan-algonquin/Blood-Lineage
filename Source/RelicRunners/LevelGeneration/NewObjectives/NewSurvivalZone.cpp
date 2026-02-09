@@ -25,6 +25,9 @@ ANewSurvivalZone::ANewSurvivalZone() :
 	TriggerZone->OnComponentEndOverlap.AddDynamic(this, &ANewSurvivalZone::OnOverlapEnd);
 	TriggerZone->SetupAttachment(Origin);
 
+	PandoraBoxMesh = CreateDefaultSubobject<USkeletalMeshComponent>("Pandora's box");
+	PandoraBoxMesh->SetupAttachment(Origin);
+
 	SurvivalTimelineComp = CreateDefaultSubobject<UTimelineComponent>(TEXT("SurvivalTimelineComponent"));
 }
 
@@ -86,7 +89,15 @@ void ANewSurvivalZone::OnTimelineEnd()
 	TriggerZone->SetGenerateOverlapEvents(false);
 
 	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Green, FString::Printf(TEXT("Survived the zone.")));
+	BeaconMesh->SetVisibility(false);
+
 	OnObjectiveActivated.Broadcast();
+
+	if (PandoraBoxMesh && ActivateAnimation)
+	{
+		PandoraBoxMesh->PlayAnimation(ActivateAnimation, false);
+	}
+
 }
 
 void ANewSurvivalZone::Multicast_HandleOverlapEnter_Implementation(AActor* OtherActor, bool OnOverlapBegin)

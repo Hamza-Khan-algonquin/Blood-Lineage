@@ -149,6 +149,19 @@ struct FObjectiveFlagValues
 
 	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMax = 0;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 FlagWidthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 FlagWidthMax = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 FlagDepthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 FlagDepthMax = 2;
+
 };
 
 USTRUCT()
@@ -160,10 +173,23 @@ struct FObjectiveEnemyZoneValues
 	TSubclassOf<class ANewEnemyZone> EnemyZone;
 
 	UPROPERTY(EditAnywhere)
-	uint8 FlagAmountMin = 0;
+	uint8 EnemyZoneAmountMin = 0;
 
 	UPROPERTY(EditAnywhere)
-	uint8 FlagAmountMax = 0;
+	uint8 EnemyZoneAmountMax = 0;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 EnemyZoneWidthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 EnemyZoneWidthMax = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 EnemyZoneDepthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 EnemyZoneDepthMax = 2;
+
 };
 
 USTRUCT()
@@ -183,6 +209,18 @@ struct FObjectivePayloadValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "1000", UIMax = "1000"))
 	float Deceleration = 1.0f;
 
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 PayloadWidthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 PayloadWidthMax = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 PayloadDepthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 PayloadDepthMax = 2;
+
 };
 
 USTRUCT()
@@ -198,6 +236,18 @@ struct FSurvivalZoneValues
 
 	UPROPERTY(EditAnywhere)
 	uint8 ZoneAmountMax = 0;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 SurvivalWidthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 SurvivalWidthMax = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 SurvivalDepthMin = 2;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
+	uint8 SurvivalDepthMax = 2;
 
 };
 

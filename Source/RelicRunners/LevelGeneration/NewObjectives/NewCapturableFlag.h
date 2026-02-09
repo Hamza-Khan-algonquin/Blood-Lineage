@@ -35,9 +35,14 @@ public:
 	UFUNCTION()
 	void OnActiveChange();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default Values")
+	USkeletalMeshComponent* FlagMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default Values")
+	UAnimSequence* ActivateAnimation;
+
 private:
 
 	UPROPERTY(ReplicatedUsing = OnActiveChange)
 	bool isActive = false;
-
 };

@@ -27,6 +27,9 @@ protected:
 
 	TArray<class AIslandGenerationTest*> Islands;
 
+	UPROPERTY(EditAnywhere, Category = "GenerationValues")
+	class AActor* CameraActor;
+
 	UPROPERTY(EditAnywhere, Category = "GenerationValues", meta = (ClampMin = "1", UIMin = "1"))
 	uint8 NumIslands;
 

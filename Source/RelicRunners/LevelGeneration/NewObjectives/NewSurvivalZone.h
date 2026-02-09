@@ -28,6 +28,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	UCurveFloat* SurvivalTimelineFloatCurve;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default Values")
+	USkeletalMeshComponent* PandoraBoxMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default Values")
+	UAnimSequence* ActivateAnimation;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
