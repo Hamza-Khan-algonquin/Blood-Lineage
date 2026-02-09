@@ -56,8 +56,14 @@
 #include <RelicRunners/Menu/LobbyGameMode.h>
 #include "RelicRunners/Minimap/Minimap.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
+#include "RelicRunners/Objective/ObjectiveLog.h"
 
 #include "Components/SceneCaptureComponent2D.h"
+#include <RelicRunners/Objective/TitleData.h>
+#include <RelicRunners/Objective/PayloadData.h>
+#include <RelicRunners/Objective/PandoraData.h>
+#include <RelicRunners/Objective/EnemiesData.h>
+#include <RelicRunners/Objective/FlagData.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -744,8 +750,84 @@ void ARelicRunnersPlayerController::ForceGameModeOnly()
 	SetShowMouseCursor(false);
 }
 
+void ARelicRunnersPlayerController::SetupObjectives()
+{
+	if (ObjectiveLogClass && !ObjectiveLog)
+	{
+		ObjectiveLog = CreateWidget<UObjectiveLog>(this, ObjectiveLogClass);
+		ObjectiveLog->AddToViewport();
+
+		ObjectiveStageTitle = NewObject<UTitleData>(this);
+
+		UWorld* World = GetWorld();
+		if (!World) return;
+
+		const FString MapName = World->GetMapName();
+
+		if (MapName.Contains(TEXT("ShopDemo")))
+		{
+			ObjectiveStageTitle->LevelName = FText::FromString("Forge");
+			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveStageTitle->CurrentZones = 0;
+		}
+		else if (MapName.Contains(TEXT("IslandTest")))
+		{
+			ObjectiveStageTitle->LevelName = FText::FromString("Stage 1");
+			ObjectiveStageTitle->TotalZones = 5;
+			ObjectiveStageTitle->CurrentZones = 0;
+		}
+
+		ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
+	}
+}
+
+void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	UPayloadData* PayloadGoal = NewObject<UPayloadData>(this);
+	PayloadGoal->ProgressFraction = 0.0f;
+
+	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
+}
+
+void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation()
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	UFlagData* FlagGoal = NewObject<UFlagData>(this);
+	FlagGoal->Flag1Active = false;
+	FlagGoal->Flag2Active = false;
+	FlagGoal->Flag3Active = false;
+
+	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
+}
+
+void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(int TotalEnemies)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	UEnemiesData* EnemiesGoal = NewObject<UEnemiesData>(this);
+	EnemiesGoal->EnemiesRemaining = TotalEnemies;
+
+	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
+}
+
+void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation()
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
+	PandoraGoal->Percent = 0.0f;
+	PandoraGoal->TimeRemainingText = FString("00:00");
+
+	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
+}
+
 void ARelicRunnersPlayerController::InitLocalUI()
 {
+	SetupObjectives();
+
 	if (BuildVersion && !BuildVersion->IsInViewport())
 	{
 		BuildVersion->AddToViewport();
