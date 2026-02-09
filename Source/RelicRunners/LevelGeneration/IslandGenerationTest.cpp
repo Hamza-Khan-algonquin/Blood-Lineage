@@ -14,11 +14,8 @@
 #include "IslandBridge.h"
 #include "LevelChangeTrigger.h"
 #include "Components/SplineComponent.h"
-<<<<<<< HEAD
 #include "NavigationSystem.h"
-=======
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
->>>>>>> d7db5b9c31e23046549c3f392c2b26c07c17133e
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -548,12 +545,9 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 	switch (IslandObjective)
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
-<<<<<<< HEAD
 		ObjectiveAmount = flagAmount;
-=======
-		
+
 		AddObjectiveToAllControllers(EIslandObjectiveType::CaptureTheFlag);
->>>>>>> d7db5b9c31e23046549c3f392c2b26c07c17133e
 
 		//Override previously initialized tiles with capturable flag tiles
 		for (int i = 0; i < ObjectiveAmount; i++)
@@ -587,14 +581,10 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 	case EIslandObjectiveType::DefeatAllEnemies:
 		ObjectiveAmount = enemyZoneAmount;
 
-<<<<<<< HEAD
 		for (int i = 0; i < ObjectiveAmount; i++)
-=======
+		{
 		AddObjectiveToAllControllers(EIslandObjectiveType::DefeatAllEnemies);
 
-		for (int i = 0; i < enemyZoneAmount; i++)
->>>>>>> d7db5b9c31e23046549c3f392c2b26c07c17133e
-		{
 			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
 
 			int whileLoopLimit = 0;
