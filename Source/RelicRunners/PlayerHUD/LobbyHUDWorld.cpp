@@ -61,19 +61,21 @@ void ULobbyHUDWorld::UpdatePlayerClassDisplay(FName NewClass)
     {
         UTexture2D* ClassIcon = nullptr;
 
-        if (IconCache.Contains(NewClass))
+        if (*NewClass.ToString() == FName("Nemesis"))
         {
-            ClassIcon = IconCache[NewClass];
+            ClassIcon = NemesisIcon;
         }
-        else
+        if (*NewClass.ToString() == FName("Artemis"))
         {
-            FString TexturePath = FString::Printf(TEXT("/Game/ThirdPerson/Icons/Icon_%s.Icon_%s"), *NewClass.ToString(), *NewClass.ToString());
-            ClassIcon = LoadObject<UTexture2D>(nullptr, *TexturePath);
-            if (ClassIcon)
-            {
-                ClassIcon->NeverStream = true;
-                IconCache.Add(NewClass, ClassIcon);
-            }
+            ClassIcon = ArtemisIcon;
+        }
+        if (*NewClass.ToString() == FName("Aphrodite"))
+        {
+            ClassIcon = AphroditeIcon;
+        }
+        if (*NewClass.ToString() == FName("Ares"))
+        {
+            ClassIcon = AresIcon;
         }
 
         if (ClassIcon)
