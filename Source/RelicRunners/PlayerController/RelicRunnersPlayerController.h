@@ -44,6 +44,17 @@ public:
 	void HandleLevelUpVisuals();
 	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
 	void TravelCleanUI();
+	UFUNCTION(Client, Reliable)
+	void Client_AddFlagObjective();
+
+	UFUNCTION(Client, Reliable)
+	void Client_AddEnemiesObjective(int TotalEnemies);
+
+	UFUNCTION(Client, Reliable)
+	void Client_AddPandoraObjective();
+
+	UFUNCTION(Client, Reliable)
+	void Client_AddPayloadObjective();
 
 	UFUNCTION()
 	void UpdateCharacterVisuals();
@@ -221,6 +232,7 @@ protected:
 	class ARelicRunnersCharacter* PossessedPawn;
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 	class ARelicRunnersPlayerState* RelicPlayerState;
+	class UTitleData* ObjectiveStageTitle;
 
 	//Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)

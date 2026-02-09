@@ -119,6 +119,8 @@ public:
 
 	void CreateSplinePathStartToEnd(int startingIndex, int targetIndex, int width, class ANewPayloadObjective* payloadActor);
 
+	void AddObjectiveToAllControllers(EIslandObjectiveType Type);
+
 	//Initializes the objective
 	void InitializeObjectives(int startingIndex, int endingIndex);
 

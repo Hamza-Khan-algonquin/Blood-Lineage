@@ -9,7 +9,7 @@ void UObjectiveLog::InitializeObjectives(UObjectiveItemData* RootLevel)
 {
     if (!ObjectiveTreeView || !RootLevel) return;
 
-    //Clear previous entries
+
     ObjectiveTreeView->ClearListItems();
 
     //Level Title Item
@@ -17,6 +17,26 @@ void UObjectiveLog::InitializeObjectives(UObjectiveItemData* RootLevel)
 
     //Expand the root so the objectives are visible immediately
     ObjectiveTreeView->SetItemExpansion(RootLevel, true);
+}
+
+void UObjectiveLog::AddObjective(UObjectiveItemData* Parent, UObjectiveItemData* NewChild)
+{
+    if (!Parent || !NewChild || !ObjectiveTreeView) return;
+
+    //Add the new data to the top of the list
+    Parent->SubObjectives.Insert(NewChild, 0);
+
+    ObjectiveTreeView->RequestRefresh();
+
+    //Expand the root so the objectives are visible immediately
+    ObjectiveTreeView->SetItemExpansion(Parent, true);
+}
+
+void UObjectiveLog::UpdateObjective(UObjectiveItemData* ObjectiveToUpdate)
+{
+    if (!ObjectiveTreeView || !ObjectiveToUpdate) return;
+
+    ObjectiveTreeView->RequestRefresh();
 }
 
 void UObjectiveLog::HandleGetItemChildren(UObject* Item, TArray<UObject*>& OutChildren)

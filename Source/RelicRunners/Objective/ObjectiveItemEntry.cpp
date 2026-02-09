@@ -30,7 +30,15 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
         {
             Widget->TB_Title->SetText(TitleData->LevelName);
 
-            FString ZoneString = FString::Printf(TEXT("%d / %d Zones"), TitleData->CurrentZones, TitleData->TotalZones);
+            FString ZoneString;
+            if (TitleData->TotalZones == 0)
+            {
+                ZoneString = FString::Printf(TEXT(""), TitleData->CurrentZones, TitleData->TotalZones);
+            }
+            else
+            {
+                ZoneString = FString::Printf(TEXT("%d / %d Zones"), TitleData->CurrentZones, TitleData->TotalZones);
+            }
             Widget->TB_Text->SetText(FText::FromString(ZoneString));
         }
     }
