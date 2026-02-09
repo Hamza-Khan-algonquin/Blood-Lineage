@@ -44,26 +44,11 @@ void AEnemyZone::BeginPlay()
 	{
 		SpawnZone->OnEnemyWavesComplete.AddDynamic(this, &AEnemyZone::Server_HandleEnemyWavesCompleted);
 	}
-
-	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-
-	if (gameState)
-	{
-		//Increment the Replicated Objective variable in the Gamestate for every flag that is spawned
-		gameState->Server_IncrementObjective(EObjectiveType::DefeatAllEnemies);
-	}
 }
 
 void AEnemyZone::Server_HandleEnemyWavesCompleted_Implementation()
 {
-	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
 
-	if (gameState && IsActive)
-	{
-		//Increment the Replicated Objective variable in the Gamestate for every flag that is spawned
-		gameState->Server_DecrementObjective(EObjectiveType::DefeatAllEnemies);
-		IsActive = false;
-	}
 }
 
 void AEnemyZone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

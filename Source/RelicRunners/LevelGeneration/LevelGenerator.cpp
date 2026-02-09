@@ -369,13 +369,6 @@ void ALevelGenerator::PostInitializeComponents()
 				CreateFloor();
 			}
 		}
-
-		//Set the gamestate's objective type in order to help keep track of remaining objectives if it is set to anything.
-		ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-		if (gameState)
-		{
-			gameState->Server_SetObjectiveType(ObjectiveType);
-		}
 	}
 
 	TArray<FString> enumName;

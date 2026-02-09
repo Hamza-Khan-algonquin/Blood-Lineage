@@ -44,14 +44,6 @@ ACapturableFlag::ACapturableFlag():
 void ACapturableFlag::BeginPlay()
 {
 	Super::BeginPlay();
-
-	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-
-	if (gameState)
-	{
-		//Increment the Replicated Objective variable in the Gamestate for every flag that is spawned
-		gameState->Server_IncrementObjective(EObjectiveType::CaptureTheFlag);
-	}	
 }
 
 // Called every frame
@@ -76,14 +68,6 @@ void ACapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 {
 	if (!Char || isActive)
 		return;
-
-	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-
-	if (gameState)
-	{
-		//Decrement the Replicated Objective variable in the Gamestate
-		gameState->Server_DecrementObjective(EObjectiveType::CaptureTheFlag);
-	}
 
 	//Disable further interactions
 	isActive = true;

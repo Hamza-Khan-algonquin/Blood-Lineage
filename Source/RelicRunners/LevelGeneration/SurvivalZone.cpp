@@ -47,13 +47,6 @@ void ASurvivalZone::BeginPlay()
 		SurvivalTimelineComp->SetTimelineLength(1.0f);
 		SurvivalTimelineComp->SetPlayRate(1.0f / Duration);
 		SurvivalTimelineComp->SetLooping(false);
-
-		ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-
-		if (gameState)
-		{
-			gameState->Server_IncrementObjective(EObjectiveType::Survival);
-		}
 	}
 }
 
@@ -92,13 +85,6 @@ void ASurvivalZone::OnTimelineEnd()
 		return;
 
 	TriggerZone->SetGenerateOverlapEvents(false);
-
-	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-
-	if (gameState)
-	{
-		gameState->Server_DecrementObjective(EObjectiveType::Survival);
-	}
 	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Green, FString::Printf(TEXT("Survived the zone.")));
 }
 

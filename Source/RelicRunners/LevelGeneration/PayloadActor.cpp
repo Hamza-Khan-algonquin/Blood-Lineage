@@ -50,14 +50,6 @@ APayloadActor::APayloadActor() :
 void APayloadActor::BeginPlay()
 {
 	Super::BeginPlay();
-
-	ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-
-	if (gameState)
-	{
-		gameState->Server_IncrementObjective(EObjectiveType::MoveThePayload);
-	}
-
 }
 
 // Called every frame
@@ -83,12 +75,6 @@ void APayloadActor::Tick(float DeltaTime)
 		if (Distance >= DeliverySpline->GetSplineLength() && !HasReachedDestination)
 		{
 			HasReachedDestination = true;
-			ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
-
-			if (gameState)
-			{
-				gameState->Server_DecrementObjective(EObjectiveType::MoveThePayload);
-			}
 			GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Yellow, FString::Printf(TEXT("Payload has reached destination")));
 			TriggerCollision->SetGenerateOverlapEvents(false);
 			PrimaryActorTick.bCanEverTick = false;
