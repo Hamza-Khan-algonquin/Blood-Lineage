@@ -51,32 +51,15 @@ void ALevelChangeTrigger::BeginPlay()
 	Super::BeginPlay();
 
 	LevelTargetTextRender->SetText(FText::FromString(TargetLevel));
-
-	if (ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState()))
-	{
-		gameState->OnObjectiveActionCompleted.AddDynamic(this, &ALevelChangeTrigger::Server_Activate);
-		IsActive = gameState->InitializeTriggerState();
-	}
 }
 
 void ALevelChangeTrigger::OnTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!OtherActor->ActorHasTag("Player")) return;
 
-	if (IsActive)
+	if (HasAuthority())
 	{
-		if (HasAuthority())
-		{
-			Server_ChangeLevel();
-		}
-	}
-	else
-	{
-		if (ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>())
-		{
-			GS->InformCurrentObjectives();
-		}
-		GEngine->AddOnScreenDebugMessage(-1, 30.0f, FColor::Yellow, FString::Printf(TEXT("Objective has not been met.")));
+		Server_ChangeLevel();
 	}
 }
 
@@ -111,7 +94,7 @@ void ALevelChangeTrigger::ChangeLevel()
 void ALevelChangeTrigger::Server_Activate_Implementation()
 {
 	IsActive = true;
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Level Trigger has been activated")));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Level Trigger has been activated")));
 }
 
 void ALevelChangeTrigger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
