@@ -225,6 +225,9 @@ struct FSurvivalZoneValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 SurvivalDepthMax = 2;
 
+	UPROPERTY(EditAnywhere)
+	float SurvivalDuration = 0;
+
 };
 
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))

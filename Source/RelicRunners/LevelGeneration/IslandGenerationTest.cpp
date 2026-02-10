@@ -509,36 +509,55 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 	}
 }
 
-void AIslandGenerationTest::AddObjectiveToAllControllers(EIslandObjectiveType Type)
+void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags)
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get());
-
-		if (TargetPC)
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			switch (Type)
-			{
-			case EIslandObjectiveType::CaptureTheFlag:
-				TargetPC->Client_AddFlagObjective();
-				break;
-			case EIslandObjectiveType::DefeatAllEnemies:
-				TargetPC->Client_AddEnemiesObjective(10);
-				break;
-			case EIslandObjectiveType::Survival:
-				TargetPC->Client_AddPandoraObjective();
-				break;
-			case EIslandObjectiveType::MoveThePayload:
-				TargetPC->Client_AddPayloadObjective();
-				break;
-			}
+			TargetPC->Client_AddFlagObjective(NumFlags);
+		}
+	}
+}
+
+void AIslandGenerationTest::AddEnemiesObjectiveToAll(int TotalEnemies)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			TargetPC->Client_AddEnemiesObjective(TotalEnemies);
+		}
+	}
+}
+
+void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			// Now passing the Time variable through to the Client RPC
+			TargetPC->Client_AddPandoraObjective(Time);
+		}
+	}
+}
+
+void AIslandGenerationTest::AddPayloadObjectiveToAll()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			TargetPC->Client_AddPayloadObjective();
 		}
 	}
 }
 
 void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
 {
-	int flagAmount = FMath::RandRange(GenerationValuesComponent->FlagObjectiveValues.FlagAmountMin, GenerationValuesComponent->FlagObjectiveValues.FlagAmountMax);
+	auto& Flag = GenerationValuesComponent->FlagObjectiveValues;
+	int flagAmount = FMath::RandRange(Flag.FlagAmountMin, Flag.FlagAmountMax);
 	int enemyZoneAmount = 1;
 	int survivalZoneAmount = 1;
 
@@ -547,7 +566,7 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 	case EIslandObjectiveType::CaptureTheFlag:
 		ObjectiveAmount = flagAmount;
 
-		AddObjectiveToAllControllers(EIslandObjectiveType::CaptureTheFlag);
+		AddFlagObjectiveToAll(ObjectiveAmount);
 
 		//Override previously initialized tiles with capturable flag tiles
 		for (int i = 0; i < ObjectiveAmount; i++)
@@ -583,7 +602,7 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 
 		for (int i = 0; i < ObjectiveAmount; i++)
 		{
-		AddObjectiveToAllControllers(EIslandObjectiveType::DefeatAllEnemies);
+			AddEnemiesObjectiveToAll(ObjectiveAmount);
 
 			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
 
@@ -613,7 +632,7 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 		break;
 	case EIslandObjectiveType::MoveThePayload:
 
-		AddObjectiveToAllControllers(EIslandObjectiveType::MoveThePayload);
+		AddPayloadObjectiveToAll();
 
 		if (IslandObjective == EIslandObjectiveType::MoveThePayload)
 		{
@@ -645,9 +664,11 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 
 		break;
 	case EIslandObjectiveType::Survival:
+
+		auto& Survival = GenerationValuesComponent->SurvivalZoneObjectiveValues;
 		ObjectiveAmount = survivalZoneAmount;
 
-		AddObjectiveToAllControllers(EIslandObjectiveType::Survival);
+		AddPandoraObjectiveToAll(Survival.SurvivalDuration);
 
 		//Override previously initialized tiles with survival zone tiles
 		for (int i = 0; i < ObjectiveAmount; i++)
@@ -1309,7 +1330,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 			newZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
-
+			newZone->Duration = GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
 			newZone->Activate();
 		}
 

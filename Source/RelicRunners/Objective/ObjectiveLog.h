@@ -25,5 +25,5 @@ public:
     void InitializeObjectives(class UObjectiveItemData* RootLevel);
     void AddObjective(UObjectiveItemData* Parent, UObjectiveItemData* NewChild);
     void UpdateObjective(UObjectiveItemData* ObjectiveToUpdate);
-
+    void RefreshLog(UObjectiveItemData* Parent);
 };

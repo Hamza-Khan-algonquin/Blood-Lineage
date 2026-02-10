@@ -787,6 +787,75 @@ void ARelicRunnersPlayerController::SetupObjectives()
 	}
 }
 
+void ARelicRunnersPlayerController::UpdatePayloadObjective(float NewProgress)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) {
+		UE_LOG(LogTemp, Warning, TEXT("Update failed: Missing Title or Log Widget!"));
+		return;
+	}
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UPayloadData* PayloadGoal = Cast<UPayloadData>(SubObj))
+		{
+			PayloadGoal->ProgressFraction = NewProgress;
+			ObjectiveLog->UpdateObjective(PayloadGoal);
+			return;
+		}
+	}
+	UE_LOG(LogTemp, Error, TEXT("Could not find PayloadData in SubObjectives!"));
+}
+
+void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UEnemiesData* EnemiesGoal = Cast<UEnemiesData>(SubObj))
+		{
+			EnemiesGoal->EnemiesRemaining = EnemiesLeft;
+			ObjectiveLog->UpdateObjective(EnemiesGoal);
+			return;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::UpdateFlagObjective(int FlagIndex, bool bIsActive)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
+		{
+			if (FlagIndex == 1) FlagGoal->Flag1Active = bIsActive;
+			else if (FlagIndex == 2) FlagGoal->Flag2Active = bIsActive;
+			else if (FlagIndex == 3) FlagGoal->Flag3Active = bIsActive;
+
+			ObjectiveLog->UpdateObjective(FlagGoal);
+			return;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FString NewTimeText)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UPandoraData* PandoraGoal = Cast<UPandoraData>(SubObj))
+		{
+			PandoraGoal->Percent = NewPercent;
+			PandoraGoal->TimeRemainingText = NewTimeText;
+
+			ObjectiveLog->UpdateObjective(PandoraGoal);
+			return;
+		}
+	}
+}
+
 void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
@@ -795,9 +864,14 @@ void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
 	PayloadGoal->ProgressFraction = 0.0f;
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
+
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, PayloadGoal]()
+		{
+			ClearOldObjectives();
+		}, 3.0f, false);
 }
 
-void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation()
+void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int NumFlags)
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
@@ -807,6 +881,11 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation()
 	FlagGoal->Flag3Active = false;
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
+
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, FlagGoal]()
+		{
+			ClearOldObjectives();
+		}, 3.0f, false);
 }
 
 void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(int TotalEnemies)
@@ -817,17 +896,47 @@ void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(in
 	EnemiesGoal->EnemiesRemaining = TotalEnemies;
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
+
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, EnemiesGoal]()
+		{
+			ClearOldObjectives();
+		}, 3.0f, false);
 }
 
-void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation()
+void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(float Time)
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
 	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
-	PandoraGoal->Percent = 0.0f;
-	PandoraGoal->TimeRemainingText = FString("00:00");
+	PandoraGoal->Percent = 1.0f;
+
+	int Minutes = FMath::FloorToInt(Time / 60.0f);
+	int Seconds = FMath::CeilToInt(FMath::Fmod(Time, 60.0f));
+	if (Seconds == 60) { Seconds = 0; Minutes++; }
+
+	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
+
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, PandoraGoal]()
+		{
+			ClearOldObjectives();
+		}, 3.0f, false);
+}
+
+void ARelicRunnersPlayerController::ClearOldObjectives()
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	if (ObjectiveStageTitle->SubObjectives.Num() > 1)
+	{
+		for (int i = ObjectiveStageTitle->SubObjectives.Num() - 1; i > 0; --i)
+		{
+			ObjectiveStageTitle->SubObjectives.RemoveAt(i);
+		}
+
+		ObjectiveLog->RefreshLog(ObjectiveStageTitle);
+	}
 }
 
 void ARelicRunnersPlayerController::InitLocalUI()

@@ -51,17 +51,22 @@ public:
 	UFUNCTION()
 	void UpdateTimelineComp(float Output);
 
+	void UpdateObjectiveToAllControllers(float NewPercent, FString TimerText);
+
 	UFUNCTION()
 	void OnTimelineEnd();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_HandleOverlapEnter(AActor* OtherActor, bool OnOverlapBegin);
 
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(Replicated)
 	float Duration;
 
 	UPROPERTY(Replicated)
 	float Remaining;
+
+	UPROPERTY(Replicated)
+	float CompletionPercentage;
 
 	UPROPERTY(Replicated)
 	TArray<AActor*> CollidingActors;

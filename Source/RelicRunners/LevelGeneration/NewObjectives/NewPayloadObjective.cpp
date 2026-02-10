@@ -8,6 +8,7 @@
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include <Net/UnrealNetwork.h>
+#include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 
 // Sets default values
 ANewPayloadObjective::ANewPayloadObjective() :
@@ -57,6 +58,18 @@ void ANewPayloadObjective::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ANewPayloadObjective::UpdateObjectiveToAllControllers(float NewPercentage)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get());
+		if (TargetPC)
+		{
+			TargetPC->UpdatePayloadObjective(NewPercentage);
+		}
+	}
+}
+
 // Called every frame
 void ANewPayloadObjective::Tick(float DeltaTime)
 {
@@ -76,14 +89,21 @@ void ANewPayloadObjective::Tick(float DeltaTime)
 
 		Distance = FMath::FInterpConstantTo(Distance, SplinePath->GetSplineLength(), DeltaTime, CurrentSpeed);
 
-		CompletionPercentage = (SplinePath->GetSplineLength() / Distance) * 100.0f;
+		float TotalLength = SplinePath->GetSplineLength();
+		float NewPercentage = (TotalLength > 0.0f) ? FMath::Clamp(Distance / TotalLength, 0.0f, 100.0f) : 0.0f;
+
+		//Update UI
+		if (!FMath::IsNearlyEqual(NewPercentage, CompletionPercentage, 0.001f))
+		{
+			CompletionPercentage = NewPercentage;
+			UpdateObjectiveToAllControllers(CompletionPercentage);
+		}
 
 		SetActorTransform(SplinePath->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World));
 
 		if (Distance >= SplinePath->GetSplineLength() && !HasReachedDestination)
 		{
 			HasReachedDestination = true;
-			GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Yellow, FString::Printf(TEXT("Payload has reached destination")));
 			TriggerCollision->SetGenerateOverlapEvents(false);
 			PrimaryActorTick.bCanEverTick = false;
 

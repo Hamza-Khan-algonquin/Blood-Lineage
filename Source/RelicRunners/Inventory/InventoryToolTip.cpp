@@ -41,7 +41,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
 {
     B_Rarity->SetBrushColor(HoveredColor);
     TB_RarityTooltip->SetText(FText::FromString(HoveredItem->GetRarity()));
-    TB_RarityTooltip->SetColorAndOpacity(FLinearColor::White);
+    //TB_RarityTooltip->SetColorAndOpacity(FLinearColor::White);
 
     TB_ItemTypeTooltip->SetText(FText::FromString(HoveredItem->GetItemType()));
     FLinearColor BorderColor = FLinearColor(0.165f, 0.13f, 0.082f, 1.0f);
@@ -49,7 +49,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
     //B_ItemType->SetBrushColor(BorderColor);
 
     TB_LevelTooltip->SetText(FText::FromString(FString::FromInt(HoveredItem->GetLevel())));
-    TB_LevelTooltip->SetColorAndOpacity(FLinearColor::White);
+    //TB_LevelTooltip->SetColorAndOpacity(FLinearColor::White);
 
     const bool HasEquipped = EquippedItem != nullptr;
 
@@ -90,7 +90,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
             Stat.HoveredBox->SetVisibility(ESlateVisibility::Visible);
             Stat.HoveredBorder->SetVisibility(ESlateVisibility::Visible);
             Stat.HoveredText->SetText(FText::FromString(Stat.Label));
-            Stat.HoveredText->SetColorAndOpacity(FLinearColor::White);
+            //Stat.HoveredText->SetColorAndOpacity(FLinearColor::White);
             //Stat.HoveredBorder->SetBrushColor(BorderColor);
 
             if (Stat.Label == "Gold")

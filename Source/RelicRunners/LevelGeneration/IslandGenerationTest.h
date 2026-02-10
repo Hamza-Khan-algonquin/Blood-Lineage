@@ -119,7 +119,13 @@ public:
 
 	void CreateSplinePathStartToEnd(int startingIndex, int targetIndex, int width, class ANewPayloadObjective* payloadActor);
 
-	void AddObjectiveToAllControllers(EIslandObjectiveType Type);
+	void AddFlagObjectiveToAll(int NumFlags);
+
+	void AddEnemiesObjectiveToAll(int TotalEnemies);
+
+	void AddPandoraObjectiveToAll(float Time);
+
+	void AddPayloadObjectiveToAll();
 
 	//Initializes the objective
 	void InitializeObjectives(int startingIndex, int endingIndex);

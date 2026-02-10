@@ -36,7 +36,18 @@ void UObjectiveLog::UpdateObjective(UObjectiveItemData* ObjectiveToUpdate)
 {
     if (!ObjectiveTreeView || !ObjectiveToUpdate) return;
 
-    ObjectiveTreeView->RequestRefresh();
+    ObjectiveTreeView->RegenerateAllEntries();
+}
+
+void UObjectiveLog::RefreshLog(UObjectiveItemData* Parent)
+{
+    if (ObjectiveTreeView)
+    {
+        ObjectiveTreeView->SetItemExpansion(Parent, false);
+        ObjectiveTreeView->SetItemExpansion(Parent, true);
+
+        ObjectiveTreeView->RequestRefresh();
+    }
 }
 
 void UObjectiveLog::HandleGetItemChildren(UObject* Item, TArray<UObject*>& OutChildren)

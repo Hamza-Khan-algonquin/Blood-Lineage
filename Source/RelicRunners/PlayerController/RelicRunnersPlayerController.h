@@ -44,14 +44,22 @@ public:
 	void HandleLevelUpVisuals();
 	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
 	void TravelCleanUI();
+	void UpdatePayloadObjective(float NewProgress);
+	void UpdateEnemiesObjective(int EnemiesLeft);
+	void UpdateFlagObjective(int FlagIndex, bool bIsActive);
+	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
+
+	UFUNCTION()
+	void ClearOldObjectives();
+
 	UFUNCTION(Client, Reliable)
-	void Client_AddFlagObjective();
+	void Client_AddFlagObjective(int NumFlags);
 
 	UFUNCTION(Client, Reliable)
 	void Client_AddEnemiesObjective(int TotalEnemies);
 
 	UFUNCTION(Client, Reliable)
-	void Client_AddPandoraObjective();
+	void Client_AddPandoraObjective(float Time);
 
 	UFUNCTION(Client, Reliable)
 	void Client_AddPayloadObjective();
@@ -174,6 +182,7 @@ public:
 	FTimerHandle UIInitialSyncTimerHandle;
 	FTimerHandle SyncDataTimerHandle;
 	FTimerHandle DisableUITimer;
+	FTimerHandle ObjectiveClearTimerHandle;
 
 protected:
 
