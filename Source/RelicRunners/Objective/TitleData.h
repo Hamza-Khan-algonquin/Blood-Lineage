@@ -13,9 +13,6 @@ class RELICRUNNERS_API UTitleData : public UObjectiveItemData
 public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
-    FText LevelName;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
     int CurrentZones;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")

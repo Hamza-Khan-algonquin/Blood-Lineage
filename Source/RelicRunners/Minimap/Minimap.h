@@ -19,6 +19,8 @@ public:
 
 	class UTextureRenderTarget2D* CreateRenderTarget(class ARelicRunnersCharacter* Owner);
 
+	void SetLevelTitle(FText title);
+
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_Minimap;
 	
@@ -27,4 +29,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
 	TObjectPtr<UMaterialInterface> MinimapBaseMaterial;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Title;
 };

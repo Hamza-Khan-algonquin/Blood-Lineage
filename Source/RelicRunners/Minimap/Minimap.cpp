@@ -3,6 +3,7 @@
 
 #include "Minimap.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include <RelicRunners/RelicRunnersCharacter.h>
 #include "Components/SceneCaptureComponent2D.h"
@@ -47,4 +48,9 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 	Owner->MinimapCaptureComponent->ShowFlags.SetDynamicShadows(false);
 
 	return RenderTarget;
+}
+
+void UMinimap::SetLevelTitle(FText title)
+{
+	TB_Title->SetText(title);
 }

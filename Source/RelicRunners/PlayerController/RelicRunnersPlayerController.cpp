@@ -766,18 +766,24 @@ void ARelicRunnersPlayerController::SetupObjectives()
 
 		if (MapName.Contains(TEXT("ShopDemo")))
 		{
-			ObjectiveStageTitle->LevelName = FText::FromString("Forge");
+			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveStageTitle->CurrentZones = 0;
+		}
+		else if (MapName.Contains(TEXT("ThirdPersonMap")))
+		{
 			ObjectiveStageTitle->TotalZones = 0;
 			ObjectiveStageTitle->CurrentZones = 0;
 		}
 		else if (MapName.Contains(TEXT("IslandTest")))
 		{
-			ObjectiveStageTitle->LevelName = FText::FromString("Stage 1");
 			ObjectiveStageTitle->TotalZones = 5;
 			ObjectiveStageTitle->CurrentZones = 0;
 		}
 
-		ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
+		if (ObjectiveStageTitle->TotalZones != 0)
+		{
+			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
+		}
 	}
 }
 
@@ -850,6 +856,20 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			MinimapWidget->AddToViewport();
 			MinimapWidget->SetVisibility(ESlateVisibility::Hidden);
 			MinimapWidget->SetIsEnabled(false);
+
+			UWorld* World = GetWorld();
+			if (!World) return;
+
+			const FString MapName = World->GetMapName();
+
+			if (MapName.Contains(TEXT("ShopDemo")))
+			{
+				MinimapWidget->SetLevelTitle(FText::FromString("Forge"));
+			}
+			else if (MapName.Contains(TEXT("IslandTest")))
+			{
+				MinimapWidget->SetLevelTitle(FText::FromString("Stage"));
+			}
 		}
 	}
 
