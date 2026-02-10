@@ -13,8 +13,5 @@ class RELICRUNNERS_API UTitleObjective : public UUserWidget
 public:
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Title;
-
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Text;
 };

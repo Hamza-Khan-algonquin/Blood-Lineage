@@ -28,8 +28,6 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
 
         if (UTitleObjective* Widget = Cast<UTitleObjective>(WidgetSwitcher->GetActiveWidget()))
         {
-            Widget->TB_Title->SetText(TitleData->LevelName);
-
             FString ZoneString;
             if (TitleData->TotalZones == 0)
             {
