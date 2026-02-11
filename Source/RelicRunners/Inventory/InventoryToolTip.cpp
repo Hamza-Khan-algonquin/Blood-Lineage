@@ -96,7 +96,7 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
             if (Stat.Label == "Gold")
             {
                 Stat.HoveredText->SetText(FText::FromString(FString::FromInt(Stat.Value)));
-                Stat.HoveredText->SetColorAndOpacity(FLinearColor(1, 1, 0.3, 1));
+                //Stat.HoveredText->SetColorAndOpacity(FLinearColor(1, 1, 0.3, 1));
                 //Stat.HoveredBorder->SetBrushColor(GoldBorderColor);
 
                 if (HoveredItem->ItemData.ItemType == "Greatsword"

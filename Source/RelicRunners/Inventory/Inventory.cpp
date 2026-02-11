@@ -291,7 +291,7 @@ void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemT
     {
         Components.LevelText->SetText(FText::AsNumber(Item->GetLevel()));
         Components.LevelBorder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-        Components.LevelBorder->SetBrushColor(Color);
+        Components.LevelBorder->SetBrushColor(FLinearColor(0.8, 0.8, 0.6, 1));
     }
     else
     {
@@ -982,7 +982,7 @@ void UInventory::UpdateForgeUI()
         FLinearColor color = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemLeft->GetRarity()].Color;
         ItemFrame->SetBrushTintColor(color);
         B_ForgeItem1->SetBrushColor(color);
-        B_Level->SetBrushColor(color);
+        B_Level->SetBrushColor(FLinearColor(0.8, 0.8, 0.6, 1));
         B_Level->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
         SetForgeTooltip(I_ForgeItem1, B_ForgeItem1, InventoryComponent->ForgeItemLeft);
     }
@@ -1013,7 +1013,7 @@ void UInventory::UpdateForgeUI()
         FLinearColor color = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemRight->GetRarity()].Color;
         ItemFrame_1->SetBrushTintColor(color);
         B_ForgeItem2->SetBrushColor(color);
-        B_Level_1->SetBrushColor(color);
+        B_Level_1->SetBrushColor(FLinearColor(0.8, 0.8, 0.6, 1));
         B_Level_1->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
         SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, InventoryComponent->ForgeItemRight);
     }
@@ -1066,7 +1066,7 @@ void UInventory::UpdateForgeUI()
         TB_ForgeItemResultLevel->SetText(FText::AsNumber(InventoryComponent->ForgeItemResult->ItemData.Level));
         FLinearColor RarityColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->GetRarity()].Color;
         B_ForgeItemResult->SetBrushColor(RarityColor);
-        B_Level_2->SetBrushColor(RarityColor);
+        B_Level_2->SetBrushColor(FLinearColor(0.8, 0.8, 0.6, 1));
         B_Level_2->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
         ItemFrame_2->SetBrushTintColor(RarityColor);
         SetForgeTooltip(I_ForgeItemResult, B_ForgeItemResult, InventoryComponent->ForgeItemResult);

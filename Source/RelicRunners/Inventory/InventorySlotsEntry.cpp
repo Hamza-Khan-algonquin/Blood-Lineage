@@ -53,13 +53,13 @@ void UInventorySlotsEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     ParentInventory = GetTypedOuter<UInventory>();
 
     TB_Level->SetText(FText::FromString(FString::FromInt(Item->GetLevel())));
-    TB_Level->SetColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f, 1));
+    //TB_Level->SetColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f, 1));
 
     //Set border color by rarity
     FLinearColor ItemFrameColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
     B_Item->SetBrushColor(ItemFrameColor);
     B_Color->SetBrushColor(ItemFrameColor);
-    B_Level->SetBrushColor(ItemFrameColor);
+    B_Level->SetBrushColor(FLinearColor(0.8, 0.8,0.6,1));
     ItemFrame->SetBrushTintColor(ItemFrameColor);
     I_Item->SetBrushFromTexture(Item->ItemData.Icon);
 
