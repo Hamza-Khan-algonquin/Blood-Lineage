@@ -60,7 +60,8 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 	FVector finalInflunceVector = { 0,0,0 };
 
 	FVector targetDirection;
-	float distanceFromTargetRadius;
+	//just define as a big number to get ride of a warning
+	float distanceFromTargetRadius = 100000;
 
 	//int boidsEffectingSeparation = 0;
 
@@ -140,7 +141,7 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), separationVector.X, separationVector.Y, separationVector.Z);
 	if (Commander->TargetPlayer)
 	{
-		if (FMath::Abs(distanceFromTargetRadius) > 50)
+		if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
 		{
 			targetVector = targetDirection.GetSafeNormal() * FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceWeight, MaxTargetDistanceWeight);
 		}

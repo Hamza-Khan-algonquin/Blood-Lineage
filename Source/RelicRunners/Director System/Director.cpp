@@ -51,6 +51,11 @@ ADirector* ADirector::GetInstance(const UObject* WorldContext)
 {
 	UWorld* world = WorldContext->GetWorld();
 
+	if (!world)
+	{
+		return nullptr;
+	}
+
 	if (Instance.IsValid())
 	{
 		return Instance.Get();

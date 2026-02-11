@@ -23,6 +23,16 @@ ACommanderController::ACommanderController()
 	TimeToAttack = 1;
 }
 
+ACommanderController::~ACommanderController()
+{
+	ADirector* director = ADirector::GetInstance(this);
+	if (director)
+	{
+		director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
+		director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
+	}
+}
+
 void ACommanderController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -43,7 +53,7 @@ void ACommanderController::Tick(float DeltaTime)
 	
 
 	UpdateLODs(players, pawn->GetActorLocation());
-	AttackCheck(players);
+	AttackCheck(players, DeltaTime);
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
@@ -94,25 +104,37 @@ void ACommanderController::SpawnPawnEnemy()
 	AddPawnEnemy(newEnemy);
 }
 
+inline void ACommanderController::AddPlayerToTimeToAttack(APawn* player)
+{
+	RemainingTimeToAttack.Add(player, TimeToAttack);
+}
+
+inline void ACommanderController::RemovePlayerFromTimeToAttack(APawn* player)
+{
+	RemainingTimeToAttack.Remove(player);
+}
+
 void ACommanderController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	GetWorldTimerManager().SetTimerForNextTick([this]()
 		{
-			ADirector* Director = ADirector::GetInstance(this);
-			if (Director)
+			ADirector* director = ADirector::GetInstance(this);
+			if (director)
 			{
-				TArray<APawn*> players = Director->GetPlayers();
+				TArray<APawn*> players = director->GetPlayers();
 				for (int i = 0; i < players.Num(); i++)
 				{
 					if (players[i])
 					{
-						RemainingTimeToAttack.Add(players[i], TimeToAttack);
-
+						AddPlayerToTimeToAttack(players[i]);
 						break;
 					}
 				}
+
+				director->OnPlayerAdd.AddDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
+				director->OnPlayerRemoved.AddDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
 			}
 			else
 			{
@@ -175,27 +197,59 @@ void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLo
 	}
 }
 
-void ACommanderController::AttackCheck(TArray<APawn*> players)
+void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 {
+	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0)
+	{
+		return;
+	}
+	/*ADirector* director = ADirector::GetInstance(this);
+	if (!director)
+	{
+		return;
+	}*/
+
 	//loop through all players and check to see if they are available to be attack through the member varaible map and it to array
-
-	//loop through all enemies
-
-		//check what the close player to it and if it is in target radius
-
-		//check to see if it is the closest enemy
-
-			//set it as the enemy to attack this time in a map with the key be the players
+	//for (auto& it : RemainingTimeToAttack)
+	//{
+	//	if(it.Value <= 0)
+	//	{ }
+	//}
 
 
+	//loop through all players
+	for (int i = 0; i < players.Num(); i++)
+	{
+		//check what the close enemy to it and if it is in the enemies target radius
+		float closestDistance = FVector::DistSquared(players[i]->GetActorLocation(), ControlledEnemies[0]->GetActorLocation());
+		AEnemyPawn* closestEnemy = ControlledEnemies[0];
 
-	//loop through the array of players
+		for (int j = 1; j < ControlledEnemies.Num(); j++)
+		{
+			float newDistance = FVector::DistSquared(players[i]->GetActorLocation(), ControlledEnemies[j]->GetActorLocation());
+			if (closestDistance > newDistance)
+			{
+				closestDistance = newDistance;
+				closestEnemy = ControlledEnemies[j];
+			}
+		}
 
-		//check the map to get for the player keyed to a enemy
+		float trueDistance = FMath::Sqrt(closestDistance);
+		//check to see if the enemy is in their target Radius
+		if (trueDistance <= closestEnemy->MovementComponent->GetTotalTargetRadius())
+		{
+			if (RemainingTimeToAttack.Contains(players[i]) && RemainingTimeToAttack[players[i]] > 0)
+			{
+				RemainingTimeToAttack[players[i]] -= delta;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
+				RemainingTimeToAttack[players[i]] = TimeToAttack;
+			}
+		}
 
-		//command the enemy to attack
-
-	//rest the remaining time
+	}
 }
 
 void ACommanderController::UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer)

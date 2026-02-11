@@ -15,6 +15,7 @@ class RELICRUNNERS_API UEnemyBoidMovementComponent : public UPawnMovementCompone
 public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<ACommanderController> Commander;
+	
 protected:
 	UPROPERTY(EditAnywhere)
 	float VisualRange;
@@ -34,6 +35,8 @@ protected:
 	float MaxSpeed;
 	UPROPERTY(EditAnywhere)
 	float TargetRadius;
+	UPROPERTY(EditAnywhere)
+	float TargetDeadZone;
 
 	UPROPERTY(EditAnywhere)
 	float CoherenceWeight;
@@ -67,4 +70,5 @@ public:
 	//check to see if another boid is in range and feild of view
 	bool CanSeeOtherBoid(APawn* otherBoid, FVector& directionToBoid, float& distanceToBoid);
 	const FVector GetVelocity();
+	float GetTotalTargetRadius() { return TargetRadius + TargetDeadZone; }
 };

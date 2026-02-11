@@ -20,6 +20,11 @@ AObjectPoolManager* AObjectPoolManager::GetInstance(const UObject* WorldContext)
 {
 	UWorld* world = WorldContext->GetWorld();
 
+	if (!world)
+	{
+		return nullptr;
+	}
+
 	if (world->IsNetMode(NM_Client))
 	{
 		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager::GetInstance called on client! This should only be called on the server!"));

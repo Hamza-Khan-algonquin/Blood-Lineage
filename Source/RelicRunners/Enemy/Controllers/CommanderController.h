@@ -7,6 +7,7 @@
 #include "CommanderController.generated.h"
 
 class AEnemyPawn;
+class APawn;
 class UAIPerceptionComponent;
 
 UCLASS()
@@ -52,6 +53,7 @@ protected:
 	
 public: 
 	ACommanderController();
+	~ACommanderController();
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -63,6 +65,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void SpawnPawnEnemy();
+
+	UFUNCTION(BlueprintCallable)
+	void AddPlayerToTimeToAttack(APawn* player);
+	UFUNCTION(BlueprintCallable)
+	void RemovePlayerFromTimeToAttack(APawn* player);
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
@@ -70,7 +77,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void UpdateLODs(TArray<APawn*> players, FVector refernceLocation);
 	UFUNCTION(BlueprintCallable)
-	void AttackCheck(TArray<APawn*> players);
+	void AttackCheck(TArray<APawn*> players, float delta);
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer);
 };

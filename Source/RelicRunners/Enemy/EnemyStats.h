@@ -68,7 +68,7 @@ public:
 	UFUNCTION(BlueprintSetter)
 	void SetChanceToDropItem(float newChance) { ChanceToDropItem = FMath::Clamp(newChance, 0.0f, 1.0f); };
 	UFUNCTION(BlueprintSetter)
-	void SetChanceToDropItem(float newAttack) { AttackDamage = newAttack; };
+	void SetAttackDamage(float newAttack) { AttackDamage = newAttack; };
 
 	UFUNCTION(BlueprintCallable)
 	void AddToCurrentHealth(float healthToAdd) { CurrentHealth = FMath::Clamp(CurrentHealth + healthToAdd, 0.0f, MaxHealth); };
