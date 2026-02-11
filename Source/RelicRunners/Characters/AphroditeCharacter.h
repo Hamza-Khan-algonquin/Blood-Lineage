@@ -59,6 +59,9 @@ protected:
 	UPROPERTY()
 	float ProjectileElapsed = 0.f;
 
+	UPROPERTY()
+	float ProjectileDamage;
+
 	FVector PreviousProjectileLocation;
 
 	FTimerHandle TimerHandle_AttackCooldown;

@@ -193,12 +193,12 @@ void AArtemisCharacter::BasicAttack()
 void AArtemisCharacter::HeavyAttack()
 {
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-	if (!CanBasicAttack) return;
+	if (!CanHeavyAttack) return;
 	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-	CanBasicAttack = false;
+	CanHeavyAttack = false;
 
-	ProjectileDamage = 200.0f;
+	ProjectileDamage = 100.0f;
 
 	// Spawn projectile
 	bProjectileActive = true;
@@ -227,7 +227,7 @@ void AArtemisCharacter::HeavyAttack()
 	}
 
 	// Cooldown
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AArtemisCharacter::Tick(float DeltaTime)

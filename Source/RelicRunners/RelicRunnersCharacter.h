@@ -207,6 +207,7 @@ protected:
 	FTimerHandle HealthRegenTimerHandle;
 	FTimerHandle DelegateBindHandle;
 	FTimerHandle TimerHandle_AttackCooldown;
+	FTimerHandle TimerHandle_HeavyAttackCooldown;
 
 	//Stored Classes
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")

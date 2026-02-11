@@ -201,17 +201,17 @@ void ANemesisCharacter::HeavyAttack()
 {
     if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-    if (!CanBasicAttack) return;
-    CanBasicAttack = false;
+    if (!CanHeavyAttack) return;
+    CanHeavyAttack = false;
 
-    Damage = 200.0f;
+    Damage = 10.0f;
 
     if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
     {
         PlayRandomAttackAnimation();
     }
 
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void ANemesisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)

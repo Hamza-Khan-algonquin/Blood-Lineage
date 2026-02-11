@@ -19,7 +19,7 @@ AAphroditeCharacter::AAphroditeCharacter()
     bProjectileActive = false;
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
-
+    ProjectileDamage = 90.0f;
 }
 
 void AAphroditeCharacter::BeginPlay()
@@ -152,6 +152,8 @@ void AAphroditeCharacter::BasicAttack()
     if (!CanBasicAttack) return;
     CanBasicAttack = false;
 
+    ProjectileDamage = 90.0f;
+
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
     // Spawn projectile
@@ -174,6 +176,8 @@ void AAphroditeCharacter::HeavyAttack()
 
     if (!CanHeavyAttack) return;
     CanHeavyAttack = false;
+
+    ProjectileDamage = 120.0f;
 
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
