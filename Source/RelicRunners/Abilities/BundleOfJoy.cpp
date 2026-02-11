@@ -36,6 +36,7 @@ UBundleOfJoy::UBundleOfJoy()
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
+    Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
     float CurrentTime = ActorInfo->AvatarActor->GetWorld()->GetTimeSeconds();
 

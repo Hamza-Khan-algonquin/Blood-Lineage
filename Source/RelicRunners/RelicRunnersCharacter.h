@@ -24,6 +24,7 @@
 #include "Abilities/WarBannerAbility.h"
 #include "Abilities/ImpunityAbility.h"
 #include "Abilities/EarthquakeAbility.h"
+#include "Abilities/BackStab.h"
 #include "Abilities/BundleOfJoy.h"
 #include "Abilities/MarkOfTheHunt.h"
 #include "Abilities/RageOfTheGods.h"

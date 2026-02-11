@@ -67,6 +67,8 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+    LastUseTime = World->GetTimeSeconds();
+
     KillEnemiesInRadius(ActorInfo->AvatarActor->GetActorLocation());
 
 }
@@ -81,7 +83,10 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
 
     //DrawDebugSphere(World, Center, AreaRadius, 32, FColor::Purple, false, Duration, 0, 4.f);
 
-    UNiagaraFunctionLibrary::SpawnSystemAtLocation(AvatarActor->GetWorld(),AbilityVFX,FVector(Center.X, Center.Y, Center.Z - 100),FRotator(0, 0, 0),FVector(2.f),true,true);
+    if (AbilityVFX)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(AvatarActor->GetWorld(), AbilityVFX, FVector(Center.X, Center.Y, Center.Z - 100), FRotator(0, 0, 0), FVector(2.f), true, true);
+    }
 
     DamageTicksElapsed = 0;
 

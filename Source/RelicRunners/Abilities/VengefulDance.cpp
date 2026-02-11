@@ -21,6 +21,7 @@ UVengefulDance::UVengefulDance()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
     Cost = 50;
+
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
       TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash")
   );
@@ -101,15 +102,7 @@ void UVengefulDance::ApplyRingDamage()
 
     if (AbilityVFX)
     {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            AvatarActor->GetWorld(),
-            AbilityVFX,
-            AvatarActor->GetActorLocation() + FVector(0, 0, 0),
-            AvatarActor->GetActorRotation() + FRotator(0, 0, 90),
-            FVector(1.5f),
-            true,
-            true
-        );
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(AvatarActor->GetWorld(),AbilityVFX,AvatarActor->GetActorLocation() + FVector(0, 0, 0),AvatarActor->GetActorRotation() + FRotator(0, 0, 90),FVector(1.5f),true, true);
     }
 
 

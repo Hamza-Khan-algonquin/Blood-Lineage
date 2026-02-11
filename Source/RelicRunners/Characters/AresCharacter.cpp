@@ -27,6 +27,9 @@ void AAresCharacter::BeginPlay()
 
 		// Give War Banner ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UWarBannerAbility::StaticClass(), 1, 0));
+
+		// Give Rage of the Gods ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(URageOfTheGods::StaticClass(), 1, 0));
 	}
 
 }
@@ -101,7 +104,7 @@ void AAresCharacter::GiveUltimateAbilities()
 
 	if (AbilitySystem)
 	{
-
+		AbilitySystem->TryActivateAbilityByClass(URageOfTheGods::StaticClass());
 	}
 }
 

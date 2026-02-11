@@ -29,6 +29,9 @@ void ANemesisCharacter::BeginPlay()
         // Give Vengeful Dance ability
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(UVengefulDance::StaticClass(), 1, 0));
 
+        // Give Back Stab ability
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBackStab::StaticClass(), 1, 0));
+
 	}
 
     ////Starting Stats
@@ -83,7 +86,8 @@ void ANemesisCharacter::GiveDamageAbilities()
 
     if (AbilitySystem)
     {
-
+        // Activate Back Stab ability
+        AbilitySystem->TryActivateAbilityByClass(UBackStab::StaticClass());
     }
 }
 
