@@ -196,6 +196,7 @@ protected:
 	void UltimateAbility();
 	void HealthPotion();
 	void BasicAttack();
+	void HeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
 
@@ -244,6 +245,8 @@ protected:
 	class UInputAction* LookAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* BasicAttackAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* HeavyAttackAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* DamageAbilityAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))

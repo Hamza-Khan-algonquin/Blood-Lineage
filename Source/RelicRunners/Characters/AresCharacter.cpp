@@ -174,6 +174,21 @@ void AAresCharacter::BasicAttack()
 	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&ARelicRunnersCharacter::ResetBasicAttack,BasicAttackCooldown,false);
 }
 
+void AAresCharacter::HeavyAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+	if (!CanBasicAttack) return;
+	CanBasicAttack = false;
+
+	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+	{
+		PlayRandomAttackAnimation();
+	}
+
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+}
+
 void AAresCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {
 	if (HitActor)

@@ -15,6 +15,7 @@ UKeybinds::UKeybinds()
     KeyBinds.Add({ TEXT("Pause"),              EKeys::Escape });
     KeyBinds.Add({ TEXT("Ping"),               EKeys::MiddleMouseButton });
     KeyBinds.Add({ TEXT("Basic Attack"),       EKeys::LeftMouseButton });
+    KeyBinds.Add({ TEXT("Heavy Attack"),       EKeys::RightMouseButton });
     KeyBinds.Add({ TEXT("Damage Ability"),     EKeys::One });
     KeyBinds.Add({ TEXT("Defence Ability"),    EKeys::Two });
     KeyBinds.Add({ TEXT("Utility Ability"),    EKeys::Three });

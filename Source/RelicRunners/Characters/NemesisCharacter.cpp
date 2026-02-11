@@ -12,6 +12,7 @@
 
 ANemesisCharacter::ANemesisCharacter()
 {
+    Damage = 20.0f;
 }
 
 void ANemesisCharacter::BeginPlay()
@@ -186,6 +187,25 @@ void ANemesisCharacter::BasicAttack()
     if (!CanBasicAttack) return;
     CanBasicAttack = false;
 
+    Damage = 5.0f;
+
+    if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+    {
+        PlayRandomAttackAnimation();
+    }
+
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+}
+
+void ANemesisCharacter::HeavyAttack()
+{
+    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+    if (!CanBasicAttack) return;
+    CanBasicAttack = false;
+
+    Damage = 200.0f;
+
     if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
     {
         PlayRandomAttackAnimation();
@@ -198,6 +218,6 @@ void ANemesisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {
     if (HitActor)
     {
-        UGameplayStatics::ApplyDamage(HitActor, 5.f, GetController(), this, nullptr);
+        UGameplayStatics::ApplyDamage(HitActor, Damage, GetController(), this, nullptr);
     }
 }

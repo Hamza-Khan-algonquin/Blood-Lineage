@@ -63,6 +63,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<UAnimInstance> HealerAnim;
 
+	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<UAnimInstance> MeleeAnim;
+
 	FString GetMeshPathByItemType(const FString& ItemType);
 	UStaticMeshComponent* GetStaticMeshComponentByItemType(const FString& ItemType);
 	void SetPreviewMeshByItemType(const FString& ItemType, UObject* MeshAsset);

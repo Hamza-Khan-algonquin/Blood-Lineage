@@ -36,6 +36,7 @@ protected:
 
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void BasicAttack() override;
+	virtual void HeavyAttack() override;
 
 	UPROPERTY()
 	bool bCanFire = true;

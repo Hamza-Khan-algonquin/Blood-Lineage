@@ -35,6 +35,13 @@ ALobbyPreview::ALobbyPreview()
         HealerAnim = HealerAnimBP.Class;
     }
 
+    static ConstructorHelpers::FClassFinder<UAnimInstance> MeleeAnimBP(TEXT("/Game/Assets/Characters/Melee/Model/ABP_melee_model"));
+
+    if (MeleeAnimBP.Succeeded())
+    {
+        MeleeAnim = MeleeAnimBP.Class;
+    }
+
     MeshComp->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
     MeshComp->SetIsReplicated(true);
 
@@ -147,6 +154,7 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     {
         ItemType = "Sword";
         CharacterMeshPath = TEXT("/Game/Assets/Characters/Melee/Model/melee_model");
+        DesiredAnimBP = MeleeAnim;
     }
     else if (NewClass == "Aphrodite")
     {
@@ -183,7 +191,7 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
         {
             MeshComp->SetSkeletalMesh(CharacterMesh);
 
-            if (DesiredAnimBP == HealerAnim)
+            if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim)
             {
                 MeshComp->SetAnimationMode(EAnimationMode::AnimationBlueprint);
                 MeshComp->SetAnimInstanceClass(DesiredAnimBP);

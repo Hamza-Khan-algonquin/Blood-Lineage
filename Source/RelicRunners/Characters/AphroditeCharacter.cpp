@@ -168,6 +168,29 @@ void AAphroditeCharacter::BasicAttack()
     GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AAphroditeCharacter::ResetBasicAttack, BasicAttackCooldown, false);
 }
 
+void AAphroditeCharacter::HeavyAttack()
+{
+    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+    if (!CanHeavyAttack) return;
+    CanHeavyAttack = false;
+
+    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+
+    // Spawn projectile
+    bProjectileActive = true;
+    ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
+    ProjectileElapsed = 0.f;
+
+    PlayRandomAttackAnimation();
+
+    AlreadyHitActors.Empty();
+
+    // Cooldown
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AAphroditeCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+}
+
 void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {
     if (HitActor)
