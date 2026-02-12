@@ -379,6 +379,15 @@ public:
 	class UTextBlock* TB_Odds2;
 
 	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Odds;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Odds1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Odds2;
+
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_InventorySlots;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Username;

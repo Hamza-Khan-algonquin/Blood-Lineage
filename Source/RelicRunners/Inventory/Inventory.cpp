@@ -75,6 +75,10 @@ void UInventory::NativeConstruct()
     if (B_ForgeItem1) B_ForgeItem1->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItem1Clicked");
     if (B_ForgeItem2) B_ForgeItem2->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItem2Clicked");
     if (B_ForgeItemResult) B_ForgeItemResult->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItemResultClicked");
+
+    if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
+    if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
+    if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
 }
 
 FEventReply UInventory::OnForgeItem1Clicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent)
@@ -888,30 +892,66 @@ void UInventory::CompleteForgeSequence()
 
     FLinearColor FinalColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color;
 
+    if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
+    if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
+    if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
+
     UpdateForgeUI();
 
     if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity1)
     {
-        TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color);
+        FLinearColor RarityColor = ItemStats::GetRarityDataMap()[ForgeRarity1].Color;
+        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
+        TB_Odds->SetColorAndOpacity(RarityColor);
+
+        FSlateFontInfo FontInfo = TB_Odds->GetFont();
+        FontInfo.OutlineSettings.OutlineColor = RarityColor;
+        TB_Odds->SetFont(FontInfo);
+
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Brittled"))));
-    }
-    if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity2)
-    {
-        TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color);
-        TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Unaffected"))));
-    }
-    if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity3)
-    {
-        TB_Odds->SetColorAndOpacity(ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color);
-        TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("Quality Polished"))));
+        TB_Odds->SetText(FText::FromString(TEXT("Quality Brittled")));
     }
 
+    if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity2)
+    {
+        FLinearColor RarityColor = ItemStats::GetRarityDataMap()[ForgeRarity2].Color;
+        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
+        TB_Odds->SetColorAndOpacity(RarityColor);
+
+        FSlateFontInfo FontInfo = TB_Odds->GetFont();
+        FontInfo.OutlineSettings.OutlineColor = RarityColor;
+        TB_Odds->SetFont(FontInfo);
+
+        TB_Odds->SetVisibility(ESlateVisibility::Visible);
+        TB_Odds->SetText(FText::FromString(TEXT("Quality Unaffected")));
+    }
+
+    if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity3)
+    {
+        FLinearColor RarityColor = ItemStats::GetRarityDataMap()[ForgeRarity3].Color;
+        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
+        TB_Odds->SetColorAndOpacity(RarityColor);
+
+        FSlateFontInfo FontInfo = TB_Odds->GetFont();
+        FontInfo.OutlineSettings.OutlineColor = RarityColor;
+        TB_Odds->SetFont(FontInfo);
+
+        TB_Odds->SetVisibility(ESlateVisibility::Visible);
+        TB_Odds->SetText(FText::FromString(TEXT("Quality Polished")));
+    }
+
+    FinalColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color;
+
     TB_Odds1->SetVisibility(ESlateVisibility::Visible);
-    TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s item!"), *InventoryComponent->ForgeItemResult->ItemData.Rarity)));
-    TB_Odds1->SetColorAndOpacity(ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color);
+    TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s item"), *InventoryComponent->ForgeItemResult->ItemData.Rarity)));
+    TB_Odds1->SetColorAndOpacity(FinalColor);
+
+    FSlateFontInfo FontInfo1 = TB_Odds1->GetFont();
+    FontInfo1.OutlineSettings.OutlineColor = FinalColor;
+    TB_Odds1->SetFont(FontInfo1);
 
     if (ItemFrame_2) ItemFrame_2->SetBrushTintColor(FinalColor);
     if (B_ForgeItemResult) B_ForgeItemResult->SetBrushColor(FinalColor);
@@ -937,22 +977,59 @@ void UInventory::UpdateForgeOdds(const FString& LeftRarity, const FString& Right
 
     if (Odds.Rarity1 == Odds.Rarity2)
     {
-        TB_Odds->SetVisibility(ESlateVisibility::Hidden);
-        TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity2, Odds.Chance1 + Odds.Chance2)));
-        TB_Odds2->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity3, Odds.Chance3)));
+        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
+
+        TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity2, Odds.Chance1 + Odds.Chance2)));
+        TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity3, Odds.Chance3)));
+        TB_Odds2->SetVisibility(ESlateVisibility::Hidden);
+
+        auto& RarityMap = ItemStats::GetRarityDataMap();
+
+        FLinearColor Color0 = RarityMap[Odds.Rarity2].Color;
+        TB_Odds->SetColorAndOpacity(Color0);
+        FSlateFontInfo Font0 = TB_Odds->GetFont();
+        Font0.OutlineSettings.OutlineColor = Color0;
+        TB_Odds->SetFont(Font0);
+
+        FLinearColor Color1 = RarityMap[Odds.Rarity3].Color;
+        TB_Odds1->SetColorAndOpacity(Color1);
+        FSlateFontInfo Font1 = TB_Odds1->GetFont();
+        Font1.OutlineSettings.OutlineColor = Color1;
+        TB_Odds1->SetFont(Font1);
     }
     else
     {
-        TB_Odds->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Visible);
+
         TB_Odds->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity1, Odds.Chance1)));
         TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity2, Odds.Chance2)));
         TB_Odds2->SetText(FText::FromString(FString::Printf(TEXT("%s: %.1f%%"), *Odds.Rarity3, Odds.Chance3)));
-    }
+        TB_Odds2->SetVisibility(ESlateVisibility::Visible);
 
-    auto& RarityMap = ItemStats::GetRarityDataMap();
-    TB_Odds->SetColorAndOpacity(RarityMap[Odds.Rarity1].Color);
-    TB_Odds1->SetColorAndOpacity(RarityMap[Odds.Rarity2].Color);
-    TB_Odds2->SetColorAndOpacity(RarityMap[Odds.Rarity3].Color);
+        auto& RarityMap = ItemStats::GetRarityDataMap();
+
+        FLinearColor Color0 = RarityMap[Odds.Rarity1].Color;
+        TB_Odds->SetColorAndOpacity(Color0);
+        FSlateFontInfo Font0 = TB_Odds->GetFont();
+        Font0.OutlineSettings.OutlineColor = Color0;
+        TB_Odds->SetFont(Font0);
+
+        FLinearColor Color1 = RarityMap[Odds.Rarity2].Color;
+        TB_Odds1->SetColorAndOpacity(Color1);
+        FSlateFontInfo Font1 = TB_Odds1->GetFont();
+        Font1.OutlineSettings.OutlineColor = Color1;
+        TB_Odds1->SetFont(Font1);
+
+        FLinearColor Color2 = RarityMap[Odds.Rarity3].Color;
+        TB_Odds2->SetColorAndOpacity(Color2);
+        FSlateFontInfo Font2 = TB_Odds2->GetFont();
+        Font2.OutlineSettings.OutlineColor = Color2;
+        TB_Odds2->SetFont(Font2);
+    }
 }
 
 void UInventory::UpdateForgeUI()
@@ -965,6 +1042,10 @@ void UInventory::UpdateForgeUI()
 
     Throbber1->SetRenderOpacity(LeftFilled ? 1.0f : 0.0f);
     Throbber2->SetRenderOpacity(RightFilled ? 1.0f : 0.0f);
+
+    if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
+    if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
+    if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
 
     SetForgeTooltip(I_ForgeItem1, B_ForgeItem1, nullptr);
     SetForgeTooltip(I_ForgeItem2, B_ForgeItem2, nullptr);
@@ -1040,6 +1121,9 @@ void UInventory::UpdateForgeUI()
     if (BothFilled)
     {
         UpdateForgeOdds(InventoryComponent->ForgeItemLeft->ItemData.Rarity, InventoryComponent->ForgeItemRight->ItemData.Rarity);
+
+        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
+        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
     }
 
     if (!LeftFilled || !RightFilled)
