@@ -29,7 +29,7 @@ public:
 
     UPROPERTY(meta = (BindWidget))
     class UButton* ConfirmButton;
-    UFUNCTION()
+    UFUNCTION(BlueprintCallable)
     void OnConfirmClicked();
     virtual void NativeConstruct() override;
 
