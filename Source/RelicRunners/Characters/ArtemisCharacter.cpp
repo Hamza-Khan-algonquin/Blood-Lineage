@@ -12,6 +12,7 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/Abilities/PiercingArrow.h"
 
 
 AArtemisCharacter::AArtemisCharacter()
@@ -38,6 +39,9 @@ void AArtemisCharacter::BeginPlay()
 
 		// Give NatureBlessing ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+
+        // Give PiercingArrow ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
 	}
 
 	if (ClassInfo)
@@ -89,7 +93,7 @@ void AArtemisCharacter::GiveDamageAbilities()
 
 	if (AbilitySystem)
 	{
-
+		AbilitySystem->TryActivateAbilityByClass(UPiercingArrow::StaticClass());
 	}
 }
 
