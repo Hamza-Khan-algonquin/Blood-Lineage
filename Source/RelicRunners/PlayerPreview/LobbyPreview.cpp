@@ -42,6 +42,13 @@ ALobbyPreview::ALobbyPreview()
         MeleeAnim = MeleeAnimBP.Class;
     }
 
+    static ConstructorHelpers::FClassFinder<UAnimInstance> RangedAnimBP(TEXT("/Game/Assets/Characters/Melee/Model/ABP_ranged_model"));
+
+    if (RangedAnimBP.Succeeded())
+    {
+        RangedAnim = RangedAnimBP.Class;
+    }
+
     MeshComp->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
     MeshComp->SetIsReplicated(true);
 
@@ -166,6 +173,7 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     {
         ItemType = "Bow";
         CharacterMeshPath = TEXT("/Game/Assets/Characters/Ranged/Model/ranged_model");
+        DesiredAnimBP = RangedAnim;
     }
     if (ItemType.IsEmpty()) return;
 
@@ -191,7 +199,7 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
         {
             MeshComp->SetSkeletalMesh(CharacterMesh);
 
-            if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim)
+            if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim)
             {
                 MeshComp->SetAnimationMode(EAnimationMode::AnimationBlueprint);
                 MeshComp->SetAnimInstanceClass(DesiredAnimBP);
