@@ -37,4 +37,8 @@ protected:
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
+	virtual void HeavyAttack() override;
+
+	UPROPERTY()
+	float Damage;
 };

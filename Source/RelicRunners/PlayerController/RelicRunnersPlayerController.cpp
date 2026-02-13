@@ -1200,6 +1200,9 @@ void ARelicRunnersPlayerController::SetupInputComponent()
 
 		// BasicAttack
 		EnhancedInputComponent->BindAction(BasicAttackAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::BasicAttack);
+
+		// HeavyAttack
+		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::HeavyAttack);
 		
 		// Abilities
 		EnhancedInputComponent->BindAction(DamageAbilityAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::DamageAbility);
@@ -1300,6 +1303,14 @@ void ARelicRunnersPlayerController::BasicAttack()
 	if (PossessedPawn)
 	{
 		PossessedPawn->BasicAttack();
+	}
+}
+
+void ARelicRunnersPlayerController::HeavyAttack()
+{
+	if (PossessedPawn)
+	{
+		PossessedPawn->HeavyAttack();
 	}
 }
 

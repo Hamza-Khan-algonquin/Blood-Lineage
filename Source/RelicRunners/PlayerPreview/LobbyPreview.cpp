@@ -19,13 +19,34 @@ ALobbyPreview::ALobbyPreview()
     MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
     RootComponent = MeshComp;
 
-    static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBP(
-        TEXT("/Game/Characters/Mannequins/Animations/ABP_Quinn.ABP_Quinn_C")
-    );
+    //static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBP(
+    //    TEXT("/Game/Characters/Mannequins/Animations/ABP_Quinn.ABP_Quinn_C")
+    //);
+    //
+    //if (AnimBP.Succeeded())
+    //{
+    //    MeshComp->SetAnimInstanceClass(AnimBP.Class);
+    //}
 
-    if (AnimBP.Succeeded())
+    static ConstructorHelpers::FClassFinder<UAnimInstance> HealerAnimBP(TEXT("/Game/Assets/Characters/Healer/Model/ABP_healer_model"));
+
+    if (HealerAnimBP.Succeeded())
     {
-        MeshComp->SetAnimInstanceClass(AnimBP.Class);
+        HealerAnim = HealerAnimBP.Class;
+    }
+
+    static ConstructorHelpers::FClassFinder<UAnimInstance> MeleeAnimBP(TEXT("/Game/Assets/Characters/Melee/Model/ABP_melee_model"));
+
+    if (MeleeAnimBP.Succeeded())
+    {
+        MeleeAnim = MeleeAnimBP.Class;
+    }
+
+    static ConstructorHelpers::FClassFinder<UAnimInstance> RangedAnimBP(TEXT("/Game/Assets/Characters/Melee/Model/ABP_ranged_model"));
+
+    if (RangedAnimBP.Succeeded())
+    {
+        RangedAnim = RangedAnimBP.Class;
     }
 
     MeshComp->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
@@ -129,10 +150,31 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     UE_LOG(LogTemp, Log, TEXT("[LobbyPreview][%s] %s > %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"), *GetNameSafe(LinkedPlayerState), *NewClass.ToString());
 
     FString ItemType;
-    if (NewClass == "Ares")             ItemType = "Greatsword";
-    else if (NewClass == "Nemesis")     ItemType = "Sword";
-    else if (NewClass == "Aphrodite")   ItemType = "Staff";
-    else if (NewClass == "Artemis")     ItemType = "Bow";
+    FString CharacterMeshPath;
+    TSubclassOf<UAnimInstance> DesiredAnimBP = nullptr;
+    if (NewClass == "Ares")
+    {
+        ItemType = "Greatsword";
+        CharacterMeshPath = TEXT("/Game/Assets/Characters/Tank/Model/tank_model");
+    }
+    else if (NewClass == "Nemesis")
+    {
+        ItemType = "Sword";
+        CharacterMeshPath = TEXT("/Game/Assets/Characters/Melee/Model/melee_model");
+        DesiredAnimBP = MeleeAnim;
+    }
+    else if (NewClass == "Aphrodite")
+    {
+        ItemType = "Staff";
+        CharacterMeshPath = TEXT("/Game/Assets/Characters/Healer/Model/healer_model");
+        DesiredAnimBP = HealerAnim;
+    }
+    else if (NewClass == "Artemis")
+    {
+        ItemType = "Bow";
+        CharacterMeshPath = TEXT("/Game/Assets/Characters/Ranged/Model/ranged_model");
+        DesiredAnimBP = RangedAnim;
+    }
     if (ItemType.IsEmpty()) return;
 
     FString MeshPath = GetMeshPathByItemType(ItemType);
@@ -147,6 +189,28 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     {
         LoadedMesh = StaticLoadObject(USkeletalMesh::StaticClass(), nullptr, *MeshPath);
         SetPreviewMeshByItemType(ItemType, Cast<USkeletalMesh>(LoadedMesh));
+    }
+
+    if (!CharacterMeshPath.IsEmpty())
+    {
+        USkeletalMesh* CharacterMesh = Cast<USkeletalMesh>(StaticLoadObject(USkeletalMesh::StaticClass(), nullptr, *CharacterMeshPath));
+
+        if (CharacterMesh)
+        {
+            MeshComp->SetSkeletalMesh(CharacterMesh);
+
+            if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim)
+            {
+                MeshComp->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+                MeshComp->SetAnimInstanceClass(DesiredAnimBP);
+            }
+            else
+            {
+                MeshComp->SetAnimInstanceClass(nullptr);
+                MeshComp->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+                MeshComp->SetAnimation(nullptr);
+            }
+        }
     }
 }
 

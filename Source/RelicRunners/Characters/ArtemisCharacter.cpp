@@ -20,6 +20,7 @@ AArtemisCharacter::AArtemisCharacter()
 	bProjectileActive = false;
 	ProjectileSpeed = 5000.f;
 	ProjectileLifetime = 2.f;
+	ProjectileDamage = 70.0f;
 
 }
 
@@ -157,6 +158,8 @@ void AArtemisCharacter::BasicAttack()
 
 	CanBasicAttack = false;
 
+	ProjectileDamage = 70.0f;
+
 	// Spawn projectile
 	bProjectileActive = true;
 	ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
@@ -187,6 +190,45 @@ void AArtemisCharacter::BasicAttack()
 	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetBasicAttack, BasicAttackCooldown, false);
 }
 
+void AArtemisCharacter::HeavyAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+	if (!CanHeavyAttack) return;
+	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+
+	CanHeavyAttack = false;
+
+	ProjectileDamage = 100.0f;
+
+	// Spawn projectile
+	bProjectileActive = true;
+	ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+	ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
+	ProjectileElapsed = 0.f;
+
+	PlayRandomAttackAnimation();
+	AlreadyHitActors.Empty();
+
+	// Spawn static mesh
+	if (ProjectileMeshAsset)
+	{
+		if (!ActiveProjectileMesh)
+		{
+			ActiveProjectileMesh = NewObject<UStaticMeshComponent>(this);
+			ActiveProjectileMesh->RegisterComponent();
+			ActiveProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
+			ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
+			ActiveProjectileMesh->SetWorldScale3D(FVector(1.f));
+			ActiveProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+			// Initial rotation based on velocity
+			ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
+		}
+	}
+
+	// Cooldown
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+}
 
 void AArtemisCharacter::Tick(float DeltaTime)
 {
@@ -272,6 +314,6 @@ void AArtemisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {
 	if (HitActor)
 	{
-		UGameplayStatics::ApplyDamage(HitActor, 70.f, GetController(), this, nullptr);
+		UGameplayStatics::ApplyDamage(HitActor, ProjectileDamage, GetController(), this, nullptr);
 	}
 }

@@ -359,6 +359,16 @@ void ARelicRunnersCharacter::BasicAttack()
 	
 }
 
+void ARelicRunnersCharacter::ResetHeavyAttack()
+{
+	CanHeavyAttack = true;
+}
+
+void ARelicRunnersCharacter::HeavyAttack()
+{
+
+}
+
 void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 {
 	

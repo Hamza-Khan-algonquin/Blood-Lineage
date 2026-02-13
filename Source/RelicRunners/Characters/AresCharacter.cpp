@@ -14,6 +14,7 @@
 
 AAresCharacter::AAresCharacter()
 {
+	Damage = 8.0f;
 }
 
 void AAresCharacter::BeginPlay()
@@ -169,6 +170,8 @@ void AAresCharacter::BasicAttack()
 	if (!CanBasicAttack) return;
 	CanBasicAttack = false;
 
+	Damage = 8.0f;
+
 	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 	{
 		PlayRandomAttackAnimation();
@@ -177,10 +180,27 @@ void AAresCharacter::BasicAttack()
 	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&ARelicRunnersCharacter::ResetBasicAttack,BasicAttackCooldown,false);
 }
 
+void AAresCharacter::HeavyAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+	if (!CanHeavyAttack) return;
+	CanHeavyAttack = false;
+
+	Damage = 12.0f;
+
+	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+	{
+		PlayRandomAttackAnimation();
+	}
+
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+}
+
 void AAresCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {
 	if (HitActor)
 	{
-		UGameplayStatics::ApplyDamage(HitActor, 5.f, GetController(), this, nullptr);
+		UGameplayStatics::ApplyDamage(HitActor, Damage, GetController(), this, nullptr);
 	}
 }

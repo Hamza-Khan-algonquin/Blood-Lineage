@@ -19,7 +19,7 @@ AAphroditeCharacter::AAphroditeCharacter()
     bProjectileActive = false;
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
-
+    ProjectileDamage = 90.0f;
 }
 
 void AAphroditeCharacter::BeginPlay()
@@ -154,6 +154,8 @@ void AAphroditeCharacter::BasicAttack()
     if (!CanBasicAttack) return;
     CanBasicAttack = false;
 
+    ProjectileDamage = 90.0f;
+
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
     // Spawn projectile
@@ -168,6 +170,31 @@ void AAphroditeCharacter::BasicAttack()
 
     // Cooldown
     GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AAphroditeCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+}
+
+void AAphroditeCharacter::HeavyAttack()
+{
+    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+    if (!CanHeavyAttack) return;
+    CanHeavyAttack = false;
+
+    ProjectileDamage = 120.0f;
+
+    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+
+    // Spawn projectile
+    bProjectileActive = true;
+    ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
+    ProjectileElapsed = 0.f;
+
+    PlayRandomAttackAnimation();
+
+    AlreadyHitActors.Empty();
+
+    // Cooldown
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AAphroditeCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)

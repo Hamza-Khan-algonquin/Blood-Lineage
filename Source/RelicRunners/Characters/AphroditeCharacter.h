@@ -36,6 +36,7 @@ protected:
 
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void BasicAttack() override;
+	virtual void HeavyAttack() override;
 
 	UPROPERTY()
 	bool bCanFire = true;
@@ -57,6 +58,9 @@ protected:
 
 	UPROPERTY()
 	float ProjectileElapsed = 0.f;
+
+	UPROPERTY()
+	float ProjectileDamage;
 
 	FVector PreviousProjectileLocation;
 

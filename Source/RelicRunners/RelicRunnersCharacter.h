@@ -88,6 +88,7 @@ public:
 	virtual void PlayRandomAttackAnimation();
 	bool HasValidWeaponEquipped(class UInventoryComponent* InvComp) const;
 	virtual void BasicAttack();
+	virtual void HeavyAttack();
 	void MoveInDirection(EAxis::Type Axis, float Value);
 	void Look(const FInputActionValue& Value);
 	void Interact();
@@ -105,6 +106,8 @@ public:
 	void TraceForInteractables();
 	UFUNCTION()
     void ResetBasicAttack();
+	UFUNCTION()
+	void ResetHeavyAttack();
 	UFUNCTION(Server, Reliable)
 	void Server_SpawnDroppedItemWorld(const struct FItemData& Data);
 	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
@@ -160,6 +163,10 @@ public:
 	bool CanBasicAttack = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float BasicAttackCooldown = 0.5f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool CanHeavyAttack = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float HeavyAttackCooldown = 2.0f;
 	TSet<AActor*> AlreadyHitActors;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UWidgetComponent* PlayerHUDWorld;
@@ -202,6 +209,7 @@ protected:
 	FTimerHandle HealthRegenTimerHandle;
 	FTimerHandle DelegateBindHandle;
 	FTimerHandle TimerHandle_AttackCooldown;
+	FTimerHandle TimerHandle_HeavyAttackCooldown;
 
 	//Stored Classes
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
