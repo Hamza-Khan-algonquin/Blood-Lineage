@@ -11,7 +11,6 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "RelicRunners/Abilities/GuardAbility.h"
 
 
 AAresCharacter::AAresCharacter()
