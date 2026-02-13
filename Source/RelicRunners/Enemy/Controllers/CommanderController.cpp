@@ -203,19 +203,6 @@ void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 	{
 		return;
 	}
-	/*ADirector* director = ADirector::GetInstance(this);
-	if (!director)
-	{
-		return;
-	}*/
-
-	//loop through all players and check to see if they are available to be attack through the member varaible map and it to array
-	//for (auto& it : RemainingTimeToAttack)
-	//{
-	//	if(it.Value <= 0)
-	//	{ }
-	//}
-
 
 	//loop through all players
 	for (int i = 0; i < players.Num(); i++)
@@ -245,6 +232,7 @@ void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 			else
 			{
 				UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
+				closestEnemy->StartAttack();
 				RemainingTimeToAttack[players[i]] = TimeToAttack;
 			}
 		}

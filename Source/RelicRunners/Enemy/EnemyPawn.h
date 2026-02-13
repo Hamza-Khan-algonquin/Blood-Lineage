@@ -56,6 +56,8 @@ protected:
 	bool SetControllerActiveStatus = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	FTimerHandle LifeSpanTimerHandle;
+	bool IsAttacking = false;
+	TSoftObjectPtr<UAnimMontage> AttackMontage;
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
@@ -97,12 +99,14 @@ public:
 
 	void AddEnemyToDirector();
 
-
+	void StartAttack();
+	void AttackTick();
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void PlayMontage(UAnimMontage* Montage, float PlayRate = 1.0f);
 
 public:	
 	// Called every frame

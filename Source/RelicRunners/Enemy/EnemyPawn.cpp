@@ -39,6 +39,7 @@ AEnemyPawn::AEnemyPawn()
 	LODComponent->OnUpdateLODEvent.AddDynamic(StaticMesh, &UEnemyLODStaticMeshComponent::LODUpdate);
 
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
+	MovementComponent->UpdateNavAgent(*CapsuleComponent);
 }
 
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -164,6 +165,42 @@ void AEnemyPawn::AddEnemyToDirector()
 #endif
 }
 
+void AEnemyPawn::StartAttack()
+{
+	MovementComponent->SetMovementMode(EBoidMovementMode::DirectMoveTo);
+	IsAttacking = true;
+	PrimaryActorTick.bCanEverTick = true;
+}
+
+void AEnemyPawn::AttackTick()
+{
+	if (MovementComponent->IsAtTarget())
+	{
+		if (AttackMontage.IsValid())
+		{
+			UAnimMontage* montage = AttackMontage.Get();
+			PlayMontage(montage);
+			
+
+			FTimerHandle tempHandle;
+			FTimerDelegate attackCallBack;
+			attackCallBack.BindLambda([this]()
+				{
+					MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+				});
+			GetWorldTimerManager().SetTimer(tempHandle, attackCallBack, montage->GetPlayLength(), false);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Attack Animation Missing"));
+			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+		}
+
+		IsAttacking = false;
+		PrimaryActorTick.bCanEverTick = false;
+	}
+}
+
 // Called when the game starts or when spawned
 void AEnemyPawn::BeginPlay()
 {
@@ -180,13 +217,31 @@ void AEnemyPawn::BeginPlay()
 	}
 }
 
+void AEnemyPawn::PlayMontage_Implementation(UAnimMontage* Montage, float PlayRate)
+{
+	if (!SkeletalMesh || !SkeletalMesh->IsActive())
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInstance = SkeletalMesh->GetAnimInstance();
+
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(Montage, PlayRate);
+	}
+}
+
 
 
 // Called every frame
 void AEnemyPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (IsActive)
+	{
+		AttackTick();
+	}
 }
 
 bool AEnemyPawn::GetIsActive()

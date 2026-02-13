@@ -22,7 +22,7 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	SeparationWeight = 1.5f;
 	AlignmentWeight = 1.f;
 	TargetWeight = 2.f;
-	MaxTargetDistanceWeight = 5.f;
+	MaxTargetDistanceMultiplier = 5.f;
 	OrbitWeight = 1.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
@@ -31,12 +31,25 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	CalculateDirection(DeltaTime);
-	MoveInDirection(DeltaTime);
-	//GroundSnap();
+	switch(MovementMode)
+	{ 	
+	case EBoidMovementMode::Boid:
+		CalculateBoidDirection(DeltaTime);
+		break;
+	case EBoidMovementMode::DirectMoveTo:
+		CalculateMoveToDirection(DeltaTime);
+		break;
+	}
+
+	if (MovementMode != EBoidMovementMode::Disabled)
+	{
+		MoveInDirection(DeltaTime);
+		UpdateRotation();
+		//GroundSnap();
+	}
 }
 
-void UEnemyBoidMovementComponent::CalculateDirection(float delta)
+void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 {
 	if (!Commander)
 	{
@@ -74,7 +87,17 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 	if (Commander->TargetPlayer)
 	{
 		targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
-		distanceFromTargetRadius = targetDirection.Size() - TargetRadius;
+		float distanceToTarget = targetDirection.Size();
+		distanceFromTargetRadius = distanceToTarget - TargetRadius;
+
+		if (FocuseMode == EBoidFocuseMode::Velocity && distanceToTarget <= FocuseOnTargetDistance)
+		{
+			FocuseMode = EBoidFocuseMode::Target;
+		}
+		else if (FocuseMode == EBoidFocuseMode::Target && distanceToTarget > FocuseOnTargetDistance)
+		{
+			FocuseMode = EBoidFocuseMode::Velocity;
+		}
 		
 		currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0, 1) + MinSeperationRange;
 	}
@@ -116,11 +139,6 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 
 	pOtherBoids = pOtherBoidsToCheck;
 	
-
-
-
-
-
 	//average everything out
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), coherenceVector.X, coherenceVector.Y, coherenceVector.Z);
 	coherenceVector /= pOtherBoidsToCheck.Num();
@@ -143,7 +161,7 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 	{
 		if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
 		{
-			targetVector = targetDirection.GetSafeNormal() * FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceWeight, MaxTargetDistanceWeight);
+			targetVector = targetDirection.GetSafeNormal() * FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceMultiplier, MaxTargetDistanceMultiplier);
 		}
 		else
 		{
@@ -191,7 +209,28 @@ void UEnemyBoidMovementComponent::CalculateDirection(float delta)
 
 	Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
+	UpdateComponentVelocity();
+}
+
+void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
+{
+	if (!Commander || !Commander->TargetPlayer)
+	{
+		return;
+	}
 	
+	FVector targetDirection;
+	//just define as a big number to get ride of a warning
+	float distanceFromTargetRadius = 100000;
+
+	targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
+
+	FVector desiredVelocity = targetDirection.GetSafeNormal() * MaxSpeed;
+
+	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
+
+	Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
+	UpdateComponentVelocity();
 }
 
 bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement, FVector& out)
@@ -203,7 +242,7 @@ bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement,
 	GetOwner()->GetActorBounds(false, standIn, offset, false);
 	offset.X = 0;
 	offset.Y = 0;
-	FVector actualExtent = NavMeshClampExtent + offset;
+	FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
 
 	if (navSys && navSys->ProjectPointToNavigation(DesiredMovement, navLocation, NavMeshClampExtent))
 	{
@@ -251,6 +290,19 @@ void UEnemyBoidMovementComponent::GroundSnap()
 	}
 }
 
+void UEnemyBoidMovementComponent::UpdateRotation()
+{
+	switch (FocuseMode)
+	{
+		case EBoidFocuseMode::Velocity:
+			GetOwner()->SetActorRotation(Velocity.GetSafeNormal2D().Rotation());
+			break;
+		case EBoidFocuseMode::Target:
+			GetOwner()->SetActorRotation((Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D().Rotation());
+			break;
+	}
+}
+
 bool UEnemyBoidMovementComponent::CanSeeOtherBoid(APawn* otherBoid, FVector& directionToBoid, float& distanceToBoid)
 {
 	//ingore the boids I can't see
@@ -283,4 +335,31 @@ const FVector UEnemyBoidMovementComponent::GetVelocity()
 	}
 
 	return Velocity;
+}
+
+void UEnemyBoidMovementComponent::StopMovementImmediately()
+{
+	Super::StopMovementImmediately();
+	MovementMode = EBoidMovementMode::Disabled;
+}
+
+bool UEnemyBoidMovementComponent::IsAtTarget()
+{
+	if (MovementMode == EBoidMovementMode::Disabled || !Commander || !Commander->TargetPlayer)
+	{
+		return false;
+	}
+
+	float distanceToTarget = (Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation()).Size();
+
+	if (MovementMode == EBoidMovementMode::Boid)
+	{
+		return distanceToTarget - TargetRadius <= TargetDeadZone;
+	}
+	else 
+	{
+		return distanceToTarget <= DirectMoveToAcceptanceRadius;
+	}
+
+	return false;
 }
