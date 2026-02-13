@@ -25,6 +25,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
     float BeamDuration = 3.f;
+    
+    UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
+    float BeamDamage = 20.f;
 
 private:
     FTimerHandle CooldownTimerHandle;

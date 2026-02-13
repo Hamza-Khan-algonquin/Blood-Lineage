@@ -7,6 +7,8 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
+#include "RelicRunners/Abilities/MirrorOfDesireAbility.h"
+
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
@@ -42,8 +44,10 @@ void AAphroditeCharacter::PossessedBy(AController* NewController)
     {
         AbilitySystem = PS->GetAbilitySystemComponent();
         if (AbilitySystem)
-        {
+        {                       
             AbilitySystem->InitAbilityActorInfo(PS, this);
+
+            AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMirrorOfDesireAbility::StaticClass(), 1, 0));
         }
     }
 }
@@ -84,6 +88,7 @@ void AAphroditeCharacter::GiveDefenceAbilities()
     {
 		// start ability cooldown
         //AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
+        AbilitySystem->TryActivateAbilityByClass(UMirrorOfDesireAbility::StaticClass());
     }
 }
 

@@ -8,6 +8,8 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/Classes/ClassInfo.h>
+#include "RelicRunners/Abilities/GuardAbility.h"
+
 
 AAresCharacter::AAresCharacter()
 {
@@ -50,6 +52,8 @@ void AAresCharacter::PossessedBy(AController* NewController)
 		if (AbilitySystem)
 		{
 			AbilitySystem->InitAbilityActorInfo(PS, this);
+
+			AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGuardAbility::StaticClass(), 1, 0));
 		}
 	}
 }
@@ -88,6 +92,8 @@ void AAresCharacter::GiveDefenceAbilities()
 	{
 		// start ability cooldown
 		//AbilityPointCounter->StartDefenceCooldown(DefenceCooldown);
+
+		AbilitySystem->TryActivateAbilityByClass(UGuardAbility::StaticClass());
 	}
 }
 

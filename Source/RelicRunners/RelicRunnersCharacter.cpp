@@ -51,8 +51,9 @@
 #include "Enemy/Characters/EnemyCharacter.h"
 #include "Enemy/Characters/EnemyCharacterAI.h"
 #include "Components/SceneCaptureComponent2D.h"
-
+#include "DrawDebugHelpers.h"
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
+
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -186,7 +187,7 @@ void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedVisuals);
+	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedVisuals);	
 }
 
 void ARelicRunnersCharacter::PossessedBy(AController* NewController)
@@ -207,6 +208,45 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 	if (!HasAuthority()) return 0.0f;
 
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	//if (RelicPlayerState) RelicPlayerState->ModifyHealth(-ActualDamage);
+	
+	if (bMirrorActive && ActualDamage > 0.f)
+	{
+		AActor* Attacker = DamageCauser;
+	
+		if (!Attacker && EventInstigator)
+		{
+			Attacker = EventInstigator->GetPawn();
+		}
+
+		if (Attacker && Attacker != this && Attacker->ActorHasTag("Enemy"))
+		{
+			const float Reflected = ActualDamage * MirrorReflectPercent;
+
+			UGameplayStatics::ApplyDamage(Attacker,Reflected,GetController(),this,nullptr);
+		}
+	}
+
+	if (bGuardActive && ActualDamage > 0.f)
+	{
+		AActor* Attacker = DamageCauser;
+
+		if (!Attacker && EventInstigator)
+		{
+			Attacker = EventInstigator->GetPawn();
+		}
+
+		if (Attacker && Attacker != this && Attacker->ActorHasTag("Enemy"))
+		{
+			if (IsDamageFromFront(Attacker))
+			{
+				DrawDebugLine(GetWorld(),GetActorLocation() + FVector(0, 0, 60.f),Attacker->GetActorLocation(),FColor::Green,false, 0.15f, 0, 2.f);
+
+				ActualDamage = 0.f;
+			}
+		}
+	}
 
 	if (RelicPlayerState) RelicPlayerState->ModifyHealth(-ActualDamage);
 
@@ -800,4 +840,80 @@ void ARelicRunnersCharacter::UltimateAbility()
 {
 	GiveUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
+}
+
+void ARelicRunnersCharacter::SetMirrorActive(bool bActive)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	bMirrorActive = bActive;
+
+	if (!bMirrorActive)
+	{
+		GetWorldTimerManager().ClearTimer(MirrorDebugDrawHandle);
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(MirrorDebugDrawHandle,this,&ARelicRunnersCharacter::DrawMirrorDebug,0.1f,true);
+	}
+}
+
+void ARelicRunnersCharacter::DrawMirrorDebug()
+{
+	if (!bMirrorActive)
+	{
+		return;
+	}
+
+	DrawDebugSphere(GetWorld(),GetActorLocation(),MirrorRadius,16,FColor::Purple,false,0.11f);
+}
+
+void ARelicRunnersCharacter::SetGuardActive(bool bActive)
+{
+    if (!HasAuthority()) return;
+
+    bGuardActive = bActive;
+
+    if (!bGuardActive)
+    {
+        GetWorldTimerManager().ClearTimer(GuardDebugDrawHandle);
+    }
+    else
+    {        
+        GetWorldTimerManager().SetTimer(GuardDebugDrawHandle,this,&ARelicRunnersCharacter::DrawGuardDebug,0.1f,true);
+    }
+}
+
+bool ARelicRunnersCharacter::IsDamageFromFront(AActor* DamageCauser) const
+{
+	if (!DamageCauser)
+	{
+		return false;
+	}
+
+    const FVector Forward = GetActorForwardVector().GetSafeNormal();
+    const FVector ToCauser = (DamageCauser->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+
+    const float Dot = FVector::DotProduct(Forward, ToCauser);
+
+    const float HalfAngleRad = FMath::DegreesToRadians(GuardAngleDegrees * 0.5f);
+    const float Threshold = FMath::Cos(HalfAngleRad);
+
+    return Dot >= Threshold;
+}
+
+void ARelicRunnersCharacter::DrawGuardDebug()
+{
+	if (!bGuardActive)
+	{
+		return;
+	}
+
+    const FVector Start = GetActorLocation() + FVector(0,0,60.f);
+    const FVector End = Start + GetActorForwardVector() * 200.f;
+
+    DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.11f, 0, 4.f);
 }
