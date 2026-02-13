@@ -49,6 +49,8 @@ public:
 	void UpdateFlagObjective(int FlagIndex, bool bIsActive);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
+	void AnimateOldObjectives();
+
 	UFUNCTION()
 	void ClearOldObjectives();
 

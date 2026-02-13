@@ -58,12 +58,15 @@
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include "RelicRunners/Objective/ObjectiveLog.h"
 
+#include "Components/TreeView.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include <RelicRunners/Objective/TitleData.h>
 #include <RelicRunners/Objective/PayloadData.h>
 #include <RelicRunners/Objective/PandoraData.h>
 #include <RelicRunners/Objective/EnemiesData.h>
 #include <RelicRunners/Objective/FlagData.h>
+#include <RelicRunners/Objective/ObjectiveItemEntry.h>
+#include <RelicRunners/Objective/PandorasObjective.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -865,10 +868,7 @@ void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, PayloadGoal]()
-		{
-			ClearOldObjectives();
-		}, 3.0f, false);
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
 }
 
 void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int NumFlags)
@@ -882,10 +882,7 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, FlagGoal]()
-		{
-			ClearOldObjectives();
-		}, 3.0f, false);
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
 }
 
 void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(int TotalEnemies)
@@ -897,15 +894,12 @@ void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(in
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, EnemiesGoal]()
-		{
-			ClearOldObjectives();
-		}, 3.0f, false);
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
 }
 
 void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(float Time)
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+	if (!ObjectiveStageTitle || !ObjectiveLog || !ObjectiveLog->ObjectiveTreeView) return;
 
 	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
 	PandoraGoal->Percent = 1.0f;
@@ -913,15 +907,16 @@ void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(fl
 	int Minutes = FMath::FloorToInt(Time / 60.0f);
 	int Seconds = FMath::CeilToInt(FMath::Fmod(Time, 60.0f));
 	if (Seconds == 60) { Seconds = 0; Minutes++; }
-
 	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, [this, PandoraGoal]()
-		{
-			ClearOldObjectives();
-		}, 3.0f, false);
+	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+}
+
+void ARelicRunnersPlayerController::AnimateOldObjectives()
+{
+
 }
 
 void ARelicRunnersPlayerController::ClearOldObjectives()

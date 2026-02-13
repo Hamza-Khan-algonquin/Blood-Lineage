@@ -153,6 +153,9 @@ void UInventorySlotsEntry::NativeOnMouseEnter(const FGeometry& InGeometry, const
     B_Item->SetToolTip(ToolTip);
 
     HoveredTime = GetWorld()->GetRealTimeSeconds();
+
+    PlayAnimation(Shake);
+    SelectedBorder->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
@@ -171,6 +174,9 @@ void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
             ParentInventory->InventoryComponent->SortInventoryByCurrentMethod();
         }
     }
+
+    StopAnimation(Shake);
+    SelectedBorder->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UInventorySlotsEntry::ToggleGoldPriceBorder(bool value)

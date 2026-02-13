@@ -17,4 +17,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* EnemyImage;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	class UWidgetAnimation* Completion;
 };

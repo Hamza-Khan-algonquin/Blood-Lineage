@@ -92,3 +92,8 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
         }
     }
 }
+
+void UObjectiveItemEntry::CompleteObjective()
+{
+    PlayAnimation(Completion);
+}

@@ -61,9 +61,13 @@ public:
     class UImage* ItemFrame;
     UPROPERTY(meta = (BindWidget))
     class UBorder* B_Level;
-
+    UPROPERTY(meta = (BindWidget))
+    class UBorder* SelectedBorder;
     UPROPERTY()
     class UItemObject* Item;
+
+    UPROPERTY(meta = (BindWidgetAnim), Transient)
+    class UWidgetAnimation* Shake;
 
 protected:
     virtual void NativeConstruct() override;
