@@ -208,6 +208,11 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
 	Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
+
+	if (Velocity.Size2D() < MinMoveVelocity)
+	{
+		Velocity = FVector::ZeroVector;
+	}
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
 	UpdateComponentVelocity();
 }
@@ -220,16 +225,25 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 	}
 	
 	FVector targetDirection;
+	FVector desiredVelocity = FVector::ZeroVector;
 	//just define as a big number to get ride of a warning
 	float distanceFromTargetRadius = 100000;
 
 	targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
 
-	FVector desiredVelocity = targetDirection.GetSafeNormal() * MaxSpeed;
+	if (targetDirection.Size() > DirectMoveToAcceptanceRadius)
+	{
+		desiredVelocity = targetDirection.GetSafeNormal() * MaxSpeed;
+		FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
-	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
+		Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
+	}
+	else
+	{
+		Velocity = desiredVelocity;
+	}
 
-	Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
+	
 	UpdateComponentVelocity();
 }
 

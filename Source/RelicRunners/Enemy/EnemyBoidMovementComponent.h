@@ -68,6 +68,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float OrbitWeight;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float MinMoveVelocity;
 
 	UPROPERTY(EditAnywhere, Category = "Direct Move To Behavior")
 	float DirectMoveToAcceptanceRadius;
@@ -77,6 +79,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Other")
 	float FocuseOnTargetDistance;
 
+	UPROPERTY(VisibleAnywhere)
 	EBoidMovementMode MovementMode = EBoidMovementMode::Boid;
 	EBoidFocuseMode FocuseMode = EBoidFocuseMode::Velocity;
 

@@ -15,13 +15,15 @@
 #include "RelicRunners/Enemy/LOD Wrapper Components/EnemyLODStaticMeshComponent.h"
 #include "RelicRunners/Enemy/EnemyLODComponent.h"
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
+#include "RelicRunners/Enemy/Controllers/CommanderController.h"
 
 
 // Sets default values
 AEnemyPawn::AEnemyPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	SetActorTickEnabled(false);
 
 	this->AutoPossessAI = EAutoPossessAI::Disabled;
 
@@ -169,7 +171,7 @@ void AEnemyPawn::StartAttack()
 {
 	MovementComponent->SetMovementMode(EBoidMovementMode::DirectMoveTo);
 	IsAttacking = true;
-	PrimaryActorTick.bCanEverTick = true;
+	SetActorTickEnabled(true);
 }
 
 void AEnemyPawn::AttackTick()
@@ -197,7 +199,7 @@ void AEnemyPawn::AttackTick()
 		}
 
 		IsAttacking = false;
-		PrimaryActorTick.bCanEverTick = false;
+		SetActorTickEnabled(false);
 	}
 }
 
@@ -281,6 +283,25 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
 {
 	return LifeSpanTimerHandle;
+}
+
+void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->Tags.Contains("Player"))
+	{
+		if (Controller)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, Controller, this, nullptr);
+		}
+		else if (MovementComponent->Commander)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, MovementComponent->Commander, this, nullptr);
+		}
+		else
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, nullptr, this, nullptr);
+		}
+	}
 }
 
 
