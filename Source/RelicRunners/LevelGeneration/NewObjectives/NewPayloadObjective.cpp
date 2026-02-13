@@ -55,6 +55,16 @@ ANewPayloadObjective::ANewPayloadObjective() :
 void ANewPayloadObjective::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UMaterialInterface* OutlineOverlay = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Shader/M_Outline"));
+
+	if (OutlineOverlay)
+	{
+		PayloadBody->SetOverlayMaterial(OutlineOverlay);
+		PayloadBody->SetForceDisableNanite(true);
+		UE_LOG(LogTemp, Warning, TEXT("DropOutlineApplied"));
+	}
+
 }
 
 // Called every frame

@@ -603,6 +603,7 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 					FVector posOffset = FVector((tileScale * x * 4) + tileScale, (tileScale * y * 4) + tileScale, 0.0f) + GetActorLocation();
 
 					ANewPayloadObjective* payload = GetWorld()->SpawnActor<ANewPayloadObjective>(GenerationValuesComponent->PayloadObjectiveValues.Payload, posOffset, FRotator::ZeroRotator);
+
 					CreateSplinePathStartToEnd(startingIndex, endingIndex, IslandWidth, payload);
 
 					FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
