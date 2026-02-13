@@ -11,10 +11,17 @@ UCLASS()
 class RELICRUNNERS_API UObjectiveItemEntry : public UUserWidget, public IUserObjectListEntry
 {
     GENERATED_BODY()
+
+public:
+
+    void CompleteObjective();
 protected:
 
     UPROPERTY(meta = (BindWidget))
     class UWidgetSwitcher* WidgetSwitcher;
+
+    UPROPERTY(meta = (BindWidgetAnim), Transient)
+    class UWidgetAnimation* Completion;
 
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 };

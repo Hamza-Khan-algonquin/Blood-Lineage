@@ -11,12 +11,11 @@ class RELICRUNNERS_API UObjectiveLog : public UUserWidget
 {
     GENERATED_BODY()
 
-protected:
+public:
+
 
     UPROPERTY(meta = (BindWidget))
     class UTreeView* ObjectiveTreeView;
-
-public:
 
     UFUNCTION(BlueprintCallable, Category = "Objectives")
     void HandleGetItemChildren(UObject* InItem, TArray<UObject*>& OutChildren);

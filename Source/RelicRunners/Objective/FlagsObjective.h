@@ -23,4 +23,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* FlagImage_2;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	class UWidgetAnimation* Completion;
 };

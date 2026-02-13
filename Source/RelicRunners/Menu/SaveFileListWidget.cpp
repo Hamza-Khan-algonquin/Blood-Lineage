@@ -94,20 +94,34 @@ void USaveFileListWidget::OnSaveFileButtonClicked()
 
 void USaveFileListWidget::SetSelected(bool bSelected)
 {
-    FLinearColor DelectedColor = FLinearColor(0.062f, 0.049f, 0.031f, 1);
-    FLinearColor MetaColor = FLinearColor(0.0f, 0.309f, 0.753f, 1);
-    TB_Name->SetColorAndOpacity(bSelected ? FLinearColor(1,0.5,0,1) : FLinearColor::White);
-    TB_TimePlayed->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
-    TB_MetaLevel->SetColorAndOpacity(MetaColor);
-    EditIcon->SetColorAndOpacity(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor::White);
-    B_SaveFile->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
-    B_Upgrades->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
-    B_Edit->SetBrushColor(bSelected ? FLinearColor(0, 0, 0, 1) : DelectedColor);
-    SaveFileButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(1, 1, 1, 1));
-    EditButton->SetBackgroundColor(bSelected ? FLinearColor(1, 0.5, 0, 1) : FLinearColor(1, 1, 1, 1));
-    Upgrades->SetBackgroundColor(bSelected ? MetaColor : FLinearColor(1, 1, 1, 1));
-}
+    FLinearColor SelectedOutlineColor = FLinearColor(1.0f, 0.5f, 0.0f, 1.0f);
+    FLinearColor DefaultColor = FLinearColor::White;
+    FLinearColor DelectedColor = FLinearColor(0.062f, 0.049f, 0.031f, 1.0f);
+    FLinearColor MetaColor = FLinearColor(0.0f, 0.309f, 0.753f, 1.0f);
 
+    FLinearColor ActiveTextColor = bSelected ? SelectedOutlineColor : DefaultColor;
+
+    TB_Name->SetColorAndOpacity(ActiveTextColor);
+    TB_TimePlayed->SetColorAndOpacity(ActiveTextColor);
+    TB_MetaLevel->SetColorAndOpacity(MetaColor);
+    EditIcon->SetColorAndOpacity(ActiveTextColor);
+
+    FSlateFontInfo NameFont = TB_Name->GetFont();
+    NameFont.OutlineSettings.OutlineColor = ActiveTextColor;
+    TB_Name->SetFont(NameFont);
+
+    FSlateFontInfo TimeFont = TB_TimePlayed->GetFont();
+    TimeFont.OutlineSettings.OutlineColor = ActiveTextColor;
+    TB_TimePlayed->SetFont(TimeFont);
+
+    B_SaveFile->SetBrushColor(bSelected ? FLinearColor::Black : DelectedColor);
+    B_Upgrades->SetBrushColor(bSelected ? FLinearColor::Black : DelectedColor);
+    B_Edit->SetBrushColor(bSelected ? FLinearColor::Black : DelectedColor);
+
+    SaveFileButton->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
+    EditButton->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
+    Upgrades->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
+}
 
 void USaveFileListWidget::OnEditButtonClicked()
 {

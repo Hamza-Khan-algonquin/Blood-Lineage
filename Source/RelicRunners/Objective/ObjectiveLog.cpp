@@ -4,6 +4,7 @@
 #include "ObjectiveLog.h"
 #include "Components/TreeView.h"
 #include "ObjectiveItemData.h"
+#include "ObjectiveItemEntry.h"
 
 void UObjectiveLog::InitializeObjectives(UObjectiveItemData* RootLevel)
 {
@@ -43,9 +44,6 @@ void UObjectiveLog::RefreshLog(UObjectiveItemData* Parent)
 {
     if (ObjectiveTreeView)
     {
-        ObjectiveTreeView->SetItemExpansion(Parent, false);
-        ObjectiveTreeView->SetItemExpansion(Parent, true);
-
         ObjectiveTreeView->RequestRefresh();
     }
 }

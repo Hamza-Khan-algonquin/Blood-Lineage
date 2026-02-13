@@ -17,4 +17,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* ProgressionBar;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	class UWidgetAnimation* Completion;
 };
