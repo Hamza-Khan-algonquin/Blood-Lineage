@@ -97,13 +97,11 @@ void USaveFileListWidget::SetSelected(bool bSelected)
     FLinearColor SelectedOutlineColor = FLinearColor(1.0f, 0.5f, 0.0f, 1.0f);
     FLinearColor DefaultColor = FLinearColor::White;
     FLinearColor DelectedColor = FLinearColor(0.062f, 0.049f, 0.031f, 1.0f);
-    FLinearColor MetaColor = FLinearColor(0.0f, 0.309f, 0.753f, 1.0f);
 
     FLinearColor ActiveTextColor = bSelected ? SelectedOutlineColor : DefaultColor;
 
     TB_Name->SetColorAndOpacity(ActiveTextColor);
     TB_TimePlayed->SetColorAndOpacity(ActiveTextColor);
-    TB_MetaLevel->SetColorAndOpacity(MetaColor);
     EditIcon->SetColorAndOpacity(ActiveTextColor);
 
     FSlateFontInfo NameFont = TB_Name->GetFont();
