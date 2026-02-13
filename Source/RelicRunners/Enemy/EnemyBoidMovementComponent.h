@@ -70,6 +70,8 @@ protected:
 	float OrbitWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float MinMoveVelocity;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float MinVelocityChange;
 
 	UPROPERTY(EditAnywhere, Category = "Direct Move To Behavior")
 	float DirectMoveToAcceptanceRadius;

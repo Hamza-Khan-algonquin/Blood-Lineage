@@ -216,6 +216,9 @@ void AEnemyPawn::BeginPlay()
 
 		//call it next tick so their no problem with stuff not loaded in yet
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
+
+		IsAttacking = false;
+		SetActorTickEnabled(false);
 	}
 }
 

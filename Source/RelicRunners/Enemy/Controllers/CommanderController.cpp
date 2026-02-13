@@ -63,6 +63,7 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 		return;
 	}
 
+
 	ControlledEnemies.Add(enemy);
 	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
@@ -101,7 +102,11 @@ void ACommanderController::SpawnPawnEnemy()
 
 	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
 	newEnemy->MovementComponent->Commander = this;
-	AddPawnEnemy(newEnemy);
+	//giving time for the enemy to set
+	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
+		{
+			AddPawnEnemy(newEnemy);
+		});
 }
 
 inline void ACommanderController::AddPlayerToTimeToAttack(APawn* player)

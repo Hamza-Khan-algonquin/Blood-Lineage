@@ -207,11 +207,15 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
-	Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
+	FVector newVelocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
 
+	if (newVelocity.Size2D() >= MinVelocityChange)
+	{
+		Velocity = newVelocity;
+	}
 	if (Velocity.Size2D() < MinMoveVelocity)
 	{
-		Velocity = FVector::ZeroVector;
+		//Velocity = FVector::ZeroVector;
 	}
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
 	UpdateComponentVelocity();

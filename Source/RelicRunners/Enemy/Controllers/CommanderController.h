@@ -16,7 +16,7 @@ class RELICRUNNERS_API ACommanderController : public AAIController
 	GENERATED_BODY()
 public:
 	UPROPERTY(BlueprintReadWrite)
-	TArray<TObjectPtr<AEnemyPawn>> ControlledEnemies;
+	TArray<AEnemyPawn*> ControlledEnemies;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxNumberOfEnemies;
