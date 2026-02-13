@@ -683,6 +683,23 @@ void ARelicRunnersPlayerState::UpdateRemoteHUDAbility()
 void ARelicRunnersPlayerState::OnRep_Health()
 {
 	UpdateRemoteHUDHealth();
+
+	if (PlayerHealth < PlayerMaxHealth)
+	{
+		if (ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn()))
+		{
+			if (Char->IsLocallyControlled())
+			{
+				if (APlayerController* PC = Cast<APlayerController>(Char->GetController()))
+				{
+					if (HitCameraShakeClass)
+					{
+						PC->ClientStartCameraShake(HitCameraShakeClass);
+					}
+				}
+			}
+		}
+	}
 }
 
 void ARelicRunnersPlayerState::OnRep_HealthPotions()

@@ -86,6 +86,9 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Stats")
 	bool HasReceivedStarterItems = false;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	TSubclassOf<UCameraShakeBase> HitCameraShakeClass;
+
 	//Stats
 	void UpdateRemoteHUDHealth();
 	void UpdateRemoteHUDHealthPotions();
