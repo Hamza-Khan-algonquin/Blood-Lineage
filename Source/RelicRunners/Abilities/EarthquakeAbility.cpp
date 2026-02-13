@@ -12,7 +12,7 @@ UEarthquakeAbility::UEarthquakeAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Duration = 8.0f;
+    Duration = 3.0f;
     ConeAngle = 90.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -29,6 +29,8 @@ UEarthquakeAbility::UEarthquakeAbility()
 
 void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
+    Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
     {
@@ -91,10 +93,19 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+    LastUseTime = World->GetTimeSeconds();
 
     ApplyDamageAndStun();
 
-    //EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+    World->GetTimerManager().SetTimer(
+        CooldownTimerHandle,
+        [this, Handle, ActorInfo, ActivationInfo]()
+        {
+            EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+        },
+        Duration,
+        false 
+    );
 }
 
 

@@ -133,8 +133,6 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
     // Perform the sphere overlap
     bool bHit = UKismetSystemLibrary::SphereOverlapActors(World,BannerLocation,AreaRadius,ObjectTypes,ACharacter::StaticClass(),ActorsToIgnore,OverlappingActors);
 
-    if (!bHit) return;
-
     for (AActor* Actor : OverlappingActors)
     {
         ACharacter* Character = Cast<ACharacter>(Actor);
@@ -147,7 +145,19 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 
     }
 
-    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+    if (World)
+    {
+        World->GetTimerManager().SetTimer(
+            DurationTimerHandle,
+            [this]()
+            {
+                EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+            },
+            Duration,
+            false 
+        );
+    }
+
 }
 
 FVector UWarBannerAbility::GetBannerLocation() const

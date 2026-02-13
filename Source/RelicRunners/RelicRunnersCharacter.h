@@ -21,6 +21,7 @@
 
 #include "AbilitySystem/AbilityBase.h"  
 #include "Abilities/Moonbeam.h"       
+#include "Abilities/GoddessOfLove.h"       
 #include "Abilities/WarBannerAbility.h"
 #include "Abilities/ImpunityAbility.h"
 #include "Abilities/EarthquakeAbility.h"

@@ -35,11 +35,11 @@ UBackStab::UBackStab()
         AbilityVFX = VFXAsset.Object;
     }
 
-    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshObj(TEXT("/Game/ThirdPerson/Blueprints/Combat/AbilityCircleBase.AbilityCircleBase"));
-    if (MeshObj.Succeeded())
-    {
-        BackStabMeshAsset = MeshObj.Object;
-    }
+    //static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshObj(TEXT("/Game/ThirdPerson/Blueprints/Combat/AbilityCircleBase.AbilityCircleBase"));
+    //if (MeshObj.Succeeded())
+    //{
+    //    BackStabMeshAsset = MeshObj.Object;
+    //}
 }
 
 void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -215,40 +215,37 @@ void UBackStab::ExecuteBackStabSequence()
         return;
     }
 
-    if (BackStabMeshAsset && !ActiveMeshActor)
-    {
-        if (World && AvatarActor)
-        {
-            FVector SpawnLocation = OriginalLocation;
-            SpawnLocation.Z -= 50.f; 
+    //if (BackStabMeshAsset && !ActiveMeshActor)
+    //{
+    //    if (World && AvatarActor)
+    //    {
+    //        FVector SpawnLocation = OriginalLocation;
+    //        SpawnLocation.Z -= 50.f; 
 
-            FActorSpawnParameters SpawnParams;
-            SpawnParams.Owner = AvatarActor;
-            SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    //        FActorSpawnParameters SpawnParams;
+    //        SpawnParams.Owner = AvatarActor;
+    //        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-            // Spawn the StaticMeshActor
-            ActiveMeshActor = World->SpawnActor<AStaticMeshActor>(SpawnLocation, FRotator::ZeroRotator, SpawnParams);
-            if (ActiveMeshActor)
-            {
-                UStaticMeshComponent* MeshComp = ActiveMeshActor->GetStaticMeshComponent();
-                if (MeshComp)
-                {
-                    MeshComp->SetStaticMesh(BackStabMeshAsset);
-                    MeshComp->SetWorldScale3D(FVector(0.5f));
-                    MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-                    MeshComp->SetMobility(EComponentMobility::Movable);
-                    ActiveMeshActor->SetActorHiddenInGame(false);
-                }
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("Failed to spawn ActiveMeshActor"));
-            }
-        }
-    }
-
-
-
+    //        // Spawn the StaticMeshActor
+    //        ActiveMeshActor = World->SpawnActor<AStaticMeshActor>(SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+    //        if (ActiveMeshActor)
+    //        {
+    //            UStaticMeshComponent* MeshComp = ActiveMeshActor->GetStaticMeshComponent();
+    //            if (MeshComp)
+    //            {
+    //                MeshComp->SetStaticMesh(BackStabMeshAsset);
+    //                MeshComp->SetWorldScale3D(FVector(0.5f));
+    //                MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    //                MeshComp->SetMobility(EComponentMobility::Movable);
+    //                ActiveMeshActor->SetActorHiddenInGame(false);
+    //            }
+    //        }
+    //        else
+    //        {
+    //            UE_LOG(LogTemp, Warning, TEXT("Failed to spawn ActiveMeshActor"));
+    //        }
+    //    }
+    
     // Find target
     AActor* TargetEnemy = FindBackstabTarget(AvatarActor);
     if (!TargetEnemy || !IsValid(TargetEnemy))
@@ -283,7 +280,7 @@ void UBackStab::ExecuteBackStabSequence()
             VFXInstance->SetAutoDestroy(true);
         }
     }
-
+    
     // Delay damage for 1 second
     World->GetTimerManager().SetTimer(
         BackStabDamageTimerHandle,

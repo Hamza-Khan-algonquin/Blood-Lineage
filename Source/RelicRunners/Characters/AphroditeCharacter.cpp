@@ -32,7 +32,8 @@ void AAphroditeCharacter::BeginPlay()
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
         // Give KissOfLife ability
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
-
+        // Give Goddess Of Love ability
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGoddessOfLove::StaticClass(), 1, 0));
     }
 
  //   //Starting Stats
@@ -119,7 +120,8 @@ void AAphroditeCharacter::GiveUltimateAbilities()
 
     if (AbilitySystem)
     {
-
+        // Activate Goddess of Love ability 
+        AbilitySystem->TryActivateAbilityByClass(UGoddessOfLove::StaticClass());
     }
 }
 

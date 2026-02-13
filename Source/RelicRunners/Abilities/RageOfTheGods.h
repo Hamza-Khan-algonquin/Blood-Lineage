@@ -21,7 +21,7 @@ public:
 
 protected:
 	void StartPulse();
-	void ExpandPulse();
+	void ExpandPulse(AActor* AvatarActor);
 
 	FTimerHandle PulseTimerHandle;
 	FTimerHandle ExpansionTimerHandle;

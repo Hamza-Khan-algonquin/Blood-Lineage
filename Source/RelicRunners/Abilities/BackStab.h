@@ -41,11 +41,11 @@ protected:
     UPROPERTY()
     FRotator OriginalRotation;
     
-    UPROPERTY(EditAnywhere, Category = "Combat")
-    UStaticMesh* BackStabMeshAsset = nullptr;
+  /*  UPROPERTY(EditAnywhere, Category = "Combat")
+    UStaticMesh* BackStabMeshAsset;
 
     UPROPERTY()
-    AStaticMeshActor* ActiveMeshActor = nullptr;
+    AStaticMeshActor* ActiveMeshActor;*/
 
 };
 

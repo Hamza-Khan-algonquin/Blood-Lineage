@@ -18,6 +18,7 @@ public:
 
 private:
     FTimerHandle BannerDurationTimer;
+    FTimerHandle DurationTimerHandle;
 
     void SpawnBanner();
     void ApplyAllyBuffs(const FVector& BannerLocation);

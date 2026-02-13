@@ -11,7 +11,7 @@ UDivinePunishment::UDivinePunishment()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	Duration = 5.f;
 	LastUseTime = -100.f;
-	CooldownTimer = 5.f;
+	CooldownTimer = 10.f;
 	Cost = 20;
 	DamageAmount = 100.f;
     AreaRadius = 500.f;
@@ -67,65 +67,106 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+
+    CachedInstigatorController =
+        ActorInfo->PlayerController.IsValid()
+        ? ActorInfo->PlayerController.Get()
+        : nullptr;
+
     LastUseTime = World->GetTimeSeconds();
 
-    KillEnemiesInRadius(ActorInfo->AvatarActor->GetActorLocation());
+    // ---- Start ticking damage ----
+    const FVector Center = ActorInfo->AvatarActor->GetActorLocation();
+
+
+    if (AbilityVFX)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            World,
+            AbilityVFX,
+            Center + FVector(0.f, 0.f, -100.f),
+            FRotator::ZeroRotator,
+            FVector(2.f),
+            true,
+            true
+        );
+    }
+
+    KillEnemiesInRadius(Center);
+
 
 }
 
 void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
 {
+    CachedCenter = Center;
+    DamageTicksElapsed = 0;
+
     UWorld* World = GetWorld();
     if (!World) return;
 
+    World->GetTimerManager().SetTimer(
+        DivineDamageTimerHandle,
+        this,
+        &UDivinePunishment::DivineDamageTick,
+        1.f,
+        true
+    );
+}
+
+
+void UDivinePunishment::DivineDamageTick()
+{
+    UWorld* World = GetWorld();
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    AController* InstigatorController = CachedInstigatorController.Get();
 
-    //DrawDebugSphere(World, Center, AreaRadius, 32, FColor::Purple, false, Duration, 0, 4.f);
-
-    if (AbilityVFX)
+    if (!World || !AvatarActor || !InstigatorController)
     {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(AvatarActor->GetWorld(), AbilityVFX, FVector(Center.X, Center.Y, Center.Z - 100), FRotator(0, 0, 0), FVector(2.f), true, true);
+        World->GetTimerManager().ClearTimer(DivineDamageTimerHandle);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+        return;
     }
 
-    DamageTicksElapsed = 0;
+    DamageTicksElapsed++;
 
-    World->GetTimerManager().SetTimer(DivineDamageTimerHandle,[this, World, Center, AvatarActor]()
-        {
-            if (!World || !AvatarActor)
-            {
-                World->GetTimerManager().ClearTimer(DivineDamageTimerHandle);
-                return;
-            }
+    TArray<AActor*> FoundActors;
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 
-            DamageTicksElapsed++;
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(AvatarActor);
 
-            TArray<AActor*> FoundActors;
+    UKismetSystemLibrary::SphereOverlapActors(
+        World,
+        CachedCenter,
+        AreaRadius,
+        ObjectTypes,
+        ACharacter::StaticClass(),
+        ActorsToIgnore,
+        FoundActors
+    );
 
-            TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-            ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    for (AActor* Actor : FoundActors)
+    {
+        if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
 
-            TArray<AActor*> ActorsToIgnore;
-            ActorsToIgnore.Add(AvatarActor);
+        UGameplayStatics::ApplyDamage(
+            Actor,
+            DamageAmount,
+            InstigatorController,
+            AvatarActor,
+            UDamageType::StaticClass()
+        );
+    }
 
-            UKismetSystemLibrary::SphereOverlapActors(World,Center,AreaRadius, ObjectTypes, ACharacter::StaticClass(), ActorsToIgnore, FoundActors);
-
-            for (AActor* Actor : FoundActors)
-            {
-                if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
-
-                UGameplayStatics::ApplyDamage( Actor,DamageAmount,AvatarActor->GetInstigatorController(), AvatarActor,UDamageType::StaticClass());
-            }
-
-            // Stop after 5 seconds
-            if (DamageTicksElapsed >= Duration)
-            {
-                World->GetTimerManager().ClearTimer(DivineDamageTimerHandle);
-
-                EndAbility(CurrentSpecHandle,CurrentActorInfo,CurrentActivationInfo,false,false );
-            }
-        }, 1.f, true);
+    if (DamageTicksElapsed >= Duration)
+    {
+        World->GetTimerManager().ClearTimer(DivineDamageTimerHandle);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+    }
 }
+
 
 
 void UDivinePunishment::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -139,6 +180,7 @@ void UDivinePunishment::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
+            World->GetTimerManager().ClearTimer(DivineDamageTimerHandle);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();

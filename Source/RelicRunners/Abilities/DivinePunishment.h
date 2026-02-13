@@ -21,7 +21,11 @@ public:
 
 private:
     void KillEnemiesInRadius(const FVector& Center);
+    void DivineDamageTick();
     FTimerHandle DivineDamageTimerHandle;
     int32 DamageTicksElapsed = 0;
+
+    TWeakObjectPtr<AController> CachedInstigatorController;
+	FVector CachedCenter;
 };
 
