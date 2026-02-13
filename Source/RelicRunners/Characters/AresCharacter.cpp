@@ -11,6 +11,8 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/Abilities/GuardAbility.h"
+
 
 AAresCharacter::AAresCharacter()
 {
@@ -25,7 +27,8 @@ void AAresCharacter::BeginPlay()
 	{
 		// Give Earthquake ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UEarthquakeAbility::StaticClass(), 1, 0));
-
+		// Give Guard ability
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGuardAbility::StaticClass(), 1, 0));
 		// Give War Banner ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UWarBannerAbility::StaticClass(), 1, 0));
 
@@ -48,6 +51,8 @@ void AAresCharacter::PossessedBy(AController* NewController)
 		if (AbilitySystem)
 		{
 			AbilitySystem->InitAbilityActorInfo(PS, this);
+
+			
 		}
 	}
 }
@@ -84,7 +89,7 @@ void AAresCharacter::GiveDefenceAbilities()
 
 	if (AbilitySystem)
 	{
-
+		AbilitySystem->TryActivateAbilityByClass(UGuardAbility::StaticClass());
 	}
 }
 

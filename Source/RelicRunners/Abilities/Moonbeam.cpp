@@ -5,7 +5,11 @@
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/PlayerController/RelicRunnersPlayerController.h"
+#include "RelicRunners/PlayerHUD/PlayerHUD.h"
+
 //#include "RelicRunners/Enemy/EnemyCharacter.h"
 //#include "RelicRunners/Enemy/EnemyCharacterAI.h"
 
@@ -31,7 +35,27 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         return;
     }
 
-    // Get camera view rotation (direction)
+
+    if (OwnerChar->GetWorld()->GetTimeSeconds() - LastUseTime < CooldownDuration)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    ARelicRunnersPlayerState* PlayerState = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
+
+    if (!PlayerState || PlayerState->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    if (OwnerChar->HasAuthority())
+    {
+        PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - Cost);
+        PlayerState->UpdateRemoteHUDResource();
+    }
+
     FVector CamLoc;
     FRotator ViewRot;
 
@@ -50,13 +74,59 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
     const FVector End = Start + (ViewRot.Vector() * BeamRange);
 
     SpawnBeamEffect(Start, End);
+  
+    if (OwnerChar->HasAuthority())
+    {
+        TArray<FHitResult> Hits;
 
     // Visual-only version: end instantly
+        TArray<AActor*> ActorsToIgnore;ActorsToIgnore.Add(OwnerChar);
+
+        const bool bHit = UKismetSystemLibrary::SphereTraceMulti(OwnerChar,Start,End,BeamRadius,UEngineTypes::ConvertToTraceType(ECC_Pawn),false,ActorsToIgnore,EDrawDebugTrace::None,Hits,true);
+
+        if (bHit)
+        {
+            for (const FHitResult& Hit : Hits)
+            {
+                AActor* HitActor = Hit.GetActor();
+
+                if (!HitActor)
+                {
+                    continue;
+                }
+              
+                if (!HitActor->ActorHasTag("Enemy"))
+                {
+                    continue;
+                }
+
+                UGameplayStatics::ApplyDamage(HitActor,BeamDamage,OwnerChar->GetController(),OwnerChar,nullptr);
+            }
+        }
+    }
+
     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
 void UMoonbeam::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,bool bReplicateEndAbility,bool bWasCancelled)
 {
+    UWorld* World = ActorInfo->AvatarActor->GetWorld();
+    if (World && !bWasCancelled)
+    {       
+        LastUseTime = World->GetTimeSeconds();
+
+        if (ActorInfo->IsLocallyControlled())
+        {
+            if (ARelicRunnersPlayerController* RPC =Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+            {
+                if (RPC->PlayerHUD)
+                {
+                    RPC->PlayerHUD->StartUltimateCooldown(CooldownDuration);
+                }
+            }
+        }
+    }
+
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 

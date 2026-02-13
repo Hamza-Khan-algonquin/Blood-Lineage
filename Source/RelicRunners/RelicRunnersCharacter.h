@@ -36,6 +36,8 @@
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
+#include "TimerManager.h"
+
 
 #include "RelicRunnersCharacter.generated.h"
 
@@ -177,6 +179,47 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
+	
+
+// Mirror of Desire, For my mergers :)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Mirror")
+	bool bMirrorActive = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mirror")
+	float MirrorReflectPercent = 0.35f; 
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mirror")
+	float MirrorRadius = 150.f;
+
+	FTimerHandle MirrorDurationHandle;
+	FTimerHandle MirrorDebugDrawHandle;
+
+	UFUNCTION()
+	void SetMirrorActive(bool bActive);
+
+	UFUNCTION()
+	void DrawMirrorDebug();
+// Mirror of Desire, For my mergers :)
+
+// Guard For Ares, For my mergers :)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Guard")
+	bool bGuardActive = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Guard")
+	float GuardAngleDegrees = 100.f;
+
+	FTimerHandle GuardDebugDrawHandle;
+
+	UFUNCTION()
+	void SetGuardActive(bool bActive);
+
+	UFUNCTION()
+	bool IsDamageFromFront(AActor* DamageCauser) const;
+
+	UFUNCTION()
+	void DrawGuardDebug(); 
+
+// Guard For Ares, For my mergers :)
 
 protected:
 

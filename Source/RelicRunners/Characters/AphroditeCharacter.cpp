@@ -12,6 +12,9 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/Abilities/MirrorOfDesireAbility.h"
+
+
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
@@ -32,6 +35,8 @@ void AAphroditeCharacter::BeginPlay()
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
         // Give KissOfLife ability
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
+        // Give MirrorOfDesireAbility ability - added
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMirrorOfDesireAbility::StaticClass(), 1, 0));
         // Give Goddess Of Love ability
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGoddessOfLove::StaticClass(), 1, 0));
     }
@@ -62,7 +67,7 @@ void AAphroditeCharacter::PossessedBy(AController* NewController)
     {
         AbilitySystem = PS->GetAbilitySystemComponent();
         if (AbilitySystem)
-        {
+        {                       
             AbilitySystem->InitAbilityActorInfo(PS, this);
         }
     }
@@ -99,7 +104,7 @@ void AAphroditeCharacter::GiveDefenceAbilities()
 
     if (AbilitySystem)
     {
-
+        AbilitySystem->TryActivateAbilityByClass(UMirrorOfDesireAbility::StaticClass());
     }
 }
 
