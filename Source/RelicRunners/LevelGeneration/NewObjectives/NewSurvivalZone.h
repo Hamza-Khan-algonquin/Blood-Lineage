@@ -57,7 +57,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_HandleOverlapEnter(AActor* OtherActor, bool OnOverlapBegin);
 
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(Replicated)
 	float Duration;
 
 	UPROPERTY(Replicated)
