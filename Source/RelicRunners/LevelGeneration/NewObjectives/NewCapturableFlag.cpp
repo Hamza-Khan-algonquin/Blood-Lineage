@@ -25,9 +25,6 @@ ANewCapturableFlag::ANewCapturableFlag()
 	TextComponent->SetupAttachment(Origin);
 	TextComponent->SetText(FText::FromString("Press E to Interact"));
 
-	FlagMesh = CreateDefaultSubobject<USkeletalMeshComponent>("FlagMesh");
-	FlagMesh->SetupAttachment(Origin);
-
 	bReplicates = true;
 	bAlwaysRelevant = true;
 }
@@ -63,11 +60,7 @@ void ANewCapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 	BeaconMesh->SetVisibility(false);
 	OnObjectiveActivated.Broadcast();
 
-	if (FlagMesh && ActivateAnimation)
-	{
-		FlagMesh->PlayAnimation(ActivateAnimation, false);
-	}
-
+	PlayFlagAnimation();
 }
 
 void ANewCapturableFlag::OnActiveChange()
@@ -82,11 +75,7 @@ void ANewCapturableFlag::OnActiveChange()
 	BeaconMesh->SetVisibility(false);
 	OnObjectiveActivated.Broadcast();
 
-	if (FlagMesh && ActivateAnimation)
-	{
-		FlagMesh->PlayAnimation(ActivateAnimation, false);
-	}
-
+	PlayFlagAnimation();
 }
 
 void ANewCapturableFlag::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

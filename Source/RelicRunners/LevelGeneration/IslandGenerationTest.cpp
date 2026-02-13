@@ -16,6 +16,7 @@
 #include "Components/SplineComponent.h"
 #include "NavigationSystem.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include "RelicRunners/Director System/SpawnZone.h"
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -182,6 +183,13 @@ void AIslandGenerationTest::Generate()
 	{
 		NavSys->Build();
 	}
+
+	if (SpawnZoneTemplate == nullptr || IslandObjective == EIslandObjectiveType::DefeatAllEnemies)
+		return;
+	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
+
+	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset+GetActorLocation(), GetActorRotation());
 }
 
 void AIslandGenerationTest::InitializeValues(EIslandObjectiveType islandObjective)
@@ -649,6 +657,7 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 					FVector posOffset = FVector((tileScale * x * 4) + tileScale, (tileScale * y * 4) + tileScale, 0.0f) + GetActorLocation();
 
 					ANewPayloadObjective* payload = GetWorld()->SpawnActor<ANewPayloadObjective>(GenerationValuesComponent->PayloadObjectiveValues.Payload, posOffset, FRotator::ZeroRotator);
+
 					CreateSplinePathStartToEnd(startingIndex, endingIndex, IslandWidth, payload);
 
 					FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
@@ -1324,13 +1333,15 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 		}
 		break;
 	case EIslandFloorObstacle::SurvivalZone:
-		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
+		if (GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZone != nullptr)
 		{
 			ANewSurvivalZone* newZone = GetWorld()->SpawnActor<ANewSurvivalZone>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZone, posOffset, FRotator(0.0f, yaw, 0.0f));
 
 			newZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 			newZone->Duration = GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
+
+
 			newZone->Activate();
 		}
 
@@ -1370,7 +1381,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	case EIslandFloorObstacle::End:
 		if (GenerationValuesComponent->IslandStartEnd.LevelEndPackedActor != nullptr)
 		{
-			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->IslandStartEnd.LevelEndPackedActor, posOffset, FRotator(0.0f, yaw, 0.0f));
+			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->IslandStartEnd.LevelEndPackedActor, posOffset, FRotator(0.0f, 0.0f, 0.0f));
 		}
 
 		if (startEndWallTemplate != nullptr)

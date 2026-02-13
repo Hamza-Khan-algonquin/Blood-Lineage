@@ -203,4 +203,7 @@ public:
 
 	class AActor* CameraActor;
 
+	UPROPERTY(EditAnywhere, Category = "Default Values | Enemy Spawning Zone Actor");
+	TSubclassOf<class ASpawnZone> SpawnZoneTemplate;
+
 };

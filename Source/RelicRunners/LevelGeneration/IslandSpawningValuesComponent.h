@@ -213,6 +213,9 @@ struct FSurvivalZoneValues
 	UPROPERTY(EditAnywhere)
 	TSubclassOf <class ANewSurvivalZone> SurvivalZone;
 
+	UPROPERTY(EditAnywhere)
+	float SurvivalDuration;
+
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 SurvivalWidthMin = 2;
 
