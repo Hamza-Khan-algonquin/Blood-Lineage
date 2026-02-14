@@ -42,6 +42,7 @@ void UInventorySlotsEntry::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    SelectedBorder->SetVisibility(ESlateVisibility::Collapsed);
     InventoryItemOptionsClass = LoadClass<UInventoryItemOptions>(nullptr, TEXT("/Game/Inventory/BP_InventoryItemOptions.BP_InventoryItemOptions_C"));
 }
 
