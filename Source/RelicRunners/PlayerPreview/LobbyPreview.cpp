@@ -42,7 +42,7 @@ ALobbyPreview::ALobbyPreview()
         MeleeAnim = MeleeAnimBP.Class;
     }
 
-    static ConstructorHelpers::FClassFinder<UAnimInstance> RangedAnimBP(TEXT("/Game/Assets/Characters/Melee/Model/ABP_ranged_model"));
+    static ConstructorHelpers::FClassFinder<UAnimInstance> RangedAnimBP(TEXT("/Game/Assets/Characters/Ranged/Model/ABP_ranged_model"));
 
     if (RangedAnimBP.Succeeded())
     {
