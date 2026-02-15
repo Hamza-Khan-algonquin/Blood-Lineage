@@ -19,6 +19,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Flag3Active;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Flag1Enabled;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Flag2Enabled;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Flag3Enabled;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
 	class UTexture2D* FlagUpIcon;
 

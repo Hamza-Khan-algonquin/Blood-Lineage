@@ -55,6 +55,9 @@ public:
 	void ClearOldObjectives();
 
 	UFUNCTION(Client, Reliable)
+	void Client_DecrementFlagObjective();
+
+	UFUNCTION(Client, Reliable)
 	void Client_AddFlagObjective(int NumFlags);
 
 	UFUNCTION(Client, Reliable)

@@ -24,4 +24,5 @@ protected:
     class UWidgetAnimation* Completion;
 
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+    void RefreshFlagVisuals(class UFlagData* FlagData);
 };
