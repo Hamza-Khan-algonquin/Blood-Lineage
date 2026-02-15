@@ -100,10 +100,10 @@ public:
 	void DefenceAbility();
 	void UtilityAbility();
 	void UltimateAbility();
-	virtual void GiveDamageAbilities();
-	virtual void GiveDefenceAbilities();
-	virtual void GiveUtilityAbilities();
-	virtual void GiveUltimateAbilities();
+	virtual void ActivateDamageAbilities();
+	virtual void ActivateDefenceAbilities();
+	virtual void ActivateUtilityAbilities();
+	virtual void ActivateUltimateAbilities();
 	void HealthPotions();
 	virtual void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();

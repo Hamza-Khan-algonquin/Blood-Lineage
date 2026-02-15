@@ -54,6 +54,14 @@ void AAresCharacter::PossessedBy(AController* NewController)
 			
 		}
 	}
+	if (AbilitySystem)
+	{
+		// Give Abilities
+		GiveEarthquake();
+		GiveGuard();
+		GiveWarBanner();
+		GiveRageofTheGods();
+	}
 }
 
 // Called when PlayerState is replicated on clients
@@ -70,9 +78,9 @@ void AAresCharacter::OnRep_PlayerState()
 	}
 }
 
-void AAresCharacter::GiveDamageAbilities()
+void AAresCharacter::ActivateDamageAbilities()
 {
-	Super::GiveDamageAbilities();
+	Super::ActivateDamageAbilities();
 
 	if (AbilitySystem)
 	{
@@ -82,9 +90,9 @@ void AAresCharacter::GiveDamageAbilities()
 	}
 }
 
-void AAresCharacter::GiveDefenceAbilities()
+void AAresCharacter::ActivateDefenceAbilities()
 {
-	Super::GiveDefenceAbilities();
+	Super::ActivateDefenceAbilities();
 
 	if (AbilitySystem)
 	{
@@ -92,9 +100,9 @@ void AAresCharacter::GiveDefenceAbilities()
 	}
 }
 
-void AAresCharacter::GiveUtilityAbilities()
+void AAresCharacter::ActivateUtilityAbilities()
 {
-	Super::GiveUtilityAbilities();
+	Super::ActivateUtilityAbilities();
 
 	if (AbilitySystem)
 	{
@@ -103,13 +111,53 @@ void AAresCharacter::GiveUtilityAbilities()
 	}
 }
 
-void AAresCharacter::GiveUltimateAbilities()
+void AAresCharacter::ActivateUltimateAbilities()
 {
-	Super::GiveUltimateAbilities();
+	Super::ActivateUltimateAbilities();
 
 	if (AbilitySystem)
 	{
 		AbilitySystem->TryActivateAbilityByClass(URageOfTheGods::StaticClass());
+	}
+}
+
+void AAresCharacter::GiveEarthquake()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(UEarthquakeAbility::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UEarthquakeAbility::StaticClass(), 1, 0));
+	}
+}
+
+void AAresCharacter::GiveGuard()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(UGuardAbility::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGuardAbility::StaticClass(), 1, 0));
+	}
+}
+
+void AAresCharacter::GiveWarBanner()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(UWarBannerAbility::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UWarBannerAbility::StaticClass(), 1, 0));
+	}
+}
+
+void AAresCharacter::GiveRageofTheGods()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(URageOfTheGods::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(URageOfTheGods::StaticClass(), 1, 0));
 	}
 }
 
@@ -208,3 +256,5 @@ void AAresCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 		UGameplayStatics::ApplyDamage(HitActor, Damage, GetController(), this, nullptr);
 	}
 }
+
+

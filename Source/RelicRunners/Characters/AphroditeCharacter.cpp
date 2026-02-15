@@ -28,17 +28,7 @@ void AAphroditeCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (AbilitySystem)
-    {
-        // Give Bundle of Joy ability 
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
-        // Give KissOfLife ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
-        // Give MirrorOfDesireAbility ability - added
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMirrorOfDesireAbility::StaticClass(), 1, 0));
-        // Give Goddess Of Love ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGoddessOfLove::StaticClass(), 1, 0));
-    }
+
 
  //   //Starting Stats
  //   if (ClassInfo)
@@ -70,6 +60,15 @@ void AAphroditeCharacter::PossessedBy(AController* NewController)
             AbilitySystem->InitAbilityActorInfo(PS, this);
         }
     }
+
+    if (AbilitySystem)
+    {
+        // Give Abilities
+        GiveBundleOfJoy();
+        GiveMirrorOfDesire();
+        GiveKissOfLife();
+        GiveGoddessOfLove();
+    }
 }
 
 // Called when PlayerState is replicated on clients
@@ -86,46 +85,88 @@ void AAphroditeCharacter::OnRep_PlayerState()
     }
 }
 
-void AAphroditeCharacter::GiveDamageAbilities()
+void AAphroditeCharacter::ActivateDamageAbilities()
 {
-    Super::GiveDamageAbilities();
+    Super::ActivateDamageAbilities();
 
     if (AbilitySystem)
     {
-		// Activate Bundle of Joy ability
+        // Activate Back Stab ability
         AbilitySystem->TryActivateAbilityByClass(UBundleOfJoy::StaticClass());
-
     }
+
 }
-void AAphroditeCharacter::GiveDefenceAbilities()
+
+void AAphroditeCharacter::ActivateDefenceAbilities()
 {
-	Super::GiveDefenceAbilities();
+    Super::ActivateDefenceAbilities();
 
     if (AbilitySystem)
     {
+        // Activate Back Stab ability
         AbilitySystem->TryActivateAbilityByClass(UMirrorOfDesireAbility::StaticClass());
     }
 }
 
-void AAphroditeCharacter::GiveUtilityAbilities()
+void AAphroditeCharacter::ActivateUtilityAbilities()
 {
-    Super::GiveUtilityAbilities();
+    Super::ActivateUtilityAbilities();
 
     if (AbilitySystem)
     {
-        // Activate KissOfLife ability 
+        // Activate Back Stab ability
         AbilitySystem->TryActivateAbilityByClass(UKissOfLife::StaticClass());
     }
 }
 
-void AAphroditeCharacter::GiveUltimateAbilities()
+void AAphroditeCharacter::ActivateUltimateAbilities()
 {
-	Super::GiveUltimateAbilities();
+    Super::ActivateUltimateAbilities();
 
     if (AbilitySystem)
     {
-        // Activate Goddess of Love ability 
+        // Activate Back Stab ability
         AbilitySystem->TryActivateAbilityByClass(UGoddessOfLove::StaticClass());
+    }
+}
+
+void AAphroditeCharacter::GiveBundleOfJoy()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(UBundleOfJoy::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
+    }
+}
+
+void AAphroditeCharacter::GiveMirrorOfDesire()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(UMirrorOfDesireAbility::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMirrorOfDesireAbility::StaticClass(), 1, 0));
+    }
+}
+
+void AAphroditeCharacter::GiveKissOfLife()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(UKissOfLife::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
+    }
+}
+
+void AAphroditeCharacter::GiveGoddessOfLove()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(UGoddessOfLove::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGoddessOfLove::StaticClass(), 1, 0));
     }
 }
 
@@ -265,8 +306,6 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         bProjectileActive = false;
     }
 }
-
-
 
 
 

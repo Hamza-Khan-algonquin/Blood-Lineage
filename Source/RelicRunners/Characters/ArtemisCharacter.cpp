@@ -72,6 +72,15 @@ void AArtemisCharacter::PossessedBy(AController* NewController)
 			AbilitySystem->InitAbilityActorInfo(PS, this);
 		}
 	}
+
+	if (AbilitySystem)
+	{
+		// Give Abilities
+		GivePiercingArrow();
+		GiveNaturesBlessing();
+		GiveMarkOfTheHunt();
+		GiveMoonBeam();
+	}
 }
 
 // Called when PlayerState is replicated on clients
@@ -87,9 +96,9 @@ void AArtemisCharacter::OnRep_PlayerState()
 		AbilitySystem->InitAbilityActorInfo(PS, this);
 	}
 }
-void AArtemisCharacter::GiveDamageAbilities()
+void AArtemisCharacter::ActivateDamageAbilities()
 {
-	Super::GiveDamageAbilities();
+	Super::ActivateDamageAbilities();
 
 	if (AbilitySystem)
 	{
@@ -97,9 +106,9 @@ void AArtemisCharacter::GiveDamageAbilities()
 	}
 }
 
-void AArtemisCharacter::GiveDefenceAbilities()
+void AArtemisCharacter::ActivateDefenceAbilities()
 {
-	Super::GiveDefenceAbilities();
+	Super::ActivateDefenceAbilities();
 
 	if (AbilitySystem)
 	{
@@ -108,9 +117,9 @@ void AArtemisCharacter::GiveDefenceAbilities()
 	}
 }
 
-void AArtemisCharacter::GiveUtilityAbilities()
+void AArtemisCharacter::ActivateUtilityAbilities()
 {
-	Super::GiveUtilityAbilities();
+	Super::ActivateUtilityAbilities();
 
 	if (AbilitySystem)
 	{
@@ -119,9 +128,9 @@ void AArtemisCharacter::GiveUtilityAbilities()
 	}
 }
 
-void AArtemisCharacter::GiveUltimateAbilities()
+void AArtemisCharacter::ActivateUltimateAbilities()
 {
-	Super::GiveUltimateAbilities();
+	Super::ActivateUltimateAbilities();
 
 	if (AbilitySystem)
 	{
@@ -129,6 +138,46 @@ void AArtemisCharacter::GiveUltimateAbilities()
 		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
 	}
 
+}
+
+void AArtemisCharacter::GivePiercingArrow()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(UPiercingArrow::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
+	}
+}
+
+void AArtemisCharacter::GiveNaturesBlessing()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(UNaturesBlessing::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+	}
+}
+
+void AArtemisCharacter::GiveMarkOfTheHunt()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(UMarkOfTheHunt::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
+	}
+}
+
+void AArtemisCharacter::GiveMoonBeam()
+{
+	if (!AbilitySystem) return;
+
+	if (!AbilitySystem->FindAbilitySpecFromClass(UMoonbeam::StaticClass()))
+	{
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
+	}
 }
 
 void AArtemisCharacter::PlayRandomAttackAnimation()

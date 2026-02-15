@@ -735,47 +735,51 @@ UStaticMeshComponent* ARelicRunnersCharacter::GetStaticMeshComponentByItemType(c
 	return nullptr;
 }
 
-void ARelicRunnersCharacter::GiveDamageAbilities()
+void ARelicRunnersCharacter::ActivateDamageAbilities()
 {
 
 }
 
-void ARelicRunnersCharacter::GiveDefenceAbilities()
+void ARelicRunnersCharacter::ActivateDefenceAbilities()
 {
 
 }
 
-void ARelicRunnersCharacter::GiveUtilityAbilities()
+void ARelicRunnersCharacter::ActivateUtilityAbilities()
 {
 
 }
 
-void ARelicRunnersCharacter::GiveUltimateAbilities()
+void ARelicRunnersCharacter::ActivateUltimateAbilities()
 {
 
 }
 
 void ARelicRunnersCharacter::DamageAbility()
 {
-	GiveDamageAbilities();
+	ActivateDamageAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Damage Ability Activated on Character"));
 }
 
+
 void ARelicRunnersCharacter::DefenceAbility()
 {
-	GiveDefenceAbilities();
+	if (!IsLocallyControlled())
+		return;
+
+	ActivateDefenceAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Defence Ability Activated on Character"));
 }
 
 void ARelicRunnersCharacter::UtilityAbility()
 {
-	GiveUtilityAbilities();
+	ActivateUtilityAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Utility Ability Activated on Character"));
 }
 
 void ARelicRunnersCharacter::UltimateAbility()
 {
-	GiveUltimateAbilities();
+	ActivateUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
 

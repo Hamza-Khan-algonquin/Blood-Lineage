@@ -42,7 +42,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
     AttributeSet = CreateDefaultSubobject<UAttributeSet>(TEXT("AttributeSet"));
 
     AbilitySystemComponent->SetIsReplicated(true);
-    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	//Inventory
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));

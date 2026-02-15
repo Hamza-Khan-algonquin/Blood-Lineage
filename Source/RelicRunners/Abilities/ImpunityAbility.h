@@ -19,18 +19,22 @@ public:
 
     virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
+
+
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
     virtual FName GetAbilityName() const override { return FName("Impunity"); }
 
     float GetDamageReductionMultiplier() const { return bIsActive ? 0.5f : 1.0f; }
 
-private:
+protected:
+
+    void ResetSpeed();
+
     float OriginalSpeed;
 
     FTimerHandle SpeedResetTimer;
 
     bool bIsOnCooldown = false;
 
-    void ResetSpeed();
 };

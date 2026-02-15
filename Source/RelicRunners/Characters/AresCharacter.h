@@ -29,10 +29,15 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	virtual void GiveDamageAbilities() override;
-	virtual void GiveDefenceAbilities() override;
-	virtual void GiveUtilityAbilities() override;
-	virtual void GiveUltimateAbilities() override;
+	virtual void ActivateDamageAbilities() override;
+	virtual void ActivateDefenceAbilities() override;
+	virtual void ActivateUtilityAbilities() override;
+	virtual void ActivateUltimateAbilities() override;
+
+	void GiveEarthquake();
+	void GiveGuard();
+	void GiveWarBanner();
+	void GiveRageofTheGods();
 
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;

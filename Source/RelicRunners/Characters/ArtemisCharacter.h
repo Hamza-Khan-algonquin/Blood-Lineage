@@ -27,10 +27,15 @@ public:
 protected:
     virtual void BeginPlay() override;
 	void Tick(float DeltaTime);
-    virtual void GiveDamageAbilities() override;
-    virtual void GiveDefenceAbilities() override;
-    virtual void GiveUtilityAbilities() override;
-    virtual void GiveUltimateAbilities() override;
+	virtual void ActivateDamageAbilities() override;
+	virtual void ActivateDefenceAbilities() override;
+	virtual void ActivateUtilityAbilities() override;
+	virtual void ActivateUltimateAbilities() override;
+
+	void GivePiercingArrow();
+	void GiveNaturesBlessing();
+	void GiveMarkOfTheHunt();
+	void GiveMoonBeam(); 
    
     virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;

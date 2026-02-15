@@ -19,21 +19,7 @@ void ANemesisCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-	if (AbilitySystem)
-	{
-        // Give Divine Punishment Dance ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UDivinePunishment::StaticClass(), 1, 0));
 
-        // Give Impunity ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
-
-        // Give Vengeful Dance ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UVengefulDance::StaticClass(), 1, 0));
-
-        // Give Back Stab ability
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBackStab::StaticClass(), 1, 0));
-
-	}
 
     ////Starting Stats
     //if (ClassInfo)
@@ -64,6 +50,16 @@ void ANemesisCharacter::PossessedBy(AController* NewController)
             AbilitySystem->InitAbilityActorInfo(PS, this);
         }
     }
+
+    // Give Abilities
+    if (AbilitySystem)
+    {
+        GiveImpunity();
+        GiveBackStab();
+        GiveVengefulDance();
+        GiveDivinePunishment();
+    }
+
 }
 
 // Called when PlayerState is replicated on clients
@@ -81,9 +77,9 @@ void ANemesisCharacter::OnRep_PlayerState()
 }
 
 
-void ANemesisCharacter::GiveDamageAbilities()
+void ANemesisCharacter::ActivateDamageAbilities()
 {
-    Super::GiveDamageAbilities();
+    Super::ActivateDamageAbilities();
 
     if (AbilitySystem)
     {
@@ -92,22 +88,60 @@ void ANemesisCharacter::GiveDamageAbilities()
     }
 }
 
-void ANemesisCharacter::GiveDefenceAbilities()
+void ANemesisCharacter::GiveImpunity()
 {
-    Super::GiveDefenceAbilities();
+    if (!AbilitySystem) return;
 
+    if (!AbilitySystem->FindAbilitySpecFromClass(UImpunityAbility::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
+    }
+}
+
+void ANemesisCharacter::GiveBackStab()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(UBackStab::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBackStab::StaticClass(), 1, 0));
+    }
+}
+
+void ANemesisCharacter::GiveVengefulDance()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(UVengefulDance::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UVengefulDance::StaticClass(), 1, 0));
+    }
+}
+
+void ANemesisCharacter::GiveDivinePunishment()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(UDivinePunishment::StaticClass()))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UDivinePunishment::StaticClass(), 1, 0));
+    }
+}
+
+void ANemesisCharacter::ActivateDefenceAbilities()
+{
     if (AbilitySystem)
     {
-
         // Activate Impunity ability
         AbilitySystem->TryActivateAbilityByClass(UImpunityAbility::StaticClass());
 
     }
 }
 
-void ANemesisCharacter::GiveUtilityAbilities()
+
+void ANemesisCharacter::ActivateUtilityAbilities()
 {
-    Super::GiveUtilityAbilities();
+    Super::ActivateUtilityAbilities();
 
     if (AbilitySystem)
     {
@@ -117,13 +151,12 @@ void ANemesisCharacter::GiveUtilityAbilities()
     }
 }
 
-void ANemesisCharacter::GiveUltimateAbilities()
+void ANemesisCharacter::ActivateUltimateAbilities()
 {
-    Super::GiveUltimateAbilities();
+    Super::ActivateUltimateAbilities();
 
     if (AbilitySystem)
     {
-
         // Activate Vengeful Dance ability
         AbilitySystem->TryActivateAbilityByClass(UDivinePunishment::StaticClass());
 

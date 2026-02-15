@@ -1274,13 +1274,25 @@ void ARelicRunnersPlayerController::DamageAbility()
 		PossessedPawn->DamageAbility();
 	}
 }
+//void ARelicRunnersPlayerController::DefenceAbility()
+//{
+//	if (PossessedPawn)
+//	{
+//		PossessedPawn->DefenceAbility();
+//	}
+//}
+
 void ARelicRunnersPlayerController::DefenceAbility()
 {
-	if (PossessedPawn)
+	if (!IsLocalController())
+		return;
+
+	if (ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn()))
 	{
-		PossessedPawn->DefenceAbility();
+		Char->DefenceAbility();
 	}
 }
+
 
 void ARelicRunnersPlayerController::UtilityAbility()
 {

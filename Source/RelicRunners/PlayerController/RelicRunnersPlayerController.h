@@ -186,6 +186,7 @@ public:
 	FTimerHandle DisableUITimer;
 	FTimerHandle ObjectiveClearTimerHandle;
 
+
 protected:
 
 	//Template
