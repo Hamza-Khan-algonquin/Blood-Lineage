@@ -24,6 +24,12 @@
 void UPlayerHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearAllTimersForObject(this);
+	}
+
 	UpdateBindText();
 }
 
@@ -113,31 +119,58 @@ void UPlayerHUD::UpdateBindText()
 
 void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
 {
-	if (!CooldownText || CooldownTime <= 0.f) return;
+	if (!CooldownText || CooldownTime <= 0.f)
+	{
+		return;
+	}
 
 	if (RemainingTime > 0.f)
+	{
 		return;
+	}
 
 	RemainingTime = CooldownTime;
-	CooldownText->SetText(FText::AsNumber(FMath::CeilToInt(RemainingTime)));
-
-	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, CooldownText, &RemainingTime, &TimerHandle]()
-		{
-			RemainingTime -= 1.0f;
-			if (!CooldownText) GetWorld()->GetTimerManager().ClearTimer(TimerHandle); return;
-
-			if (RemainingTime <= 0.f)
-			{
-				CooldownText->SetText(FText::FromString(TEXT("")));
-				GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
-			}
-			else
-			{
-				CooldownText->SetText(FText::AsNumber(FMath::CeilToInt(RemainingTime)));
-			}
-		}, 1.0f, true
+	CooldownText->SetText(
+		FText::AsNumber(FMath::CeilToInt(RemainingTime))
 	);
+
+	// Clear any existing timer BEFORE setting a new one
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(TimerHandle);
+	}
+
+	TWeakObjectPtr<UTextBlock> CooldownTextWeak = CooldownText;
+	float* RemainingTimePtr = &RemainingTime;
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			TimerHandle,
+			[this, CooldownTextWeak, RemainingTimePtr]()
+			{
+				// Widget or HUD is gone — do nothing
+				if (!CooldownTextWeak.IsValid() || !RemainingTimePtr)
+				{
+					return;
+				}
+
+				*RemainingTimePtr -= 1.f;
+
+				if (*RemainingTimePtr <= 0.f)
+				{
+					CooldownTextWeak->SetText(FText::GetEmpty());
+					return;
+				}
+
+				CooldownTextWeak->SetText(
+					FText::AsNumber(FMath::CeilToInt(*RemainingTimePtr))
+				);
+			},
+			1.0f,
+			true
+		);
+	}
 }
 void UPlayerHUD::StartDamageCooldown(float CooldownTime)
 {

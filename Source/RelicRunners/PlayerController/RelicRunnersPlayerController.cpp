@@ -1174,8 +1174,8 @@ void ARelicRunnersPlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ARelicRunnersPlayerController::StopJumping);
+		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::Jump);
+		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ARelicRunnersPlayerController::StopJumping);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &ARelicRunnersPlayerController::MoveForward);
@@ -1314,13 +1314,13 @@ void ARelicRunnersPlayerController::HeavyAttack()
 	}
 }
 
-void ARelicRunnersPlayerController::Jump(const FInputActionValue& Value)
-{
-	if (PossessedPawn)
-	{
-		PossessedPawn->Jump();
-	}
-}
+//void ARelicRunnersPlayerController::Jump(const FInputActionValue& Value)
+//{
+//	if (PossessedPawn)
+//	{
+//		PossessedPawn->Jump();
+//	}
+//}
 
 void ARelicRunnersPlayerController::StopJumping(const FInputActionValue& Value)
 {

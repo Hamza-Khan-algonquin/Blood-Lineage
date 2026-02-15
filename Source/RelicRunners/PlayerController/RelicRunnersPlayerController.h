@@ -208,7 +208,7 @@ protected:
 	void MoveRight(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 	void Interact();
-	void Jump(const struct FInputActionValue& Value);
+	//void Jump(const struct FInputActionValue& Value);
 	void StopJumping(const struct FInputActionValue& Value);
 	void InitLocalUI();
 	void ToggleUI(UUserWidget* UIWidget);
