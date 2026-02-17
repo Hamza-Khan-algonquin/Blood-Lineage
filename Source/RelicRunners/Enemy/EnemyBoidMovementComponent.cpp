@@ -99,7 +99,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 			FocuseMode = EBoidFocuseMode::Velocity;
 		}
 		
-		currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0, 1) + MinSeperationRange;
+		currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0.3, 1) + MinSeperationRange;
 	}
 
 	TArray<AEnemyPawn*> boidsInFlock = Commander->GetPawnEnemies();
@@ -203,7 +203,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//finalInflunceVector /= totalWeight;
 	//finalInflunceVector.Normalize();
 
-	FVector desiredVelocity = finalInflunceVector.GetSafeNormal() * MaxSpeed;
+	FVector desiredVelocity = finalInflunceVector.GetSafeNormal2D() * MaxSpeed;
 
 	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
