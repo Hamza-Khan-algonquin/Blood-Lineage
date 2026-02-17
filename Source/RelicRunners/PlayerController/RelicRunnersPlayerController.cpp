@@ -866,9 +866,9 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 	FlagGoal->Flag1Active = false;
 	FlagGoal->Flag2Active = false;
 	FlagGoal->Flag3Active = false;
-	if (NumFlags >= 1) FlagGoal->Flag1Enabled = true;
-	if (NumFlags >= 2) FlagGoal->Flag2Enabled = true;
-	if (NumFlags == 3) FlagGoal->Flag3Enabled = true;
+	if (NumFlags >= 1) FlagGoal->Flag1Enabled = true; else FlagGoal->Flag1Enabled = false;
+	if (NumFlags >= 2) FlagGoal->Flag2Enabled = true; else FlagGoal->Flag2Enabled = false;
+	if (NumFlags == 3) FlagGoal->Flag3Enabled = true; else FlagGoal->Flag3Enabled = false;
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
@@ -912,10 +912,8 @@ void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(fl
 	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
 	PandoraGoal->Percent = 1.0f;
 
-	int Minutes = FMath::FloorToInt(Time / 60.0f);
 	int Seconds = FMath::CeilToInt(FMath::Fmod(Time, 60.0f));
-	if (Seconds == 60) { Seconds = 0; Minutes++; }
-	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%d"), Seconds);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
 
