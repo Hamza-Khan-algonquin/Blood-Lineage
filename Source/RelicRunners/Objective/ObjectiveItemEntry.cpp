@@ -55,7 +55,8 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     {
         WidgetSwitcher->SetActiveWidgetIndex(2);
 
-        RefreshFlagVisuals(FlagData);
+        UFlagsObjective* FlagWidget = Cast<UFlagsObjective>(WidgetSwitcher->GetWidgetAtIndex(2));
+        RefreshFlagVisuals(FlagData, FlagWidget);
     }
     else if (UEnemiesData* EnemiesData = Cast<UEnemiesData>(ListItemObject)) 
     {
@@ -80,9 +81,8 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     }
 }
 
-void UObjectiveItemEntry::RefreshFlagVisuals(UFlagData* FlagData)
+void UObjectiveItemEntry::RefreshFlagVisuals(UFlagData* FlagData, UFlagsObjective* Widget)
 {
-    UFlagsObjective* Widget = Cast<UFlagsObjective>(WidgetSwitcher->GetActiveWidget());
     if (!Widget || !FlagData) return;
 
     if (!FlagData->FlagUpIcon) FlagData->FlagUpIcon = ItemStats::LoadIcon("FlagUpIcon");

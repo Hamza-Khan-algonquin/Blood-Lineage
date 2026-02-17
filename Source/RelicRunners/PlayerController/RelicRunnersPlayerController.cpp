@@ -866,9 +866,9 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 	FlagGoal->Flag1Active = false;
 	FlagGoal->Flag2Active = false;
 	FlagGoal->Flag3Active = false;
-	if (NumFlags >= 1) FlagGoal->Flag1Enabled = true; else FlagGoal->Flag1Enabled = false;
-	if (NumFlags >= 2) FlagGoal->Flag2Enabled = true; else FlagGoal->Flag2Enabled = false;
-	if (NumFlags == 3) FlagGoal->Flag3Enabled = true; else FlagGoal->Flag3Enabled = false;
+	FlagGoal->Flag1Enabled = (NumFlags >= 1);
+	FlagGoal->Flag2Enabled = (NumFlags >= 2);
+	FlagGoal->Flag3Enabled = (NumFlags == 3);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
