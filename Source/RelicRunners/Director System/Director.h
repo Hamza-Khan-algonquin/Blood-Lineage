@@ -20,10 +20,17 @@ To do:
 
 class ARelicRunnersCharacter;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerAdd, APawn*, Player);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerRemoved, APawn*, Player);
+
 UCLASS()
 class RELICRUNNERS_API ADirector : public AActor
 {
 	GENERATED_BODY()
+
+public:
+	FOnPlayerAdd OnPlayerAdd;
+	FOnPlayerRemoved OnPlayerRemoved;
 
 protected:
 	static TWeakObjectPtr<ADirector> Instance;
@@ -72,6 +79,8 @@ public:
 	//A method to add a player to the list of players the director knows of
 	UFUNCTION(meta = (ToolTip = "A method to add a player to the list of players the director knows of", ShortToolTip = "Add the players"))
 	void AddPlayer(APawn* newPlayer);
+	UFUNCTION()
+	void RemovePlayer(AActor* player);
 
 
 

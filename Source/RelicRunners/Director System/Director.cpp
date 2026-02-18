@@ -52,6 +52,11 @@ ADirector* ADirector::GetInstance(const UObject* WorldContext)
 {
 	UWorld* world = WorldContext->GetWorld();
 
+	if (!world)
+	{
+		return nullptr;
+	}
+
 	if (Instance.IsValid())
 	{
 		return Instance.Get();
@@ -132,6 +137,18 @@ void ADirector::AddPlayer(APawn* newPlayer)
 	if (!Players.Contains(newPlayer))
 	{
 		Players.Add(newPlayer);
+		OnPlayerAdd.Broadcast(newPlayer);
+	}
+}
+
+void ADirector::RemovePlayer(AActor* player)
+{
+	if (APawn* pawnPlayer = Cast<APawn>(player))
+	{
+		Players.Remove(pawnPlayer);
+
+		pawnPlayer->OnDestroyed.RemoveDynamic(this, &ADirector::RemovePlayer);
+		OnPlayerRemoved.Broadcast(pawnPlayer);
 	}
 }
 

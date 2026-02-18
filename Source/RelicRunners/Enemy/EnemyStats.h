@@ -28,6 +28,8 @@ protected:
 	UPROPERTY(Category = "Stats", EditAnywhere, Replicated, BlueprintReadWrite, BlueprintGetter = GetChanceToDropItem, BlueprintSetter = SetChanceToDropItem, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
 	//The Chance the enemy has to drop an item on death from 0.0 to 1.0
 	float ChanceToDropItem;
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintGetter = GetRemainingStunTime, BlueprintSetter = SetRemainingStunTime, meta = (Delta = 0.1))
+	float AttackDamage;
 
 public:	
 	// Sets default values for this component's properties
@@ -48,26 +50,30 @@ public:
 	float GetRemainingStunTime() const { return RemainingStunTime; }
 	UFUNCTION(BlueprintGetter)
 	float GetChanceToDropItem() const { return ChanceToDropItem; }
+	UFUNCTION(BlueprintGetter)
+	float GetAttackDamage() const { return AttackDamage; }
 
 	UFUNCTION(BlueprintSetter)
-	void SetName(const FName& NewName) { EnemyName = NewName; }
+	void SetName(const FName& newName) { EnemyName = newName; }
 	UFUNCTION(BlueprintSetter)
-	void SetLevel(int NewLevel) { EnemyLevel = NewLevel; }
+	void SetLevel(int newLevel) { EnemyLevel = newLevel; }
 	UFUNCTION(BlueprintSetter)
-	void SetEnemyType(EEnemyType NewType) { EnemyType = NewType; }
+	void SetEnemyType(EEnemyType newType) { EnemyType = newType; }
 	UFUNCTION(BlueprintSetter)
-	void SetMaxHealth(float NewMaxHealth) { MaxHealth = NewMaxHealth; }
+	void SetMaxHealth(float newMaxHealth) { MaxHealth = newMaxHealth; }
 	UFUNCTION(BlueprintSetter)
-	void SetCurrentHealth(float NewCurrentHealth) { CurrentHealth = FMath::Clamp(NewCurrentHealth, 0.0f, MaxHealth); }
+	void SetCurrentHealth(float newCurrentHealth) { CurrentHealth = FMath::Clamp(newCurrentHealth, 0.0f, MaxHealth); }
 	UFUNCTION(BlueprintSetter)
-	void SetRemainingStunTime(float NewStunTime) { RemainingStunTime = NewStunTime; }
+	void SetRemainingStunTime(float newStunTime) { RemainingStunTime = newStunTime; }
 	UFUNCTION(BlueprintSetter)
-	void SetChanceToDropItem(float NewChance) { ChanceToDropItem = FMath::Clamp(NewChance, 0.0f, 1.0f); };
+	void SetChanceToDropItem(float newChance) { ChanceToDropItem = FMath::Clamp(newChance, 0.0f, 1.0f); };
+	UFUNCTION(BlueprintSetter)
+	void SetAttackDamage(float newAttack) { AttackDamage = newAttack; };
 
 	UFUNCTION(BlueprintCallable)
-	void AddToCurrentHealth(float HealthToAdd) { CurrentHealth = FMath::Clamp(CurrentHealth + HealthToAdd, 0.0f, MaxHealth); };
+	void AddToCurrentHealth(float healthToAdd) { CurrentHealth = FMath::Clamp(CurrentHealth + healthToAdd, 0.0f, MaxHealth); };
 	UFUNCTION(BlueprintCallable)
-	void AddToRemainingStunTime(float TimeToAdd) { RemainingStunTime += TimeToAdd; };
+	void AddToRemainingStunTime(float timeToAdd) { RemainingStunTime += timeToAdd; };
 
 	//This is an conditional compilation macro that specifies that the code with in should only be included when compiling for the Unreal Engine Editor. Basically mean it get tosed when building that blasted exe.
 #if WITH_EDITOR

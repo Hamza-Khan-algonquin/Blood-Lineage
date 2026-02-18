@@ -7,6 +7,7 @@
 #include "CommanderController.generated.h"
 
 class AEnemyPawn;
+class APawn;
 class UAIPerceptionComponent;
 
 UCLASS()
@@ -15,7 +16,7 @@ class RELICRUNNERS_API ACommanderController : public AAIController
 	GENERATED_BODY()
 public:
 	UPROPERTY(BlueprintReadWrite)
-	TArray<TObjectPtr<AEnemyPawn>> ControlledEnemies;
+	TArray<AEnemyPawn*> ControlledEnemies;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxNumberOfEnemies;
@@ -31,9 +32,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ActiveDistanceFromPlayer;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AttackDistanceFromPlayer;
-
 	UPROPERTY(VisibleAnywhere)
 	bool EnemiesSetToLowestLOD;
 
@@ -43,10 +41,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	APawn* TargetPlayer;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TMap<TObjectPtr<APawn>, float> RemainingTimeToAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TimeToAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DistanceToTargetPlayer;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DistanceForBoidsToFocusePlayer;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool BoidShouldFocusePlayer;
 protected:
-	
+	bool IsTargeting;
 public: 
 	ACommanderController();
+	~ACommanderController();
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -58,12 +68,22 @@ public:
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void SpawnPawnEnemy();
+
+	UFUNCTION(BlueprintCallable)
+	void AddPlayerToTimeToAttack(APawn* player);
+	UFUNCTION(BlueprintCallable)
+	void RemovePlayerFromTimeToAttack(APawn* player);
+
+	UFUNCTION(BlueprintCallable)
+	APawn* GetCurrentTarget();
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateLODs(float closestDistance);
+	void UpdateLODs(TArray<APawn*> players, FVector refernceLocation);
+	UFUNCTION(BlueprintCallable)
+	void AttackCheck(TArray<APawn*> players, float delta);
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer);
 };
