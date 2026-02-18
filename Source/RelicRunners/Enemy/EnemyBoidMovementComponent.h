@@ -66,8 +66,8 @@ protected:
 	float TargetWeight;
 	
 
-	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
-	float OrbitWeight;
+	//UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	//float OrbitWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float MinMoveVelocity;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")

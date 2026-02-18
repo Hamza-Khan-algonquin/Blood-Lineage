@@ -10,6 +10,7 @@
 #include "NavigationSystem.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
 
 ACommanderController::ACommanderController()
 {
@@ -18,7 +19,8 @@ ACommanderController::ACommanderController()
 	CurrentLifeTimeNumberOfEnemies = 0;
 	SpawnRadius = 1000.f;
 	ActiveDistanceFromPlayer = 10000.f;
-	AttackDistanceFromPlayer = 8000.f;
+	DistanceToTargetPlayer = 5000.f;
+	DistanceForBoidsToFocusePlayer = 1000;
 	EnemiesSetToLowestLOD = false;
 	TimeToAttack = 1;
 }
@@ -39,6 +41,7 @@ void ACommanderController::Tick(float DeltaTime)
 
 	APawn* pawn = GetPawn();
 	TArray<APawn*> players;
+	UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(BrainComponent);
 
 	if (ADirector* dir = ADirector::GetInstance(this))
 	{
@@ -50,7 +53,55 @@ void ACommanderController::Tick(float DeltaTime)
 		return;
 	}
 
-	
+	if (!BTComp || !BTComp->IsRunning() && players[0])
+	{
+		
+		float distance; 
+
+		if (!TargetPlayer)
+		{
+			APawn* closestPlayer = players[0];
+			distance = FVector::DistSquared(pawn->GetActorLocation(), players[0]->GetActorLocation());
+
+			for (int i = 1; i < players.Num(); i++)
+			{
+				float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
+				if (newDistance > distance)
+				{
+					closestPlayer = players[i];
+					distance = newDistance;
+				}
+			}
+
+			TargetPlayer = closestPlayer;
+			distance = FMath::Sqrt(distance);
+			BoidShouldFocusePlayer = false;
+		}
+		else
+		{
+			distance = FVector::Distance(pawn->GetActorLocation(), TargetPlayer->GetActorLocation());
+			BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
+		}
+
+		
+
+		IsTargeting = distance <= DistanceToTargetPlayer;
+		
+
+		if (IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+		{
+			MoveToActor(TargetPlayer, 25);
+		}
+		else if (!IsTargeting)
+		{
+			TargetPlayer = nullptr;
+			StopMovement();
+		}
+	}
+	else
+	{
+		TargetPlayer = nullptr;
+	}
 
 	UpdateLODs(players, pawn->GetActorLocation());
 	AttackCheck(players, DeltaTime);
@@ -117,6 +168,16 @@ inline void ACommanderController::AddPlayerToTimeToAttack(APawn* player)
 inline void ACommanderController::RemovePlayerFromTimeToAttack(APawn* player)
 {
 	RemainingTimeToAttack.Remove(player);
+}
+
+APawn* ACommanderController::GetCurrentTarget()
+{
+	if (BoidShouldFocusePlayer && TargetPlayer)
+	{
+		return TargetPlayer;
+	}
+
+	return GetPawn();
 }
 
 void ACommanderController::BeginPlay()

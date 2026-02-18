@@ -734,7 +734,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
 		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 0.2f, false);
+		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 10.0f, false);
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}

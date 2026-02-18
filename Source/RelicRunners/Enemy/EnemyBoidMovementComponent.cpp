@@ -23,7 +23,6 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	AlignmentWeight = 1.f;
 	TargetWeight = 2.f;
 	MaxTargetDistanceMultiplier = 5.f;
-	OrbitWeight = 1.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
 }
@@ -82,15 +81,13 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	TArray<APawn*> pOtherBoidsToCheck;
 	TArray<APawn*> pOtherBoids;
 
-
-	
-	if (Commander->TargetPlayer)
+	if (Commander->GetCurrentTarget())
 	{
-		targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
+		targetDirection = Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation();
 		float distanceToTarget = targetDirection.Size();
 		distanceFromTargetRadius = distanceToTarget - TargetRadius;
 
-		if (FocuseMode == EBoidFocuseMode::Velocity && distanceToTarget <= FocuseOnTargetDistance)
+		if (FocuseMode == EBoidFocuseMode::Velocity && distanceToTarget <= FocuseOnTargetDistance && !Commander->BoidShouldFocusePlayer)
 		{
 			FocuseMode = EBoidFocuseMode::Target;
 		}
@@ -99,7 +96,14 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 			FocuseMode = EBoidFocuseMode::Velocity;
 		}
 		
-		currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0.3, 1) + MinSeperationRange;
+		if (!Commander->BoidShouldFocusePlayer)
+		{
+			currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0, 1) + MinSeperationRange;
+		}
+		else
+		{
+			currentSeparationDistance = MaxSeperationRange;
+		}
 	}
 
 	TArray<AEnemyPawn*> boidsInFlock = Commander->GetPawnEnemies();
@@ -157,7 +161,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//}
 	
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), separationVector.X, separationVector.Y, separationVector.Z);
-	if (Commander->TargetPlayer)
+	if (Commander->GetCurrentTarget())
 	{
 		if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
 		{
@@ -185,9 +189,9 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 		finalInflunceVector += (targetVector * TargetWeight);
 
-		targetDirection.Normalize();
+		/*targetDirection.Normalize();
 		FVector orbitVector = FVector::CrossProduct(targetDirection, FVector::UpVector);
-		finalInflunceVector += (orbitVector * OrbitWeight);
+		finalInflunceVector += (orbitVector * OrbitWeight);*/
 	}
 
 
@@ -223,7 +227,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 {
-	if (!Commander || !Commander->TargetPlayer)
+	if (!Commander || !Commander->GetCurrentTarget())
 	{
 		return;
 	}
@@ -233,7 +237,7 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 	//just define as a big number to get ride of a warning
 	float distanceFromTargetRadius = 100000;
 
-	targetDirection = Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation();
+	targetDirection = Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation();
 
 	if (targetDirection.Size() > DirectMoveToAcceptanceRadius)
 	{
@@ -316,7 +320,7 @@ void UEnemyBoidMovementComponent::UpdateRotation()
 			GetOwner()->SetActorRotation(Velocity.GetSafeNormal2D().Rotation());
 			break;
 		case EBoidFocuseMode::Target:
-			GetOwner()->SetActorRotation((Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D().Rotation());
+			GetOwner()->SetActorRotation((Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D().Rotation());
 			break;
 	}
 }
@@ -363,12 +367,12 @@ void UEnemyBoidMovementComponent::StopMovementImmediately()
 
 bool UEnemyBoidMovementComponent::IsAtTarget()
 {
-	if (MovementMode == EBoidMovementMode::Disabled || !Commander || !Commander->TargetPlayer)
+	if (MovementMode == EBoidMovementMode::Disabled || !Commander || !Commander->GetCurrentTarget())
 	{
 		return false;
 	}
 
-	float distanceToTarget = (Commander->TargetPlayer->GetActorLocation() - GetOwner()->GetActorLocation()).Size();
+	float distanceToTarget = (Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation()).Size();
 
 	if (MovementMode == EBoidMovementMode::Boid)
 	{

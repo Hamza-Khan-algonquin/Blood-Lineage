@@ -32,9 +32,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ActiveDistanceFromPlayer;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AttackDistanceFromPlayer;
-
 	UPROPERTY(VisibleAnywhere)
 	bool EnemiesSetToLowestLOD;
 
@@ -48,9 +45,15 @@ public:
 	TMap<TObjectPtr<APawn>, float> RemainingTimeToAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TimeToAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DistanceToTargetPlayer;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DistanceForBoidsToFocusePlayer;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool BoidShouldFocusePlayer;
 protected:
-	
+	bool IsTargeting;
 public: 
 	ACommanderController();
 	~ACommanderController();
@@ -70,6 +73,9 @@ public:
 	void AddPlayerToTimeToAttack(APawn* player);
 	UFUNCTION(BlueprintCallable)
 	void RemovePlayerFromTimeToAttack(APawn* player);
+
+	UFUNCTION(BlueprintCallable)
+	APawn* GetCurrentTarget();
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
