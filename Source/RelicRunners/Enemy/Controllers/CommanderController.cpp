@@ -84,10 +84,7 @@ void ACommanderController::Tick(float DeltaTime)
 			BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
 		}
 
-		
-
 		IsTargeting = distance <= DistanceToTargetPlayer;
-		
 
 		if (IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
 		{
@@ -95,6 +92,7 @@ void ACommanderController::Tick(float DeltaTime)
 		}
 		else if (!IsTargeting)
 		{
+			BoidShouldFocusePlayer = false;
 			TargetPlayer = nullptr;
 			StopMovement();
 		}

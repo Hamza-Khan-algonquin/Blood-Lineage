@@ -45,6 +45,7 @@ AEnemyPawn::AEnemyPawn()
 
 	MaxHealth = 100;
 	CurrentHealth = 100;
+	Tags.Add("Enemy");
 }
 
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

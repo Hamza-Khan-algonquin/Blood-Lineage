@@ -13,7 +13,7 @@ TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
 ADirector::ADirector() 
 {  
 	MaxSpawnPointActivisionDistance = 10000;
-	SpawnWait = 20;
+	SpawnWait = 1;
 	PrimaryActorTick.bCanEverTick = true;
 	bAlwaysRelevant = true;
 	Tags.Add("Director");

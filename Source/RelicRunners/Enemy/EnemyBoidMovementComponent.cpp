@@ -96,7 +96,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 			FocuseMode = EBoidFocuseMode::Velocity;
 		}
 		
-		if (!Commander->BoidShouldFocusePlayer)
+		if (Commander->BoidShouldFocusePlayer)
 		{
 			currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0, 1) + MinSeperationRange;
 		}
@@ -138,7 +138,6 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 				}
 			}
 		}
-
 	}
 
 	pOtherBoids = pOtherBoidsToCheck;
@@ -342,7 +341,6 @@ bool UEnemyBoidMovementComponent::CanSeeOtherBoid(APawn* otherBoid, FVector& dir
 	if (distanceToBoid <= VisualRange)
 	{
 		float angle = directionToBoid.Dot(Velocity) / (Velocity.Length() * directionToBoid.Length());
-
 		return angle <= FeildOfView;
 	}
 
