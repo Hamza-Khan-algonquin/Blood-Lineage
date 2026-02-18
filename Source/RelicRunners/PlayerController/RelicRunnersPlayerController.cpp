@@ -826,20 +826,7 @@ void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
 
 void ARelicRunnersPlayerController::UpdateFlagObjective(int FlagIndex, bool bIsActive)
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
-	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
-	{
-		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
-		{
-			if (FlagIndex == 1) FlagGoal->Flag1Active = bIsActive;
-			else if (FlagIndex == 2) FlagGoal->Flag2Active = bIsActive;
-			else if (FlagIndex == 3) FlagGoal->Flag3Active = bIsActive;
-
-			ObjectiveLog->UpdateObjective(FlagGoal);
-			return;
-		}
-	}
 }
 
 void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FString NewTimeText)
@@ -879,10 +866,31 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 	FlagGoal->Flag1Active = false;
 	FlagGoal->Flag2Active = false;
 	FlagGoal->Flag3Active = false;
+	FlagGoal->Flag1Enabled = (NumFlags >= 1);
+	FlagGoal->Flag2Enabled = (NumFlags >= 2);
+	FlagGoal->Flag3Enabled = (NumFlags == 3);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
 	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+}
+
+void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation()
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
+		{
+			if (!FlagGoal->Flag1Active) FlagGoal->Flag1Active = true;
+			else if (!FlagGoal->Flag2Active) FlagGoal->Flag2Active = true;
+			else if (!FlagGoal->Flag3Active) FlagGoal->Flag3Active = true;
+
+			ObjectiveLog->UpdateObjective(FlagGoal);
+			return;
+		}
+	}
 }
 
 void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(int TotalEnemies)
@@ -904,10 +912,8 @@ void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(fl
 	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
 	PandoraGoal->Percent = 1.0f;
 
-	int Minutes = FMath::FloorToInt(Time / 60.0f);
 	int Seconds = FMath::CeilToInt(FMath::Fmod(Time, 60.0f));
-	if (Seconds == 60) { Seconds = 0; Minutes++; }
-	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%d"), Seconds);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
 

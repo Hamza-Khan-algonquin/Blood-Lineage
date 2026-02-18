@@ -557,7 +557,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         TooltipValue = FText::AsNumber(Stats.TotalHealth);
         StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
 
-        Descriptions.Add(FText::FromString("Maximum health pool."));
+        Descriptions.Add(FText::FromString("Health pool."));
     }
     else if (HoveredBorder == B_Defence)
     {
@@ -566,7 +566,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
 
         float Percentage = ItemStats::GetDefencePerc(Stats.TotalArmor);
-        FText FormatString = FText::FromString("Damage taken reduced by {0}%.");
+        FText FormatString = FText::FromString("{0}% Damage reduction.");
         FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
         Descriptions.Add(FormattedDescription);
     }
@@ -577,7 +577,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
 
         float Percentage = ItemStats::GetStrengthPerc(Stats.TotalStrength);
-        FText FormatString = FText::FromString("Attack and ability damage +{0}%.");
+        FText FormatString = FText::FromString("+{0}% Attack & ability damage.");
         FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
         Descriptions.Add(FormattedDescription);
     }
@@ -588,17 +588,17 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
 
         float Percentage = ItemStats::GetCritPerc(Stats.TotalDexterity);
-        FText FormatString = FText::FromString("Critical strike chance increased by {0}%.");
+        FText FormatString = FText::FromString("+{0}% Crit chance.");
         FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
         Descriptions.Add(FormattedDescription);
 
         float PercentageDamage = ItemStats::GetCritDmgPerc(Stats.TotalDexterity);
-        FormatString = FText::FromString("Critical strikes deal {0}x damage.");
+        FormatString = FText::FromString("{0}x Damage on crit.");
         FormattedDescription = FText::Format(FormatString, FText::AsNumber(PercentageDamage));
         Descriptions.Add(FormattedDescription);
 
         Percentage = ItemStats::GetSpeedPerc(Stats.TotalDexterity);
-        FormatString = FText::FromString("Movement speed increased by {0}%.");
+        FormatString = FText::FromString("+{0}% Movement speed.");
         FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
         Descriptions.Add(FormattedDescription);
     }
@@ -609,12 +609,12 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
 
         int Num = ItemStats::GetManaPoolIncrease(Stats.TotalIntelligence);
-        FText FormatString = FText::FromString("Maximum mana pool increased by {0}.");
+        FText FormatString = FText::FromString("+{0} Mana pool.");
         FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
         Descriptions.Add(FormattedDescription);
 
         float Percentage = ItemStats::GetAbilityCostPerc(Stats.TotalIntelligence);
-        FormatString = FText::FromString("Reduces all ability costs by {0}%.");
+        FormatString = FText::FromString("{0}% Ability cost reduction.");
         FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
         Descriptions.Add(FormattedDescription);
     }
