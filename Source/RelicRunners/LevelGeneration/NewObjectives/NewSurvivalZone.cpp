@@ -55,6 +55,14 @@ void ANewSurvivalZone::BeginPlay()
 		Remaining = Duration;
 		CompletionPercentage = 0.0f;
 	}
+
+	if (PandoraBoxMesh && ActivateAnimation)
+	{
+		PandoraBoxMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		PandoraBoxMesh->SetAnimation(ActivateAnimation);
+		PandoraBoxMesh->SetPosition(0.0f, false);
+		PandoraBoxMesh->Stop();
+	}
 }
 
 // Called every frame
@@ -101,6 +109,14 @@ void ANewSurvivalZone::UpdateTimelineComp(float Output)
 
 		UpdateObjectiveToAllControllers(CompletionPercentage, TimerText);
 	}
+
+	if (PandoraBoxMesh && ActivateAnimation)
+	{
+		float AnimLength = ActivateAnimation->GetPlayLength();
+		float NewTime = (1.0f - Alpha) * AnimLength;
+
+		PandoraBoxMesh->SetPosition(NewTime, false);
+	}
 }
 void ANewSurvivalZone::UpdateObjectiveToAllControllers(float NewPercent, FString TimerText)
 {
@@ -125,10 +141,10 @@ void ANewSurvivalZone::OnTimelineEnd()
 
 	OnObjectiveActivated.Broadcast();
 
-	if (PandoraBoxMesh && ActivateAnimation)
-	{
-		PandoraBoxMesh->PlayAnimation(ActivateAnimation, false);
-	}
+	//if (PandoraBoxMesh && ActivateAnimation)
+	//{
+	//	PandoraBoxMesh->PlayAnimation(ActivateAnimation, false);
+	//}
 
 }
 
