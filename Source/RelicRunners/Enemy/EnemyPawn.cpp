@@ -42,6 +42,9 @@ AEnemyPawn::AEnemyPawn()
 
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
+
+	MaxHealth = 100;
+	CurrentHealth = 100;
 }
 
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

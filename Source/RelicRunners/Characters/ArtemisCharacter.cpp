@@ -13,6 +13,7 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Abilities/PiercingArrow.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 
 
 AArtemisCharacter::AArtemisCharacter()
@@ -284,6 +285,10 @@ void AArtemisCharacter::Tick(float DeltaTime)
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
 				{
 					Server_HitEnemy(TEnemy);
+				}
+				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+				{
+					Server_HitEnemy(TPEnemy);
 				}
 
 				AlreadyHitActors.Add(HitActor);

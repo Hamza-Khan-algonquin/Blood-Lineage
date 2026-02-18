@@ -11,6 +11,7 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 
 
 AAresCharacter::AAresCharacter()
@@ -160,6 +161,10 @@ void AAresCharacter::PerformSwingTrace()
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
 				{
 					Server_HitEnemy(TEnemy);
+				}
+				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+				{
+					Server_HitEnemy(TPEnemy);
 				}
 				AlreadyHitActors.Add(HitActor);
 			}

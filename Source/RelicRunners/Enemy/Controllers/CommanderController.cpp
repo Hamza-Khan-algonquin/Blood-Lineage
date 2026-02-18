@@ -11,6 +11,7 @@
 #include "NavMesh/NavMeshBoundsVolume.h"
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 
 ACommanderController::ACommanderController()
 {
@@ -105,6 +106,13 @@ void ACommanderController::Tick(float DeltaTime)
 
 	UpdateLODs(players, pawn->GetActorLocation());
 	AttackCheck(players, DeltaTime);
+	SpawmLoop();
+
+	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0 && !Cast<AEnemyCharacter>(GetPawn()))
+	{
+		Destroy();
+		//GetPawn()->Destroy();
+	}
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
@@ -116,7 +124,18 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 
 
 	ControlledEnemies.Add(enemy);
+	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
 	enemy->LODComponent->SetIsUpdatingLOD(false);
+}
+
+void ACommanderController::RemovePawnEnemy(AActor* enemy)
+{
+	AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
+	if (!enemyPawn)
+	{
+		return;
+	}
+	ControlledEnemies.Remove(enemyPawn);
 }
 
 TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
@@ -158,6 +177,22 @@ void ACommanderController::SpawnPawnEnemy()
 		{
 			AddPawnEnemy(newEnemy);
 		});
+}
+
+void ACommanderController::SpawmLoop()
+{
+	for (int i = 0; i < MaxNumberOfEnemies; i++)
+	{
+		if (CurrentLifeTimeNumberOfEnemies < MaxLifeTimeNumberOfEnemies)
+		{
+			SpawnPawnEnemy();
+			CurrentLifeTimeNumberOfEnemies++;
+		}
+		else
+		{
+			break;
+		}
+	}
 }
 
 inline void ACommanderController::AddPlayerToTimeToAttack(APawn* player)

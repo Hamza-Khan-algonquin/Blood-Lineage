@@ -62,12 +62,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void AddPawnEnemy(AEnemyPawn* enemy);
+	UFUNCTION(BlueprintCallable)
+	void RemovePawnEnemy(AActor* enemy);
 
 	UFUNCTION(BlueprintCallable)
 	TArray<AEnemyPawn*> GetPawnEnemies();
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void SpawnPawnEnemy();
+	void SpawmLoop();
 
 	UFUNCTION(BlueprintCallable)
 	void AddPlayerToTimeToAttack(APawn* player);
