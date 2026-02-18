@@ -550,11 +550,15 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     FString StatKey = "";
     int RawValue = 0;
 
-    if (HoveredBorder == B_Health)              { StatKey = "Health";       RawValue = Stats.TotalHealth; }
+    if      (HoveredBorder == B_Health)         { StatKey = "Health";       RawValue = Stats.TotalHealth; }
     else if (HoveredBorder == B_Defence)        { StatKey = "Defence";      RawValue = Stats.TotalArmor; }
     else if (HoveredBorder == B_Strength)       { StatKey = "Strength";     RawValue = Stats.TotalStrength; }
     else if (HoveredBorder == B_Agility)        { StatKey = "Agility";      RawValue = Stats.TotalDexterity; }
     else if (HoveredBorder == B_Intelligence)   { StatKey = "Intelligence"; RawValue = Stats.TotalIntelligence; }
+    else if (HoveredBorder == B_Luck)           { StatKey = "Luck";         RawValue = Stats.TotalLuck; }
+    else if (HoveredBorder == B_Mana)           { StatKey = "Mana";         RawValue = 0; }
+    else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = 0; }
+    else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = 0; }
 
     FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, "", "");
 
