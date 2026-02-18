@@ -147,11 +147,9 @@ void UJoinUserWidget::UpdateDifficultyNumbers()
 
 void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
 {
-	if (!StandardTooltipClass || !ClassDataAsset) return;
+	if (!StandardTooltipClass || !ClassDataAsset || !HoveredBorder) return;
 
 	const FClassData& Info = ClassDataAsset->Classes[CurrentClass];
-	if (!HoveredBorder) return;
-
 	APlayerController* PC = GetOwningPlayer();
 	if (!PC) return;
 
@@ -161,105 +159,32 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 		StandardTooltip->AddToViewport();
 	}
 
-	FText TooltipName = FText::GetEmpty();
-	FText TooltipValue = FText::GetEmpty();
-	TArray<FText> Descriptions;
+	FString StatKey = "";
+	int RawValue = 0;
+	FString AbilityN = "";
+	FString AbilityD = "";
 
-	if (HoveredBorder == B_Health)
-	{
-		TooltipName = FText::FromString("Health");
-		TooltipValue = FText::AsNumber(Info.Health);
-		StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
+	if (HoveredBorder == B_Health)				{ StatKey = "Health";       RawValue = Info.Health; }
+	else if (HoveredBorder == B_Defence)		{ StatKey = "Defence";      RawValue = Info.Armor; }
+	else if (HoveredBorder == B_Strength)		{ StatKey = "Strength";     RawValue = Info.Strength; }
+	else if (HoveredBorder == B_Agility)		{ StatKey = "Agility";      RawValue = Info.Dexterity; }
+	else if (HoveredBorder == B_Intelligence)	{ StatKey = "Intelligence"; RawValue = Info.Intelligence; }
 
-		Descriptions.Add(FText::FromString("Maximum health pool."));
-	}
-	else if (HoveredBorder == B_Defence)
-	{
-		TooltipName = FText::FromString("Defence");
-		TooltipValue = FText::AsNumber(Info.Armor);
-		StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
+	else if (HoveredBorder == B_Ability1)		{ StatKey = "Ability1"; AbilityN = Info.Ability1; AbilityD = Info.Ability1Description1; }
+	else if (HoveredBorder == B_Ability2)		{ StatKey = "Ability2"; AbilityN = Info.Ability2; AbilityD = Info.Ability2Description1; }
+	else if (HoveredBorder == B_Ability3)		{ StatKey = "Ability3"; AbilityN = Info.Ability3; AbilityD = Info.Ability3Description1; }
+	else if (HoveredBorder == B_Ability4)		{ StatKey = "Ability4"; AbilityN = Info.Ability4; AbilityD = Info.Ability4Description1; }
 
-		float Percentage = ItemStats::GetDefencePerc(Info.Armor);
-		FText FormatString = FText::FromString("Damage taken reduced by {0}%.");
-		FText FormattedDescription = FText::Format(FormatString,FText::AsNumber(Percentage));
-		Descriptions.Add(FormattedDescription);
-	}
-	else if (HoveredBorder == B_Strength)
-	{
-		TooltipName = FText::FromString("Strength");
-		TooltipValue = FText::AsNumber(Info.Strength);
-		StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
+	FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, AbilityN, AbilityD);
 
-		float Percentage = ItemStats::GetStrengthPerc(Info.Strength);
-		FText FormatString = FText::FromString("Attack and ability damage +{0}%.");
-		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-		Descriptions.Add(FormattedDescription);
-	}
-	else if (HoveredBorder == B_Agility)
-	{
-		TooltipName = FText::FromString("Agility");
-		TooltipValue = FText::AsNumber(Info.Dexterity);
-		StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
-
-		float Percentage = ItemStats::GetCritPerc(Info.Dexterity);
-		FText FormatString = FText::FromString("Critical strike chance increased by {0}%.");
-		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-		Descriptions.Add(FormattedDescription);
-
-		float PercentageDamage = ItemStats::GetCritDmgPerc(Info.Dexterity);
-		FormatString = FText::FromString("Critical strikes deal {0}x damage.");
-		FormattedDescription = FText::Format(FormatString, FText::AsNumber(PercentageDamage));
-		Descriptions.Add(FormattedDescription);
-
-		Percentage = ItemStats::GetSpeedPerc(Info.Dexterity);
-		FormatString = FText::FromString("Movement speed increased by {0}%.");
-		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-		Descriptions.Add(FormattedDescription);
-	}
-	else if (HoveredBorder == B_Intelligence)
-	{
-		TooltipName = FText::FromString("Intelligence");
-		TooltipValue = FText::AsNumber(Info.Intelligence);
-		StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
-
-		int Num = ItemStats::GetManaPoolIncrease(Info.Intelligence);
-		FText FormatString = FText::FromString("Maximum mana pool increased by {0}.");
-		FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
-		Descriptions.Add(FormattedDescription);
-
-		float Percentage = ItemStats::GetAbilityCostPerc(Info.Intelligence);
-		FormatString = FText::FromString("Reduces all ability costs by {0}%.");
-		FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-		Descriptions.Add(FormattedDescription);
-	}
-	else if (HoveredBorder == B_Ability1)
-	{
-		TooltipName = FText::FromString(Info.Ability1);
-		Descriptions.Add(FText::FromString(Info.Ability1Description1));
-	}
-	else if (HoveredBorder == B_Ability2)
-	{
-		TooltipName = FText::FromString(Info.Ability2);
-		Descriptions.Add(FText::FromString(Info.Ability2Description1));
-	}
-	else if (HoveredBorder == B_Ability3)
-	{
-		TooltipName = FText::FromString(Info.Ability3);
-		Descriptions.Add(FText::FromString(Info.Ability3Description1));
-	}
-	else if (HoveredBorder == B_Ability4)
-	{
-		TooltipName = FText::FromString(Info.Ability4);
-		Descriptions.Add(FText::FromString(Info.Ability4Description1));
-	}
+	StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+	StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
 
 	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
-
 	const FVector2D Offset(5.0f, 5.0f);
 	const FVector2D Anchor(0.f, 1.f);
 
 	StandardTooltip->SetAnchor(Anchor);
-	StandardTooltip->Setup(TooltipName, TooltipValue, Descriptions);
 	StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }
 

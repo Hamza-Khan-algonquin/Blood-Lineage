@@ -547,77 +547,16 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     FEquippedStatsSummary Stats = InventoryComponent->GetCachedEquippedStats();
 
-    FText TooltipName = FText::GetEmpty();
-    FText TooltipValue = FText::GetEmpty();
-    TArray<FText> Descriptions;
+    FString StatKey = "";
+    int RawValue = 0;
 
-    if (HoveredBorder == B_Health)
-    {
-        TooltipName = FText::FromString("Health");
-        TooltipValue = FText::AsNumber(Stats.TotalHealth);
-        StandardTooltip->SetIcon(ItemStats::LoadIcon("HealthIcon"), ItemStats::GetIconColor("Health"));
+    if (HoveredBorder == B_Health)              { StatKey = "Health";       RawValue = Stats.TotalHealth; }
+    else if (HoveredBorder == B_Defence)        { StatKey = "Defence";      RawValue = Stats.TotalArmor; }
+    else if (HoveredBorder == B_Strength)       { StatKey = "Strength";     RawValue = Stats.TotalStrength; }
+    else if (HoveredBorder == B_Agility)        { StatKey = "Agility";      RawValue = Stats.TotalDexterity; }
+    else if (HoveredBorder == B_Intelligence)   { StatKey = "Intelligence"; RawValue = Stats.TotalIntelligence; }
 
-        Descriptions.Add(FText::FromString("Health pool."));
-    }
-    else if (HoveredBorder == B_Defence)
-    {
-        TooltipName = FText::FromString("Defence");
-        TooltipValue = FText::AsNumber(Stats.TotalArmor);
-        StandardTooltip->SetIcon(ItemStats::LoadIcon("DefenceIcon"), ItemStats::GetIconColor("Defence"));
-
-        float Percentage = ItemStats::GetDefencePerc(Stats.TotalArmor);
-        FText FormatString = FText::FromString("{0}% Damage reduction.");
-        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-        Descriptions.Add(FormattedDescription);
-    }
-    else if (HoveredBorder == B_Strength)
-    {
-        TooltipName = FText::FromString("Strength");
-        TooltipValue = FText::AsNumber(Stats.TotalStrength);
-        StandardTooltip->SetIcon(ItemStats::LoadIcon("StrengthIcon"), ItemStats::GetIconColor("Strength"));
-
-        float Percentage = ItemStats::GetStrengthPerc(Stats.TotalStrength);
-        FText FormatString = FText::FromString("+{0}% Attack & ability damage.");
-        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-        Descriptions.Add(FormattedDescription);
-    }
-    else if (HoveredBorder == B_Agility)
-    {
-        TooltipName = FText::FromString("Agility");
-        TooltipValue = FText::AsNumber(Stats.TotalDexterity);
-        StandardTooltip->SetIcon(ItemStats::LoadIcon("AgilityIcon"), ItemStats::GetIconColor("Agility"));
-
-        float Percentage = ItemStats::GetCritPerc(Stats.TotalDexterity);
-        FText FormatString = FText::FromString("+{0}% Crit chance.");
-        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-        Descriptions.Add(FormattedDescription);
-
-        float PercentageDamage = ItemStats::GetCritDmgPerc(Stats.TotalDexterity);
-        FormatString = FText::FromString("{0}x Damage on crit.");
-        FormattedDescription = FText::Format(FormatString, FText::AsNumber(PercentageDamage));
-        Descriptions.Add(FormattedDescription);
-
-        Percentage = ItemStats::GetSpeedPerc(Stats.TotalDexterity);
-        FormatString = FText::FromString("+{0}% Movement speed.");
-        FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-        Descriptions.Add(FormattedDescription);
-    }
-    else if (HoveredBorder == B_Intelligence)
-    {
-        TooltipName = FText::FromString("Intelligence");
-        TooltipValue = FText::AsNumber(Stats.TotalIntelligence);
-        StandardTooltip->SetIcon(ItemStats::LoadIcon("IntelligenceIcon"), ItemStats::GetIconColor("Intelligence"));
-
-        int Num = ItemStats::GetManaPoolIncrease(Stats.TotalIntelligence);
-        FText FormatString = FText::FromString("+{0} Mana pool.");
-        FText FormattedDescription = FText::Format(FormatString, FText::AsNumber(Num));
-        Descriptions.Add(FormattedDescription);
-
-        float Percentage = ItemStats::GetAbilityCostPerc(Stats.TotalIntelligence);
-        FormatString = FText::FromString("{0}% Ability cost reduction.");
-        FormattedDescription = FText::Format(FormatString, FText::AsNumber(Percentage));
-        Descriptions.Add(FormattedDescription);
-    }
+    FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, "", "");
 
     FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
 
@@ -625,7 +564,8 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     const FVector2D Anchor(1.f, 0.f);
 
     StandardTooltip->SetAnchor(Anchor);
-    StandardTooltip->Setup(TooltipName, TooltipValue, Descriptions);
+    StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+    StandardTooltip->Setup(FText::FromString(StatKey), TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }
 

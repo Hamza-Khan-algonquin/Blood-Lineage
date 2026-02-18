@@ -20,6 +20,27 @@
 #include "ItemData.h"
 #include "ItemMeshData.h"
 
+struct FTooltipData
+{
+public:
+    FTooltipData() {}
+
+    UPROPERTY()
+    FText Name;
+
+    UPROPERTY()
+    FText Value;
+
+    UPROPERTY()
+    TArray<FText> Descriptions;
+
+    UPROPERTY()
+    class UTexture2D* Icon;
+
+    UPROPERTY()
+    FLinearColor IconColor;
+};
+
 struct FForgeResultOdds
 {
 public:
@@ -44,6 +65,94 @@ public:
 class RELICRUNNERS_API ItemStats
 {
 public:
+
+    static FTooltipData GetStatTooltipData(FString BorderType, int StatValue, const FString& AbilityName, const FString& AbilityDesc)
+    {
+        FTooltipData Data;
+
+        if (!BorderType.Contains("Ability"))
+        {
+            Data.Value = FText::AsNumber(StatValue);
+        }
+
+        if (BorderType == "Health")
+        {
+            Data.Name = FText::FromString("Health");
+            Data.Icon = LoadIcon("HealthIcon");
+            Data.IconColor = GetIconColor("Health");
+            Data.Descriptions.Add(FText::FromString("Health pool."));
+        }
+        else if (BorderType == "Defence")
+        {
+            Data.Name = FText::FromString("Defence");
+            Data.Icon = LoadIcon("DefenceIcon");
+            Data.IconColor = GetIconColor("Defence");
+            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Damage reduction."), FText::AsNumber(GetDefencePerc(StatValue))));
+        }
+        else if (BorderType == "Strength")
+        {
+            Data.Name = FText::FromString("Strength");
+            Data.Icon = LoadIcon("StrengthIcon");
+            Data.IconColor = GetIconColor("Strength");
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Attack & ability damage."), FText::AsNumber(GetStrengthPerc(StatValue))));
+        }
+        else if (BorderType == "Agility")
+        {
+            Data.Name = FText::FromString("Agility");
+            Data.Icon = LoadIcon("AgilityIcon");
+            Data.IconColor = GetIconColor("Agility");
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Crit chance."), FText::AsNumber(GetCritPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("{0}x Damage on crit."), FText::AsNumber(GetCritDmgPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Movement speed."), FText::AsNumber(GetSpeedPerc(StatValue))));
+        }
+        else if (BorderType == "Intelligence")
+        {
+            Data.Name = FText::FromString("Intelligence");
+            Data.Icon = LoadIcon("IntelligenceIcon");
+            Data.IconColor = GetIconColor("Intelligence");
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0} Mana pool."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Ability cost reduction."), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+        }
+        else if (BorderType == "Luck")
+        {
+            Data.Name = FText::FromString("Luck");
+            Data.Icon = LoadIcon("LuckIcon");
+            Data.IconColor = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot chance."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot quality."), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+        }
+        else if (BorderType == "Purity")
+        {
+            Data.Name = FText::FromString("Purity");
+            Data.Icon = LoadIcon("PurityIcon");
+            Data.IconColor = GetIconColor("Purity");
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Heal amount."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Chance to not consume."), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+        }
+        else if (BorderType == "Level")
+        {
+            Data.Name = FText::FromString("Level");
+            Data.Icon = LoadIcon("LevelIcon");
+            Data.IconColor = GetIconColor("Level");
+            Data.Descriptions.Add(FText::Format(FText::FromString("Current Level"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0} From Meta-Upgrade"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+        }
+        else if (BorderType == "Mana")
+        {
+            Data.Name = FText::FromString("Mana");
+            Data.Icon = LoadIcon("ResourceIcon");
+            Data.IconColor = GetIconColor("Mana");
+            Data.Descriptions.Add(FText::Format(FText::FromString("Mana pool."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0} From Meta-Upgrade"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+        }
+        else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
+        {
+            Data.Name = FText::FromString(AbilityName);
+            Data.Descriptions.Add(FText::FromString(AbilityDesc));
+        }
+
+        return Data;
+    }
 
     struct FRarityData
     {
