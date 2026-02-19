@@ -960,6 +960,21 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		{
 			PlayerHUD->AddToViewport();
 		}
+		UWorld* World = GetWorld();
+		if (!World) return;
+
+		const FString MapName = World->GetMapName();
+
+		if (MapName.Contains(TEXT("BossLevel")))
+		{
+			PlayerHUD->ToggleBossBar(true);
+			PlayerHUD->ToggleExpBar(false);
+		}
+		else
+		{
+			PlayerHUD->ToggleBossBar(false);
+			PlayerHUD->ToggleExpBar(true);
+		}
 	}
 
 	if (!MinimapWidget && MinimapClass)
@@ -986,7 +1001,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			}
 			else if (MapName.Contains(TEXT("BossLevel")))
 			{
-				MinimapWidget->SetLevelTitle(FText::FromString("Arena"));
+				MinimapWidget->SetLevelTitle(FText::FromString("Hell"));
 			}
 		}
 	}

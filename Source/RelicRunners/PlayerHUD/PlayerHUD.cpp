@@ -16,6 +16,7 @@
 
 #include "PlayerHUD.h"
 #include "Components/TextBlock.h"
+#include "Components/VerticalBox.h"
 #include "Components/ProgressBar.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include <Kismet/GameplayStatics.h>
@@ -25,6 +26,16 @@ void UPlayerHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	UpdateBindText();
+}
+
+void UPlayerHUD::ToggleExpBar(bool value)
+{
+	ExpHUD->SetVisibility(value ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UPlayerHUD::ToggleBossBar(bool value)
+{
+	BossHUD->SetVisibility(value ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void UPlayerHUD::UpdateHUD(float CurrentHealth, float MaxHealth, float CurrentResource, float MaxResource, int CurrentLevel, float CurrentXP, float XPToLevel)
