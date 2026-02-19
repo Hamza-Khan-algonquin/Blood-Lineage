@@ -782,7 +782,11 @@ void ARelicRunnersPlayerController::SetupObjectives()
 			ObjectiveStageTitle->TotalZones = 5;
 			ObjectiveStageTitle->CurrentZones = 0;
 		}
-
+		else if (MapName.Contains(TEXT("BossLevel")))
+		{
+			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveStageTitle->CurrentZones = 0;
+		}
 		if (ObjectiveStageTitle->TotalZones != 0)
 		{
 			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
@@ -979,6 +983,10 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			else if (MapName.Contains(TEXT("IslandTest")))
 			{
 				MinimapWidget->SetLevelTitle(FText::FromString("Stage"));
+			}
+			else if (MapName.Contains(TEXT("BossLevel")))
+			{
+				MinimapWidget->SetLevelTitle(FText::FromString("Arena"));
 			}
 		}
 	}

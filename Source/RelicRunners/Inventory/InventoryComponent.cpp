@@ -25,7 +25,10 @@
 #include "Engine/ActorChannel.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/Menu/SaveFileListData.h"
+#include <Kismet/GameplayStatics.h>
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -513,18 +516,22 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
 {
     FEquippedStatsSummary Summary;
 
+    //Starting stats
     if (const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner()))
     {
+        Summary.PlayerLevel = PS->GetPlayerStartingLevel();
         Summary.TotalHealth = PS->GetPlayerStartingMaxHealth();
         Summary.TotalArmor = PS->GetPlayerStartingArmor();
         Summary.TotalDexterity = PS->GetPlayerStartingDexterity();
         Summary.TotalStrength = PS->GetPlayerStartingStrength();
         Summary.TotalIntelligence = PS->GetPlayerStartingIntelligence();
         Summary.TotalLuck = PS->GetPlayerStartingLuck();
+        Summary.TotalResource = PS->GetPlayerStartingMaxResource();
         Summary.TotalResourceRegen = PS->GetPlayerStartingResourceRegen();
         Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
     }
 
+    //Equipped Stats
     for (const FEquippedItemEntry& Entry : EquippedItems)
     {
         if (UItemObject* Item = Entry.Item)
@@ -537,7 +544,20 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
         }
     }
 
-
+    //Meta
+    if (const UWorld* World = GetWorld())
+    {
+        if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(World->GetGameInstance()))
+        {
+            Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
+            Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth;
+            Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence;
+            Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength;
+            Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility;
+            Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence;
+            Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
+        }
+    }
 
     return Summary;
 }

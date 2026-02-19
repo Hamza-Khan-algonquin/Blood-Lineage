@@ -50,39 +50,39 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerNumInventorySlots = 20;
 
 	//Level
-	PlayerStartingLevel = 0;
-	PlayerLevel = 1 + PlayerStartingLevel;
+	PlayerStartingLevel = 1;
+	PlayerLevel = PlayerStartingLevel;
 	PlayerXP = 0;
 	PlayerXPToLevel = 100;
 
 	//Health
-	PlayerStartingMaxHealth = 100 + PlayerStartingLevel;
+	PlayerStartingMaxHealth = 99 + PlayerStartingLevel;
 	PlayerMaxHealth = PlayerStartingMaxHealth;
-	PlayerHealth = 20;
+	PlayerHealth = PlayerMaxHealth;
 
 	//Resource
-	PlayerStartingMaxResource = 100 + PlayerStartingLevel;
+	PlayerStartingMaxResource = 99 + PlayerStartingLevel;
 	PlayerMaxResource = PlayerStartingMaxResource;
 	PlayerResource = PlayerMaxResource;
 	PlayerStartingResourceRegen = 5; //Percent
 
 	//Stats
-	PlayerStartingArmor = PlayerStartingLevel;
-	PlayerStartingDexterity = PlayerStartingLevel;
-	PlayerStartingStrength = PlayerStartingLevel;
-	PlayerStartingIntelligence = PlayerStartingLevel;
+	PlayerStartingArmor = PlayerStartingLevel - 1;
+	PlayerStartingDexterity = PlayerStartingLevel - 1;
+	PlayerStartingStrength = PlayerStartingLevel - 1;
+	PlayerStartingIntelligence = PlayerStartingLevel - 1;
 	PlayerStartingLuck = 0;
-	PlayerArmor = PlayerStartingLevel;
-	PlayerDexterity = PlayerStartingLevel;
-	PlayerStrength = PlayerStartingLevel;
-	PlayerIntelligence = PlayerStartingLevel;
+	PlayerArmor = PlayerStartingLevel - 1;
+	PlayerDexterity = PlayerStartingLevel - 1;
+	PlayerStrength = PlayerStartingLevel - 1;
+	PlayerIntelligence = PlayerStartingLevel - 1;
 
 	//Gold
 	PlayerStartingGold = 0;
-	PlayerGold = PlayerStartingGold;
+	PlayerGold = 0;
 
 	//Abilities
-	PlayerAbilityPoints = 1 + PlayerStartingLevel;
+	PlayerAbilityPoints = PlayerStartingLevel;
 
 	//Potions
 	HealthPotionCount = 3;
