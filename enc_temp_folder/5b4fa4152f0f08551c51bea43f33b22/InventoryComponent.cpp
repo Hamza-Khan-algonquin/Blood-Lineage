@@ -25,7 +25,10 @@
 #include "Engine/ActorChannel.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/Menu/SaveFileListData.h"
+#include <Kismet/GameplayStatics.h>
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -541,8 +544,20 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
         }
     }
 
-    //Level & stats effected by it
-    Summary.TotalResource += Summary.PlayerLevel;
+    //Meta
+    if (const UWorld* World = GetWorld())
+    {
+        if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(World->GetGameInstance()))
+        {
+            Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
+            Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaLuck;
+            Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence;
+            Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength;
+            Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility;
+            Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence;
+            Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
+        }
+    }
 
     return Summary;
 }

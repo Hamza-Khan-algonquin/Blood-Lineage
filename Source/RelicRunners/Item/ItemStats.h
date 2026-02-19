@@ -147,6 +147,7 @@ public:
         }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {
+            Data.Icon = nullptr;
             Data.Name = FText::FromString(AbilityName);
             Data.Descriptions.Add(FText::FromString(AbilityDesc));
         }
