@@ -376,10 +376,9 @@ bool UEnemyBoidMovementComponent::IsAtTarget()
 	{
 		return distanceToTarget - TargetRadius <= TargetDeadZone;
 	}
-	else 
-	{
-		return distanceToTarget <= DirectMoveToAcceptanceRadius;
-	}
 
-	return false;
+	return distanceToTarget <= DirectMoveToAcceptanceRadius;
+	
+
+	//return false;
 }
