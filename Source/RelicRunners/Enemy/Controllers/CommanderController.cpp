@@ -24,6 +24,8 @@ ACommanderController::ACommanderController()
 	DistanceForBoidsToFocusePlayer = 1000;
 	EnemiesSetToLowestLOD = false;
 	TimeToAttack = 1;
+	bReplicates = true;
+	SetReplicateMovement(true);
 }
 
 ACommanderController::~ACommanderController()
@@ -39,6 +41,11 @@ ACommanderController::~ACommanderController()
 void ACommanderController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!HasAuthority())
+	{
+		return;
+	}
 
 	APawn* pawn = GetPawn();
 	TArray<APawn*> players;

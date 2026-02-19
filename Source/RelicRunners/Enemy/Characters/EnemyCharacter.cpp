@@ -58,10 +58,16 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AEnemyCharacter, EnemyHUDWorld);
 	DOREPLIFETIME(AEnemyCharacter, EnemyResource);
 	DOREPLIFETIME(AEnemyCharacter, EnemyMaxResource);*/
+	DOREPLIFETIME(AEnemyCharacter, IsActive);
 }
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (!HasAuthority())
+	{
+		return 0;
+	}
+
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
@@ -110,6 +116,7 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 		}
 
 		OnDied.Broadcast(this);
+		OnDied.Clear();
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
@@ -262,6 +269,22 @@ void AEnemyCharacter::UpdateEnemyHUDWorldFacing()
 	}
 }
 
+void AEnemyCharacter::NetMultSetIsActive_Implementation(bool newIsActive)
+{
+	if (newIsActive)
+	{
+		this->SetActorHiddenInGame(false);
+		this->SetActorEnableCollision(true);
+		this->SetActorTickEnabled(this->GetShouldTick());
+	}
+	else
+	{
+		this->SetActorHiddenInGame(true);
+		this->SetActorEnableCollision(false);
+		this->SetActorTickEnabled(false);
+	}
+}
+
 
 
 // Called every frame
@@ -316,7 +339,7 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	}
 
 	IsActive = newIsActive;
-	IPoolActorInterface::SetIsActive(newIsActive);
+	NetMultSetIsActive(newIsActive);
 
 	if (!newIsActive)
 	{

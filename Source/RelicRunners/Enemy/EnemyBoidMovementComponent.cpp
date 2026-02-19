@@ -5,6 +5,7 @@
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
 #include "NavigationSystem.h"
+#include <Net/UnrealNetwork.h>
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -25,11 +26,18 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxTargetDistanceMultiplier = 5.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
+	SetIsReplicatedByDefault(true);
 }
 
 void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (GetOwnerRole() != ROLE_Authority)
+	{
+		return;
+	}
+
 	switch(MovementMode)
 	{ 	
 	case EBoidMovementMode::Boid:
@@ -274,7 +282,7 @@ bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement,
 	return false;
 }
 
-void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
+void UEnemyBoidMovementComponent::MoveInDirection_Implementation(float DeltaTime)
 {
 	FVector desiredMovement = Velocity * DeltaTime;
 	FVector finalMovement = FVector::Zero();
@@ -376,10 +384,9 @@ bool UEnemyBoidMovementComponent::IsAtTarget()
 	{
 		return distanceToTarget - TargetRadius <= TargetDeadZone;
 	}
-	else 
-	{
-		return distanceToTarget <= DirectMoveToAcceptanceRadius;
-	}
 
-	return false;
+	return distanceToTarget <= DirectMoveToAcceptanceRadius;
+	
+
+	//return false;
 }

@@ -16,6 +16,7 @@
 #include "RelicRunners/Enemy/EnemyLODComponent.h"
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 
 // Sets default values
@@ -45,6 +46,10 @@ AEnemyPawn::AEnemyPawn()
 
 	MaxHealth = 100;
 	CurrentHealth = 100;
+
+	bReplicates = true;
+	SetReplicateMovement(true);
+
 	Tags.Add("Enemy");
 }
 
@@ -59,6 +64,11 @@ void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (!HasAuthority())
+	{
+		return 0;
+	}
+
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
@@ -103,14 +113,16 @@ void AEnemyPawn::Die(AController* EventInstigator)
 		//check to make sure it a play and if do add experience
 		if (EventInstigator)
 		{
-			if (ARelicRunnersCharacter* player = Cast<ARelicRunnersCharacter>(EventInstigator->GetPawn()))
+			ARelicRunnersPlayerState* PS = EventInstigator->GetPlayerState<ARelicRunnersPlayerState>();
+
+			if (PS)
 			{
-				//player->AddExperience(CalculateXP());
+				PS->AddExperience(CalculateXP());
 			}
 		}
 
 		OnDied.Broadcast(this);
-		//OnDied.Clear();
+		OnDied.Clear();
 		//OnDestroyed.Clear();
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
@@ -159,7 +171,7 @@ void AEnemyPawn::AddEnemyToDirector()
 		//add the enemy to the director
 		Director->AddEnemy(this);
 		//add the remove enemy method to the OnDestroyed delegate/ on die
-		//this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
+		this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
 		this->OnDeactivated.AddDynamic(Director, &ADirector::RemoveEnemy);
 		this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
 	}
@@ -205,6 +217,30 @@ void AEnemyPawn::AttackTick()
 		IsAttacking = false;
 		SetActorTickEnabled(false);
 	}
+}
+
+void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->Tags.Contains("Player"))
+	{
+		if (Controller)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, Controller, this, nullptr);
+		}
+		else if (MovementComponent->Commander)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, MovementComponent->Commander, this, nullptr);
+		}
+		else
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, nullptr, this, nullptr);
+		}
+	}
+}
+
+float AEnemyPawn::CalculateXP() const
+{
+	return FMath::RandRange(10, 25);
 }
 
 // Called when the game starts or when spawned
@@ -292,23 +328,6 @@ FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
 	return LifeSpanTimerHandle;
 }
 
-void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (OtherActor->Tags.Contains("Player"))
-	{
-		if (Controller)
-		{
-			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, Controller, this, nullptr);
-		}
-		else if (MovementComponent->Commander)
-		{
-			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, MovementComponent->Commander, this, nullptr);
-		}
-		else
-		{
-			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, nullptr, this, nullptr);
-		}
-	}
-}
+
 
 

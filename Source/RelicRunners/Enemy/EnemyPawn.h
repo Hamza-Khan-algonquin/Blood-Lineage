@@ -106,6 +106,8 @@ public:
 	void AttackTick();
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Method that is set for the OnOverlap delegate of a collider, that handles dealing damage to the player.", ShortToolTip = "OnOverlap delegate."))
 	void BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	virtual float CalculateXP() const;
 	
 protected:
 	// Called when the game starts or when spawned
