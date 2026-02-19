@@ -513,18 +513,22 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
 {
     FEquippedStatsSummary Summary;
 
+    //Starting stats
     if (const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner()))
     {
+        Summary.PlayerLevel = PS->GetPlayerStartingLevel();
         Summary.TotalHealth = PS->GetPlayerStartingMaxHealth();
         Summary.TotalArmor = PS->GetPlayerStartingArmor();
         Summary.TotalDexterity = PS->GetPlayerStartingDexterity();
         Summary.TotalStrength = PS->GetPlayerStartingStrength();
         Summary.TotalIntelligence = PS->GetPlayerStartingIntelligence();
         Summary.TotalLuck = PS->GetPlayerStartingLuck();
+        Summary.TotalResource = PS->GetPlayerStartingMaxResource();
         Summary.TotalResourceRegen = PS->GetPlayerStartingResourceRegen();
         Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
     }
 
+    //Equipped Stats
     for (const FEquippedItemEntry& Entry : EquippedItems)
     {
         if (UItemObject* Item = Entry.Item)
@@ -536,8 +540,6 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
             Summary.TotalIntelligence += Item->ItemData.Intelligence;
         }
     }
-
-
 
     return Summary;
 }

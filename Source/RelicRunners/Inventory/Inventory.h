@@ -400,6 +400,14 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Username;
 	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Level;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Mana;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Luck;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Purity;
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Health;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Armor;

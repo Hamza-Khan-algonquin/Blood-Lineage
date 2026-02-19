@@ -495,7 +495,17 @@ FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 
     FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
 
-    TArray<UBorder*> Borders = { B_Health, B_Defence, B_Strength, B_Agility, B_Intelligence};
+    TArray<UBorder*> Borders = {
+        B_Health,
+        B_Defence,
+        B_Strength,
+        B_Agility,
+        B_Intelligence,
+        B_Luck,           
+        B_Mana,           
+        B_PlayerLevel,    
+        B_Purity          
+    };
 
     UBorder* HoveredBorder = nullptr;
     for (UBorder* Border : Borders)
@@ -556,9 +566,9 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_Agility)        { StatKey = "Agility";      RawValue = Stats.TotalDexterity; }
     else if (HoveredBorder == B_Intelligence)   { StatKey = "Intelligence"; RawValue = Stats.TotalIntelligence; }
     else if (HoveredBorder == B_Luck)           { StatKey = "Luck";         RawValue = Stats.TotalLuck; }
-    else if (HoveredBorder == B_Mana)           { StatKey = "Mana";         RawValue = 0; }
-    else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = 0; }
-    else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = 0; }
+    else if (HoveredBorder == B_Mana)           { StatKey = "Mana";         RawValue = Stats.TotalResource; }
+    else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = Stats.PlayerLevel; }
+    else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = Stats.TotalPotionEfficiency; }
 
     FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, "", "");
 
@@ -569,7 +579,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     StandardTooltip->SetAnchor(Anchor);
     StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
-    StandardTooltip->Setup(FText::FromString(StatKey), TD.Value, TD.Descriptions);
+    StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }
 
@@ -1103,11 +1113,15 @@ void UInventory::UpdateForgeUI()
 
 void UInventory::OnEquippedStatsUpdated(const FEquippedStatsSummary& Stats)
 {
-    if (TB_Health)       TB_Health->SetText(FText::AsNumber(Stats.TotalHealth));
-    if (TB_Armor)        TB_Armor->SetText(FText::AsNumber(Stats.TotalArmor));
-    if (TB_Dexterity)    TB_Dexterity->SetText(FText::AsNumber(Stats.TotalDexterity));
-    if (TB_Strength)     TB_Strength->SetText(FText::AsNumber(Stats.TotalStrength));
-    if (TB_Intelligence) TB_Intelligence->SetText(FText::AsNumber(Stats.TotalIntelligence));
+    if (TB_Level)           TB_Level->SetText(FText::AsNumber(Stats.PlayerLevel));
+    if (TB_Health)          TB_Health->SetText(FText::AsNumber(Stats.TotalHealth));
+    if (TB_Armor)           TB_Armor->SetText(FText::AsNumber(Stats.TotalArmor));
+    if (TB_Dexterity)       TB_Dexterity->SetText(FText::AsNumber(Stats.TotalDexterity));
+    if (TB_Strength)        TB_Strength->SetText(FText::AsNumber(Stats.TotalStrength));
+    if (TB_Intelligence)    TB_Intelligence->SetText(FText::AsNumber(Stats.TotalIntelligence));
+    if (TB_Luck)            TB_Luck->SetText(FText::AsNumber(Stats.TotalLuck));
+    if (TB_Purity)          TB_Purity->SetText(FText::AsNumber(Stats.TotalPotionEfficiency));
+    if (TB_Mana)            TB_Mana->SetText(FText::AsNumber(Stats.TotalResource));
 
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
