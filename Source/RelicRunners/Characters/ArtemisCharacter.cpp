@@ -308,14 +308,7 @@ void AArtemisCharacter::Tick(float DeltaTime)
 	TArray<FHitResult> Hits;
 	FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-	bool bHit = GetWorld()->SweepMultiByChannel(
-		Hits,
-		PreviousProjectileLocation,
-		ProjectileLocation,
-		FQuat::Identity,
-		ECC_Pawn,
-		Sphere
-	);
+	bool bHit = GetWorld()->SweepMultiByChannel(Hits,PreviousProjectileLocation,ProjectileLocation,FQuat::Identity,ECC_Pawn,Sphere);
 
 	if (bHit)
 	{

@@ -300,8 +300,6 @@ void UBackStab::ExecuteBackStabSequence()
 }
 
 
-
-
 void UBackStab::ReturnPlayerToOriginalPosition()
 {
     AActor* AvatarActor = GetAvatarActorFromActorInfo();

@@ -7,6 +7,8 @@
 /**
  *
  */
+//class USpringArmComponent;
+//class UCameraComponent;
 
 UCLASS()
 class RELICRUNNERS_API ANemesisCharacter : public ARelicRunnersCharacter
@@ -41,6 +43,7 @@ protected:
     virtual void PerformSwingTrace() override;
     virtual void BasicAttack() override;
     virtual void HeavyAttack() override;
+    virtual void UpdateCamera(float DeltaTime) override;
 
     UPROPERTY()
     float Damage;

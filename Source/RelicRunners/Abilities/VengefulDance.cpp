@@ -22,9 +22,7 @@ UVengefulDance::UVengefulDance()
     CooldownTimer = 10.f;
     Cost = 50;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(
-      TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash")
-  );
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
   if (VFXAsset.Succeeded())
   {

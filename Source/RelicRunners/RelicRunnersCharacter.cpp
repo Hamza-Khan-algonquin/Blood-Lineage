@@ -76,12 +76,29 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
+	// Slightly closer than before
+	CameraBoom->TargetArmLength = 500.0f; 
+
+	// Slightly higher
+	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 10.f)); 
+
+	// Slight downward angle to see enemies
+	CameraBoom->SetRelativeRotation(FRotator(-10.f, 0.f, 0.f));
+
+	// Smooth follow
+	CameraBoom->bUsePawnControlRotation = false;
+	CameraBoom->bEnableCameraLag = true;
+	CameraBoom->CameraLagSpeed = 8.f;
+	CameraBoom->bEnableCameraRotationLag = true;
+	CameraBoom->CameraRotationLagSpeed = 6.f;
+	CameraBoom->bDoCollisionTest = false;
+	//CameraBoom->SocketOffset = FVector(0.f, 40.f, 0.f); // shoulder offset
+
+	// Follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->bUsePawnControlRotation = false;
 
 	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
 	MinimapSpringArm->SetupAttachment(RootComponent);
@@ -322,6 +339,7 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 
 	TraceForInteractables();
 	UpdatePlayerHUDWorldFacing();
+	UpdateCamera(DeltaTime);
 
 	if (GetActorLocation().Z <= -200.0f)
 	{
@@ -329,6 +347,12 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 	}
 
 }
+
+void ARelicRunnersCharacter::UpdateCamera(float DeltaTime)
+{
+	
+}
+
 
 void ARelicRunnersCharacter::TraceForInteractables()
 {
