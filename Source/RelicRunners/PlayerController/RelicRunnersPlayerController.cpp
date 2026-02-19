@@ -1037,6 +1037,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		}
 	}
 
+	float LoadingScreenTime = 3.0f;
 	if (!LoadingScreen && LoadingScreenClass)
 	{
 		FInputModeUIOnly InputMode;
@@ -1049,14 +1050,14 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (LoadingScreen)
 		{
 			LoadingScreen->AddToViewport();
-			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 5.0f, false);
+			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, LoadingScreenTime, false);
 		}
 	}
 
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
 		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 10.0f, false);
+		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, LoadingScreenTime, false);
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}

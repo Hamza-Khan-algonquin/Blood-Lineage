@@ -11,7 +11,7 @@
  *   Any use, distribution, or modification outside of these projects
  *   is strictly prohibited without explicit written permission.
  *
- *   © 2025 Tristan Anglin. All rights reserved.
+ *   ï¿½ 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
 #include "RelicRunnersPlayerController.h"
@@ -782,7 +782,11 @@ void ARelicRunnersPlayerController::SetupObjectives()
 			ObjectiveStageTitle->TotalZones = 5;
 			ObjectiveStageTitle->CurrentZones = 0;
 		}
-
+		else if (MapName.Contains(TEXT("BossLevel")))
+		{
+			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveStageTitle->CurrentZones = 0;
+		}
 		if (ObjectiveStageTitle->TotalZones != 0)
 		{
 			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
@@ -980,6 +984,10 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			{
 				MinimapWidget->SetLevelTitle(FText::FromString("Stage"));
 			}
+			else if (MapName.Contains(TEXT("BossLevel")))
+			{
+				MinimapWidget->SetLevelTitle(FText::FromString("Arena"));
+			}
 		}
 	}
 
@@ -1048,7 +1056,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
 		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 0.2f, false);
+		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 10.0f, false);
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
