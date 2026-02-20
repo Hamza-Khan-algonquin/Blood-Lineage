@@ -342,6 +342,8 @@ void UEnemyBoidMovementComponent::UpdateRotation()
 			GetOwner()->SetActorRotation(Velocity.GetSafeNormal2D().Rotation());
 			break;
 		case EBoidFocuseMode::Target:
+			if (!Commander->GetCurrentTarget())
+				return;
 			GetOwner()->SetActorRotation((Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D().Rotation());
 			break;
 	}

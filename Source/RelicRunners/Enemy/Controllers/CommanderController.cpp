@@ -129,6 +129,7 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 
 
 	ControlledEnemies.Add(enemy);
+	enemy->MovementComponent->Commander = this;
 	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
 	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
@@ -176,10 +177,11 @@ void ACommanderController::SpawnPawnEnemy()
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
 	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
-	newEnemy->MovementComponent->Commander = this;
+	
 	//giving time for the enemy to set
 	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
 		{
+			
 			AddPawnEnemy(newEnemy);
 		});
 }

@@ -13,6 +13,7 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
+#include "Engine/CollisionProfile.h"
 
 
 
@@ -224,7 +225,9 @@ void AAphroditeCharacter::Tick(float DeltaTime)
     DrawDebugSphere(GetWorld(), ProjectileLocation, 15.f, 12, FColor::Red, false, 0.f);
 
     TArray<FHitResult> Hits;
-    FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(50.0f);
 
     bool bHit = GetWorld()->SweepMultiByChannel(
         Hits,
@@ -232,7 +235,8 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         ProjectileLocation,
         FQuat::Identity,
         ECC_Pawn,
-        Sphere
+        Sphere,
+        Params
     );
 
     if (bHit)
