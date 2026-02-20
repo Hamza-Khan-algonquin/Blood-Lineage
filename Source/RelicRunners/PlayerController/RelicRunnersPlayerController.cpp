@@ -1203,7 +1203,10 @@ void ARelicRunnersPlayerController::SetupInputComponent()
 
 		// HeavyAttack
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::HeavyAttack);
+		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Completed, this, &ARelicRunnersPlayerController::ProjectileHeavyAttack);
 		
+
+
 		// Abilities
 		EnhancedInputComponent->BindAction(DamageAbilityAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::DamageAbility);
 		EnhancedInputComponent->BindAction(DefenceAbilityAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::DefenceAbility);
@@ -1323,6 +1326,14 @@ void ARelicRunnersPlayerController::HeavyAttack()
 	if (PossessedPawn)
 	{
 		PossessedPawn->HeavyAttack();
+	}
+}
+
+void ARelicRunnersPlayerController::ProjectileHeavyAttack()
+{
+	if (PossessedPawn)
+	{
+		PossessedPawn->ProjectileHeavyAttack();
 	}
 }
 

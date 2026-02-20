@@ -28,7 +28,6 @@ public:
 
 protected:
     virtual void BeginPlay() override;
-
     virtual void ActivateDamageAbilities() override;
     virtual void ActivateDefenceAbilities() override;
     virtual void ActivateUtilityAbilities() override;

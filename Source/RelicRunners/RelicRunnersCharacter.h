@@ -93,6 +93,7 @@ public:
 	bool HasValidWeaponEquipped(class UInventoryComponent* InvComp) const;
 	virtual void BasicAttack();
 	virtual void HeavyAttack();
+	virtual void ProjectileHeavyAttack();
 	void MoveInDirection(EAxis::Type Axis, float Value);
 	void Look(const FInputActionValue& Value);
 	void Interact();

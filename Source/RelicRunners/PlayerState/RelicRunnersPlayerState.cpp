@@ -16,6 +16,7 @@
 
 #include "RelicRunnersPlayerState.h"
 #include "RelicRunners/Menu/Keybinds.h"
+#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
@@ -135,6 +136,32 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 	}
 
 	PS->ForceNetUpdate();
+}
+
+void ARelicRunnersPlayerState::Multicast_SpawnVFX_Implementation(FVector Location, FRotator Rotation, FVector Scale, UNiagaraSystem* NiagaraAsset, bool IsAttached)
+{
+	if (!NiagaraAsset)
+		return;
+
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	if (!IsAttached)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(World, NiagaraAsset, Location, Rotation, Scale, true, true);
+	}
+	else
+	{
+		APawn* Pawn = GetPawn();
+		if (!Pawn) return;
+
+		USceneComponent* RootComp = Pawn->GetRootComponent();
+		if (!RootComp) return;
+
+		UNiagaraFunctionLibrary::SpawnSystemAttached(NiagaraAsset,RootComp, NAME_None,Location,Rotation,EAttachLocation::KeepRelativeOffset,true, true,ENCPoolMethod::None );
+
+	}
 }
 
 bool ARelicRunnersPlayerState::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)

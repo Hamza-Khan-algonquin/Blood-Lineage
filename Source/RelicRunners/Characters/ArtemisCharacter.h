@@ -39,8 +39,12 @@ protected:
    
     virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
+	void ShowReticle();
+	void HideReticle();
     virtual void BasicAttack() override;
 	virtual void HeavyAttack() override;
+	virtual void ProjectileHeavyAttack() override;
+	virtual void UpdateCamera(float DeltaTime) override;
 
 	UPROPERTY()
 	bool bCanFire = true;
@@ -76,5 +80,24 @@ protected:
 	UStaticMesh* ProjectileMeshAsset = nullptr; 
 
 	UStaticMeshComponent* ActiveProjectileMesh = nullptr;
+
+	bool bIsAiming = false;
+
+	// Camera offset when aiming
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
+	FVector AimingOffset = FVector(0.f, 80.f, 100.f); 
+
+	// Camera distance/speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
+	float AimingInterpSpeed = 8.f;
+
+	float AimingArmLength = 100.f; 
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> ReticleWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* ReticleWidget;
+
 
 };

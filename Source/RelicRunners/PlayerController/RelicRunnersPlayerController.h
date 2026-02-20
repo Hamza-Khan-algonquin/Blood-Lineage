@@ -225,6 +225,7 @@ protected:
 	void HealthPotion();
 	void BasicAttack();
 	void HeavyAttack();
+	void ProjectileHeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
 

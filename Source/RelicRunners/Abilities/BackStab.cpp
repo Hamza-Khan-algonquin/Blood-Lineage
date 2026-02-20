@@ -271,20 +271,29 @@ void UBackStab::ExecuteBackStabSequence()
     // Stop player movement
     Char->GetCharacterMovement()->DisableMovement();
 
-    if (AbilityVFX)
-    {
-        UNiagaraComponent* VFXInstance = UNiagaraFunctionLibrary::SpawnSystemAttached(AbilityVFX,AvatarActor->GetRootComponent(),NAME_None,FVector::ZeroVector, FRotator::ZeroRotator,EAttachLocation::KeepRelativeOffset, true, true, ENCPoolMethod::None,true);
 
-        if (VFXInstance)
+    if (AvatarActor->HasAuthority())
+    {
+        AController* Controller = nullptr;
+
+        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
         {
-            VFXInstance->SetAutoDestroy(true);
+            Controller = CurrentActorInfo->PlayerController.Get();
+        }
+
+        if (Controller)
+        {
+            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+            if (PS)
+            {
+                PS->Multicast_SpawnVFX(FVector(0), FRotator::ZeroRotator, FVector(2.f), AbilityVFX, true);
+            }
         }
     }
     
     // Delay damage for 1 second
-    World->GetTimerManager().SetTimer(
-        BackStabDamageTimerHandle,
-        FTimerDelegate::CreateLambda([this, AvatarActor, Char]()
+    World->GetTimerManager().SetTimer(BackStabDamageTimerHandle, FTimerDelegate::CreateLambda([this, AvatarActor, Char]()
             {
                 PerformBackStabDamage(AvatarActor);
 

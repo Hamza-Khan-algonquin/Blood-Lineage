@@ -87,7 +87,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	CameraBoom->SetRelativeRotation(FRotator(-10.f, 0.f, 0.f));
 
 	// Smooth follow
-	CameraBoom->bUsePawnControlRotation = false;
+	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->CameraLagSpeed = 8.f;
 	CameraBoom->bEnableCameraRotationLag = true;
@@ -429,6 +429,11 @@ void ARelicRunnersCharacter::ResetHeavyAttack()
 }
 
 void ARelicRunnersCharacter::HeavyAttack()
+{
+
+}
+
+void ARelicRunnersCharacter::ProjectileHeavyAttack()
 {
 
 }

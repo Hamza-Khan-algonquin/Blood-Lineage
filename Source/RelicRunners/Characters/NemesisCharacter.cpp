@@ -361,6 +361,7 @@ void ANemesisCharacter::UpdateCamera(float DeltaTime)
     }
     else
     {
+        if (!Controller) return;
         FRotator ControlRot = Controller->GetControlRotation();
         ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
         ControlRot.Roll = 0.f;

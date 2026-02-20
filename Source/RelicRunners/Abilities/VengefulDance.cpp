@@ -90,6 +90,12 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->UpdateRemoteHUDResource();
 
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
+
+    if (ActorInfo->AvatarActor->HasAuthority())
+    {
+        PS->Multicast_SpawnVFX(AvatarActor->GetActorLocation(), AvatarActor->GetActorRotation() + FRotator(0, 0, 90), FVector(1.5f), AbilityVFX, false);
+    }
+
     AvatarActor->GetWorldTimerManager().SetTimer(EndTimer, FTimerDelegate::CreateUObject(this, &UVengefulDance::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
 
     //DrawDebugCircle(AvatarActor->GetWorld(), AvatarActor->GetActorLocation(), AreaRadius, 64, FColor::Red, false, Duration, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false);
@@ -103,13 +109,6 @@ void UVengefulDance::ApplyRingDamage()
 
     UWorld* World = AvatarActor->GetWorld(); // Get the world
     if (!World) return; // Exit if world is invalid
-
-
-    if (AbilityVFX)
-    {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(AvatarActor->GetWorld(),AbilityVFX,AvatarActor->GetActorLocation() + FVector(0, 0, 0),AvatarActor->GetActorRotation() + FRotator(0, 0, 90),FVector(1.5f),true, true);
-    }
-
 
     FVector Origin = AvatarActor->GetActorLocation(); // Center of the damage/knockback
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius

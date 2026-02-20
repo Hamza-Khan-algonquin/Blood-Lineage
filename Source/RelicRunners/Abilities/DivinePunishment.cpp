@@ -68,20 +68,17 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     PS->UpdateRemoteHUDResource();
 
 
-    CachedInstigatorController =
-        ActorInfo->PlayerController.IsValid()
-        ? ActorInfo->PlayerController.Get()
-        : nullptr;
+    CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
 
     LastUseTime = World->GetTimeSeconds();
 
-    // ---- Start ticking damage ----
+    //  Start ticking damage
     const FVector Center = ActorInfo->AvatarActor->GetActorLocation();
 
 
-    if (AbilityVFX)
+    if (ActorInfo->AvatarActor->HasAuthority())
     {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(World,AbilityVFX,Center + FVector(0.f, 0.f, -100.f),FRotator::ZeroRotator,FVector(2.f), true, true);
+        PS->Multicast_SpawnVFX(Center + FVector(0.f, 0.f, -100.f), FRotator::ZeroRotator, FVector(2.f),  AbilityVFX, false);
     }
 
     KillEnemiesInRadius(Center);

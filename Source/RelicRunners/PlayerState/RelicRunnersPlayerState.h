@@ -233,6 +233,10 @@ public:
     DECLARE_MULTICAST_DELEGATE_OneParam(FOnSelectedClassChanged, FName);
     FOnSelectedClassChanged OnSelectedClassChanged;
 
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnVFX(FVector Location, FRotator Rotation, FVector Scale, UNiagaraSystem* NiagaraAsset, bool IsAttached);
+
 protected:
 
 
