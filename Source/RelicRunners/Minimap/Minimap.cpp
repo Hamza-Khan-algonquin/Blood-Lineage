@@ -6,6 +6,7 @@
 #include "Components/TextBlock.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include <RelicRunners/RelicRunnersCharacter.h>
+#include "GameFramework/SpringArmComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 
 void UMinimap::SetMinimapImage(UTextureRenderTarget2D* NewRenderTarget)
@@ -36,16 +37,43 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 
 	RenderTarget = NewObject<UTextureRenderTarget2D>(this, FName(*UniqueNameStr));
 	RenderTarget->RenderTargetFormat = RTF_RGBA16f;
-	RenderTarget->InitAutoFormat(2000, 2000);
+	RenderTarget->InitAutoFormat(1000, 1000);
 	RenderTarget->ClearColor = FLinearColor(0,0,0,0);
-	RenderTarget->bAutoGenerateMips = false;
 	RenderTarget->UpdateResource();
+	RenderTarget->Filter = TF_Bilinear;
 
 	Owner->MinimapCaptureComponent->TextureTarget = RenderTarget;
 	Owner->MinimapCaptureComponent->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
-	Owner->MinimapCaptureComponent->ShowFlags.SetAtmosphere(false);
-	Owner->MinimapCaptureComponent->ShowFlags.SetFog(false);
 	Owner->MinimapCaptureComponent->ShowFlags.SetDynamicShadows(false);
+	Owner->MinimapCaptureComponent->ShowFlags.SetContactShadows(false);
+	Owner->MinimapCaptureComponent->ShowFlags.SetAmbientOcclusion(false);
+	Owner->MinimapCaptureComponent->ShowFlags.SetScreenSpaceReflections(false);
+	Owner->MinimapCaptureComponent->bUseRayTracingIfEnabled = false; 
+	Owner->MinimapCaptureComponent->ShowFlags.SetTemporalAA(false); 
+	Owner->MinimapCaptureComponent->ShowFlags.SetAntiAliasing(true);
+	Owner->MinimapCaptureComponent->ShowFlags.SetSpecular(false);
+	Owner->MinimapCaptureComponent->ShowFlags.SetFog(false);
+	Owner->MinimapCaptureComponent->bCaptureEveryFrame = true;
+
+	MinimapToonPostProcess = LoadObject<UMaterialInterface>(
+		nullptr, TEXT("/Game/Minimap/M_MinimapPostProcess.M_MinimapPostProcess"));
+
+	FPostProcessSettings& Settings = Owner->MinimapCaptureComponent->PostProcessSettings;
+	Settings.FilmGrainIntensity = 0;
+	Settings.bOverride_AutoExposureMethod = true;
+	Settings.AutoExposureMethod = EAutoExposureMethod::AEM_Manual;
+	Settings.bOverride_AutoExposureBias = true;
+	Settings.AutoExposureBias = 1.0f;
+
+	if (MinimapToonPostProcess)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Minimap] Successfully set post process material."));
+		Owner->MinimapCaptureComponent->PostProcessSettings.AddBlendable(MinimapToonPostProcess, 1.0f);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Minimap] Failed to set post process material."));
+	}
 
 	return RenderTarget;
 }
