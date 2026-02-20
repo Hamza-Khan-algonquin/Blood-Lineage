@@ -93,6 +93,7 @@ public:
 	bool HasValidWeaponEquipped(class UInventoryComponent* InvComp) const;
 	virtual void BasicAttack();
 	virtual void HeavyAttack();
+	virtual void ProjectileHeavyAttack();
 	void MoveInDirection(EAxis::Type Axis, float Value);
 	void Look(const FInputActionValue& Value);
 	void Interact();
@@ -100,10 +101,10 @@ public:
 	void DefenceAbility();
 	void UtilityAbility();
 	void UltimateAbility();
-	virtual void GiveDamageAbilities();
-	virtual void GiveDefenceAbilities();
-	virtual void GiveUtilityAbilities();
-	virtual void GiveUltimateAbilities();
+	virtual void ActivateDamageAbilities();
+	virtual void ActivateDefenceAbilities();
+	virtual void ActivateUtilityAbilities();
+	virtual void ActivateUltimateAbilities();
 	void HealthPotions();
 	virtual void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
@@ -230,6 +231,7 @@ protected:
 
 	//Functions
 	void Tick(float DeltaTime);
+	virtual void UpdateCamera(float DeltaTime);
 	void InitializeWorldHUD();
 	void InitializeWeaponSockets();
 	void RegisterDirector();
@@ -260,6 +262,47 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
 
+
+	// Camera smoothing
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
+	float CameraYawSmoothSpeed = 6.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
+	float CameraPitchSmoothSpeed = 4.f;
+
+	// Camera look-ahead offset
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
+	float LookAheadDistance = 50.f;
+
+	// Height & offset tweaks
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
+	float HeightOffset = 80.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
+	float ShoulderOffset = 40.f;
+
+	// Arm length settings
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Zoom")
+	float BaseArmLength = 500.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Zoom")
+	float SprintArmLength = 450.f;
+
+	// Pitch limits
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
+	float MinPitch = -45.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
+	float MaxPitch = -5.f;
+
+	// Optional bounce
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")
+	float BounceAmplitude = 3.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")
+	float BounceSpeed = 6.f;
+
+	FVector CurrentLookAhead;
 
 };
 

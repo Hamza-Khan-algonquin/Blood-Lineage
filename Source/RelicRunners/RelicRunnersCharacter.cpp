@@ -53,6 +53,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "DrawDebugHelpers.h"
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
+#include <Kismet/KismetMathLibrary.h>
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -67,7 +68,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
-	GetCharacterMovement()->JumpZVelocity = 700.f;
+	//GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
@@ -76,12 +77,29 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
+	// Slightly closer than before
+	CameraBoom->TargetArmLength = 500.0f; 
+
+	// Slightly higher
+	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 10.f)); 
+
+	// Slight downward angle to see enemies
+	CameraBoom->SetRelativeRotation(FRotator(-10.f, 0.f, 0.f));
+
+	// Smooth follow
+	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->bEnableCameraLag = true;
+	CameraBoom->CameraLagSpeed = 8.f;
+	CameraBoom->bEnableCameraRotationLag = true;
+	CameraBoom->CameraRotationLagSpeed = 6.f;
+	CameraBoom->bDoCollisionTest = false;
+	//CameraBoom->SocketOffset = FVector(0.f, 40.f, 0.f); // shoulder offset
+
+	// Follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->bUsePawnControlRotation = false;
 
 	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
 	MinimapSpringArm->SetupAttachment(RootComponent);
@@ -180,6 +198,14 @@ void ARelicRunnersCharacter::BeginPlay()
 	}
 
 	respawnPoint = GetActorLocation();
+
+	const FString MapName = GetWorld()->GetMapName();
+	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
+
+	if (MapName.Contains(TEXT("BossLevel")))
+	{
+		CameraBoom->TargetArmLength = 3000;
+	}
 }
 
 
@@ -293,7 +319,7 @@ void ARelicRunnersCharacter::RegisterDirector()
 			{
 				Director->AddPlayer(this);
 
-				this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
+				this->OnDestroyed.AddDynamic(Director, &ADirector::RemovePlayer);
 			}
 			else
 			{
@@ -322,13 +348,27 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 
 	TraceForInteractables();
 	UpdatePlayerHUDWorldFacing();
+	UpdateCamera(DeltaTime);
 
 	if (GetActorLocation().Z <= -200.0f)
 	{
 		Die();
 	}
 
+	if (GetWorld()->GetMapName().Contains("BossLevel"))
+	{
+		FVector CurrentLocation = GetActorLocation();
+		FVector Target(0.f, 0.f, -1000.f);
+		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(CurrentLocation, Target);
+		Controller->SetControlRotation(LookAtRot);
+	}
 }
+
+void ARelicRunnersCharacter::UpdateCamera(float DeltaTime)
+{
+	
+}
+
 
 void ARelicRunnersCharacter::TraceForInteractables()
 {
@@ -409,6 +449,11 @@ void ARelicRunnersCharacter::HeavyAttack()
 
 }
 
+void ARelicRunnersCharacter::ProjectileHeavyAttack()
+{
+
+}
+
 void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 {
 	
@@ -458,12 +503,12 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 
 void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr)
+	//Lock look input on boss level
+	if (GetWorld()->GetMapName().Contains("BossLevel")) return;
+	else if (Controller != nullptr)
 	{
-		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
@@ -735,47 +780,51 @@ UStaticMeshComponent* ARelicRunnersCharacter::GetStaticMeshComponentByItemType(c
 	return nullptr;
 }
 
-void ARelicRunnersCharacter::GiveDamageAbilities()
+void ARelicRunnersCharacter::ActivateDamageAbilities()
 {
 
 }
 
-void ARelicRunnersCharacter::GiveDefenceAbilities()
+void ARelicRunnersCharacter::ActivateDefenceAbilities()
 {
 
 }
 
-void ARelicRunnersCharacter::GiveUtilityAbilities()
+void ARelicRunnersCharacter::ActivateUtilityAbilities()
 {
 
 }
 
-void ARelicRunnersCharacter::GiveUltimateAbilities()
+void ARelicRunnersCharacter::ActivateUltimateAbilities()
 {
 
 }
 
 void ARelicRunnersCharacter::DamageAbility()
 {
-	GiveDamageAbilities();
+	ActivateDamageAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Damage Ability Activated on Character"));
 }
 
+
 void ARelicRunnersCharacter::DefenceAbility()
 {
-	GiveDefenceAbilities();
+	if (!IsLocallyControlled())
+		return;
+
+	ActivateDefenceAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Defence Ability Activated on Character"));
 }
 
 void ARelicRunnersCharacter::UtilityAbility()
 {
-	GiveUtilityAbilities();
+	ActivateUtilityAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Utility Ability Activated on Character"));
 }
 
 void ARelicRunnersCharacter::UltimateAbility()
 {
-	GiveUltimateAbilities();
+	ActivateUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
 

@@ -13,11 +13,18 @@ class RELICRUNNERS_API UFlagData : public UObjectiveItemData
 public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Flag1Active;
+	bool Flag1Active = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Flag2Active;
+	bool Flag2Active = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Flag3Active;
+	bool Flag3Active = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Flag1Enabled = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Flag2Enabled = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool Flag3Enabled = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
 	class UTexture2D* FlagUpIcon;

@@ -531,6 +531,17 @@ void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags)
 	}
 }
 
+void AIslandGenerationTest::DecrementFlagObjectiveForAll()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			TargetPC->Client_DecrementFlagObjective();
+		}
+	}
+}
+
 void AIslandGenerationTest::AddEnemiesObjectiveToAll(int TotalEnemies)
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -548,7 +559,6 @@ void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			// Now passing the Time variable through to the Client RPC
 			TargetPC->Client_AddPandoraObjective(Time);
 		}
 	}
@@ -1500,6 +1510,7 @@ void AIslandGenerationTest::DecrementObjective()
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
 		objectiveName = "Flags";
+		DecrementFlagObjectiveForAll();
 		break;
 	case EIslandObjectiveType::DefeatAllEnemies:
 		objectiveName = "Enemies";

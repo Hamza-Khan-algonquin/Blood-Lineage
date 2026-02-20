@@ -147,15 +147,7 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 
     if (World)
     {
-        World->GetTimerManager().SetTimer(
-            DurationTimerHandle,
-            [this]()
-            {
-                EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-            },
-            Duration,
-            false 
-        );
+        World->GetTimerManager().SetTimer(DurationTimerHandle,[this](){EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);},Duration,false );
     }
 
 }

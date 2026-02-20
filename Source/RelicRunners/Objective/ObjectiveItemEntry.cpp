@@ -55,20 +55,8 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
     {
         WidgetSwitcher->SetActiveWidgetIndex(2);
 
-        FlagData->FlagDownIcon = ItemStats::LoadIcon("FlagDownIcon");
-        FlagData->FlagUpIcon = ItemStats::LoadIcon("FlagUpIcon");
-
-        //Update visuals with data
-        if (UFlagsObjective* Widget = Cast<UFlagsObjective>(WidgetSwitcher->GetActiveWidget()))
-        {
-            UTexture2D* Texture;
-            Texture = FlagData->Flag1Active ? FlagData->FlagUpIcon : FlagData->FlagDownIcon;
-            Widget->FlagImage_0->SetBrushFromTexture(Texture);
-            Texture = FlagData->Flag2Active ? FlagData->FlagUpIcon : FlagData->FlagDownIcon;
-            Widget->FlagImage_1->SetBrushFromTexture(Texture);
-            Texture = FlagData->Flag3Active ? FlagData->FlagUpIcon : FlagData->FlagDownIcon;
-            Widget->FlagImage_2->SetBrushFromTexture(Texture);
-        }
+        UFlagsObjective* FlagWidget = Cast<UFlagsObjective>(WidgetSwitcher->GetWidgetAtIndex(2));
+        RefreshFlagVisuals(FlagData, FlagWidget);
     }
     else if (UEnemiesData* EnemiesData = Cast<UEnemiesData>(ListItemObject)) 
     {
@@ -91,6 +79,28 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
             Widget->TB_Progression->SetText(FText::FromString(PandoraData->TimeRemainingText));
         }
     }
+}
+
+void UObjectiveItemEntry::RefreshFlagVisuals(UFlagData* FlagData, UFlagsObjective* Widget)
+{
+    if (!Widget || !FlagData) return;
+
+    if (!FlagData->FlagUpIcon) FlagData->FlagUpIcon = ItemStats::LoadIcon("FlagUpIcon");
+    if (!FlagData->FlagDownIcon) FlagData->FlagDownIcon = ItemStats::LoadIcon("FlagDownIcon");
+
+    auto UpdateFlag = [&](bool bEnabled, bool bActive, UImage* Image) {
+        if (bEnabled) {
+            Image->SetVisibility(ESlateVisibility::Visible);
+            Image->SetBrushFromTexture(bActive ? FlagData->FlagUpIcon : FlagData->FlagDownIcon);
+        }
+        else {
+            Image->SetVisibility(ESlateVisibility::Collapsed);
+        }
+        };
+
+    UpdateFlag(FlagData->Flag1Enabled, FlagData->Flag1Active, Widget->FlagImage_0);
+    UpdateFlag(FlagData->Flag2Enabled, FlagData->Flag2Active, Widget->FlagImage_1);
+    UpdateFlag(FlagData->Flag3Enabled, FlagData->Flag3Active, Widget->FlagImage_2);
 }
 
 void UObjectiveItemEntry::CompleteObjective()

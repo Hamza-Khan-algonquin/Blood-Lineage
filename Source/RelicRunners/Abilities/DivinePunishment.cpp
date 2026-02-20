@@ -68,32 +68,20 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     PS->UpdateRemoteHUDResource();
 
 
-    CachedInstigatorController =
-        ActorInfo->PlayerController.IsValid()
-        ? ActorInfo->PlayerController.Get()
-        : nullptr;
+    CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
 
     LastUseTime = World->GetTimeSeconds();
 
-    // ---- Start ticking damage ----
+    //  Start ticking damage
     const FVector Center = ActorInfo->AvatarActor->GetActorLocation();
 
 
-    if (AbilityVFX)
+    if (ActorInfo->AvatarActor->HasAuthority())
     {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            World,
-            AbilityVFX,
-            Center + FVector(0.f, 0.f, -100.f),
-            FRotator::ZeroRotator,
-            FVector(2.f),
-            true,
-            true
-        );
+        PS->Multicast_SpawnVFX(Center + FVector(0.f, 0.f, -100.f), FRotator::ZeroRotator, FVector(2.f),  AbilityVFX, false);
     }
 
     KillEnemiesInRadius(Center);
-
 
 }
 
@@ -105,13 +93,7 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
     UWorld* World = GetWorld();
     if (!World) return;
 
-    World->GetTimerManager().SetTimer(
-        DivineDamageTimerHandle,
-        this,
-        &UDivinePunishment::DivineDamageTick,
-        1.f,
-        true
-    );
+    World->GetTimerManager().SetTimer(DivineDamageTimerHandle,this, &UDivinePunishment::DivineDamageTick, 1.f,true);
 }
 
 
@@ -137,27 +119,13 @@ void UDivinePunishment::DivineDamageTick()
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(AvatarActor);
 
-    UKismetSystemLibrary::SphereOverlapActors(
-        World,
-        CachedCenter,
-        AreaRadius,
-        ObjectTypes,
-        ACharacter::StaticClass(),
-        ActorsToIgnore,
-        FoundActors
-    );
+    UKismetSystemLibrary::SphereOverlapActors(World,CachedCenter,AreaRadius,ObjectTypes,ACharacter::StaticClass(), ActorsToIgnore, FoundActors);
 
     for (AActor* Actor : FoundActors)
     {
         if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
 
-        UGameplayStatics::ApplyDamage(
-            Actor,
-            DamageAmount,
-            InstigatorController,
-            AvatarActor,
-            UDamageType::StaticClass()
-        );
+        UGameplayStatics::ApplyDamage(Actor,DamageAmount,InstigatorController, AvatarActor,UDamageType::StaticClass());
     }
 
     if (DamageTicksElapsed >= Duration)

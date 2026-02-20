@@ -97,15 +97,7 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
     ApplyDamageAndStun();
 
-    World->GetTimerManager().SetTimer(
-        CooldownTimerHandle,
-        [this, Handle, ActorInfo, ActivationInfo]()
-        {
-            EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-        },
-        Duration,
-        false 
-    );
+    World->GetTimerManager().SetTimer(CooldownTimerHandle,[this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, true, false);}, Duration, false );
 }
 
 

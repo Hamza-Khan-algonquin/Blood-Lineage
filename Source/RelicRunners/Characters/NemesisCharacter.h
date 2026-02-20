@@ -7,6 +7,8 @@
 /**
  *
  */
+//class USpringArmComponent;
+//class UCameraComponent;
 
 UCLASS()
 class RELICRUNNERS_API ANemesisCharacter : public ARelicRunnersCharacter
@@ -26,16 +28,21 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+    virtual void ActivateDamageAbilities() override;
+    virtual void ActivateDefenceAbilities() override;
+    virtual void ActivateUtilityAbilities() override;
+    virtual void ActivateUltimateAbilities() override;
 
-    virtual void GiveDamageAbilities() override;
-    virtual void GiveDefenceAbilities() override;
-    virtual void GiveUtilityAbilities() override;
-    virtual void GiveUltimateAbilities() override;
+    void GiveImpunity();
+    void GiveBackStab();
+    void GiveVengefulDance();
+    void GiveDivinePunishment();
 
     virtual void PlayRandomAttackAnimation() override;
     virtual void PerformSwingTrace() override;
     virtual void BasicAttack() override;
     virtual void HeavyAttack() override;
+    virtual void UpdateCamera(float DeltaTime) override;
 
     UPROPERTY()
     float Damage;

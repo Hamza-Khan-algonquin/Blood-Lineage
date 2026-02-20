@@ -124,6 +124,8 @@ public:
 
 	void AddFlagObjectiveToAll(int NumFlags);
 
+	void DecrementFlagObjectiveForAll();
+
 	void AddEnemiesObjectiveToAll(int TotalEnemies);
 
 	void AddPandoraObjectiveToAll(float Time);

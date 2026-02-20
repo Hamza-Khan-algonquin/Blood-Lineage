@@ -32,6 +32,10 @@ public:
 
 	void NativeConstruct();
 
+	void ToggleExpBar(bool value);
+
+	void ToggleBossBar(bool value);
+
 	void UpdateHUD(float CurrentHealth, float MaxHealth, float CurrentResource, float MaxResource, int CurrentLevel, float CurrentXP, float XPToLevel);
 
 	void UpdateHUDAbilityPoints(int AbilityPoints);
@@ -43,6 +47,12 @@ public:
 	void UpdateHUDResource(float CurrentResource, float MaxResource);
 
 	void UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel);
+
+	UPROPERTY(meta = (BindWidget))
+	class UVerticalBox* ExpHUD;
+
+	UPROPERTY(meta = (BindWidget))
+	class UVerticalBox* BossHUD;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Health;

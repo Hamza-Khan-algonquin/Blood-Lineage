@@ -16,6 +16,7 @@
 
 #include "RelicRunnersPlayerState.h"
 #include "RelicRunners/Menu/Keybinds.h"
+#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
@@ -42,7 +43,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
     AttributeSet = CreateDefaultSubobject<UAttributeSet>(TEXT("AttributeSet"));
 
     AbilitySystemComponent->SetIsReplicated(true);
-    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	//Inventory
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
@@ -50,39 +51,39 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerNumInventorySlots = 20;
 
 	//Level
-	PlayerStartingLevel = 0;
-	PlayerLevel = 1 + PlayerStartingLevel;
+	PlayerStartingLevel = 1;
+	PlayerLevel = PlayerStartingLevel;
 	PlayerXP = 0;
 	PlayerXPToLevel = 100;
 
 	//Health
-	PlayerStartingMaxHealth = 100 + PlayerStartingLevel;
+	PlayerStartingMaxHealth = 99 + PlayerStartingLevel;
 	PlayerMaxHealth = PlayerStartingMaxHealth;
-	PlayerHealth = 20;
+	PlayerHealth = PlayerMaxHealth;
 
 	//Resource
-	PlayerStartingMaxResource = 100 + PlayerStartingLevel;
+	PlayerStartingMaxResource = 99 + PlayerStartingLevel;
 	PlayerMaxResource = PlayerStartingMaxResource;
 	PlayerResource = PlayerMaxResource;
 	PlayerStartingResourceRegen = 5; //Percent
 
 	//Stats
-	PlayerStartingArmor = PlayerStartingLevel;
-	PlayerStartingDexterity = PlayerStartingLevel;
-	PlayerStartingStrength = PlayerStartingLevel;
-	PlayerStartingIntelligence = PlayerStartingLevel;
+	PlayerStartingArmor = PlayerStartingLevel - 1;
+	PlayerStartingDexterity = PlayerStartingLevel - 1;
+	PlayerStartingStrength = PlayerStartingLevel - 1;
+	PlayerStartingIntelligence = PlayerStartingLevel - 1;
 	PlayerStartingLuck = 0;
-	PlayerArmor = PlayerStartingLevel;
-	PlayerDexterity = PlayerStartingLevel;
-	PlayerStrength = PlayerStartingLevel;
-	PlayerIntelligence = PlayerStartingLevel;
+	PlayerArmor = PlayerStartingLevel - 1;
+	PlayerDexterity = PlayerStartingLevel - 1;
+	PlayerStrength = PlayerStartingLevel - 1;
+	PlayerIntelligence = PlayerStartingLevel - 1;
 
 	//Gold
 	PlayerStartingGold = 0;
-	PlayerGold = PlayerStartingGold;
+	PlayerGold = 0;
 
 	//Abilities
-	PlayerAbilityPoints = 1 + PlayerStartingLevel;
+	PlayerAbilityPoints = PlayerStartingLevel;
 
 	//Potions
 	HealthPotionCount = 3;
@@ -135,6 +136,32 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 	}
 
 	PS->ForceNetUpdate();
+}
+
+void ARelicRunnersPlayerState::Multicast_SpawnVFX_Implementation(FVector Location, FRotator Rotation, FVector Scale, UNiagaraSystem* NiagaraAsset, bool IsAttached)
+{
+	if (!NiagaraAsset)
+		return;
+
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	if (!IsAttached)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(World, NiagaraAsset, Location, Rotation, Scale, true, true);
+	}
+	else
+	{
+		APawn* Pawn = GetPawn();
+		if (!Pawn) return;
+
+		USceneComponent* RootComp = Pawn->GetRootComponent();
+		if (!RootComp) return;
+
+		UNiagaraFunctionLibrary::SpawnSystemAttached(NiagaraAsset,RootComp, NAME_None,Location,Rotation,EAttachLocation::KeepRelativeOffset,true, true,ENCPoolMethod::None );
+
+	}
 }
 
 bool ARelicRunnersPlayerState::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)

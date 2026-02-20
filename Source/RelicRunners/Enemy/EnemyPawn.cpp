@@ -15,13 +15,15 @@
 #include "RelicRunners/Enemy/LOD Wrapper Components/EnemyLODStaticMeshComponent.h"
 #include "RelicRunners/Enemy/EnemyLODComponent.h"
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
+#include "RelicRunners/Enemy/Controllers/CommanderController.h"
 
 
 // Sets default values
 AEnemyPawn::AEnemyPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	SetActorTickEnabled(false);
 
 	this->AutoPossessAI = EAutoPossessAI::Disabled;
 
@@ -39,6 +41,11 @@ AEnemyPawn::AEnemyPawn()
 	LODComponent->OnUpdateLODEvent.AddDynamic(StaticMesh, &UEnemyLODStaticMeshComponent::LODUpdate);
 
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
+	MovementComponent->UpdateNavAgent(*CapsuleComponent);
+
+	MaxHealth = 100;
+	CurrentHealth = 100;
+	Tags.Add("Enemy");
 }
 
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -164,6 +171,42 @@ void AEnemyPawn::AddEnemyToDirector()
 #endif
 }
 
+void AEnemyPawn::StartAttack()
+{
+	MovementComponent->SetMovementMode(EBoidMovementMode::DirectMoveTo);
+	IsAttacking = true;
+	SetActorTickEnabled(true);
+}
+
+void AEnemyPawn::AttackTick()
+{
+	if (MovementComponent->IsAtTarget())
+	{
+		if (AttackMontage.IsValid())
+		{
+			UAnimMontage* montage = AttackMontage.Get();
+			PlayMontage(montage);
+			
+
+			FTimerHandle tempHandle;
+			FTimerDelegate attackCallBack;
+			attackCallBack.BindLambda([this]()
+				{
+					MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+				});
+			GetWorldTimerManager().SetTimer(tempHandle, attackCallBack, montage->GetPlayLength(), false);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Attack Animation Missing"));
+			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+		}
+
+		IsAttacking = false;
+		SetActorTickEnabled(false);
+	}
+}
+
 // Called when the game starts or when spawned
 void AEnemyPawn::BeginPlay()
 {
@@ -177,6 +220,24 @@ void AEnemyPawn::BeginPlay()
 
 		//call it next tick so their no problem with stuff not loaded in yet
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
+
+		IsAttacking = false;
+		SetActorTickEnabled(false);
+	}
+}
+
+void AEnemyPawn::PlayMontage_Implementation(UAnimMontage* Montage, float PlayRate)
+{
+	if (!SkeletalMesh || !SkeletalMesh->IsActive())
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInstance = SkeletalMesh->GetAnimInstance();
+
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(Montage, PlayRate);
 	}
 }
 
@@ -186,7 +247,10 @@ void AEnemyPawn::BeginPlay()
 void AEnemyPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (IsActive)
+	{
+		AttackTick();
+	}
 }
 
 bool AEnemyPawn::GetIsActive()
@@ -226,6 +290,25 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
 {
 	return LifeSpanTimerHandle;
+}
+
+void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->Tags.Contains("Player"))
+	{
+		if (Controller)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, Controller, this, nullptr);
+		}
+		else if (MovementComponent->Commander)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, MovementComponent->Commander, this, nullptr);
+		}
+		else
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, nullptr, this, nullptr);
+		}
+	}
 }
 
 

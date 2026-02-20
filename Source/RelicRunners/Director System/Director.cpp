@@ -13,7 +13,7 @@ TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
 ADirector::ADirector() 
 {  
 	MaxSpawnPointActivisionDistance = 10000;
-	SpawnWait = 20;
+	SpawnWait = 1;
 	PrimaryActorTick.bCanEverTick = true;
 	bAlwaysRelevant = true;
 	Tags.Add("Director");
@@ -51,6 +51,11 @@ void ADirector::BeginPlay()
 ADirector* ADirector::GetInstance(const UObject* WorldContext)
 {
 	UWorld* world = WorldContext->GetWorld();
+
+	if (!world)
+	{
+		return nullptr;
+	}
 
 	if (Instance.IsValid())
 	{
@@ -132,6 +137,18 @@ void ADirector::AddPlayer(APawn* newPlayer)
 	if (!Players.Contains(newPlayer))
 	{
 		Players.Add(newPlayer);
+		OnPlayerAdd.Broadcast(newPlayer);
+	}
+}
+
+void ADirector::RemovePlayer(AActor* player)
+{
+	if (APawn* pawnPlayer = Cast<APawn>(player))
+	{
+		Players.Remove(pawnPlayer);
+
+		pawnPlayer->OnDestroyed.RemoveDynamic(this, &ADirector::RemovePlayer);
+		OnPlayerRemoved.Broadcast(pawnPlayer);
 	}
 }
 
