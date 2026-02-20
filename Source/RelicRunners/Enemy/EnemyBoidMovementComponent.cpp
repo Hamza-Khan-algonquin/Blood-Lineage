@@ -26,6 +26,7 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxTargetDistanceMultiplier = 5.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
+	EdgeAvoidanceWeight = 1;
 	IsKnockedBack = false;
 	SetIsReplicatedByDefault(true);
 }
@@ -204,7 +205,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 
 	//factor in the weights and add them up to get the final direction vector
-	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight);
+	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight) + (-EdgeAvoidanceVector.GetSafeNormal() * EdgeAvoidanceWeight);
 	//float totalWeight = (CoherenceWeight + SeparationWeight + AlignmentWeight);
 
 	//if (Commander->TargetPlayer)
@@ -291,7 +292,29 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	//ClampToNavMesh(GetOwner()->GetActorLocation() + desiredMovement, finalMovement);
 
+	FNavLocation navLocation;
+	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	FVector offset;
+	FVector standIn;
+	GetOwner()->GetActorBounds(false, standIn, offset, false);
+	offset.X = 0;
+	offset.Y = 0;
+	FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
+
+	if (navSys && navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
+	{
+		finalMovement.Z = navLocation.Location.Z;
+		EdgeAvoidanceVector = FVector::Zero();
+	}
+	else
+	{
+		EdgeAvoidanceVector = desiredMovement;
+		return;
+	}
+
+	finalMovement -= GetOwner()->GetActorLocation();
+
+	/*FVector offset;
 	FVector standIn;
 	GetOwner()->GetActorBounds(false, standIn, offset, false);
 
@@ -301,8 +324,12 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	{
 		finalMovement.Z = navLocation.Location.Z; 
 	}
+	else
+	{
+		return;
+	}
 
-	finalMovement -= GetOwner()->GetActorLocation();
+	finalMovement -= GetOwner()->GetActorLocation();*/
 
 	//GetOwner()->SetActorLocation(finalMovement);
 

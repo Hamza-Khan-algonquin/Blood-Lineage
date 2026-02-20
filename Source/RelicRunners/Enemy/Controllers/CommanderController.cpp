@@ -307,7 +307,7 @@ void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLo
 
 void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 {
-	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0)
+	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0 || ControlledEnemies[0])
 	{
 		return;
 	}

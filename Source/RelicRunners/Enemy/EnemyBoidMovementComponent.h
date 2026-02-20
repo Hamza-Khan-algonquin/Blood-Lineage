@@ -65,6 +65,8 @@ protected:
 	float AlignmentWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float TargetWeight;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float EdgeAvoidanceWeight;
 	
 
 	//UPROPERTY(EditAnywhere, Category = "Boid Behavior")
@@ -85,6 +87,8 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	EBoidMovementMode MovementMode = EBoidMovementMode::Boid;
 	EBoidFocuseMode FocuseMode = EBoidFocuseMode::Velocity;
+
+	FVector EdgeAvoidanceVector = FVector::Zero();
 
 public:
 	UEnemyBoidMovementComponent();

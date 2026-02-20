@@ -325,10 +325,26 @@ void AEnemyPawn::SpawnItem()
 		FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
 
-		if (Dropped && DroppedItem)
+		/*if (Dropped && DroppedItem)
 		{
 			Dropped->Initialize(DroppedItem->ItemData);
 		}
+
+		FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
+
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Instigator = this;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+		if (Dropped)
+		{
+			Dropped->Initialize(Data);
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}*/
 	}
 }
 
