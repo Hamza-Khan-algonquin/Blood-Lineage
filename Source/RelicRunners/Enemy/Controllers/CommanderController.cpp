@@ -307,44 +307,47 @@ void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLo
 
 void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 {
-	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0)
-	{
-		return;
-	}
+	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0 || GetWorld() == nullptr) return;
 
-	//loop through all players
 	for (int i = 0; i < players.Num(); i++)
 	{
-		//check what the close enemy to it and if it is in the enemies target radius
-		float closestDistance = FVector::DistSquared(players[i]->GetActorLocation(), ControlledEnemies[0]->GetActorLocation());
-		AEnemyPawn* closestEnemy = ControlledEnemies[0];
+		APawn* CurrentPlayer = players[i];
+		if (!IsValid(CurrentPlayer)) continue;
 
-		for (int j = 1; j < ControlledEnemies.Num(); j++)
+		AEnemyPawn* closestEnemy = nullptr;
+		float closestDistance = TNumericLimits<float>::Max();
+
+		for (int j = 0; j < ControlledEnemies.Num(); j++)
 		{
-			float newDistance = FVector::DistSquared(players[i]->GetActorLocation(), ControlledEnemies[j]->GetActorLocation());
-			if (closestDistance > newDistance)
+			AEnemyPawn* CurrentEnemy = ControlledEnemies[j];
+
+			if (!IsValid(CurrentEnemy) || !IsValid(CurrentEnemy->MovementComponent)) continue;
+
+			float newDistance = FVector::DistSquared(CurrentPlayer->GetActorLocation(), CurrentEnemy->GetActorLocation());
+			if (newDistance < closestDistance)
 			{
 				closestDistance = newDistance;
-				closestEnemy = ControlledEnemies[j];
+				closestEnemy = CurrentEnemy;
 			}
 		}
-
-		float trueDistance = FMath::Sqrt(closestDistance);
-		//check to see if the enemy is in their target Radius
-		if (trueDistance <= closestEnemy->MovementComponent->GetTotalTargetRadius())
+		if (closestEnemy)
 		{
-			if (RemainingTimeToAttack.Contains(players[i]) && RemainingTimeToAttack[players[i]] > 0)
+			float trueDistance = FMath::Sqrt(closestDistance);
+
+			if (trueDistance <= closestEnemy->MovementComponent->GetTotalTargetRadius())
 			{
-				RemainingTimeToAttack[players[i]] -= delta;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
-				closestEnemy->StartAttack();
-				RemainingTimeToAttack[players[i]] = TimeToAttack;
+				if (RemainingTimeToAttack.Contains(CurrentPlayer) && RemainingTimeToAttack[CurrentPlayer] > 0)
+				{
+					RemainingTimeToAttack[CurrentPlayer] -= delta;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
+					closestEnemy->StartAttack();
+					RemainingTimeToAttack.FindOrAdd(CurrentPlayer) = TimeToAttack;
+				}
 			}
 		}
-
 	}
 }
 

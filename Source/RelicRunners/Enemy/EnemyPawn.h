@@ -21,6 +21,14 @@ class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
 {
 	GENERATED_BODY()
 public:
+	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
+
+	UPROPERTY()
+	class UItemMeshData* ItemMeshData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Item Generation")
+	TSubclassOf<class UItemMeshData> ItemMeshDataClass;
+
 	//Delegate that is called when the enemy dies
 	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
 	FEnemyCharacterDied OnDied;
