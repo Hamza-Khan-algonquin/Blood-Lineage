@@ -509,27 +509,26 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 	//Lock look input on boss level
 	if (GetWorld()->GetMapName().Contains("BossLevel")) return;
 	else if (Controller != nullptr)
-
-	float XSens = 1.0f;
-	float YSens = 1.0f;
-	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
-		if (GI->Keys)
+		float XSens = 1.0f;
+		float YSens = 1.0f;
+
+		if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 		{
-			XSens = GI->Keys->HorizSens;
-			YSens = GI->Keys->VertSens;
+			if (GI->Keys)
+			{
+				XSens = GI->Keys->HorizSens;
+				YSens = GI->Keys->VertSens;
 
-			//to invert mouse controls
-			if (GI->Keys->InvertedXMouse) XSens *= -1.f;
-			if (GI->Keys->InvertedYMouse) YSens *= -1.f;
-	
+				//to invert mouse controls
+				if (GI->Keys->InvertedXMouse) XSens *= -1.f;
+				if (GI->Keys->InvertedYMouse) YSens *= -1.f;
+			}
 		}
+
+		AddControllerYawInput(LookAxisVector.X * XSens);
+		AddControllerPitchInput(LookAxisVector.Y * YSens);
 	}
-
-	AddControllerYawInput(LookAxisVector.X * XSens);
-	AddControllerPitchInput(LookAxisVector.Y * YSens);
-
-
 }
 
 void ARelicRunnersCharacter::Interact()
