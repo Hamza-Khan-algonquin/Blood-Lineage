@@ -549,13 +549,15 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     {
         if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(World->GetGameInstance()))
         {
-            Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
-            Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth;
-            Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence;
-            Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength;
-            Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility;
-            Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence;
-            Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
+            if (GI->SelectedSaveSlot) {
+                Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
+                Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth;
+                Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence;
+                Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength;
+                Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility;
+                Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence;
+                Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
+            }
         }
     }
 

@@ -960,6 +960,21 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		{
 			PlayerHUD->AddToViewport();
 		}
+		UWorld* World = GetWorld();
+		if (!World) return;
+
+		const FString MapName = World->GetMapName();
+
+		if (MapName.Contains(TEXT("BossLevel")))
+		{
+			PlayerHUD->ToggleBossBar(true);
+			PlayerHUD->ToggleExpBar(false);
+		}
+		else
+		{
+			PlayerHUD->ToggleBossBar(false);
+			PlayerHUD->ToggleExpBar(true);
+		}
 	}
 
 	if (!MinimapWidget && MinimapClass)
@@ -986,7 +1001,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			}
 			else if (MapName.Contains(TEXT("BossLevel")))
 			{
-				MinimapWidget->SetLevelTitle(FText::FromString("Arena"));
+				MinimapWidget->SetLevelTitle(FText::FromString("Hell"));
 			}
 		}
 	}
@@ -1037,6 +1052,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		}
 	}
 
+	float LoadingScreenTime = 3.0f;
 	if (!LoadingScreen && LoadingScreenClass)
 	{
 		FInputModeUIOnly InputMode;
@@ -1049,14 +1065,14 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (LoadingScreen)
 		{
 			LoadingScreen->AddToViewport();
-			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 5.0f, false);
+			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, LoadingScreenTime, false);
 		}
 	}
 
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
 		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 10.0f, false);
+		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, LoadingScreenTime, false);
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}

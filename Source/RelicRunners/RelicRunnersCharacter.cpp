@@ -53,6 +53,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "DrawDebugHelpers.h"
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
+#include <Kismet/KismetMathLibrary.h>
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -197,6 +198,14 @@ void ARelicRunnersCharacter::BeginPlay()
 	}
 
 	respawnPoint = GetActorLocation();
+
+	const FString MapName = GetWorld()->GetMapName();
+	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
+
+	if (MapName.Contains(TEXT("BossLevel")))
+	{
+		CameraBoom->TargetArmLength = 3000;
+	}
 }
 
 
@@ -346,6 +355,13 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 		Die();
 	}
 
+	if (GetWorld()->GetMapName().Contains("BossLevel"))
+	{
+		FVector CurrentLocation = GetActorLocation();
+		FVector Target(0.f, 0.f, -1000.f);
+		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(CurrentLocation, Target);
+		Controller->SetControlRotation(LookAtRot);
+	}
 }
 
 void ARelicRunnersCharacter::UpdateCamera(float DeltaTime)
@@ -487,12 +503,12 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 
 void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr)
+	//Lock look input on boss level
+	if (GetWorld()->GetMapName().Contains("BossLevel")) return;
+	else if (Controller != nullptr)
 	{
-		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
