@@ -448,32 +448,6 @@ void AAphroditeCharacter::Tick(float DeltaTime)
 
     for (int32 i = ActiveProjectiles.Num() - 1; i >= 0; --i)
     {
-    if (!bProjectileActive) return;
-
-    ProjectileElapsed += DeltaTime;
-
-    PreviousProjectileLocation = ProjectileLocation;
-    ProjectileLocation += ProjectileVelocity * DeltaTime;
-
-    DrawDebugSphere(GetWorld(), ProjectileLocation, 15.f, 12, FColor::Red, false, 0.f);
-
-    TArray<FHitResult> Hits;
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-    FCollisionShape Sphere = FCollisionShape::MakeSphere(50.0f);
-
-    bool bHit = GetWorld()->SweepMultiByChannel(
-        Hits,
-        PreviousProjectileLocation,
-        ProjectileLocation,
-        FQuat::Identity,
-        ECC_Pawn,
-        Sphere,
-        Params
-    );
-
-    if (bHit)
-    {
         FBasicProjectile& Projectile = ActiveProjectiles[i];
 
         Projectile.ElapsedTime += DeltaTime;
@@ -484,50 +458,59 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         DrawDebugSphere(GetWorld(), Projectile.Location, 15.f, 12, FColor::Red, false, 0.f);
 
         TArray<FHitResult> Hits;
+        FCollisionQueryParams Params;
+        Params.AddIgnoredActor(this);
         FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-        bool bHit = GetWorld()->SweepMultiByChannel(Hits, Projectile.PreviousLocation, Projectile.Location, FQuat::Identity, ECC_Pawn, Sphere);
-
-        if (bHit)
-        {
-            for (const FHitResult& Hit : Hits)
+        bool bHit = GetWorld()->SweepMultiByChannel(
+            Hits,
+            Projectile.PreviousLocation,
+            Projectile.Location,
+            FQuat::Identity,
+            ECC_Pawn,
+            Sphere,
+            Params
+        );
+            if (bHit)
             {
-                if (AActor* HitActor = Hit.GetActor())
+                for (const FHitResult& Hit : Hits)
                 {
-                    if (Projectile.AlreadyHitActors.Contains(HitActor))
-                        continue;
-                    //Server_HitEnemy(Enemy);
-
-                    else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                    if (AActor* HitActor = Hit.GetActor())
                     {
-                        Server_HitEnemy(TEnemy);
-                    }
-                    else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                    {
-                        Server_HitEnemy(TPEnemy);
-                    }
-                    else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                    {
-                        Server_HitEnemy(Enemy);
+                        if (Projectile.AlreadyHitActors.Contains(HitActor))
+                            continue;
+                        //Server_HitEnemy(Enemy);
 
-                    }
+                        else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                        {
+                            Server_HitEnemy(TEnemy);
+                        }
+                        else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+                        {
+                            Server_HitEnemy(TPEnemy);
+                        }
+                        else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+                        {
+                            Server_HitEnemy(Enemy);
 
-                    Projectile.AlreadyHitActors.Add(HitActor);
-                    // Remove projectile after hit
-                    ActiveProjectiles.RemoveAt(i);
-                    break;
+                        }
+
+                        Projectile.AlreadyHitActors.Add(HitActor);
+                        // Remove projectile after hit
+                        ActiveProjectiles.RemoveAt(i);
+                        break;
+                    }
                 }
+                continue;
             }
-            continue;
-        }
 
-        if (Projectile.ElapsedTime >= ProjectileLifetime)
-        {
-            ActiveProjectiles.RemoveAt(i);
+            if (Projectile.ElapsedTime >= ProjectileLifetime)
+            {
+                ActiveProjectiles.RemoveAt(i);
+            }
         }
     }
-}
-}
+
 
 
 
