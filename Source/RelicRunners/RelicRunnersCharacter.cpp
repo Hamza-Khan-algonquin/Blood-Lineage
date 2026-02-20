@@ -51,6 +51,7 @@
 #include "Enemy/Characters/EnemyCharacter.h"
 #include "Enemy/Characters/EnemyCharacterAI.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "RelicRunners/Menu/Keybinds.h"
 
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
 
@@ -411,12 +412,29 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr)
+	float XSens = 1.0f;
+	float YSens = 1.0f;
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		if (GI->Keys)
+		{
+			XSens = GI->Keys->HorizSens;
+			YSens = GI->Keys->VertSens;
+
+	
+		}
+	}
+
+	AddControllerYawInput(LookAxisVector.X * XSens);
+	AddControllerPitchInput(LookAxisVector.Y * YSens);
+
+	/*if (Controller != nullptr)
 	{
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+	*/
 }
 
 void ARelicRunnersCharacter::Interact()

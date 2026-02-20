@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include <Components/Slider.h>
+#include <Components/TextBlock.h>
 #include "SettingsWidget.generated.h"
+
 
 /**
  * 
@@ -38,11 +41,58 @@ public:
 
 	class UTileView* KeybindingsTileView;
 
+	//mouse controls
 	UFUNCTION(BlueprintCallable)
 	void ToggleInvertedXMouse();
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleInvertedYMouse();
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	USlider* XSlider = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	USlider* YSlider = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* TB_XSensValue = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* TB_YSensValue = nullptr;
+
+	//mouse sens settings
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
+	float MinSens = 0.1f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
+	float MaxSens = 1.0f;
+
+	UFUNCTION()
+	void OnSensXChanged(float Value);
+
+	UFUNCTION()
+	void OnSensYChanged(float Value);
+
+	void UpdateSensText(UTextBlock* TextBlock, float Sens);
+
+	//brightness setting
+	UPROPERTY(BlueprintReadOnly, meta =(BindWidget))
+	USlider* BrightnessSlider = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta =(BindWidget))
+	UTextBlock* TB_BrightnessValue = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
+	float MinBrightness = -2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
+	float MaxBrightnes = 0.9f;
+
+	UFUNCTION()
+	void OnBrightnessChanged(float Value);
+
+	void ApplyBrightness(float ExposureComp);
+	void UpdateBrightnessText(float ExposureComp);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Keybindings")
 	TArray<class UKeybindingsListData*> DefaultKeybindings;
@@ -66,6 +116,28 @@ public:
 
 	UFUNCTION()
 	void HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType);
+
+
+	//FOV SLIDER setting
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	USlider* FOVSlider = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category ="Settings|FOV")
+	float MaxFOV = 85.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|FOV")
+	float MinFOV = 70.f;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* TB_FOVValue = nullptr;
+
+	void UpdateFOVText(float NewFOV);
+
+	UFUNCTION()
+	void OnFOVSliderChanged(float Value);
+
+	void ApplyFOV(float NewFOV);
+
 
 protected:
 	UFUNCTION()
