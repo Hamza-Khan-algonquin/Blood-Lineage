@@ -43,9 +43,8 @@ void USettingsWidget::NativeConstruct()
 
 	if (FOVSlider)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("FOVSlider is %s"), FOVSlider ? TEXT("BOUND") : TEXT("NULL"));
 		FOVSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnFOVSliderChanged);
-		
+
 		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 		{
 			if (PC->PlayerCameraManager)
@@ -58,6 +57,31 @@ void USettingsWidget::NativeConstruct()
 		}
 	}
 
+	if (B_InvertedXMouse)
+	{
+		B_InvertedXMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedXMouse);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				B_InvertedXMouse->SetIsChecked(GI->Keys->InvertedXMouse);
+			}
+		}
+	}
+	if (B_InvertedYMouse)
+	{
+		B_InvertedXMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				B_InvertedYMouse->SetIsChecked(GI->Keys->InvertedYMouse);
+			}
+		}
+	}
+
 	if (XSlider)
 	{
 		XSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensXChanged);
@@ -66,6 +90,7 @@ void USettingsWidget::NativeConstruct()
 	{
 		YSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensYChanged);
 	}
+
 
 	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 	{
@@ -99,6 +124,19 @@ void USettingsWidget::NativeConstruct()
 				BrightnessSlider->SetValue(T);
 				ApplyBrightness(B);
 				UpdateBrightnessText(B);
+			}
+		}
+	}
+
+	if (B_MotionBlur)
+	{
+		B_MotionBlur->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::OnMotionBlurClicked);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				ApplyMotionBlur(GI->Keys->motionBlurEnabled);
 			}
 		}
 	}
@@ -307,7 +345,7 @@ void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 		{
 			TB_BackButton->SetText(FText::FromString("Return"));
 		}
-		
+
 		return;
 	}
 }
@@ -337,7 +375,7 @@ void USettingsWidget::HandleSelectionChanged(FString Item, ESelectInfo::Type Sel
 //fov settings
 void USettingsWidget::OnFOVSliderChanged(float Value)
 {
-	
+
 	const float NewFOV = FMath::Lerp(MinFOV, MaxFOV, Value);
 	ApplyFOV(NewFOV);
 	UpdateFOVText(NewFOV);
@@ -360,6 +398,32 @@ void USettingsWidget::UpdateFOVText(float NewFOV)
 
 	const int32 Rounded = FMath::RoundToInt(NewFOV);
 	TB_FOVValue->SetText(FText::AsNumber(Rounded));
+}
+void USettingsWidget::OnMotionBlurClicked(bool isChecked)
+{
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->motionBlurEnabled = isChecked;
+		}
+	}
+	ApplyMotionBlur(isChecked);
+}
+void USettingsWidget::ApplyMotionBlur(bool bEnabled)
+{
+	if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+	{
+		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
+		{
+			FPostProcessSettings& PPS = Camera->PostProcessSettings;
+
+			PPS.bOverride_MotionBlurAmount = true;
+			PPS.MotionBlurAmount = bEnabled ? 0.5f : 0.0f;
+
+			Camera->PostProcessBlendWeight = 1.0f;
+		}
+	}
 }
 void USettingsWidget::BackButtonClicked()
 {
@@ -405,20 +469,20 @@ void USettingsWidget::InitializeDefaultKeybindings()
 	}
 }
 
-void USettingsWidget::ToggleInvertedXMouse()
+void USettingsWidget::ToggleInvertedXMouse(bool isChecked)
 {
 	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (GI)
+	if (GI->Keys)
 	{
-		GI->Keys->InvertedXMouse = !GI->Keys->InvertedXMouse;
+		GI->Keys->InvertedXMouse = isChecked;
 	}
 }
 
-void USettingsWidget::ToggleInvertedYMouse()
+void USettingsWidget::ToggleInvertedYMouse(bool isChecked)
 {
 	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (GI)
+	if (GI->Keys)
 	{
-		GI->Keys->InvertedYMouse = !GI->Keys->InvertedYMouse;
+		GI->Keys->InvertedYMouse = isChecked;
 	}
 }

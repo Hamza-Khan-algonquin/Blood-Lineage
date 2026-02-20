@@ -6,7 +6,9 @@
 #include "Blueprint/UserWidget.h"
 #include <Components/Slider.h>
 #include <Components/TextBlock.h>
+#include <Components/CheckBox.h>
 #include "SettingsWidget.generated.h"
+
 
 
 /**
@@ -42,11 +44,18 @@ public:
 	class UTileView* KeybindingsTileView;
 
 	//mouse controls
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UCheckBox* B_InvertedXMouse = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UCheckBox* B_InvertedYMouse = nullptr;
 	UFUNCTION(BlueprintCallable)
-	void ToggleInvertedXMouse();
+	void ToggleInvertedXMouse(bool isChecked);
 
 	UFUNCTION(BlueprintCallable)
-	void ToggleInvertedYMouse();
+	void ToggleInvertedYMouse(bool isChecked);
+
+	
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	USlider* XSlider = nullptr;
@@ -60,7 +69,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UTextBlock* TB_YSensValue = nullptr;
 
-	//mouse sens settings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
 	float MinSens = 0.1f;
 
@@ -86,7 +94,7 @@ public:
 	float MinBrightness = -2.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
-	float MaxBrightnes = 0.9f;
+	float MaxBrightnes = 0.f;
 
 	UFUNCTION()
 	void OnBrightnessChanged(float Value);
@@ -138,6 +146,16 @@ public:
 
 	void ApplyFOV(float NewFOV);
 
+
+	//Motion blur setting
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UCheckBox* B_MotionBlur = nullptr;
+
+	UFUNCTION()
+	void OnMotionBlurClicked(bool isChecked);
+
+	void ApplyMotionBlur(bool bEnabled);
 
 protected:
 	UFUNCTION()
