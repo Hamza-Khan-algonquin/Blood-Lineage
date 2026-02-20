@@ -50,6 +50,12 @@ AEnemyPawn::AEnemyPawn()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
+	//times per second it replicates
+	NetUpdateFrequency = 5.f;
+	MinNetUpdateFrequency = 2.f;
+	bAlwaysRelevant = false;
+	NetCullDistanceSquared = FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1));
+
 	Tags.Add("Enemy");
 }
 
@@ -327,6 +333,25 @@ FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
 {
 	return LifeSpanTimerHandle;
 }
+
+#if WITH_EDITOR
+void AEnemyPawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	FName PropertyName = NAME_None;
+
+	if (PropertyChangedEvent.Property)
+	{
+		PropertyName = PropertyChangedEvent.Property->GetFName();
+	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(AEnemyPawn, LODComponent))
+	{
+		NetCullDistanceSquared = FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1));
+	}
+}
+#endif
 
 
 

@@ -282,7 +282,7 @@ bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement,
 	return false;
 }
 
-void UEnemyBoidMovementComponent::MoveInDirection_Implementation(float DeltaTime)
+void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
 	FVector desiredMovement = Velocity * DeltaTime;
 	FVector finalMovement = FVector::Zero();
