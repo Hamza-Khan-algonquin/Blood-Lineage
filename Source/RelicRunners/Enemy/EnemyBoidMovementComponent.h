@@ -32,6 +32,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<ACommanderController> Commander;
 	
+	bool IsKnockedBack;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float VisualRange;

@@ -65,6 +65,8 @@ AEnemyPawn::AEnemyPawn()
 	bAlwaysRelevant = false;
 	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 
+	KnockBackStrength = 1000;
+	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
 }
 
@@ -76,11 +78,30 @@ void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority())
+	if (!HasAuthority() || DamageAmount <= 0)
 	{
 		return 0;
 	}
-	HitFlash();
+
+	if (HasAuthority())
+	{
+		HitFlash();
+
+		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
+
+		this->MovementComponent->IsKnockedBack = true;
+
+		FTimerHandle temp;
+		GetWorldTimerManager().SetTimer(temp, [this]() {
+				if (this->MovementComponent)
+				{
+					this->MovementComponent->IsKnockedBack = false;
+					this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+				}
+			}, HitFlashTimeline.GetTimelineLength(), false);
+	}
+	
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
@@ -110,10 +131,11 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 void AEnemyPawn::HitFlash_Implementation()
 {
-	//HitFlashTimeline.PlayFromStart();
+	HitFlashTimeline.PlayFromStart();
+	SetActorTickEnabled(true);
 	//HitFlashTimeline.SetPlaybackPosition(0.0f, false);
 	//HitFlashTimeline.Play();
-	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+/*	for (UMaterialInstanceDynamic* element : DynamicMaterials)
 	{
 		if (element)
 		{
@@ -131,7 +153,7 @@ void AEnemyPawn::HitFlash_Implementation()
 				element->SetScalarParameterValue("HitFlashValue", 0.0f);
 			}
 		}
-	}, 0.5f, false);
+	}, 0.5f, false);*/
 }
 
 void AEnemyPawn::UpdateHitFlash(float strength)
@@ -142,6 +164,15 @@ void AEnemyPawn::UpdateHitFlash(float strength)
 		{
 			element->SetScalarParameterValue("HitFlashValue", strength);
 		}
+	}
+}
+
+void AEnemyPawn::EndHitFlash()
+{
+	HitFlashTimeline.Stop();
+	if (!IsAttacking)
+	{
+		SetActorTickEnabled(false);
 	}
 }
 
@@ -244,7 +275,11 @@ void AEnemyPawn::AttackTick()
 		}
 
 		IsAttacking = false;
-		SetActorTickEnabled(false);
+		if (!HitFlashTimeline.IsPlaying())
+		{
+			SetActorTickEnabled(false);
+		}
+		
 	}
 }
 

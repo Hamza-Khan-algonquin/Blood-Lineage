@@ -46,12 +46,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyStats> EnemyStatsComponent;
 
-	UPROPERTY(EditAnywhere, Category = "HitFlash")
+	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	UCurveFloat* HitFlashCurve;
 
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Effect")
+	float KnockBackStrength;
+	UPROPERTY(EditAnywhere, Category = "Hit Effect")
+	float AdditionalUpwardsKnockBackForces;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
@@ -81,6 +86,8 @@ public:
 	void HitFlash();
 	UFUNCTION(BlueprintCallable)
 	void UpdateHitFlash(float strength);
+	UFUNCTION(BlueprintCallable)
+	void EndHitFlash();
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle dieing and what happens when the enemy dies.", ShortToolTip = "A method to handle dieing."))
 	//A method to handle dieing and what happens when the enemy dies
