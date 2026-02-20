@@ -437,6 +437,7 @@ void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
     if (HitActor)
     {
         UGameplayStatics::ApplyDamage(HitActor, 90.f, GetController(), this, nullptr);
+
     }
 }
 
@@ -453,12 +454,12 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Projectile.PreviousLocation = Projectile.Location;
         Projectile.Location += Projectile.Velocity * DeltaTime;
 
-        DrawDebugSphere(GetWorld(),Projectile.Location, 15.f,12,FColor::Red,false,0.f);
+        DrawDebugSphere(GetWorld(), Projectile.Location, 15.f, 12, FColor::Red, false, 0.f);
 
         TArray<FHitResult> Hits;
         FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-        bool bHit = GetWorld()->SweepMultiByChannel(Hits,Projectile.PreviousLocation,Projectile.Location,FQuat::Identity,ECC_Pawn, Sphere);
+        bool bHit = GetWorld()->SweepMultiByChannel(Hits, Projectile.PreviousLocation, Projectile.Location, FQuat::Identity, ECC_Pawn, Sphere);
 
         if (bHit)
         {
@@ -468,29 +469,23 @@ void AAphroditeCharacter::Tick(float DeltaTime)
                 {
                     if (Projectile.AlreadyHitActors.Contains(HitActor))
                         continue;
+                    //Server_HitEnemy(Enemy);
 
-                    Server_HitEnemy(Enemy);
-                }
-                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                {
-                    Server_HitEnemy(TEnemy);
-                }
-                else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                {
-                    Server_HitEnemy(TPEnemy);
-                }
-
-                    if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                    {
-                        Server_HitEnemy(Enemy);
-                    }
                     else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                     {
                         Server_HitEnemy(TEnemy);
                     }
+                    else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+                    {
+                        Server_HitEnemy(TPEnemy);
+                    }
+                    else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+                    {
+                        Server_HitEnemy(Enemy);
+
+                    }
 
                     Projectile.AlreadyHitActors.Add(HitActor);
-
                     // Remove projectile after hit
                     ActiveProjectiles.RemoveAt(i);
                     break;
@@ -504,6 +499,10 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             ActiveProjectiles.RemoveAt(i);
         }
     }
+
+
+
+}
 
 
 
