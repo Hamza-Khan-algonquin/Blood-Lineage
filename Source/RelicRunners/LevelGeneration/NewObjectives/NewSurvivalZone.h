@@ -22,6 +22,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USphereComponent* TriggerZone;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* RadiusMesh;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UTimelineComponent* SurvivalTimelineComp;
 

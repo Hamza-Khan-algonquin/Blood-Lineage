@@ -24,7 +24,6 @@ AObjectiveBase::AObjectiveBase()
 void AObjectiveBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -37,5 +36,10 @@ void AObjectiveBase::Tick(float DeltaTime)
 void AObjectiveBase::Activate()
 {
 	OnObjectiveCreated.Broadcast();
+}
+
+void AObjectiveBase::SetVisibility(bool newVisibility)
+{
+	SetActorHiddenInGame(!newVisibility);
 }
 
