@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SaveFileListData.h"
 #include "Blueprint/UserWidget.h"
 #include "UpgradesWidget.generated.h"
+
 
 UCLASS()
 class RELICRUNNERS_API UUpgradesWidget : public UUserWidget

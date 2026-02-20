@@ -52,6 +52,7 @@
 #include "Enemy/Characters/EnemyCharacterAI.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "DrawDebugHelpers.h"
+#include "RelicRunners/Menu/Keybinds.h"
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
 #include <Kismet/KismetMathLibrary.h>
 
@@ -508,10 +509,27 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 	//Lock look input on boss level
 	if (GetWorld()->GetMapName().Contains("BossLevel")) return;
 	else if (Controller != nullptr)
+
+	float XSens = 1.0f;
+	float YSens = 1.0f;
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		if (GI->Keys)
+		{
+			XSens = GI->Keys->HorizSens;
+			YSens = GI->Keys->VertSens;
+
+			//to invert mouse controls
+			if (GI->Keys->InvertedXMouse) XSens *= -1.f;
+			if (GI->Keys->InvertedYMouse) YSens *= -1.f;
+	
+		}
 	}
+
+	AddControllerYawInput(LookAxisVector.X * XSens);
+	AddControllerPitchInput(LookAxisVector.Y * YSens);
+
+
 }
 
 void ARelicRunnersCharacter::Interact()

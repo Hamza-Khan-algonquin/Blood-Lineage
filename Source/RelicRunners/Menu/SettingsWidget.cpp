@@ -11,10 +11,16 @@
 #include "Keybinds.h"
 #include "KeybindingsListWidget.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include <RelicRunners/RelicRunnersCharacter.h>
 #include <Kismet/GameplayStatics.h>
+#include "Components/Slider.h"
+#include <Camera/CameraComponent.h>
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "Components/ComboBoxString.h"
 #include "PauseMenuWidget.h"
+#include "Engine/Engine.h"
+#include "GameFramework/GameUserSettings.h"
+
 
 void USettingsWidget::NativeConstruct()
 {
@@ -35,6 +41,105 @@ void USettingsWidget::NativeConstruct()
 		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleSelectionChanged);
 	}
 
+	if (FOVSlider)
+	{
+		FOVSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnFOVSliderChanged);
+
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+		{
+			if (PC->PlayerCameraManager)
+			{
+				const float CurrentFOV = PC->PlayerCameraManager->GetFOVAngle();
+				float T = (CurrentFOV - MinFOV) / (MaxFOV - MinFOV);
+				FOVSlider->SetValue(FMath::Clamp(T, 0.f, 1.f));
+
+			}
+		}
+	}
+
+	if (B_InvertedXMouse)
+	{
+		B_InvertedXMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedXMouse);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				B_InvertedXMouse->SetIsChecked(GI->Keys->InvertedXMouse);
+			}
+		}
+	}
+	if (B_InvertedYMouse)
+	{
+		B_InvertedXMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				B_InvertedYMouse->SetIsChecked(GI->Keys->InvertedYMouse);
+			}
+		}
+	}
+
+	if (XSlider)
+	{
+		XSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensXChanged);
+	}
+	if (YSlider)
+	{
+		YSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensYChanged);
+	}
+
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			const float XSens = GI->Keys->HorizSens;
+			const float YSens = GI->Keys->VertSens;
+
+			// Convert Sens -> slider 0..1
+			const float XNorm = FMath::Clamp((XSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
+			const float YNorm = FMath::Clamp((YSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
+
+			if (XSlider) XSlider->SetValue(XNorm);
+			if (YSlider) YSlider->SetValue(YNorm);
+
+			UpdateSensText(TB_XSensValue, XSens);
+			UpdateSensText(TB_YSensValue, YSens);
+		}
+	}
+
+	if (BrightnessSlider)
+	{
+		BrightnessSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnBrightnessChanged);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				const float B = GI->Keys->Brightness;
+				const float T = FMath::Clamp((B - MinBrightness) / (MaxBrightnes - MinBrightness), 0.f, 1.f);
+				BrightnessSlider->SetValue(T);
+				ApplyBrightness(B);
+				UpdateBrightnessText(B);
+			}
+		}
+	}
+
+	if (B_MotionBlur)
+	{
+		B_MotionBlur->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::OnMotionBlurClicked);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				ApplyMotionBlur(GI->Keys->motionBlurEnabled);
+			}
+		}
+	}
 	InitializeDefaultKeybindings();
 }
 
@@ -47,6 +152,81 @@ void USettingsWidget::OnRestoreDefaultsClicked()
 	}
 
 	InitializeDefaultKeybindings();
+}
+
+void USettingsWidget::OnSensXChanged(float Value)
+{
+	const float NewSens = FMath::Lerp(MinSens, MaxSens, Value);
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->HorizSens = NewSens;
+		}
+	}
+
+	UpdateSensText(TB_XSensValue, NewSens);
+}
+
+void USettingsWidget::OnSensYChanged(float Value)
+{
+	const float NewSens = FMath::Lerp(MinSens, MaxSens, Value);
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->VertSens = NewSens;
+		}
+	}
+
+	UpdateSensText(TB_YSensValue, NewSens);
+}
+
+void USettingsWidget::UpdateSensText(UTextBlock* TextBlock, float Sens)
+{
+	if (!TextBlock) return;
+	TextBlock->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), Sens)));
+}
+
+void USettingsWidget::OnBrightnessChanged(float Value)
+{
+	const float NewExposure = FMath::Lerp(MinBrightness, MaxBrightnes, Value);
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->Brightness = NewExposure;
+		}
+
+	}
+
+	ApplyBrightness(NewExposure);
+	UpdateBrightnessText(NewExposure);
+}
+
+void USettingsWidget::ApplyBrightness(float ExposureComp)
+{
+	if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+	{
+		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
+		{
+			FPostProcessSettings& PPS = Camera->PostProcessSettings;
+
+			PPS.bOverride_AutoExposureBias = true;
+			PPS.AutoExposureBias = ExposureComp;
+
+			Camera->PostProcessBlendWeight = 1.0f;
+		}
+	}
+}
+
+void USettingsWidget::UpdateBrightnessText(float Gamma)
+{
+	if (!TB_BrightnessValue) return;
+	TB_BrightnessValue->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), Gamma)));
 }
 
 void USettingsWidget::StartRebinding(UKeybindingsListWidget* Entry)
@@ -165,7 +345,7 @@ void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 		{
 			TB_BackButton->SetText(FText::FromString("Return"));
 		}
-		
+
 		return;
 	}
 }
@@ -190,6 +370,61 @@ void USettingsWidget::HandleSelectionChanged(FString Item, ESelectInfo::Type Sel
 	}
 }
 
+
+
+//fov settings
+void USettingsWidget::OnFOVSliderChanged(float Value)
+{
+
+	const float NewFOV = FMath::Lerp(MinFOV, MaxFOV, Value);
+	ApplyFOV(NewFOV);
+	UpdateFOVText(NewFOV);
+}
+
+void USettingsWidget::ApplyFOV(float NewFOV)
+{
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (PC->PlayerCameraManager)
+		{
+			PC->PlayerCameraManager->SetFOV(NewFOV);
+		}
+	}
+}
+
+void USettingsWidget::UpdateFOVText(float NewFOV)
+{
+	if (!TB_FOVValue) return;
+
+	const int32 Rounded = FMath::RoundToInt(NewFOV);
+	TB_FOVValue->SetText(FText::AsNumber(Rounded));
+}
+void USettingsWidget::OnMotionBlurClicked(bool isChecked)
+{
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->motionBlurEnabled = isChecked;
+		}
+	}
+	ApplyMotionBlur(isChecked);
+}
+void USettingsWidget::ApplyMotionBlur(bool bEnabled)
+{
+	if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+	{
+		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
+		{
+			FPostProcessSettings& PPS = Camera->PostProcessSettings;
+
+			PPS.bOverride_MotionBlurAmount = true;
+			PPS.MotionBlurAmount = bEnabled ? 0.5f : 0.0f;
+
+			Camera->PostProcessBlendWeight = 1.0f;
+		}
+	}
+}
 void USettingsWidget::BackButtonClicked()
 {
 	if (MainParentMenu)
@@ -234,20 +469,20 @@ void USettingsWidget::InitializeDefaultKeybindings()
 	}
 }
 
-void USettingsWidget::ToggleInvertedXMouse()
+void USettingsWidget::ToggleInvertedXMouse(bool isChecked)
 {
 	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (GI)
+	if (GI->Keys)
 	{
-		GI->Keys->InvertedXMouse = !GI->Keys->InvertedXMouse;
+		GI->Keys->InvertedXMouse = isChecked;
 	}
 }
 
-void USettingsWidget::ToggleInvertedYMouse()
+void USettingsWidget::ToggleInvertedYMouse(bool isChecked)
 {
 	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (GI)
+	if (GI->Keys)
 	{
-		GI->Keys->InvertedYMouse = !GI->Keys->InvertedYMouse;
+		GI->Keys->InvertedYMouse = isChecked;
 	}
 }
