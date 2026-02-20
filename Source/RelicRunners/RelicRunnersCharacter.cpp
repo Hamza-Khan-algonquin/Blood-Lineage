@@ -310,7 +310,7 @@ void ARelicRunnersCharacter::RegisterDirector()
 			{
 				Director->AddPlayer(this);
 
-				this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
+				this->OnDestroyed.AddDynamic(Director, &ADirector::RemovePlayer);
 			}
 			else
 			{

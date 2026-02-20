@@ -11,6 +11,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 
 ANemesisCharacter::ANemesisCharacter()
 {
@@ -211,6 +212,10 @@ void ANemesisCharacter::PerformSwingTrace()
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                 {
                     Server_HitEnemy(TEnemy);
+                }
+                else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+                {
+                    Server_HitEnemy(TPEnemy);
                 }
                 AlreadyHitActors.Add(HitActor);
             }

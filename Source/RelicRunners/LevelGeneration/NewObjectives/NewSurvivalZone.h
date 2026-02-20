@@ -69,5 +69,8 @@ public:
 	float CompletionPercentage;
 
 	UPROPERTY(Replicated)
+	float AnimProgress;
+
+	UPROPERTY(Replicated)
 	TArray<AActor*> CollidingActors;
 };

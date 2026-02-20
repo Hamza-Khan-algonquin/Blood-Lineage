@@ -55,6 +55,14 @@ void ANewSurvivalZone::BeginPlay()
 		Remaining = Duration;
 		CompletionPercentage = 0.0f;
 	}
+
+	if (PandoraBoxMesh && ActivateAnimation)
+	{
+		PandoraBoxMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		PandoraBoxMesh->SetAnimation(ActivateAnimation);
+		PandoraBoxMesh->SetPosition(0.0f, false);
+		PandoraBoxMesh->Stop();
+	}
 }
 
 // Called every frame
@@ -84,33 +92,30 @@ void ANewSurvivalZone::UpdateTimelineComp(float Output)
 {
 	if (Duration <= 0.0f) return;
 
-	// FLIP: If Output is 0->1 but logic feels backward, 
-	// we use Output directly for 'Remaining' logic.
 	float Alpha = FMath::Clamp(Output, 0.0f, 1.0f);
 
-	// 1. Calculate Remaining Time:
-	// If your timer was counting UP when you entered, 
-	// then 'Output' is currently acting as the 'Elapsed' time.
-	// So we use (Duration - (Alpha * Duration)) or just (Alpha * Duration) 
-	// depending on your curve.
-
-	// TRY THIS SPECIFIC FLIP:
 	Remaining = Alpha * Duration;
 
-	// 2. Drive CompletionPercentage:
 	float NewPercent = Alpha;
 
 	if (!FMath::IsNearlyEqual(NewPercent, CompletionPercentage, 0.001f))
 	{
 		CompletionPercentage = NewPercent;
 
-		int32 TotalSecondsLeft = FMath::CeilToInt(Remaining);
-		int32 Minutes = TotalSecondsLeft / 60;
-		int32 Seconds = TotalSecondsLeft % 60;
+		int TotalSecondsLeft = FMath::CeilToInt(Remaining);
+		int Seconds = TotalSecondsLeft % 60;
 
-		FString TimerText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+		FString TimerText = FString::Printf(TEXT("%d"), Seconds);
 
 		UpdateObjectiveToAllControllers(CompletionPercentage, TimerText);
+	}
+
+	if (PandoraBoxMesh && ActivateAnimation)
+	{
+		float AnimLength = ActivateAnimation->GetPlayLength();
+		float NewTime = (1.0f - Alpha) * AnimLength;
+
+		PandoraBoxMesh->SetPosition(NewTime, false);
 	}
 }
 void ANewSurvivalZone::UpdateObjectiveToAllControllers(float NewPercent, FString TimerText)
@@ -136,10 +141,10 @@ void ANewSurvivalZone::OnTimelineEnd()
 
 	OnObjectiveActivated.Broadcast();
 
-	if (PandoraBoxMesh && ActivateAnimation)
-	{
-		PandoraBoxMesh->PlayAnimation(ActivateAnimation, false);
-	}
+	//if (PandoraBoxMesh && ActivateAnimation)
+	//{
+	//	PandoraBoxMesh->PlayAnimation(ActivateAnimation, false);
+	//}
 
 }
 

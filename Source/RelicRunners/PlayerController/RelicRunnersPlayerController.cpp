@@ -11,7 +11,7 @@
  *   Any use, distribution, or modification outside of these projects
  *   is strictly prohibited without explicit written permission.
  *
- *   © 2025 Tristan Anglin. All rights reserved.
+ *   ï¿½ 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
 #include "RelicRunnersPlayerController.h"
@@ -782,7 +782,11 @@ void ARelicRunnersPlayerController::SetupObjectives()
 			ObjectiveStageTitle->TotalZones = 5;
 			ObjectiveStageTitle->CurrentZones = 0;
 		}
-
+		else if (MapName.Contains(TEXT("BossLevel")))
+		{
+			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveStageTitle->CurrentZones = 0;
+		}
 		if (ObjectiveStageTitle->TotalZones != 0)
 		{
 			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
@@ -826,20 +830,7 @@ void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
 
 void ARelicRunnersPlayerController::UpdateFlagObjective(int FlagIndex, bool bIsActive)
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
-	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
-	{
-		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
-		{
-			if (FlagIndex == 1) FlagGoal->Flag1Active = bIsActive;
-			else if (FlagIndex == 2) FlagGoal->Flag2Active = bIsActive;
-			else if (FlagIndex == 3) FlagGoal->Flag3Active = bIsActive;
-
-			ObjectiveLog->UpdateObjective(FlagGoal);
-			return;
-		}
-	}
 }
 
 void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FString NewTimeText)
@@ -879,10 +870,31 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 	FlagGoal->Flag1Active = false;
 	FlagGoal->Flag2Active = false;
 	FlagGoal->Flag3Active = false;
+	FlagGoal->Flag1Enabled = (NumFlags >= 1);
+	FlagGoal->Flag2Enabled = (NumFlags >= 2);
+	FlagGoal->Flag3Enabled = (NumFlags == 3);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
 	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+}
+
+void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation()
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
+		{
+			if (!FlagGoal->Flag1Active) FlagGoal->Flag1Active = true;
+			else if (!FlagGoal->Flag2Active) FlagGoal->Flag2Active = true;
+			else if (!FlagGoal->Flag3Active) FlagGoal->Flag3Active = true;
+
+			ObjectiveLog->UpdateObjective(FlagGoal);
+			return;
+		}
+	}
 }
 
 void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(int TotalEnemies)
@@ -904,10 +916,8 @@ void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(fl
 	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
 	PandoraGoal->Percent = 1.0f;
 
-	int Minutes = FMath::FloorToInt(Time / 60.0f);
 	int Seconds = FMath::CeilToInt(FMath::Fmod(Time, 60.0f));
-	if (Seconds == 60) { Seconds = 0; Minutes++; }
-	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%d"), Seconds);
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
 
@@ -973,6 +983,10 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			else if (MapName.Contains(TEXT("IslandTest")))
 			{
 				MinimapWidget->SetLevelTitle(FText::FromString("Stage"));
+			}
+			else if (MapName.Contains(TEXT("BossLevel")))
+			{
+				MinimapWidget->SetLevelTitle(FText::FromString("Arena"));
 			}
 		}
 	}
@@ -1042,7 +1056,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
 		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 0.2f, false);
+		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 10.0f, false);
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}

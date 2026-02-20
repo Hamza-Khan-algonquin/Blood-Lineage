@@ -144,7 +144,7 @@ public:
 	UPROPERTY()
 	int PlayerIntelligence;
 	UPROPERTY()
-	int PlayerStartingLevel = 0;
+	int PlayerStartingLevel = 1;
 	UPROPERTY()
 	int PlayerStartingMaxHealth;
 	UPROPERTY()
@@ -181,7 +181,11 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	class UInventoryComponent* GetInventoryComponent() { return InventoryComponent; };
 	UFUNCTION()
+	int GetPlayerStartingLevel() const { return PlayerStartingLevel; }
+	UFUNCTION()
 	int GetPlayerStartingMaxHealth() const { return PlayerStartingMaxHealth; }
+	UFUNCTION()
+	int GetPlayerStartingMaxResource() const { return PlayerStartingMaxResource; }
 	UFUNCTION()
 	int GetPlayerNumInventorySlots() const { return PlayerNumInventorySlots; }
 	UFUNCTION()

@@ -16,6 +16,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
+
 
 AArtemisCharacter::AArtemisCharacter()
 {
@@ -536,6 +538,10 @@ void AArtemisCharacter::Tick(float DeltaTime)
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
 				{
 					Server_HitEnemy(TEnemy);
+				}
+				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+				{
+					Server_HitEnemy(TPEnemy);
 				}
 
 				AlreadyHitActors.Add(HitActor);

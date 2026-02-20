@@ -15,6 +15,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
+
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
@@ -378,8 +380,7 @@ void AAphroditeCharacter::BasicAttack()
 
     // === SPAWN NEW PROJECTILE ===
     FBasicProjectile NewProjectile;
-    NewProjectile.Location =
-        GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    NewProjectile.Location = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
     NewProjectile.Velocity = GetActorForwardVector() * ProjectileSpeed;
     NewProjectile.ElapsedTime = 0.f;
 
@@ -387,13 +388,7 @@ void AAphroditeCharacter::BasicAttack()
 
     PlayRandomAttackAnimation();
 
-    GetWorldTimerManager().SetTimer(
-        TimerHandle_AttackCooldown,
-        this,
-        &AAphroditeCharacter::ResetBasicAttack,
-        BasicAttackCooldown,
-        false
-    );
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetBasicAttack,BasicAttackCooldown,false );
 }
 
 
@@ -427,13 +422,7 @@ void AAphroditeCharacter::HeavyAttack()
     PlayRandomAttackAnimation();
 
     // Cooldown
-    GetWorldTimerManager().SetTimer(
-        TimerHandle_AttackCooldown,
-        this,
-        &AAphroditeCharacter::ResetHeavyAttack,
-        HeavyAttackCooldown,
-        false
-    );
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
 }
 
 
@@ -464,27 +453,12 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Projectile.PreviousLocation = Projectile.Location;
         Projectile.Location += Projectile.Velocity * DeltaTime;
 
-        DrawDebugSphere(
-            GetWorld(),
-            Projectile.Location,
-            15.f,
-            12,
-            FColor::Red,
-            false,
-            0.f
-        );
+        DrawDebugSphere(GetWorld(),Projectile.Location, 15.f,12,FColor::Red,false,0.f);
 
         TArray<FHitResult> Hits;
         FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-        bool bHit = GetWorld()->SweepMultiByChannel(
-            Hits,
-            Projectile.PreviousLocation,
-            Projectile.Location,
-            FQuat::Identity,
-            ECC_Pawn,
-            Sphere
-        );
+        bool bHit = GetWorld()->SweepMultiByChannel(Hits,Projectile.PreviousLocation,Projectile.Location,FQuat::Identity,ECC_Pawn, Sphere);
 
         if (bHit)
         {
@@ -494,6 +468,17 @@ void AAphroditeCharacter::Tick(float DeltaTime)
                 {
                     if (Projectile.AlreadyHitActors.Contains(HitActor))
                         continue;
+
+                    Server_HitEnemy(Enemy);
+                }
+                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                {
+                    Server_HitEnemy(TEnemy);
+                }
+                else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+                {
+                    Server_HitEnemy(TPEnemy);
+                }
 
                     if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
                     {
@@ -519,7 +504,7 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             ActiveProjectiles.RemoveAt(i);
         }
     }
-}
+
 
 
 
