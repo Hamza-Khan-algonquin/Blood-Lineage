@@ -33,6 +33,17 @@ inline bool operator|= (int num, EObjectiveType type)
 	return num |= static_cast<uint8>(type);
 }
 
+USTRUCT()
+struct FDifficultyInfo
+{
+	GENERATED_BODY()
+	float HealthPercent;
+
+	float DamagePercent;
+
+	float LuckAmount;
+};
+
 
 UCLASS()
 class RELICRUNNERS_API ARelicRunnersGameState : public AGameStateBase
@@ -45,6 +56,12 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentDifficulty, BlueprintReadWrite)
 	FName CurrentDifficulty;
+
+	//UPROPERTY(BlueprintReadWrite)
+	TMap<FName, FDifficultyInfo> DifficultyModifiers;
+
+	FDifficultyInfo GetDifficultyInfo(FName DifficultyName) const;
+	FDifficultyInfo GetCurrentDifficultyInfo() const { return GetDifficultyInfo(CurrentDifficulty); }
 
 	UFUNCTION()
 	virtual void OnRep_CurrentDifficulty();

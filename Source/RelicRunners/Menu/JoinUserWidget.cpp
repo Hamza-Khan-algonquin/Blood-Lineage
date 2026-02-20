@@ -28,6 +28,7 @@
 #include "RelicRunners/PlayerPreview/LobbyPreview.h"
 #include <RelicRunners/PlayerHUD/LobbyHUDWorld.h>
 #include "Components/WidgetComponent.h"
+#include "RelicRunners/RelicRunnersGameState.h"
 
 void UJoinUserWidget::NativeConstruct()
 {
@@ -61,11 +62,29 @@ void UJoinUserWidget::NativeConstruct()
 		B_CurrentSection->SetVisibility(IsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 
-	DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
-	DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
-	DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 180, 150, 2});
-	DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
-	DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+
+	if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+	{
+		FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo("Boar");
+		DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, diffInfo.HealthPercent, diffInfo.DamagePercent, diffInfo.LuckAmount });
+		diffInfo = RunnersGameState->GetDifficultyInfo("Bull");
+		DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, diffInfo.HealthPercent, diffInfo.DamagePercent, diffInfo.LuckAmount });
+		diffInfo = RunnersGameState->GetDifficultyInfo("Lion");
+		DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, diffInfo.HealthPercent, diffInfo.DamagePercent, diffInfo.LuckAmount });
+		diffInfo = RunnersGameState->GetDifficultyInfo("Hydra");
+		DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, diffInfo.HealthPercent, diffInfo.DamagePercent, diffInfo.LuckAmount });
+		diffInfo = RunnersGameState->GetDifficultyInfo("Cerberus");
+		DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, diffInfo.HealthPercent, diffInfo.DamagePercent, diffInfo.LuckAmount });
+	}
+	else
+	{
+		DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
+		DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
+		DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 180, 150, 2 });
+		DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
+		DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
+	}
 	UpdateDifficultyNumbers();
 
 	if (B_Boar)     B_Boar->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Boar);

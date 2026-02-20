@@ -35,6 +35,8 @@ public:
 	// Sets default values for this component's properties
 	UEnemyStats();
 
+	void BeginPlay() override;
+
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 	UFUNCTION(BlueprintGetter)
 	FName GetName() const { return EnemyName; }

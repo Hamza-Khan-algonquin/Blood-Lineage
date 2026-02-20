@@ -3,6 +3,8 @@
 
 #include "EnemyStats.h"
 #include <Net/UnrealNetwork.h>
+#include "RelicRunners/RelicRunnersGameState.h"
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
 // Sets default values for this component's properties
 UEnemyStats::UEnemyStats()
@@ -18,6 +20,27 @@ UEnemyStats::UEnemyStats()
 	CurrentHealth = 100;
 	RemainingStunTime = 0;
 	ChanceToDropItem = 0.01;
+	AttackDamage = 10;
+	SetIsReplicatedByDefault(true);
+}
+
+void UEnemyStats::BeginPlay()
+{
+	Super::BeginPlay();
+
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI)
+	{
+		return;
+	}
+
+	if (ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>())
+	{
+		FDifficultyInfo DifficultyInfo = GS->GetDifficultyInfo(GI->CurrentDifficulty);
+		MaxHealth *= DifficultyInfo.HealthPercent;
+		CurrentHealth = MaxHealth;
+		AttackDamage *= DifficultyInfo.DamagePercent;
+	}
 }
 
 void UEnemyStats::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -30,6 +53,7 @@ void UEnemyStats::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(UEnemyStats, CurrentHealth);
 	DOREPLIFETIME(UEnemyStats, RemainingStunTime);
 	DOREPLIFETIME(UEnemyStats, ChanceToDropItem);
+	DOREPLIFETIME(UEnemyStats, AttackDamage);
 }
 
 #if WITH_EDITOR
