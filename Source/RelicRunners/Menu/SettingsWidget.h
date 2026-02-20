@@ -134,7 +134,7 @@ public:
 	float MaxFOV = 85.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|FOV")
-	float MinFOV = 70.f;
+	float MinFOV = 80.f;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UTextBlock* TB_FOVValue = nullptr;

@@ -522,7 +522,7 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 
 				//to invert mouse controls
 				if (GI->Keys->InvertedXMouse) XSens *= -1.f;
-				if (GI->Keys->InvertedYMouse) YSens *= -1.f;
+				if (GI->Keys->InvertedYMouse) YSens *= 1.f;
 			}
 		}
 
