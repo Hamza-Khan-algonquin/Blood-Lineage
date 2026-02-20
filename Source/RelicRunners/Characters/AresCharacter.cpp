@@ -166,6 +166,11 @@ void AAresCharacter::GiveRageofTheGods()
 
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
+	const FString MapName = GetWorld()->GetMapName();
+	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
+
+	if (MapName.Contains(TEXT("BossLevel"))) return;
+
 	// Movement info 
 	FVector Velocity = GetVelocity();
 	Velocity.Z = 0.f;
