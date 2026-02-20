@@ -84,7 +84,7 @@ protected:
 	
 
 	//interface implementation variable
-	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(Category = "Object Pooling Info", Replicated, EditAnywhere, BlueprintReadWrite)
 	bool IsActive = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool SetControllerActiveStatus = true;
@@ -141,7 +141,8 @@ protected:
 	//rotates hud to face camera, courtesy of Mr big T him self Tristan
 	void UpdateEnemyHUDWorldFacing();
 
-
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMultSetIsActive(bool newIsActive);
 
 public:	
 	// Called every frame
@@ -154,4 +155,5 @@ public:
 	virtual bool GetShouldTick() override;
 	virtual void SetIsActive(bool newIsActive) override;
 	virtual FTimerHandle& GetLifeSpanTimerHandle() override;
+
 };

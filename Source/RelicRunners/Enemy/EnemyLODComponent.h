@@ -39,6 +39,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetIsUpdatingLOD(bool isUpdating);
+	float GetDistanceLOD(int index) { return DistanceOfLOD[index]; }
+	int GetNumberOfLODs() { return DistanceOfLOD.Num(); }
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

@@ -16,6 +16,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
+#include "Engine/CollisionProfile.h"
 
 
 AAphroditeCharacter::AAphroditeCharacter()
@@ -447,6 +448,32 @@ void AAphroditeCharacter::Tick(float DeltaTime)
 
     for (int32 i = ActiveProjectiles.Num() - 1; i >= 0; --i)
     {
+    if (!bProjectileActive) return;
+
+    ProjectileElapsed += DeltaTime;
+
+    PreviousProjectileLocation = ProjectileLocation;
+    ProjectileLocation += ProjectileVelocity * DeltaTime;
+
+    DrawDebugSphere(GetWorld(), ProjectileLocation, 15.f, 12, FColor::Red, false, 0.f);
+
+    TArray<FHitResult> Hits;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(50.0f);
+
+    bool bHit = GetWorld()->SweepMultiByChannel(
+        Hits,
+        PreviousProjectileLocation,
+        ProjectileLocation,
+        FQuat::Identity,
+        ECC_Pawn,
+        Sphere,
+        Params
+    );
+
+    if (bHit)
+    {
         FBasicProjectile& Projectile = ActiveProjectiles[i];
 
         Projectile.ElapsedTime += DeltaTime;
@@ -499,9 +526,7 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             ActiveProjectiles.RemoveAt(i);
         }
     }
-
-
-
+}
 }
 
 

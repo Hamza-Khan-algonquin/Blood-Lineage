@@ -16,6 +16,7 @@
 #include "RelicRunners/PlayerHUD/LobbyHUDWorld.h"
 #include "Components/WidgetComponent.h"
 #include <RelicRunners/Game/LobbyGameState.h>
+#include "RelicRunners/RelicRunnersGameState.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
@@ -162,6 +163,11 @@ void ALobbyGameMode::SetDifficulty(FName NewDifficulty)
     if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
     {
         GI->CurrentDifficulty = NewDifficulty;
+    }
+
+    if (ARelicRunnersGameState* GS = GetGameState<ARelicRunnersGameState>())
+    {
+        GS->CurrentDifficulty = NewDifficulty;
     }
 
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)

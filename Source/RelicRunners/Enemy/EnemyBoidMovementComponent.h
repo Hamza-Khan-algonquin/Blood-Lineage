@@ -32,6 +32,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<ACommanderController> Commander;
 	
+	bool IsKnockedBack;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float VisualRange;
@@ -95,6 +96,7 @@ public:
 	void CalculateMoveToDirection(float delta);
 	//clamp the direction to move onto the navmesh
 	bool ClampToNavMesh(const FVector& DesiredMovement, FVector& out);
+	//UFUNCTION(NetMulticast, Reliable)
 	//move in a given direction
 	void MoveInDirection(float DeltaTime);
 	//move the enemy onto the ground

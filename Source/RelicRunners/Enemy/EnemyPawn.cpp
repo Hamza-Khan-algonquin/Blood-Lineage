@@ -2,20 +2,27 @@
 
 
 #include "EnemyPawn.h"
+#include "Components/CapsuleComponent.h"
 #include "GameplayEffect.h"
 #include "GameplayEffectExtension.h"
-#include <Net/UnrealNetwork.h>
 #include "RelicRunners/CustomDamageEvents.h"
-#include "RelicRunners/RelicRunnersCharacter.h"
-#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/Director System/Director.h"
-#include <Kismet/GameplayStatics.h>
-#include "Components/CapsuleComponent.h"
+#include "RelicRunners/Enemy/Controllers/CommanderController.h"
+#include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
+#include "RelicRunners/Enemy/EnemyLODComponent.h"
+#include "RelicRunners/Enemy/EnemyStats.h"
 #include "RelicRunners/Enemy/LOD Wrapper Components/EnemyLODSkeletalMeshComponent.h"
 #include "RelicRunners/Enemy/LOD Wrapper Components/EnemyLODStaticMeshComponent.h"
-#include "RelicRunners/Enemy/EnemyLODComponent.h"
-#include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
-#include "RelicRunners/Enemy/Controllers/CommanderController.h"
+#include "RelicRunners/Item/ItemActor.h"
+#include "RelicRunners/Item/ItemStats.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
+#include "RelicRunners/Item/ItemMeshData.h"
+
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/RelicRunnersCharacter.h"
+#include <Kismet/GameplayStatics.h>
+#include <Net/UnrealNetwork.h>
+
 
 
 // Sets default values
@@ -43,8 +50,23 @@ AEnemyPawn::AEnemyPawn()
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
 
-	MaxHealth = 100;
-	CurrentHealth = 100;
+	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
+	EnemyStatsComponent->SetEnemyType(EEnemyType::LIGHT);
+	EnemyStatsComponent->SetChanceToDropItem(0.02f);
+	EnemyStatsComponent->SetMaxHealth(100.f);
+	EnemyStatsComponent->SetCurrentHealth(100.f);
+
+	bReplicates = true;
+	SetReplicateMovement(true);
+
+	//times per second it replicates
+	SetNetUpdateFrequency(5.f);
+	SetMinNetUpdateFrequency(2.f);
+	bAlwaysRelevant = false;
+	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
+
+	KnockBackStrength = 1000;
+	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
 }
 
@@ -52,24 +74,39 @@ void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AEnemyPawn, CurrentHealth);
-	DOREPLIFETIME(AEnemyPawn, MaxHealth);
-	DOREPLIFETIME(AEnemyPawn, TypeOfEnemy);
 }
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (!HasAuthority() || DamageAmount <= 0)
+	{
+		return 0;
+	}
+
+	if (HasAuthority())
+	{
+		HitFlash();
+
+		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
+
+		this->MovementComponent->IsKnockedBack = true;
+
+		FTimerHandle temp;
+		GetWorldTimerManager().SetTimer(temp, [this]() {
+				if (this->MovementComponent)
+				{
+					this->MovementComponent->IsKnockedBack = false;
+					this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+				}
+			}, HitFlashTimeline.GetTimelineLength(), false);
+	}
+	
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
 	//add the damage
-	CurrentHealth -= DamageAmount;
-
-	//make sure we don't go below zero
-	if (DamageAmount < 0)
-	{
-		DamageAmount = 0;
-	}
+	EnemyStatsComponent->AddToCurrentHealth(-DamageAmount);
 
 	//check if we meet the conditions to be dead and then die
 	if (IsDead())
@@ -82,7 +119,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		if (DamageEvent.IsOfType(FAttackDamageEvent::ClassID))
 		{
 			FAttackDamageEvent* AttackDamageEvent = (FAttackDamageEvent*)&DamageEvent;
-			if (AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && TypeOfEnemy == EEnemyType::LIGHT))
+			if (AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT))
 			{
 				//RemainingStunTime = AttackDamageEvent->StunDuration;
 			}
@@ -92,25 +129,74 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	return DamageAmount;
 }
 
+void AEnemyPawn::HitFlash_Implementation()
+{
+	HitFlashTimeline.PlayFromStart();
+	SetActorTickEnabled(true);
+	//HitFlashTimeline.SetPlaybackPosition(0.0f, false);
+	//HitFlashTimeline.Play();
+/*	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("HitFlashValue", 10.0f);
+		}
+	}
+	//DynamicMaterial->SetScalarParameterValue("HitFlashValue", 10.0f);
+
+	FTimerHandle temp;
+	GetWorldTimerManager().SetTimer(temp, [this]() {
+		for (UMaterialInstanceDynamic* element : this->DynamicMaterials)
+		{
+			if (element)
+			{
+				element->SetScalarParameterValue("HitFlashValue", 0.0f);
+			}
+		}
+	}, 0.5f, false);*/
+}
+
+void AEnemyPawn::UpdateHitFlash(float strength)
+{
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("HitFlashValue", strength);
+		}
+	}
+}
+
+void AEnemyPawn::EndHitFlash()
+{
+	HitFlashTimeline.Stop();
+	if (!IsAttacking)
+	{
+		SetActorTickEnabled(false);
+	}
+}
+
 void AEnemyPawn::Die(AController* EventInstigator)
 {
 	//make sure we are server side
 	if (HasAuthority())
 	{
 		//spawn item
-		//SpawnItem();
+		SpawnItem();
 
 		//check to make sure it a play and if do add experience
 		if (EventInstigator)
 		{
-			if (ARelicRunnersCharacter* player = Cast<ARelicRunnersCharacter>(EventInstigator->GetPawn()))
+			ARelicRunnersPlayerState* PS = EventInstigator->GetPlayerState<ARelicRunnersPlayerState>();
+
+			if (PS)
 			{
-				//player->AddExperience(CalculateXP());
+				PS->AddExperience(CalculateXP());
 			}
 		}
 
 		OnDied.Broadcast(this);
-		//OnDied.Clear();
+		OnDied.Clear();
 		//OnDestroyed.Clear();
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
@@ -121,33 +207,19 @@ void AEnemyPawn::Die(AController* EventInstigator)
 		}
 		else
 		{
-			//be gone hud of my enemy
-			/*if (EnemyHUDWorld)
-			{
-				EnemyHUDWorld->DestroyComponent();
-			}*/
-
 			Destroy();
 		}
 	}
 }
 
-
-
-void AEnemyPawn::SetCurrentHealth(const float& NewHealth)
+inline bool AEnemyPawn::IsDead()
 {
-	CurrentHealth = FMath::Clamp(NewHealth, 0.f, MaxHealth);
-}
-
-void AEnemyPawn::SetMaxHealth(const float& newHealth)
-{
-	MaxHealth = FMath::Max(0.f, newHealth);
-	CurrentHealth = FMath::Min(CurrentHealth, MaxHealth);
+	return EnemyStatsComponent->GetCurrentHealth() <= 0;
 }
 
 void AEnemyPawn::ResetEnemy()
 {
-	CurrentHealth = MaxHealth;
+	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
 }
 
 void AEnemyPawn::AddEnemyToDirector()
@@ -159,7 +231,7 @@ void AEnemyPawn::AddEnemyToDirector()
 		//add the enemy to the director
 		Director->AddEnemy(this);
 		//add the remove enemy method to the OnDestroyed delegate/ on die
-		//this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
+		this->OnDied.AddDynamic(Director, &ADirector::RemoveEnemy);
 		this->OnDeactivated.AddDynamic(Director, &ADirector::RemoveEnemy);
 		this->OnDestroyed.AddDynamic(Director, &ADirector::RemoveEnemy);
 	}
@@ -203,7 +275,60 @@ void AEnemyPawn::AttackTick()
 		}
 
 		IsAttacking = false;
-		SetActorTickEnabled(false);
+		if (!HitFlashTimeline.IsPlaying())
+		{
+			SetActorTickEnabled(false);
+		}
+		
+	}
+}
+
+void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->Tags.Contains("Player"))
+	{
+		if (Controller)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, EnemyStatsComponent->GetAttackDamage(), Controller, this, nullptr);
+		}
+		else if (MovementComponent->Commander)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, EnemyStatsComponent->GetAttackDamage(), MovementComponent->Commander, this, nullptr);
+		}
+		else
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, EnemyStatsComponent->GetAttackDamage(), nullptr, this, nullptr);
+		}
+	}
+}
+
+float AEnemyPawn::CalculateXP() const
+{
+	return FMath::RandRange(10, 25);
+}
+
+void AEnemyPawn::SpawnItem()
+{
+	float chance = FMath::FRandRange(0.f, 1.f);
+
+	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
+	{
+		UItemMeshData* itemMeshData = nullptr;
+		UItemObject* DroppedItem = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), itemMeshData), this);
+
+		// Spawn new dropped item
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Instigator = this;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		// Desired drop location
+		FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+
+		if (Dropped && DroppedItem)
+		{
+			Dropped->Initialize(DroppedItem->ItemData);
+		}
 	}
 }
 
@@ -211,6 +336,24 @@ void AEnemyPawn::AttackTick()
 void AEnemyPawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	for(int i = 0; i < SkeletalMesh->GetNumMaterials(); i++)
+	{
+		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
+	}
+
+	if (HitFlashCurve)
+	{
+		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+		FOnTimelineFloat inProgressFunc;
+		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
+
+		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
+
+		//putting this here for a future note of what do if I want to call something at the end
+		//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
+	}
 	
 	if (HasAuthority())
 	{
@@ -251,6 +394,8 @@ void AEnemyPawn::Tick(float DeltaTime)
 	{
 		AttackTick();
 	}
+
+	HitFlashTimeline.TickTimeline(DeltaTime);
 }
 
 bool AEnemyPawn::GetIsActive()
@@ -292,23 +437,25 @@ FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
 	return LifeSpanTimerHandle;
 }
 
-void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+#if WITH_EDITOR
+void AEnemyPawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-	if (OtherActor->Tags.Contains("Player"))
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	FName PropertyName = NAME_None;
+
+	if (PropertyChangedEvent.Property)
 	{
-		if (Controller)
-		{
-			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, Controller, this, nullptr);
-		}
-		else if (MovementComponent->Commander)
-		{
-			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, MovementComponent->Commander, this, nullptr);
-		}
-		else
-		{
-			UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, nullptr, this, nullptr);
-		}
+		PropertyName = PropertyChangedEvent.Property->GetFName();
+	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(AEnemyPawn, LODComponent))
+	{
+		SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 	}
 }
+#endif
+
+
 
 

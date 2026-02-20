@@ -5,6 +5,7 @@
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
 #include "NavigationSystem.h"
+#include <Net/UnrealNetwork.h>
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -25,11 +26,19 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxTargetDistanceMultiplier = 5.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
+	IsKnockedBack = false;
+	SetIsReplicatedByDefault(true);
 }
 
 void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (GetOwnerRole() != ROLE_Authority || IsKnockedBack)
+	{
+		return;
+	}
+
 	switch(MovementMode)
 	{ 	
 	case EBoidMovementMode::Boid:
@@ -277,20 +286,34 @@ bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement,
 void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
 	FVector desiredMovement = Velocity * DeltaTime;
-	FVector finalMovement = FVector::Zero();
+	FVector finalMovement = GetActorLocation() + desiredMovement;
 	FHitResult hit;
 
-	ClampToNavMesh(GetOwner()->GetActorLocation() + desiredMovement, finalMovement);
+	//ClampToNavMesh(GetOwner()->GetActorLocation() + desiredMovement, finalMovement);
 
-	GetOwner()->SetActorLocation(finalMovement);
+	FVector offset;
+	FVector standIn;
+	GetOwner()->GetActorBounds(false, standIn, offset, false);
+
+	FNavLocation navLocation;
+	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (navSys->ProjectPointToNavigation(finalMovement, navLocation, GetActorFeetLocation() + offset))
+	{
+		finalMovement.Z = navLocation.Location.Z; 
+	}
+
+	finalMovement -= GetOwner()->GetActorLocation();
+
+	//GetOwner()->SetActorLocation(finalMovement);
 
 	//fix if we have time
-	/*SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), false, hit);
+	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
 	if (hit.IsValidBlockingHit())
 	{
 		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
-	}*/
+		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
+	}
 }
 
 void UEnemyBoidMovementComponent::GroundSnap()
@@ -319,6 +342,8 @@ void UEnemyBoidMovementComponent::UpdateRotation()
 			GetOwner()->SetActorRotation(Velocity.GetSafeNormal2D().Rotation());
 			break;
 		case EBoidFocuseMode::Target:
+			if (!Commander->GetCurrentTarget())
+				return;
 			GetOwner()->SetActorRotation((Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D().Rotation());
 			break;
 	}

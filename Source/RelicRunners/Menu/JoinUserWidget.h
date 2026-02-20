@@ -44,11 +44,11 @@ struct FDifficultyWidgets
 	UPROPERTY()
 	class UBorder* SectionBorder = nullptr;   
 
-	int HealthPercent;
+	float HealthPercent;
 
-	int DamagePercent;
+	float DamagePercent;
 
-	int LuckAmount;
+	float LuckAmount;
 	
 };
 
