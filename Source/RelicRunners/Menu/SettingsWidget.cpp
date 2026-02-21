@@ -71,7 +71,7 @@ void USettingsWidget::NativeConstruct()
 	}
 	if (B_InvertedYMouse)
 	{
-		B_InvertedXMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
+		B_InvertedYMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
 
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
