@@ -17,7 +17,8 @@ ADirector::ADirector()
 	PrimaryActorTick.bCanEverTick = true;
 	bAlwaysRelevant = true;
 	Tags.Add("Director");
-	SetReplicates(true);
+	//SetReplicates(true);
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned

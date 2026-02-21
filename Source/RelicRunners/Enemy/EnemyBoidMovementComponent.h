@@ -89,6 +89,8 @@ protected:
 	EBoidFocuseMode FocuseMode = EBoidFocuseMode::Velocity;
 
 	FVector EdgeAvoidanceVector = FVector::Zero();
+	FVector LastValidPosition = FVector::Zero();
+	FVector LastEdgeVector = FVector::Zero();
 
 public:
 	UEnemyBoidMovementComponent();

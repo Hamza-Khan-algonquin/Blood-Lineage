@@ -6,6 +6,7 @@
 #include "RelicRunners/Enemy/EnemyPawn.h"
 #include "NavigationSystem.h"
 #include <Net/UnrealNetwork.h>
+#include "DrawDebugHelpers.h"
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -91,9 +92,9 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	TArray<APawn*> pOtherBoidsToCheck;
 	TArray<APawn*> pOtherBoids;
 
-	if (Commander->GetCurrentTarget())
+	if (APawn* target = Commander->GetCurrentTarget())
 	{
-		targetDirection = Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation();
+		targetDirection = target->GetActorLocation() - GetOwner()->GetActorLocation();
 		float distanceToTarget = targetDirection.Size();
 		distanceFromTargetRadius = distanceToTarget - TargetRadius;
 
@@ -201,12 +202,69 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		/*targetDirection.Normalize();
 		FVector orbitVector = FVector::CrossProduct(targetDirection, FVector::UpVector);
 		finalInflunceVector += (orbitVector * OrbitWeight);*/
+		
 	}
 
+	FVector edgeVector = FVector::Zero();
+	FVector inVector = (LastValidPosition - GetActorLocation());
+	inVector.Z = 0;
+	inVector = inVector.GetSafeNormal();
+	if (!EdgeAvoidanceVector.IsNearlyZero())
+	{
+		edgeVector = -EdgeAvoidanceVector.GetSafeNormal();
+		//edgeVector = (finalInflunceVector - (((finalInflunceVector | edgeVector) / (edgeVector | edgeVector)) * edgeVector)).GetSafeNormal();
+		//edgeVector = -(edgeVector - edgeVector.ProjectOnTo(targetDirection)).GetSafeNormal();
+
+		/*float edgeOffSet = FVector::DotProduct(finalInflunceVector, edgeVector);
+
+		if (edgeOffSet > 0)
+		{
+			//float strength = FMath::Clamp(edgeOffSet / MaxSpeed, 0.f, 1.f);
+			finalInflunceVector -= edgeOffSet * edgeVector;// *EdgeAvoidanceWeight;
+
+		}*/
+
+		//note for future self "|" is dot operator for vectors
+		FVector leftDirection = FVector::CrossProduct(FVector::UpVector, edgeVector);
+		//FVector rightDirection = -leftDirection;
+		/*leftDirection = (edgeVector + leftDirection * 0.5);
+		rightDirection = (edgeVector + leftDirection * 0.5);*/
+		FVector goal = finalInflunceVector.GetSafeNormal();
+/*		if ((edgeVector | goal) > 0.9f)
+		{
+			
+		}*/
+		if ((goal | leftDirection) > 0)//< (goal | rightDirection))
+		{
+			edgeVector = leftDirection.GetSafeNormal();
+		}
+		else
+		{
+			edgeVector = -leftDirection.GetSafeNormal();
+		}
+		
+		if (FVector::DotProduct(edgeVector, LastEdgeVector) < 0.f)
+			edgeVector = -edgeVector;
+		
+		//finalInflunceVector += edgeVector.GetSafeNormal() * EdgeAvoidanceWeight;
+	}
+	
+	if (!LastEdgeVector.IsNearlyZero() || !edgeVector.IsZero())
+	{
+		edgeVector = FMath::VInterpTo(LastEdgeVector, edgeVector, delta, 5);
+		LastEdgeVector = edgeVector;
+		finalInflunceVector += (edgeVector + inVector * 0.5).GetSafeNormal() * finalInflunceVector.Length();//EdgeAvoidanceWeight;
+	}
+
+	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + inVector.GetSafeNormal() * 100, FColor::Cyan, false, 0.1, 0, 3);
+
+	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + finalInflunceVector.GetSafeNormal() * 50, FColor::Black, false, 0.1, 0, 3);
 
 	//factor in the weights and add them up to get the final direction vector
-	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight) + (-EdgeAvoidanceVector.GetSafeNormal() * EdgeAvoidanceWeight);
+	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight) /*+ (EdgeAvoidanceVector.GetSafeNormal() * EdgeAvoidanceWeight)*/;
 	//float totalWeight = (CoherenceWeight + SeparationWeight + AlignmentWeight);
+
+	
 
 	//if (Commander->TargetPlayer)
 	//{
@@ -216,7 +274,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//finalInflunceVector /= totalWeight;
 	//finalInflunceVector.Normalize();
 
-	FVector desiredVelocity = finalInflunceVector.GetSafeNormal2D() * MaxSpeed;
+	FVector desiredVelocity = finalInflunceVector.GetSafeNormal() * MaxSpeed;
 
 	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
@@ -232,6 +290,8 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	}
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
 	UpdateComponentVelocity();
+
+	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + Velocity, FColor::Red, false, 0.05, 0, 3);
 }
 
 void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
@@ -305,10 +365,11 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	{
 		finalMovement.Z = navLocation.Location.Z;
 		EdgeAvoidanceVector = FVector::Zero();
+		LastValidPosition = navLocation.Location;
 	}
 	else
 	{
-		EdgeAvoidanceVector = desiredMovement;
+		EdgeAvoidanceVector = GetActorFeetLocation() + desiredMovement - LastValidPosition;
 		return;
 	}
 

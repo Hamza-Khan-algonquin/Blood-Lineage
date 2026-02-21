@@ -131,6 +131,8 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 	ControlledEnemies.Add(enemy);
 	enemy->MovementComponent->Commander = this;
 	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
 	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
