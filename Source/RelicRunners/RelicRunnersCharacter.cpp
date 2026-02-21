@@ -57,6 +57,7 @@
 #include <Kismet/KismetMathLibrary.h>
 
 
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 ARelicRunnersCharacter::ARelicRunnersCharacter()
@@ -520,15 +521,18 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 				XSens = GI->Keys->HorizSens;
 				YSens = GI->Keys->VertSens;
 
-				//to invert mouse controls
 				if (GI->Keys->InvertedXMouse) XSens *= -1.f;
-				if (GI->Keys->InvertedYMouse) YSens *= 1.f;
+				if (GI->Keys->InvertedYMouse) YSens *= -1.f;
+			
 			}
 		}
 
 		AddControllerYawInput(LookAxisVector.X * XSens);
+		
 		AddControllerPitchInput(LookAxisVector.Y * YSens);
 	}
+
+	
 }
 
 void ARelicRunnersCharacter::Interact()

@@ -71,7 +71,7 @@ void USettingsWidget::NativeConstruct()
 	}
 	if (B_InvertedYMouse)
 	{
-		B_InvertedXMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
+		B_InvertedYMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
 
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
@@ -99,7 +99,6 @@ void USettingsWidget::NativeConstruct()
 			const float XSens = GI->Keys->HorizSens;
 			const float YSens = GI->Keys->VertSens;
 
-			// Convert Sens -> slider 0..1
 			const float XNorm = FMath::Clamp((XSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
 			const float YNorm = FMath::Clamp((YSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
 
@@ -475,6 +474,7 @@ void USettingsWidget::ToggleInvertedXMouse(bool isChecked)
 	if (GI->Keys)
 	{
 		GI->Keys->InvertedXMouse = isChecked;
+		GI->ApplyKeybindings();
 	}
 }
 
@@ -484,5 +484,6 @@ void USettingsWidget::ToggleInvertedYMouse(bool isChecked)
 	if (GI->Keys)
 	{
 		GI->Keys->InvertedYMouse = isChecked;
+		GI->ApplyKeybindings();
 	}
 }
