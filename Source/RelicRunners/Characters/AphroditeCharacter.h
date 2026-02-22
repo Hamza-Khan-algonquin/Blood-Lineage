@@ -30,9 +30,6 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	class UClassInfo* ClassInfo;
-
 	virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:

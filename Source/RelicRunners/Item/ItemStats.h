@@ -143,7 +143,6 @@ public:
             Data.Icon = LoadIcon("ResourceIcon");
             Data.IconColor = GetIconColor("Mana");
             Data.Descriptions.Add(FText::Format(FText::FromString("Mana pool."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0} From Meta-Upgrade"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
         }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {

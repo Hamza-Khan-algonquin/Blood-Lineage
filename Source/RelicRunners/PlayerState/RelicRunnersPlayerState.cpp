@@ -209,7 +209,6 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		InventoryComponent->AddItem(Item);
 	}
 
-	//Starting Weapon
 	FString StartingWeapon = "";
 	if (SelectedClass == "Ares")
 	{
@@ -288,6 +287,16 @@ void ARelicRunnersPlayerState::SetPlayerMaxHealth(int value)
 	UpdateRemoteHUDHealth();
 }
 
+void ARelicRunnersPlayerState::SetPlayerMaxResource(int value)
+{
+	if (!HasAuthority()) return;
+
+	PlayerMaxResource = value;
+
+	//For server
+	UpdateRemoteHUDResource();
+}
+
 void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 {
 	if (!HasAuthority()) return;
@@ -322,31 +331,10 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	PlayerLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
 
-	//Starting stats / base stats
-	PlayerStartingMaxHealth++;
-	PlayerStartingMaxResource++;
-	PlayerStartingArmor++;
-	PlayerStartingDexterity++;
-	PlayerStartingStrength++;
-	PlayerStartingIntelligence++;
-
-	//Current health / max health
-	PlayerMaxHealth++;
-	PlayerHealth = PlayerMaxHealth;
-
-	//Current resource / max resource
-	PlayerMaxResource++;
-
-	//Current stats
-	PlayerArmor++;
-	PlayerDexterity++;
-	PlayerStrength++;
-	PlayerIntelligence++;
-	PlayerNumInventorySlots++;
-
 	//Ability points
 	PlayerAbilityPoints++;
 
+	//Weapon Upgrade
 	int HealthIncrease = 0;
 	int ArmorIncrease = 0;
 	int DexterityIncrease = 0;
@@ -745,11 +733,6 @@ void ARelicRunnersPlayerState::OnRep_Ability()
 {
 	UpdateRemoteHUDAbility();
 }
-
-
-
-
-
 
 void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

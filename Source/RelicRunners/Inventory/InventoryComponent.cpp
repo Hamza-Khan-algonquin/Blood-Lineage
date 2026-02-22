@@ -29,6 +29,8 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include <Kismet/GameplayStatics.h>
+#include <ClassData.h>
+#include "ClassInfo.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -44,6 +46,17 @@ UInventoryComponent::UInventoryComponent()
     else
     {
         UE_LOG(LogTemp, Error, TEXT("InventoryComponent: Failed to find ItemMeshData at path!"));
+    }
+
+    static ConstructorHelpers::FObjectFinder<UClassInfo> ClassInfoAsset(TEXT("/Game/ThirdPerson/Blueprints/Classes/ClassInfo.ClassInfo"));
+
+    if (ClassInfoAsset.Succeeded())
+    {
+        ClassInfo = ClassInfoAsset.Object;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("ClassInfoAsset: Failed to find ClassInfoAsset at path!"));
     }
 }
 
@@ -356,6 +369,7 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
         if (PS->HasAuthority())
         {
             PS->SetPlayerMaxHealth(CachedEquippedStats.TotalHealth);
+            PS->SetPlayerMaxResource(CachedEquippedStats.TotalResource);
             PS->Client_UpdateEquippedStats(CachedEquippedStats);
         }
     }
@@ -516,19 +530,30 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
 {
     FEquippedStatsSummary Summary;
 
+    const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner());
+    if (!PS) return Summary;
+
     //Starting stats
-    if (const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner()))
+    Summary.PlayerLevel = PS->GetPlayerStartingLevel();
+    Summary.TotalHealth = PS->GetPlayerStartingMaxHealth();
+    Summary.TotalArmor = PS->GetPlayerStartingArmor();
+    Summary.TotalDexterity = PS->GetPlayerStartingDexterity();
+    Summary.TotalStrength = PS->GetPlayerStartingStrength();
+    Summary.TotalIntelligence = PS->GetPlayerStartingIntelligence();
+    Summary.TotalLuck = PS->GetPlayerStartingLuck();
+    Summary.TotalResource = PS->GetPlayerStartingMaxResource();
+    Summary.TotalResourceRegen = PS->GetPlayerStartingResourceRegen();
+    Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
+
+    //Class stat bonuses
+    if (ClassInfo)
     {
-        Summary.PlayerLevel = PS->GetPlayerStartingLevel();
-        Summary.TotalHealth = PS->GetPlayerStartingMaxHealth();
-        Summary.TotalArmor = PS->GetPlayerStartingArmor();
-        Summary.TotalDexterity = PS->GetPlayerStartingDexterity();
-        Summary.TotalStrength = PS->GetPlayerStartingStrength();
-        Summary.TotalIntelligence = PS->GetPlayerStartingIntelligence();
-        Summary.TotalLuck = PS->GetPlayerStartingLuck();
-        Summary.TotalResource = PS->GetPlayerStartingMaxResource();
-        Summary.TotalResourceRegen = PS->GetPlayerStartingResourceRegen();
-        Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
+        FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
+        Summary.TotalHealth += (Stats.Health - 100);
+        Summary.TotalArmor += Stats.Armor;
+        Summary.TotalDexterity += Stats.Dexterity;
+        Summary.TotalStrength += Stats.Strength;
+        Summary.TotalIntelligence += Stats.Intelligence;
     }
 
     //Equipped Stats
@@ -560,6 +585,9 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
             }
         }
     }
+
+    //Mana increase by intelligence
+    Summary.TotalResource += ItemStats::GetManaPoolIncrease(Summary.TotalIntelligence);
 
     return Summary;
 }
