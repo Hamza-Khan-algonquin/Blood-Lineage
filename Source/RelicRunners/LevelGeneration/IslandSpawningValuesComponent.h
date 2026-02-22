@@ -27,6 +27,9 @@ struct FIslandValues
 	FString TargetLevel;
 
 	UPROPERTY(EditAnywhere)
+	FString BossLevel;
+
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ALevelChangeTrigger> LevelChangeTrigger;
 
 	UPROPERTY(EditAnywhere)
