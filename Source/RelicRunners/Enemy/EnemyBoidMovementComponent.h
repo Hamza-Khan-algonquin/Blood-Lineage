@@ -85,6 +85,11 @@ protected:
 	FVector NavMeshClampExtent;
 	UPROPERTY(EditAnywhere, Category = "Other")
 	float FocuseOnTargetDistance;
+	UPROPERTY(EditAnywhere, Category = "Other")
+	float StepHeight;
+	UPROPERTY(EditAnywhere, Category = "Other")
+	//the normal at which the movement stop trying to slide along a surface and instead does a step check
+	float MaxStepNormal;
 
 	UPROPERTY(VisibleAnywhere)
 	EBoidMovementMode MovementMode = EBoidMovementMode::Boid;

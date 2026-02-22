@@ -107,8 +107,9 @@ AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,ACharacter::StaticClass(),{ AvatarActor },FoundActors);
+    UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,APawn::StaticClass(),{ AvatarActor },FoundActors);
 
     AActor* BestTarget = nullptr;
     float BestDot = -1.f;

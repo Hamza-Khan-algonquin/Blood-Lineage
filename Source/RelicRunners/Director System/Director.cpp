@@ -51,6 +51,11 @@ void ADirector::BeginPlay()
 
 ADirector* ADirector::GetInstance(const UObject* WorldContext)
 {
+	if (!WorldContext)
+	{
+		return nullptr;
+	}
+
 	UWorld* world = WorldContext->GetWorld();
 
 	if (!world)

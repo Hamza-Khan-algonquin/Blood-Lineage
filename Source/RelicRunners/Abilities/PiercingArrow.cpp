@@ -8,6 +8,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -128,7 +129,7 @@ void UPiercingArrow::TickArrow()
             continue;
         }
 
-        if (!Actor->IsA(AEnemyCharacter::StaticClass()) && !Actor->IsA(AEnemyCharacterAI::StaticClass()))
+        if (!Actor->IsA(AEnemyCharacter::StaticClass()) && !Actor->IsA(AEnemyCharacterAI::StaticClass()) && !Actor->IsA(AEnemyPawn::StaticClass()))
         {
             continue;
         }

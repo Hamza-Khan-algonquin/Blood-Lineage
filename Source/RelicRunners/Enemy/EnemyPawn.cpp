@@ -70,6 +70,13 @@ AEnemyPawn::AEnemyPawn()
 	Tags.Add("Enemy");
 }
 
+void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -94,10 +101,12 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 		FTimerHandle temp;
 		GetWorldTimerManager().SetTimer(temp, [this]() {
-				if (this->MovementComponent)
+				if (this)
 				{
-					this->MovementComponent->IsKnockedBack = false;
-					this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+					if(this->MovementComponent)
+						this->MovementComponent->IsKnockedBack = false;
+					if (this->CapsuleComponent)
+						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 				}
 			}, HitFlashTimeline.GetTimelineLength(), false);
 	}
@@ -260,13 +269,17 @@ void AEnemyPawn::AttackTick()
 			PlayMontage(montage);
 			
 
-			FTimerHandle tempHandle;
+			
 			FTimerDelegate attackCallBack;
 			attackCallBack.BindLambda([this]()
 				{
-					MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					if (this)
+					{
+						if(this->MovementComponent)
+							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					}
 				});
-			GetWorldTimerManager().SetTimer(tempHandle, attackCallBack, montage->GetPlayLength(), false);
+			GetWorldTimerManager().SetTimer(AttackHandle, attackCallBack, montage->GetPlayLength(), false);
 		}
 		else
 		{

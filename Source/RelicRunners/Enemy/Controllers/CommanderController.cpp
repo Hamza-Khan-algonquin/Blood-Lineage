@@ -30,12 +30,19 @@ ACommanderController::ACommanderController()
 
 ACommanderController::~ACommanderController()
 {
+	
+}
+
+void ACommanderController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	
 	ADirector* director = ADirector::GetInstance(this);
 	if (director)
 	{
 		director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
 		director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
 	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void ACommanderController::Tick(float DeltaTime)

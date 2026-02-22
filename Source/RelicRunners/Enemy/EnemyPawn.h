@@ -72,10 +72,11 @@ protected:
 	bool IsAttacking = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
+	FTimerHandle AttackHandle;
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
-
+	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
