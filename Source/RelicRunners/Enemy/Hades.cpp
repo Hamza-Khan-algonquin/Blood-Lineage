@@ -45,9 +45,21 @@ void AHades::CheckPhaseTransition()
 {
     float HealthPercentage = CurrentHealth / MaxHealth;
 
-    if (HealthPercentage <= 0.25f) CurrentPhase = EBossPhase::Phase4;
-    else if (HealthPercentage <= 0.50f) CurrentPhase = EBossPhase::Phase3;
-    else if (HealthPercentage <= 0.75f) CurrentPhase = EBossPhase::Phase2;
+    if (HealthPercentage <= 0.25f)
+    {
+        CurrentPhase = EBossPhase::Phase4; 
+        SweepDuration = 5;
+    }
+    else if (HealthPercentage <= 0.50f)
+    {
+        CurrentPhase = EBossPhase::Phase3;
+        SweepDuration = 6;
+    }
+    else if (HealthPercentage <= 0.75f)
+    {
+        CurrentPhase = EBossPhase::Phase2;
+        SweepDuration = 7;
+    }
 }
 
 void AHades::SelectRandomTarget()
@@ -69,7 +81,7 @@ void AHades::ExecuteAttack()
 
     int Roll = FMath::RandRange(1, 100);
 
-    if (Roll <= 30)           PlaySlam();     
+    if (Roll <= 40)           PlaySlam();     
     else if (Roll <= 80)      PlayFireball(); 
     else                      PlaySweep();    
 }
@@ -98,13 +110,13 @@ void AHades::PlaySlam()
             ExecuteSlamImpact(SlamLocation, Radius);
 
             bIsLookingAtAbilityTarget = false;
-            ScheduleNextAttack(2.0f);
-        }), 4.0f, false);
+            ScheduleNextAttack(2.0f - (0.4f * (int)CurrentPhase));
+        }), 5.0f - (0.2f * (int)CurrentPhase), false);
 }
 
 void AHades::ExecuteSlamImpact(FVector ImpactLocation, float ImpactRadius)
 {
-    if (CurrentTarget)
+    if (CurrentTarget) 
     {
         ImpactLocation.Z = CurrentTarget->GetActorLocation().Z;
     }
@@ -116,7 +128,7 @@ void AHades::ExecuteSlamImpact(FVector ImpactLocation, float ImpactRadius)
 
     UGameplayStatics::ApplyRadialDamage(
         GetWorld(),
-        80.0f,             
+        40.0f * (1 + (int)CurrentPhase),
         ImpactLocation,    
         ImpactRadius,       
         UDamageType::StaticClass(),
@@ -171,13 +183,19 @@ void AHades::UpdateSweep(float DeltaTime)
     float NewYaw = SweepStartYaw + SweepCurrentAngle;
     SetActorRotation(FRotator(0, NewYaw, 0));
 
-    FVector ScytheDir = GetActorForwardVector();
+    FVector CenterDir = GetActorForwardVector();
     float InnerRadius = 2500.0f;
     float OuterRadius = 4400.0f;
+    float DotThreshold = 0.985f;
 
-    FVector LineStart = GetActorLocation() + (ScytheDir * InnerRadius);
-    FVector LineEnd = GetActorLocation() + (ScytheDir * OuterRadius);
-    DrawDebugLine(GetWorld(), LineStart, LineEnd, FColor::Red, false, -1, 0, 40.f);
+    float AngleOffsetDeg = FMath::RadiansToDegrees(FMath::Acos(DotThreshold));
+
+    FVector LeftEdgeDir = CenterDir.RotateAngleAxis(-AngleOffsetDeg, FVector::UpVector);
+    FVector RightEdgeDir = CenterDir.RotateAngleAxis(AngleOffsetDeg, FVector::UpVector);
+
+    DrawDebugLine(GetWorld(), GetActorLocation() + (LeftEdgeDir * InnerRadius), GetActorLocation() + (LeftEdgeDir * OuterRadius), FColor::Red, false, -1, 0, 40.f);
+    DrawDebugLine(GetWorld(), GetActorLocation() + (RightEdgeDir * InnerRadius), GetActorLocation() + (RightEdgeDir * OuterRadius), FColor::Red, false, -1, 0, 40.f);
+    DrawDebugLine(GetWorld(), GetActorLocation() + (CenterDir * InnerRadius), GetActorLocation() + (CenterDir * OuterRadius), FColor::Red, false, -1, 0, 20.f);
 
     TArray<AActor*> Players;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), Players);
@@ -190,10 +208,10 @@ void AHades::UpdateSweep(float DeltaTime)
         if (Dist >= InnerRadius && Dist <= OuterRadius)
         {
             ToPlayer.Normalize();
-            float Dot = FVector::DotProduct(ScytheDir, ToPlayer);
-            if (Dot > 0.998f)
+            float Dot = FVector::DotProduct(CenterDir, ToPlayer);
+            if (Dot > DotThreshold)
             {
-                UGameplayStatics::ApplyDamage(P, 15.0f, nullptr, this, UDamageType::StaticClass());
+                UGameplayStatics::ApplyDamage(P, 200.0f * (1 + (int)CurrentPhase), nullptr, this, UDamageType::StaticClass());
             }
         }
     }
@@ -201,7 +219,7 @@ void AHades::UpdateSweep(float DeltaTime)
     if (Alpha >= 1.0f)
     {
         bIsSweeping = false;
-        ScheduleNextAttack(2.0f);
+        ScheduleNextAttack(2.0f - (0.4f * (int)CurrentPhase));
     }
 }
 
@@ -210,12 +228,18 @@ void AHades::PlayFireball()
     if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
 
     FVector PlayerLoc = CurrentTarget->GetActorLocation();
+    PlayerLoc.Z -= 60.0f;
 
     AbilityLookAtTarget = PlayerLoc;
     bIsLookingAtAbilityTarget = true;
 
-    int FireballCount = (int)CurrentPhase * 3 + 4;
-    float ScatterRadius = 1200.0f;
+    FTimerHandle LookResetHandle;
+    GetWorldTimerManager().SetTimer(LookResetHandle, [this]() {
+        bIsLookingAtAbilityTarget = false;
+        }, 1.5f, false);
+
+    int FireballCount = (int)CurrentPhase * 5 + 5;
+    float ScatterRadius = 1800.0f + ((int)CurrentPhase * 200.0f);
 
     for (int i = 0; i < FireballCount; i++)
     {
@@ -233,7 +257,7 @@ void AHades::PlayFireball()
         SpawnScatterFireball(FinalDropLoc);
     }
 
-    ScheduleNextAttack(4.0f);
+    ScheduleNextAttack(4.0f - (0.4f * (int)CurrentPhase));
 }
 
 void AHades::SpawnScatterFireball(FVector TargetLocation)

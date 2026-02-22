@@ -71,7 +71,7 @@ public:
 	float FireballRadius = 300.0f;
 	float SweepStartYaw = 0.0f;
 	float SweepElapsedTime = 0.0f;
-	float SweepDuration = 5.0f;
+	float SweepDuration = 8.0f;
 
 	int ObelisksHit = 0;
 protected:
