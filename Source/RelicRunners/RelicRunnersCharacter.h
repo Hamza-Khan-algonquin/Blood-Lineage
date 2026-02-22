@@ -109,6 +109,7 @@ public:
 	virtual void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
+	void SetMovementSpeed(float value);
 	UFUNCTION()
     void ResetBasicAttack();
 	UFUNCTION()

@@ -373,6 +373,13 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
             PS->Client_UpdateEquippedStats(CachedEquippedStats);
         }
     }
+    if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(PawnOwner))
+    {
+        float PercentMovementSpeedIncrease = ItemStats::GetSpeedPerc(CachedEquippedStats.TotalDexterity);
+        float BaseMovementSpeed = 700.0f;
+        float NewMovementSpeed = BaseMovementSpeed * (1 + (PercentMovementSpeedIncrease / 100.0f));
+        Character->SetMovementSpeed(NewMovementSpeed);
+    }
     
     //Enemies
     else if (AEnemyCharacterAI* Enemy = Cast<AEnemyCharacterAI>(PawnOwner))

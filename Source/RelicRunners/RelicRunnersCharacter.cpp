@@ -370,6 +370,14 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 	}
 }
 
+void ARelicRunnersCharacter::SetMovementSpeed(float value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = value;
+	}
+}
+
 void ARelicRunnersCharacter::UpdateCamera(float DeltaTime)
 {
 	
