@@ -143,7 +143,7 @@ void AAresCharacter::PerformSwingTrace()
 	TArray<FHitResult> Hits;
 	GetWorld()->SweepMultiByChannel(
 		Hits, Start, End, FQuat::Identity,
-		ECC_Pawn, FCollisionShape::MakeSphere(100.0f), Params
+		ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params
 	);
 
 	AlreadyHitActors.Empty();

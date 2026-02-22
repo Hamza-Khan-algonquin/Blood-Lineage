@@ -111,9 +111,10 @@ void UVengefulDance::ApplyRingDamage()
 
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // Which kinds of objects the sphere check should detect
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Only pawns
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel1));
 
     // Find all actors overlapping a sphere around the origin, ignoring the owner
-    UKismetSystemLibrary::SphereOverlapActors(World, Origin, AreaRadius, ObjectTypes, ACharacter::StaticClass(), { AvatarActor }, OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, Origin, AreaRadius, ObjectTypes, APawn::StaticClass(), { AvatarActor }, OverlappingActors);
 
     for (AActor* Actor : OverlappingActors) // Loop through all overlapping actors
     {

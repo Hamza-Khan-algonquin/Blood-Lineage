@@ -125,8 +125,9 @@ void UEarthquakeAbility::ApplyDamageAndStun()
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    UKismetSystemLibrary::SphereOverlapActors(World, Origin, Radius, ObjectTypes, ACharacter::StaticClass(), { AvatarActor }, OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, Origin, Radius, ObjectTypes, APawn::StaticClass(), { AvatarActor }, OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {

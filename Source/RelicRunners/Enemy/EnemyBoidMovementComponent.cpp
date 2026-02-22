@@ -92,7 +92,12 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	TArray<APawn*> pOtherBoidsToCheck;
 	TArray<APawn*> pOtherBoids;
 
-	if (APawn* target = Commander->GetCurrentTarget())
+	if (IsAffectiveByBundleOfJoy)
+	{
+		targetDirection = BundleOfJoyLocation - GetOwner()->GetActorLocation();
+		
+	}
+	else if(APawn * target = Commander->GetCurrentTarget())
 	{
 		targetDirection = target->GetActorLocation() - GetOwner()->GetActorLocation();
 		float distanceToTarget = targetDirection.Size();
@@ -106,7 +111,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		{
 			FocuseMode = EBoidFocuseMode::Velocity;
 		}
-		
+
 		if (Commander->BoidShouldFocusePlayer)
 		{
 			currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0, 1) + MinSeperationRange;
@@ -171,7 +176,12 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//}
 	
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), separationVector.X, separationVector.Y, separationVector.Z);
-	if (Commander->GetCurrentTarget())
+	if (IsAffectiveByBundleOfJoy)
+	{
+		finalInflunceVector += targetDirection.GetSafeNormal() * BundleOfJoyWeight;
+		DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + targetVector.GetSafeNormal() * BundleOfJoyWeight, FColor::Purple, false, 0.1, 0, 3);
+	}
+	else if (Commander->GetCurrentTarget())
 	{
 		if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
 		{
@@ -262,6 +272,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 	//factor in the weights and add them up to get the final direction vector
 	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight) /*+ (EdgeAvoidanceVector.GetSafeNormal() * EdgeAvoidanceWeight)*/;
+	
 	//float totalWeight = (CoherenceWeight + SeparationWeight + AlignmentWeight);
 
 	
@@ -291,7 +302,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
 	UpdateComponentVelocity();
 
-	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + Velocity, FColor::Red, false, 0.05, 0, 3);
+	DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + Velocity, FColor::Red, false, 0.05, 0, 3);
 }
 
 void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)

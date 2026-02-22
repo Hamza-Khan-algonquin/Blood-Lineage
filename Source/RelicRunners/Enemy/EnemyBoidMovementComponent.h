@@ -33,6 +33,8 @@ public:
 	TObjectPtr<ACommanderController> Commander;
 	
 	bool IsKnockedBack;
+	bool IsAffectiveByBundleOfJoy = false;
+	FVector BundleOfJoyLocation;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float VisualRange;
@@ -91,6 +93,10 @@ protected:
 	FVector EdgeAvoidanceVector = FVector::Zero();
 	FVector LastValidPosition = FVector::Zero();
 	FVector LastEdgeVector = FVector::Zero();
+
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float BundleOfJoyWeight;
+
 
 public:
 	UEnemyBoidMovementComponent();

@@ -234,40 +234,39 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         PreviousProjectileLocation,
         ProjectileLocation,
         FQuat::Identity,
-        ECC_Pawn,
+        ECC_GameTraceChannel1,
         Sphere,
         Params
     );
 
-    if (bHit)
+
+    for (const FHitResult& Hit : Hits)
     {
-        for (const FHitResult& Hit : Hits)
+        if (AActor* HitActor = Hit.GetActor())
         {
-            if (AActor* HitActor = Hit.GetActor())
+            if (AlreadyHitActors.Contains(HitActor))
+                continue;
+
+            if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
             {
-                if (AlreadyHitActors.Contains(HitActor))
-                    continue;
-
-                if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                {
-                    Server_HitEnemy(Enemy);
-                }
-                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                {
-                    Server_HitEnemy(TEnemy);
-                }
-                else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                {
-                    Server_HitEnemy(TPEnemy);
-                }
-
-                AlreadyHitActors.Add(HitActor);
-
-                bProjectileActive = false;
-                break;
+                Server_HitEnemy(Enemy);
             }
+            else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+            {
+                Server_HitEnemy(TEnemy);
+            }
+            else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+            {
+                Server_HitEnemy(TPEnemy);
+            }
+
+            AlreadyHitActors.Add(HitActor);
+
+            bProjectileActive = false;
+            break;
         }
     }
+  
 
     if (ProjectileElapsed >= ProjectileLifetime)
     {
