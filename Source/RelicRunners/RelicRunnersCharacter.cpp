@@ -201,11 +201,10 @@ void ARelicRunnersCharacter::BeginPlay()
 	respawnPoint = GetActorLocation();
 
 	const FString MapName = GetWorld()->GetMapName();
-	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
-
 	if (MapName.Contains(TEXT("BossLevel")))
 	{
 		CameraBoom->TargetArmLength = 3000;
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
 	}
 }
 
