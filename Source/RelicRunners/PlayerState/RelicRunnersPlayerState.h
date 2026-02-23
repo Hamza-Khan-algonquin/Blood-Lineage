@@ -230,6 +230,7 @@ public:
 	void SetPlayerStartingStrength(int StartingStrength) { PlayerStartingStrength = StartingStrength; }
 	void SetPlayerResource(int Resource) { PlayerResource = Resource; }
 	void SetPlayerMaxHealth(int value);
+	void SetPlayerMaxResource(int value);
 	void ResetHealth() { PlayerHealth = PlayerMaxHealth; }
 
     //Delegates

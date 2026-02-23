@@ -22,6 +22,7 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
+#include "Components/SphereComponent.h"
 
 
 
@@ -50,6 +51,11 @@ AEnemyPawn::AEnemyPawn()
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
 
+	AttackCollider = CreateDefaultSubobject<USphereComponent>("Attack Collider");
+	AttackCollider->SetupAttachment(RootComponent);
+	AttackCollider->SetRelativeLocation(FVector(0, 25, 0));
+	AttackCollider->SetSphereRadius(25);
+
 	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
 	EnemyStatsComponent->SetEnemyType(EEnemyType::LIGHT);
 	EnemyStatsComponent->SetChanceToDropItem(0.02f);
@@ -70,6 +76,13 @@ AEnemyPawn::AEnemyPawn()
 	Tags.Add("Enemy");
 }
 
+void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -88,18 +101,22 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		HitFlash();
 
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
+		//CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
 
-		this->MovementComponent->IsKnockedBack = true;
+		//this->MovementComponent->IsKnockedBack = true;
 
 		FTimerHandle temp;
-		GetWorldTimerManager().SetTimer(temp, [this]() {
-				if (this->MovementComponent)
+	/*	GetWorldTimerManager().SetTimer(temp, [this]() {
+				if (this)
 				{
-					this->MovementComponent->IsKnockedBack = false;
-					this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+					if (!this)
+						return;
+					if(this->MovementComponent)
+						this->MovementComponent->IsKnockedBack = false;
+					if (this->CapsuleComponent)
+						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 				}
-			}, HitFlashTimeline.GetTimelineLength(), false);
+			}, HitFlashTimeline.GetTimelineLength(), false);*/
 	}
 	
 	//call the super for important stuff
@@ -254,19 +271,30 @@ void AEnemyPawn::AttackTick()
 {
 	if (MovementComponent->IsAtTarget())
 	{
-		if (AttackMontage.IsValid())
+		if (!AttackMontage.IsNull())
 		{
+
+			if (!AttackMontage.IsValid())
+			{
+				AttackMontage.LoadSynchronous();
+			}
+
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
 			
 
-			FTimerHandle tempHandle;
+			
 			FTimerDelegate attackCallBack;
 			attackCallBack.BindLambda([this]()
 				{
-					MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					if (this)
+					{
+						this->IsAttacking = false;
+						if(this->MovementComponent)
+							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					}
 				});
-			GetWorldTimerManager().SetTimer(tempHandle, attackCallBack, montage->GetPlayLength(), false);
+			GetWorldTimerManager().SetTimer(AttackHandle, attackCallBack, montage->GetPlayLength(), false);
 		}
 		else
 		{
@@ -274,7 +302,7 @@ void AEnemyPawn::AttackTick()
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 		}
 
-		IsAttacking = false;
+		
 		if (!HitFlashTimeline.IsPlaying())
 		{
 			SetActorTickEnabled(false);
@@ -311,7 +339,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = 0;
+	float chance = FMath::FRandRange(0.f, 1.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{
@@ -343,6 +371,22 @@ void AEnemyPawn::SpawnItem()
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
+
+		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
+
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Instigator = this;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+		if (Dropped)
+		{
+			Dropped->Initialize(Data);
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}*/
 	}
 }
 

@@ -107,8 +107,9 @@ AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,ACharacter::StaticClass(),{ AvatarActor },FoundActors);
+    UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,APawn::StaticClass(),{ AvatarActor },FoundActors);
 
     AActor* BestTarget = nullptr;
     float BestDot = -1.f;
@@ -148,11 +149,12 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(AvatarActor);
 
-    UKismetSystemLibrary::SphereOverlapActors(World, AvatarActor->GetActorLocation(), MaxDistance, ObjectTypes, ACharacter::StaticClass(),ActorsToIgnore,OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, AvatarActor->GetActorLocation(), MaxDistance, ObjectTypes, APawn::StaticClass(),ActorsToIgnore,OverlappingActors);
 
     FVector Forward = AvatarActor->GetActorForwardVector();
 

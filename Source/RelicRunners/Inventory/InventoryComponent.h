@@ -94,6 +94,8 @@ public:
     class UItemMeshData* ItemMeshData;
     UPROPERTY(BlueprintAssignable, Category = "Inventory")
     FOnForgeUpdated OnForgeUpdated;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    class UClassInfo* ClassInfo;
 
     //Functions
     UFUNCTION(BlueprintCallable, Category = "Inventory")

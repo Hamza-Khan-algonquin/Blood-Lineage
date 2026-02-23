@@ -104,7 +104,6 @@ void UWarBannerAbility::SpawnBanner()
 
 }
 
-
 void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 {
     UWorld* World = GetWorld();
@@ -125,13 +124,14 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
     // Object types to consider
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_EngineTraceChannel1));
 
     // Actors to ignore
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(GetAvatarActorFromActorInfo());
 
     // Perform the sphere overlap
-    bool bHit = UKismetSystemLibrary::SphereOverlapActors(World,BannerLocation,AreaRadius,ObjectTypes,ACharacter::StaticClass(),ActorsToIgnore,OverlappingActors);
+    bool bHit = UKismetSystemLibrary::SphereOverlapActors(World,BannerLocation,AreaRadius,ObjectTypes,APawn::StaticClass(),ActorsToIgnore,OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {
@@ -169,10 +169,12 @@ void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
         ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
+        if (!RPC) return;
 
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
+            World->GetTimerManager().ClearTimer(DurationTimerHandle);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();

@@ -109,6 +109,7 @@ public:
 	virtual void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
+	void SetMovementSpeed(float value);
 	UFUNCTION()
     void ResetBasicAttack();
 	UFUNCTION()
@@ -183,8 +184,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
 	
-
-// Mirror of Desire, For my mergers :)
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Mirror")
 	bool bMirrorActive = false;
 
@@ -202,9 +201,7 @@ public:
 
 	UFUNCTION()
 	void DrawMirrorDebug();
-// Mirror of Desire, For my mergers :)
 
-// Guard For Ares, For my mergers :)
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Guard")
 	bool bGuardActive = false;
 
@@ -221,8 +218,6 @@ public:
 
 	UFUNCTION()
 	void DrawGuardDebug(); 
-
-// Guard For Ares, For my mergers :)
 
 protected:
 
