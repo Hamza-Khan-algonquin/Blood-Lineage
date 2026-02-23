@@ -70,6 +70,13 @@ AEnemyPawn::AEnemyPawn()
 	Tags.Add("Enemy");
 }
 
+void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -88,16 +95,18 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		HitFlash();
 
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
+		//CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
 
 		this->MovementComponent->IsKnockedBack = true;
 
 		FTimerHandle temp;
 		GetWorldTimerManager().SetTimer(temp, [this]() {
-				if (this->MovementComponent)
+				if (this)
 				{
-					this->MovementComponent->IsKnockedBack = false;
-					this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+					if(this->MovementComponent)
+						this->MovementComponent->IsKnockedBack = false;
+					if (this->CapsuleComponent)
+						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 				}
 			}, HitFlashTimeline.GetTimelineLength(), false);
 	}
@@ -260,13 +269,17 @@ void AEnemyPawn::AttackTick()
 			PlayMontage(montage);
 			
 
-			FTimerHandle tempHandle;
+			
 			FTimerDelegate attackCallBack;
 			attackCallBack.BindLambda([this]()
 				{
-					MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					if (this)
+					{
+						if(this->MovementComponent)
+							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					}
 				});
-			GetWorldTimerManager().SetTimer(tempHandle, attackCallBack, montage->GetPlayLength(), false);
+			GetWorldTimerManager().SetTimer(AttackHandle, attackCallBack, montage->GetPlayLength(), false);
 		}
 		else
 		{
@@ -337,12 +350,28 @@ void AEnemyPawn::SpawnItem()
 
 		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
 
-		if (Dropped)
+		/*if (Dropped)
 		{
 			Dropped->Initialize(DroppedItem->ItemData);
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
+
+		FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
+
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Instigator = this;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+		if (Dropped)
+		{
+			Dropped->Initialize(Data);
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}*/
 	}
 }
 

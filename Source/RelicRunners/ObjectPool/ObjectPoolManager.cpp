@@ -18,6 +18,11 @@ AObjectPoolManager::AObjectPoolManager()
 
 AObjectPoolManager* AObjectPoolManager::GetInstance(const UObject* WorldContext)
 {
+	if (!WorldContext)
+	{
+		return nullptr;
+	}
+
 	UWorld* world = WorldContext->GetWorld();
 
 	if (!world)

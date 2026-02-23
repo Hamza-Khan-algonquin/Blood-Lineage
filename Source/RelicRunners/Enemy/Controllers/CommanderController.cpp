@@ -30,12 +30,19 @@ ACommanderController::ACommanderController()
 
 ACommanderController::~ACommanderController()
 {
+	
+}
+
+void ACommanderController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	
 	ADirector* director = ADirector::GetInstance(this);
 	if (director)
 	{
 		director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
 		director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
 	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void ACommanderController::Tick(float DeltaTime)
@@ -131,6 +138,8 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 	ControlledEnemies.Add(enemy);
 	enemy->MovementComponent->Commander = this;
 	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
 	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
@@ -307,7 +316,10 @@ void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLo
 
 void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 {
-	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0 || GetWorld() == nullptr) return;
+	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0 || !ControlledEnemies[0])
+	{
+		return;
+	}
 
 	for (int i = 0; i < players.Num(); i++)
 	{

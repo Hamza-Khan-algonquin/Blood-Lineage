@@ -97,11 +97,12 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
 
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(ActorInfo->AvatarActor.Get());
 
-    UKismetSystemLibrary::SphereOverlapActors(World,Center,AreaRadius,ObjectTypes,nullptr,ActorsToIgnore, OverlappedActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, Center, AreaRadius, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappedActors);
 
     for (AActor* Actor : OverlappedActors)
     {

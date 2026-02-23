@@ -6,6 +6,7 @@
 #include "RelicRunners/Enemy/EnemyPawn.h"
 #include "NavigationSystem.h"
 #include <Net/UnrealNetwork.h>
+#include "DrawDebugHelpers.h"
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -26,6 +27,8 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxTargetDistanceMultiplier = 5.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
+	EdgeAvoidanceWeight = 1;
+	MaxStepNormal = 0.1;
 	IsKnockedBack = false;
 	SetIsReplicatedByDefault(true);
 }
@@ -90,13 +93,18 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	TArray<APawn*> pOtherBoidsToCheck;
 	TArray<APawn*> pOtherBoids;
 
-	if (Commander->GetCurrentTarget())
+	if (IsAffectiveByBundleOfJoy)
 	{
-		targetDirection = Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation();
+		targetDirection = BundleOfJoyLocation - GetOwner()->GetActorLocation();
+		
+	}
+	else if(APawn * target = Commander->GetCurrentTarget())
+	{
+		targetDirection = target->GetActorLocation() - GetOwner()->GetActorLocation();
 		float distanceToTarget = targetDirection.Size();
 		distanceFromTargetRadius = distanceToTarget - TargetRadius;
 
-		if (FocuseMode == EBoidFocuseMode::Velocity && distanceToTarget <= FocuseOnTargetDistance && !Commander->BoidShouldFocusePlayer)
+		if (FocuseMode == EBoidFocuseMode::Velocity && distanceToTarget <= FocuseOnTargetDistance && Commander->BoidShouldFocusePlayer)
 		{
 			FocuseMode = EBoidFocuseMode::Target;
 		}
@@ -104,7 +112,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		{
 			FocuseMode = EBoidFocuseMode::Velocity;
 		}
-		
+
 		if (Commander->BoidShouldFocusePlayer)
 		{
 			currentSeparationDistance = (MaxSeperationRange - MinSeperationRange) * FMath::Clamp(distanceFromTargetRadius / (DistanceForMaxSeperation - distanceFromTargetRadius), 0, 1) + MinSeperationRange;
@@ -169,7 +177,12 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//}
 	
 	//UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f, Z: %f"), separationVector.X, separationVector.Y, separationVector.Z);
-	if (Commander->GetCurrentTarget())
+	if (IsAffectiveByBundleOfJoy)
+	{
+		finalInflunceVector += targetDirection.GetSafeNormal() * BundleOfJoyWeight;
+		//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + targetVector.GetSafeNormal() * BundleOfJoyWeight, FColor::Purple, false, 0.1, 0, 3);
+	}
+	else if (Commander->GetCurrentTarget())
 	{
 		if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
 		{
@@ -200,12 +213,70 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		/*targetDirection.Normalize();
 		FVector orbitVector = FVector::CrossProduct(targetDirection, FVector::UpVector);
 		finalInflunceVector += (orbitVector * OrbitWeight);*/
+		
 	}
 
+	FVector edgeVector = FVector::Zero();
+	FVector inVector = (LastValidPosition - GetActorLocation());
+	inVector.Z = 0;
+	inVector = inVector.GetSafeNormal();
+	if (!EdgeAvoidanceVector.IsNearlyZero())
+	{
+		edgeVector = -EdgeAvoidanceVector.GetSafeNormal();
+		//edgeVector = (finalInflunceVector - (((finalInflunceVector | edgeVector) / (edgeVector | edgeVector)) * edgeVector)).GetSafeNormal();
+		//edgeVector = -(edgeVector - edgeVector.ProjectOnTo(targetDirection)).GetSafeNormal();
+
+		/*float edgeOffSet = FVector::DotProduct(finalInflunceVector, edgeVector);
+
+		if (edgeOffSet > 0)
+		{
+			//float strength = FMath::Clamp(edgeOffSet / MaxSpeed, 0.f, 1.f);
+			finalInflunceVector -= edgeOffSet * edgeVector;// *EdgeAvoidanceWeight;
+
+		}*/
+
+		//note for future self "|" is dot operator for vectors
+		FVector leftDirection = FVector::CrossProduct(FVector::UpVector, edgeVector);
+		//FVector rightDirection = -leftDirection;
+		/*leftDirection = (edgeVector + leftDirection * 0.5);
+		rightDirection = (edgeVector + leftDirection * 0.5);*/
+		FVector goal = finalInflunceVector.GetSafeNormal();
+/*		if ((edgeVector | goal) > 0.9f)
+		{
+			
+		}*/
+		if ((goal | leftDirection) > 0)//< (goal | rightDirection))
+		{
+			edgeVector = leftDirection.GetSafeNormal();
+		}
+		else
+		{
+			edgeVector = -leftDirection.GetSafeNormal();
+		}
+		
+		if (FVector::DotProduct(edgeVector, LastEdgeVector) < 0.f)
+			edgeVector = -edgeVector;
+		
+		//finalInflunceVector += edgeVector.GetSafeNormal() * EdgeAvoidanceWeight;
+	}
+	
+	if (!LastEdgeVector.IsNearlyZero() || !edgeVector.IsZero())
+	{
+		edgeVector = FMath::VInterpTo(LastEdgeVector, edgeVector, delta, 5);
+		LastEdgeVector = edgeVector;
+		finalInflunceVector += (edgeVector + inVector * 0.5).GetSafeNormal() * finalInflunceVector.Length();//EdgeAvoidanceWeight;
+	}
+
+	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + inVector.GetSafeNormal() * 100, FColor::Cyan, false, 0.1, 0, 3);
+
+	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + finalInflunceVector.GetSafeNormal() * 50, FColor::Black, false, 0.1, 0, 3);
 
 	//factor in the weights and add them up to get the final direction vector
-	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight);
+	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight) /*+ (EdgeAvoidanceVector.GetSafeNormal() * EdgeAvoidanceWeight)*/;
+	
 	//float totalWeight = (CoherenceWeight + SeparationWeight + AlignmentWeight);
+
+	
 
 	//if (Commander->TargetPlayer)
 	//{
@@ -215,7 +286,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//finalInflunceVector /= totalWeight;
 	//finalInflunceVector.Normalize();
 
-	FVector desiredVelocity = finalInflunceVector.GetSafeNormal2D() * MaxSpeed;
+	FVector desiredVelocity = finalInflunceVector.GetSafeNormal() * MaxSpeed;
 
 	FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
@@ -231,6 +302,8 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	}
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
 	UpdateComponentVelocity();
+
+	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + Velocity, FColor::Red, false, 0.05, 0, 3);
 }
 
 void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
@@ -285,13 +358,38 @@ bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement,
 
 void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
+	FVector startLocation = GetActorLocation();
 	FVector desiredMovement = Velocity * DeltaTime;
-	FVector finalMovement = GetActorLocation() + desiredMovement;
+	FVector finalMovement = startLocation + desiredMovement;
 	FHitResult hit;
 
 	//ClampToNavMesh(GetOwner()->GetActorLocation() + desiredMovement, finalMovement);
 
+	FNavLocation navLocation;
+	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	FVector offset;
+	FVector standIn;
+	GetOwner()->GetActorBounds(false, standIn, offset, false);
+	offset.X = 0;
+	offset.Y = 0;
+	FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
+
+	if (navSys && navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
+	{
+		//move it down slightly to trigger the slide along the surface, as when this is not down, the y jitter up and down sometimes
+		finalMovement.Z = navLocation.Location.Z + offset.Z - 15;
+		EdgeAvoidanceVector = FVector::Zero();
+		LastValidPosition = navLocation.Location;
+	}
+	else
+	{
+		EdgeAvoidanceVector = GetActorFeetLocation() + desiredMovement - LastValidPosition;
+		return;
+	}
+
+	finalMovement -= startLocation;
+
+	/*FVector offset;
 	FVector standIn;
 	GetOwner()->GetActorBounds(false, standIn, offset, false);
 
@@ -301,8 +399,12 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	{
 		finalMovement.Z = navLocation.Location.Z; 
 	}
+	else
+	{
+		return;
+	}
 
-	finalMovement -= GetOwner()->GetActorLocation();
+	finalMovement -= GetOwner()->GetActorLocation();*/
 
 	//GetOwner()->SetActorLocation(finalMovement);
 
@@ -311,8 +413,45 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	if (hit.IsValidBlockingHit())
 	{
-		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
-		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
+		if (FMath::Abs(hit.Normal.Z) < MaxStepNormal)
+		{
+			FHitResult stepHit;
+			
+			FVector stepDown = UpdatedComponent->GetComponentLocation();
+
+			SafeMoveUpdatedComponent(FVector(0,0,StepHeight), GetOwner()->GetActorRotation(), true, stepHit);
+
+			if (!stepHit.IsValidBlockingHit())
+			{
+				
+
+				FHitResult secondHit;
+				SafeMoveUpdatedComponent(finalMovement * (1.f - hit.Time), GetOwner()->GetActorRotation(), true, secondHit);
+
+				if (secondHit.IsValidBlockingHit())
+				{
+					SlideAlongSurface(finalMovement, 1.f - secondHit.Time, secondHit.Normal, secondHit);
+					Velocity = FVector::VectorPlaneProject(Velocity, secondHit.Normal);
+				}
+
+				stepDown = stepDown - UpdatedComponent->GetComponentLocation();
+
+				FHitResult FinalHit;
+				//moving back down so that it only move up the amount need
+				SafeMoveUpdatedComponent(FVector(0, 0, -stepDown.Z), GetOwner()->GetActorRotation(), true, FinalHit);
+
+			/*	if (FinalHit.IsValidBlockingHit())
+				{
+					GetOwner()->SetActorLocation(FinalHit.Location + offset);
+				}*/
+
+			}
+		}
+		else
+		{
+			SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
+			Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
+		}
 	}
 }
 
@@ -336,16 +475,20 @@ void UEnemyBoidMovementComponent::GroundSnap()
 
 void UEnemyBoidMovementComponent::UpdateRotation()
 {
-	switch (FocuseMode)
+	if(FocuseMode == EBoidFocuseMode::Velocity)
 	{
-		case EBoidFocuseMode::Velocity:
-			GetOwner()->SetActorRotation(Velocity.GetSafeNormal2D().Rotation());
-			break;
-		case EBoidFocuseMode::Target:
-			if (!Commander->GetCurrentTarget())
-				return;
-			GetOwner()->SetActorRotation((Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D().Rotation());
-			break;
+		GetOwner()->SetActorRotation(Velocity.GetSafeNormal2D().Rotation());
+	}
+	else if (FocuseMode == EBoidFocuseMode::Target && Commander)
+	{
+		APawn* target = Commander->GetCurrentTarget();
+
+		if (!target)
+		{
+			return;
+		}
+				
+		GetOwner()->SetActorRotation((Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal2D().Rotation());
 	}
 }
 
