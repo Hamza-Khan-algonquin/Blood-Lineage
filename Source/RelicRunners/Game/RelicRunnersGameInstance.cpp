@@ -22,6 +22,7 @@
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
+#include "Net/UnrealNetwork.h"
 
 void URelicRunnersGameInstance::Init()
 {
@@ -76,11 +77,11 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, EKeys::Mouse2D);
 
-        //UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
-        //NegateModifier->bX = Keys->InvertedXMouse;
-        //NegateModifier->bY = Keys->InvertedYMouse;
+       UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
+       NegateModifier->bX = Keys->InvertedXMouse;
+       //NegateModifier->bY = Keys->InvertedYMouse;
 
-        //Mapping.Modifiers.Add(NegateModifier);
+       Mapping.Modifiers.Add(NegateModifier);
     }
 
     for (auto& Binding : Keys->KeyBinds)
@@ -442,8 +443,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     UE_LOG(LogTemp, Warning, TEXT("NetDriver: %s"), NetDriver ? *NetDriver->GetName() : TEXT("NULL"));
     UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
 
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap?listen");
-    //FString TravelURL = TEXT("/Game/ThirdPerson/Maps/GenerateLevelTest?listen");
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen");
     UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] Host starting travel to %s"), *TravelURL);
 
     TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin();
@@ -467,4 +467,11 @@ void URelicRunnersGameInstance::StartSessionGame()
     RPC->TravelCleanUI();
 
     World->ServerTravel(TravelURL, true);
+}
+
+void URelicRunnersGameInstance::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(URelicRunnersGameInstance, StageNumber);
 }

@@ -31,22 +31,7 @@ void AAphroditeCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-
-
- //   //Starting Stats
- //   if (ClassInfo)
- //   {
- //       FClassData Stats = ClassInfo->GetStats("Aphrodite");
- //       SetPlayerStartingHealth(Stats.Health);
- //       PlayerMaxHealth = Stats.Health;
- //       PlayerHealth = PlayerMaxHealth;
- //       SetPlayerStartingArmor(Stats.Armor);
- //       SetPlayerStartingStrength(Stats.Strength);
- //       SetPlayerStartingDexterity(Stats.Dexterity);
- //       SetPlayerStartingIntelligence(Stats.Intelligence);
- //   }
 }
-
 
 // Called when player takes control of this character
 void AAphroditeCharacter::PossessedBy(AController* NewController)
@@ -179,6 +164,9 @@ void AAphroditeCharacter::PerformSwingTrace()
 
 void AAphroditeCharacter::UpdateCamera(float DeltaTime)
 {
+    const FString MapName = GetWorld()->GetMapName();
+    if (MapName.Contains(TEXT("BossLevel"))) return;
+
     if (!CameraBoom) return;
 
     if (bIsAiming)

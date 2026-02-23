@@ -18,6 +18,7 @@
 #include "NavigationSystem.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include "RelicRunners/Director System/SpawnZone.h"
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -42,6 +43,15 @@ Add mesh for the payload track
 Set up spawning decals
 
 Set up material that randomly offsets the texture to make it look more dynamic
+*/
+
+/*
+Fixed things
+
+Replicated walls in client
+
+Fixed bridge's back wall collision in client
+
 */
 
 // Sets default values
@@ -157,11 +167,19 @@ void AIslandGenerationTest::Generate()
 			Bridge->OnFrontTrigger.AddDynamic(this, &AIslandGenerationTest::UpdateCameraPos);
 			Bridge->OnBackTrigger.AddDynamic(this, &AIslandGenerationTest::SetNextCameraPos);
 
-
-			if (GenerationValuesComponent->IslandValues.LevelChangeTrigger && isFinalIsland)
+			URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+			if (gameInstance)
 			{
-				ALevelChangeTrigger* levelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
-				levelTrigger->Server_SetTargetLevel(FName(GenerationValuesComponent->IslandValues.TargetLevel));
+				if (GenerationValuesComponent->IslandValues.LevelChangeTrigger && isFinalIsland)
+				{
+					ALevelChangeTrigger* levelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
+
+					FString TargetLevel = gameInstance->StageNumber > 1 ?
+						GenerationValuesComponent->IslandValues.BossLevel :
+						GenerationValuesComponent->IslandValues.TargetLevel;
+
+					levelTrigger->Server_SetTargetLevel(FName(TargetLevel));
+				}
 			}
 		}
 	}
@@ -1555,6 +1573,14 @@ void AIslandGenerationTest::SetNextCameraPos()
 
 void AIslandGenerationTest::OnRep_FloorValuesArrayChange()
 {
+	URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
+	if (gameInstance)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Client Stage Number: %i"), gameInstance->StageNumber));
+	}
+
+
 	for (int y = 0; y < IslandDepth; y++)
 	{
 		for (int x = 0; x < IslandWidth; x++)

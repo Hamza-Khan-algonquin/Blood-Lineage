@@ -104,7 +104,6 @@ void UWarBannerAbility::SpawnBanner()
 
 }
 
-
 void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 {
     UWorld* World = GetWorld();
@@ -170,6 +169,7 @@ void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
         ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
+        if (!RPC) return;
 
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)

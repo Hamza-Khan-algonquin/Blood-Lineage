@@ -10,29 +10,6 @@
  * 
  */
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnObjectiveActionCompleted);
-
-UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
-enum class EObjectiveType : uint8
-{
-	None = 0 UMETA(Hidden),
-	CaptureTheFlag = 1 << 0,
-	DefeatAllEnemies = 1 << 1,
-	MoveThePayload = 1 << 2,
-	Survival = 1 << 3,
-};
-ENUM_CLASS_FLAGS(EObjectiveType);
-
-inline bool operator== (int num, EObjectiveType type)
-{
-	return num == static_cast<uint8>(type);
-}
-
-inline bool operator|= (int num, EObjectiveType type)
-{
-	return num |= static_cast<uint8>(type);
-}
-
 USTRUCT()
 struct FDifficultyInfo
 {

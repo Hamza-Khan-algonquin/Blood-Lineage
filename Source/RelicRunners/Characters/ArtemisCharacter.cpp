@@ -47,18 +47,6 @@ void AArtemisCharacter::BeginPlay()
         // Give PiercingArrow ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
 	}
-
-	if (ClassInfo)
-	{
-		//FClassData Stats = ClassInfo->GetStats("Artemis");
-		//SetPlayerStartingHealth(Stats.Health);
-		//PlayerMaxHealth = Stats.Health;
-		//PlayerHealth = Stats.Health;
-		//SetPlayerStartingArmor(Stats.Armor);
-		//SetPlayerStartingStrength(Stats.Strength);
-		//SetPlayerStartingDexterity(Stats.Dexterity);
-		//SetPlayerStartingIntelligence(Stats.Intelligence);
-	}
 }
 
 // Called when player takes control of this character
@@ -232,6 +220,9 @@ void AArtemisCharacter::HideReticle()
 
 void AArtemisCharacter::UpdateCamera(float DeltaTime)
 {
+	const FString MapName = GetWorld()->GetMapName();
+	if (MapName.Contains(TEXT("BossLevel"))) return;
+
 	if (!CameraBoom) return;
 
 	if (bIsAiming)

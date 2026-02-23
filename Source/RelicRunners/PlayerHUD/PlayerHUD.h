@@ -55,6 +55,12 @@ public:
 	class UVerticalBox* BossHUD;
 
 	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_BossName;
+
+	UPROPERTY(meta = (BindWidget))
+	class UProgressBar* BossBar;
+
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Health;
 
 	UPROPERTY(meta = (BindWidget))

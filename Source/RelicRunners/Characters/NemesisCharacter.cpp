@@ -21,21 +21,6 @@ ANemesisCharacter::ANemesisCharacter()
 void ANemesisCharacter::BeginPlay()
 {
     Super::BeginPlay();
-
-
-
-    ////Starting Stats
-    //if (ClassInfo)
-    //{
-    //    FClassData Stats = ClassInfo->GetStats("Nemesis");
-    //    SetPlayerStartingHealth(Stats.Health);
-    //    PlayerMaxHealth = Stats.Health;
-    //    PlayerHealth = Stats.Health;
-    //    SetPlayerStartingArmor(Stats.Armor);
-    //    SetPlayerStartingStrength(Stats.Strength);
-    //    SetPlayerStartingDexterity(Stats.Dexterity);
-    //    SetPlayerStartingIntelligence(Stats.Intelligence);
-    //}
 }
 
 // Called when player takes control of this character
@@ -259,6 +244,9 @@ void ANemesisCharacter::HeavyAttack()
 
 void ANemesisCharacter::UpdateCamera(float DeltaTime)
 {
+    const FString MapName = GetWorld()->GetMapName();
+    if (MapName.Contains(TEXT("BossLevel"))) return;
+
     // Movement info 
     FVector Velocity = GetVelocity();
     Velocity.Z = 0.f;
