@@ -174,6 +174,7 @@ void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
+            World->GetTimerManager().ClearTimer(DurationTimerHandle);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();
