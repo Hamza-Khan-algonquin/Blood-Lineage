@@ -248,6 +248,9 @@ void UBundleOfJoy::Explode()
             enemy->MovementComponent->IsAffectiveByBundleOfJoy = false;
         }
     }
+    
+    //DrawDebugSphere(World, Center, ExplosionRadius, 32, FColor::Red, false, 2.f); // Draw debug sphere for explosion radius
+
 
 	// Spawn explosion VFX
     if (AvatarActor->HasAuthority())

@@ -353,6 +353,7 @@ void AEnemyPawn::SpawnItem()
 		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
 
 		/*if (Dropped)
+
 		{
 			Dropped->Initialize(DroppedItem->ItemData);
 			Dropped->SetReplicates(true);
