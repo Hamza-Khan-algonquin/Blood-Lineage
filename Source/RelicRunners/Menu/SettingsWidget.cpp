@@ -26,6 +26,7 @@ void USettingsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+
 	if (BackButton)
 	{
 		BackButton->OnClicked.AddDynamic(this, &USettingsWidget::BackButtonClicked);
@@ -34,11 +35,6 @@ void USettingsWidget::NativeConstruct()
 	if (B_RestoreDefaults)
 	{
 		B_RestoreDefaults->OnClicked.AddDynamic(this, &USettingsWidget::OnRestoreDefaultsClicked);
-	}
-
-	if (ResolutionDropDown)
-	{
-		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleSelectionChanged);
 	}
 
 	if (FOVSlider)
@@ -139,6 +135,45 @@ void USettingsWidget::NativeConstruct()
 			}
 		}
 	}
+
+	if (ResolutionDropDown)
+	{
+		
+		ResolutionDropDown->ClearOptions();
+
+		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+		{
+			const FIntPoint cur = GS->GetScreenResolution();
+			const FString current = FString::Printf(TEXT("%dx%d"), cur.X, cur.Y);
+
+			TArray<FIntPoint> Options = { {1280, 720}, {1920,1080}, {2560, 1440},{3840, 2160} };
+
+			for (const FIntPoint& R : Options)
+			{
+				ResolutionDropDown->AddOption(FString::Printf(TEXT("%dx%d"), R.X, R.Y));
+			}
+			if (ResolutionDropDown->FindOptionIndex(current) != INDEX_NONE) 
+			{
+				ResolutionDropDown->SetSelectedOption(current); 
+			}
+			else {
+				ResolutionDropDown->AddOption(current);
+				ResolutionDropDown->SetSelectedOption(current);
+			}
+			
+
+		}
+		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleSelectionChanged);
+	}
+
+	if (WindowModeDropDown)
+	{
+		
+		FillWindowOptions();
+		SetWindowMode();
+		WindowModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleWindowModeSelectionChanged);
+	}
+
 	InitializeDefaultKeybindings();
 }
 
@@ -349,24 +384,74 @@ void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 	}
 }
 
+void USettingsWidget::ApplyResolution(const FString& Resolution)
+{
+
+}
+
+void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	if(SelectionType == ESelectInfo::Direct)
+		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+		{
+			EWindowMode::Type Mode = EWindowMode::Windowed;
+			if (SelectedItem == "FullScreen")
+			{
+				Mode = EWindowMode::Fullscreen;
+			}
+			else if (SelectedItem == "WindowedFullscreen")
+			{
+				Mode = EWindowMode::WindowedFullscreen;
+			}
+			else if (SelectedItem == "Windowed")
+			{
+				Mode = EWindowMode::Windowed;
+			}
+
+			GS->SetFullscreenMode(Mode);
+			GS->ApplySettings(false);
+			GS->SaveSettings();
+
+		}
+}
+
+void USettingsWidget::FillWindowOptions()
+{
+	WindowModeDropDown->ClearOptions();
+
+	WindowModeDropDown->AddOption(TEXT("FullScreen"));
+	WindowModeDropDown->AddOption(TEXT("WindowedFullscreen"));
+	WindowModeDropDown->AddOption(TEXT("Windowed"));
+}
+
+//to make it show the current mode selected whne the menu opens
+void USettingsWidget::SetWindowMode()
+{
+	if (!WindowModeDropDown) return;
+
+	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+	{
+		const EWindowMode::Type Mode = GS->GetFullscreenMode();
+
+		FString Label = "Windowed";
+		if (Mode == EWindowMode::Fullscreen)
+		{
+			Label = "FullScreen";
+		}
+		else if (Mode == EWindowMode::WindowedFullscreen)
+		{
+			Label = "WindowedFullscreen";
+		}
+		else if (Mode == EWindowMode::Windowed)
+		{
+			Label = "Windowed";
+		}
+		WindowModeDropDown->SetSelectedOption(Label);
+	}
+}
+
 void USettingsWidget::HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType)
 {
-	if (Item == "1280x720")
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 1080x720."));
-	}
-	else if (Item == "1920x1080")
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 1920x1080."));
-	}
-	else if (Item == "2560x1440")
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 2560x1440."));
-	}
-	else if (Item == "3840x2160")
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 3840x2160."));
-	}
 }
 
 
