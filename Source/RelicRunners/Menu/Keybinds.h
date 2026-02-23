@@ -36,7 +36,7 @@ public:
     bool InvertedXMouse = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-    bool InvertedYMouse = true;
+    bool InvertedYMouse = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse Sens")
     float HorizSens = 1.0f;

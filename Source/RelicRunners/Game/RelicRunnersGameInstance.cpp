@@ -79,7 +79,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
 
        UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
        NegateModifier->bX = Keys->InvertedXMouse;
-       NegateModifier->bY = Keys->InvertedYMouse;
+       //NegateModifier->bY = Keys->InvertedYMouse;
 
        Mapping.Modifiers.Add(NegateModifier);
     }

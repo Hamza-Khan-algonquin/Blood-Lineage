@@ -75,6 +75,7 @@ void USettingsWidget::NativeConstruct()
 			{
 				B_InvertedYMouse->SetIsChecked(GI->Keys->InvertedYMouse);
 			}
+			
 		}
 	}
 
@@ -108,8 +109,8 @@ void USettingsWidget::NativeConstruct()
 
 	if (BrightnessSlider)
 	{
-		BrightnessSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnBrightnessChanged);
-
+		BrightnessSlider->OnValueChanged.RemoveDynamic(this, &USettingsWidget::OnBrightnessChanged);
+		
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
 			if (GI->Keys)
@@ -121,6 +122,7 @@ void USettingsWidget::NativeConstruct()
 				UpdateBrightnessText(B);
 			}
 		}
+		BrightnessSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnBrightnessChanged);
 	}
 
 	if (B_MotionBlur)
@@ -168,7 +170,6 @@ void USettingsWidget::NativeConstruct()
 
 	if (WindowModeDropDown)
 	{
-		
 		FillWindowOptions();
 		SetWindowMode();
 		WindowModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleWindowModeSelectionChanged);
@@ -391,24 +392,25 @@ void USettingsWidget::ApplyResolution(const FString& Resolution)
 
 void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if(SelectionType == ESelectInfo::Direct)
+	if(SelectionType == ESelectInfo::OnMouseClick)
 		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
 		{
 			EWindowMode::Type Mode = EWindowMode::Windowed;
 			if (SelectedItem == "FullScreen")
 			{
-				Mode = EWindowMode::Fullscreen;
+				FIntPoint NewRes(2560, 1440);
+				GS->SetFullscreenMode(EWindowMode::Fullscreen);
+				GS->SetScreenResolution(NewRes);
 			}
 			else if (SelectedItem == "WindowedFullscreen")
 			{
-				Mode = EWindowMode::WindowedFullscreen;
+				GS->SetFullscreenMode(EWindowMode::WindowedFullscreen);
 			}
 			else if (SelectedItem == "Windowed")
 			{
-				Mode = EWindowMode::Windowed;
+				GS->SetFullscreenMode(EWindowMode::Windowed);
 			}
 
-			GS->SetFullscreenMode(Mode);
 			GS->ApplySettings(false);
 			GS->SaveSettings();
 
