@@ -48,6 +48,8 @@ struct FEquippedStatsSummary
     UPROPERTY(BlueprintReadOnly)
     float TotalResourceRegen = 0.0f;
     UPROPERTY(BlueprintReadOnly)
+    float TotalResourceTime = 0.0f;
+    UPROPERTY(BlueprintReadOnly)
     float TotalPotionEfficiency = 0.0f;
 };
 

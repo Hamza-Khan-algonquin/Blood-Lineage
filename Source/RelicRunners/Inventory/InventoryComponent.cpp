@@ -370,6 +370,7 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
         {
             PS->SetPlayerMaxHealth(CachedEquippedStats.TotalHealth);
             PS->SetPlayerMaxResource(CachedEquippedStats.TotalResource);
+            PS->SetHealthGrantedFromPotion(ItemStats::GetHealPercent(CachedEquippedStats.TotalPotionEfficiency));
             PS->Client_UpdateEquippedStats(CachedEquippedStats);
         }
     }
@@ -550,6 +551,7 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     Summary.TotalLuck = PS->GetPlayerStartingLuck();
     Summary.TotalResource = PS->GetPlayerStartingMaxResource();
     Summary.TotalResourceRegen = PS->GetPlayerStartingResourceRegen();
+    Summary.TotalResourceTime = PS->GetPassiveResourceTime();
     Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
 
     //Class stat bonuses
@@ -589,6 +591,7 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
                 Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility;
                 Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence;
                 Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
+                Summary.TotalPotionEfficiency += GI->SelectedSaveSlot->SaveData.MetaPotionEfficiency;
             }
         }
     }

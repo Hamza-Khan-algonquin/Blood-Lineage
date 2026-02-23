@@ -169,6 +169,9 @@ public:
 	UPROPERTY()
 	int PlayerStartingPotionEfficiency;
 
+	UPROPERTY()
+	int PassiveResourceTime;
+
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
 
@@ -202,6 +205,10 @@ public:
 	int GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
 	UFUNCTION()
 	int GetPlayerStartingPotionEfficiency() const { return PlayerStartingPotionEfficiency; }
+
+	UFUNCTION()
+	int GetPassiveResourceTime() const { return PassiveResourceTime; }
+
 	UFUNCTION()
 	int GetPlayerGold() const { return PlayerGold; }
 	int GetPlayerLevel() { return PlayerLevel; };
@@ -231,6 +238,7 @@ public:
 	void SetPlayerResource(int Resource) { PlayerResource = Resource; }
 	void SetPlayerMaxHealth(int value);
 	void SetPlayerMaxResource(int value);
+	void SetHealthGrantedFromPotion(int value) { HealthGranted = value; }
 	void ResetHealth() { PlayerHealth = PlayerMaxHealth; }
 
     //Delegates

@@ -66,7 +66,7 @@ class RELICRUNNERS_API ItemStats
 {
 public:
 
-    static FTooltipData GetStatTooltipData(FString BorderType, int StatValue, const FString& AbilityName, const FString& AbilityDesc)
+    static FTooltipData GetStatTooltipData(FString BorderType, int StatValue, int StatValue2, int StatValue3, const FString& AbilityName, const FString& AbilityDesc)
     {
         FTooltipData Data;
 
@@ -126,8 +126,8 @@ public:
             Data.Name = FText::FromString("Purity");
             Data.Icon = LoadIcon("PurityIcon");
             Data.IconColor = GetIconColor("Purity");
-            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Heal."), FText::AsNumber(GetHealPercent(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Chance to not consume."), FText::AsNumber(GetChanceToNotConsume(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Health potion heal."), FText::AsNumber(GetHealPercent(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Chance to not consume."), FText::AsNumber(GetChanceToNotConsume(StatValue))));
         }
         else if (BorderType == "Level")
         {
@@ -141,7 +141,8 @@ public:
             Data.Name = FText::FromString("Mana");
             Data.Icon = LoadIcon("ResourceIcon");
             Data.IconColor = GetIconColor("Mana");
-            Data.Descriptions.Add(FText::Format(FText::FromString("Mana pool."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::FromString("Mana pool."));
+            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Mana / {1}s."), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
         }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {

@@ -37,6 +37,7 @@
 #include "InventoryComponent.h"
 #include <RelicRunners/RelicRunnersCharacter.h>
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "InventoryDragVisual.h"
 
 void UInventorySlotsEntry::NativeConstruct()
 {
@@ -111,8 +112,17 @@ void UInventorySlotsEntry::NativeOnDragDetected(const FGeometry& InGeometry, con
     //Start drag operation
     UInventoryDragOperation* DragOp = NewObject<UInventoryDragOperation>();
     DragOp->Payload = Item;
-    DragOp->DefaultDragVisual = this;
     DragOp->Pivot = EDragPivot::MouseDown;
+
+    if (DragVisualClass)
+    {
+        UInventoryDragVisual* VisualWidget = CreateWidget<UInventoryDragVisual>(GetWorld(), DragVisualClass);
+        if (VisualWidget)
+        {
+            VisualWidget->OnSetupVisual(Item);
+            DragOp->DefaultDragVisual = VisualWidget;
+        }
+    }
 
     //Get starting location 
     UTileView* TileView = Cast<UTileView>(GetOwningListView());

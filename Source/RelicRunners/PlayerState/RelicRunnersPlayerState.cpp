@@ -66,6 +66,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerMaxResource = PlayerStartingMaxResource;
 	PlayerResource = PlayerMaxResource;
 	PlayerStartingResourceRegen = 5; //Percent
+	PassiveResourceTime = 3; //Time in seconds
 
 	//Stats
 	PlayerStartingArmor = PlayerStartingLevel - 1;
@@ -87,15 +88,15 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 
 	//Potions
 	HealthPotionCount = 3;
-	HealthGranted = 0.5;
 	PlayerStartingPotionEfficiency = 30; //Percent
+	HealthGranted = PlayerStartingPotionEfficiency;
 }
 
 void ARelicRunnersPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, 3.f, true);
+	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, PassiveResourceTime, true);
 
 	if (PlayerHealth != PlayerMaxHealth)
 	{
@@ -308,11 +309,18 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 
 	if (HealthPotionCount > 0 && PlayerHealth < PlayerMaxHealth)
 	{
-		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * HealthGranted);
+		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * (HealthGranted / 100.0f));
 
 
 		PlayerHealth += HealthToGrant;
-		HealthPotionCount--;
+		
+		int Efficiency = InventoryComponent->CachedEquippedStats.TotalPotionEfficiency;
+		int ChanceToNotConsume = ItemStats::GetChanceToNotConsume(Efficiency);
+		int Roll = FMath::RandRange(1, 100);
+		if (Roll < ChanceToNotConsume)
+		{
+			HealthPotionCount--;
+		}
 
 		if (PlayerHealth > PlayerMaxHealth)
 		{
