@@ -82,9 +82,6 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	// Slightly closer than before
 	CameraBoom->TargetArmLength = 500.0f; 
 
-	// Slightly higher
-	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 10.f)); 
-
 	// Slight downward angle to see enemies
 	CameraBoom->SetRelativeRotation(FRotator(-10.f, 0.f, 0.f));
 
@@ -100,7 +97,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	// Follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	FollowCamera->bUsePawnControlRotation = false;
+	FollowCamera->bUsePawnControlRotation = true;
 
 	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
 	MinimapSpringArm->SetupAttachment(RootComponent);

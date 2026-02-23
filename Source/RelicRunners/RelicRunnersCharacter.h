@@ -276,7 +276,7 @@ protected:
 
 	// Height & offset tweaks
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
-	float HeightOffset = 80.f;
+	float HeightOffset = 100.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
 	float ShoulderOffset = 40.f;
@@ -290,10 +290,10 @@ protected:
 
 	// Pitch limits
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MinPitch = -45.f;
+	float MinPitch = -10.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MaxPitch = -5.f;
+	float MaxPitch = 35.f;
 
 	// Optional bounce
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")

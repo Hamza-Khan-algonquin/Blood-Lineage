@@ -85,7 +85,7 @@ protected:
 
 	// Camera offset when aiming
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
-	FVector AimingOffset = FVector(0.f, 80.f, 100.f); 
+	FVector AimingOffset = FVector(-20.f, 80.f, 100.f); 
 
 	// Camera distance/speed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
@@ -98,6 +98,11 @@ protected:
 
 	UPROPERTY()
 	UUserWidget* ReticleWidget;
+
+	bool bExitingAim = false;
+
+	const float MinLookHeightOffset = 60.f;   
+	const float LookClampDistance = 10000.f;
 
 
 };

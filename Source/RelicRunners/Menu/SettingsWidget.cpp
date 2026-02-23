@@ -69,6 +69,7 @@ void USettingsWidget::NativeConstruct()
 			}
 		}
 	}
+
 	if (B_InvertedYMouse)
 	{
 		B_InvertedYMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
