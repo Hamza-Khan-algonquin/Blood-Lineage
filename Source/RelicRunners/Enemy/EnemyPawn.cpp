@@ -97,18 +97,20 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
 		//CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
 
-		this->MovementComponent->IsKnockedBack = true;
+		//this->MovementComponent->IsKnockedBack = true;
 
 		FTimerHandle temp;
-		GetWorldTimerManager().SetTimer(temp, [this]() {
+	/*	GetWorldTimerManager().SetTimer(temp, [this]() {
 				if (this)
 				{
+					if (!this)
+						return;
 					if(this->MovementComponent)
 						this->MovementComponent->IsKnockedBack = false;
 					if (this->CapsuleComponent)
 						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 				}
-			}, HitFlashTimeline.GetTimelineLength(), false);
+			}, HitFlashTimeline.GetTimelineLength(), false);*/
 	}
 	
 	//call the super for important stuff

@@ -241,7 +241,6 @@ void AArtemisCharacter::UpdateCamera(float DeltaTime)
 		CameraBoom->bEnableCameraRotationLag = false;
 		CameraBoom->bUsePawnControlRotation = false;
 		CameraBoom->bEnableCameraLag = false;
-		GetCharacterMovement()->MaxWalkSpeed = 300.f;
 		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength, DeltaTime, AimingInterpSpeed);
 
 		// Smoothly interpolate socket offset 
@@ -270,7 +269,6 @@ void AArtemisCharacter::UpdateCamera(float DeltaTime)
 		CameraBoom->bEnableCameraLag = true;
 		CameraBoom->bEnableCameraRotationLag = true;
 		CameraBoom->bUsePawnControlRotation = true;
-		GetCharacterMovement()->MaxWalkSpeed = 500.f;
 		// Movement info 
 		FVector Velocity = GetVelocity();
 		Velocity.Z = 0.f;
@@ -407,13 +405,13 @@ void AArtemisCharacter::UpdateCamera(float DeltaTime)
 
 void AArtemisCharacter::BasicAttack()
 {
-	if (!bIsAiming) return;
+	//if (!bIsAiming) return;
 
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-	if (!CanBasicAttack) return;
+	//if (!CanBasicAttack) return;
 	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-	CanBasicAttack = false;
+	CanBasicAttack = true;
 
 	ProjectileDamage = 70.0f;
 
