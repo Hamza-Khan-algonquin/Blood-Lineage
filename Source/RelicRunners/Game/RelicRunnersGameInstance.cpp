@@ -22,6 +22,7 @@
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
+#include "Net/UnrealNetwork.h"
 
 void URelicRunnersGameInstance::Init()
 {
@@ -467,4 +468,11 @@ void URelicRunnersGameInstance::StartSessionGame()
     RPC->TravelCleanUI();
 
     World->ServerTravel(TravelURL, true);
+}
+
+void URelicRunnersGameInstance::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(URelicRunnersGameInstance, StageNumber);
 }

@@ -6,6 +6,7 @@
 #include "LevelGenerator.h"
 #include "IslandSpawningValuesComponent.h"
 #include "PayloadActor.h"
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
 
 // Sets default values
@@ -31,6 +32,13 @@ void AIslandSpawner::BeginPlay()
 
 		if (IslandGenerationTestTemplate != nullptr)
 		{
+
+			URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+			if (gameInstance)
+			{
+				gameInstance->StageNumber += 1;
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Server Stage Number: %i"), gameInstance->StageNumber));
+			}
 
 			for (int i = 0; i < NumIslands; i++)
 			{
