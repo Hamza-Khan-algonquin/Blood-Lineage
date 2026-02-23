@@ -97,9 +97,10 @@ void UKissOfLife::ApplyHealTick()
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     // Healing part that heals both allies and self
-    UKismetSystemLibrary::SphereOverlapActors(World, Origin, HealRadius, ObjectTypes, ACharacter::StaticClass(), TArray<AActor*>(), OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, Origin, HealRadius, ObjectTypes, APawn::StaticClass(), TArray<AActor*>(), OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {

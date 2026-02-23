@@ -82,7 +82,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
     // Visual-only version: end instantly
     TArray<AActor*> ActorsToIgnore;ActorsToIgnore.Add(OwnerChar);
 
-        const bool bHit = UKismetSystemLibrary::SphereTraceMulti(OwnerChar,Start,End,BeamRadius,UEngineTypes::ConvertToTraceType(ECC_Pawn),false,ActorsToIgnore,EDrawDebugTrace::None,Hits,true);
+        const bool bHit = UKismetSystemLibrary::SphereTraceMulti(OwnerChar,Start,End,BeamRadius,UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel1),false,ActorsToIgnore,EDrawDebugTrace::None,Hits,true);
 
         if (bHit)
         {
