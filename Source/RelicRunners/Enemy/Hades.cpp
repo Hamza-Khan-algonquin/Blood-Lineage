@@ -91,6 +91,16 @@ void AHades::PlaySlam()
 {
     if (!CurrentTarget) { bIsBusy = false; ScheduleNextAttack(1.0f); return; }
 
+    if (SkeletalMesh)
+    {
+        UAnimInstance* AnimInst = SkeletalMesh->GetAnimInstance();
+        if (AnimInst && SlamMontage)
+        {
+            AnimInst->Montage_Play(SlamMontage, 0.5f);
+            UE_LOG(LogTemp, Log, TEXT("Hades: Slam Animation Started"));
+        }
+    }
+
     FVector Origin = FVector(0, 0, 0);
     FVector Dir = (CurrentTarget->GetActorLocation() - Origin).GetSafeNormal2D();
     FVector SlamLoc = Origin + (Dir * 3450.0f);

@@ -37,6 +37,12 @@ public:
     class UAnimMontage* SlamMontage;
 
     UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* DeathMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* DamagedMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animations")
     class UAnimMontage* SweepMontage;
 
     UPROPERTY(EditAnywhere, Category = "Classes")
