@@ -7,6 +7,7 @@
 #include "Components/RadialSlider.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
+#include "RelicRunners/Menu/SaveFileListWidget.h"
 
 void UUpgradesWidget::NativeConstruct()
 {

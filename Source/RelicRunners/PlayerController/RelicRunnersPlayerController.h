@@ -189,6 +189,7 @@ public:
 	FTimerHandle DisableUITimer;
 	FTimerHandle ObjectiveClearTimerHandle;
 
+
 protected:
 
 	//Template
@@ -211,7 +212,7 @@ protected:
 	void MoveRight(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 	void Interact();
-	void Jump(const struct FInputActionValue& Value);
+	//void Jump(const struct FInputActionValue& Value);
 	void StopJumping(const struct FInputActionValue& Value);
 	void InitLocalUI();
 	void ToggleUI(UUserWidget* UIWidget);
@@ -227,6 +228,7 @@ protected:
 	void HealthPotion();
 	void BasicAttack();
 	void HeavyAttack();
+	void ProjectileHeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
 

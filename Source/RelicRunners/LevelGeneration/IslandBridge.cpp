@@ -2,6 +2,7 @@
 
 
 #include "IslandBridge.h"
+#include "Components/BoxComponent.h"
 #include <Net/UnrealNetwork.h>
 
 // Sets default values
@@ -21,6 +22,20 @@ AIslandBridge::AIslandBridge():
 	BackBarrier = CreateDefaultSubobject<UStaticMeshComponent>("Back Barrier Mesh");
 	BackBarrier->SetupAttachment(Bridge);
 	BackBarrier->SetIsReplicated(true);
+
+	FrontCameraTrigger = CreateDefaultSubobject<UBoxComponent>(TEXT("FrontTrigger"));
+	FrontCameraTrigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	FrontCameraTrigger->SetCollisionProfileName("OverlapAll");
+	FrontCameraTrigger->SetGenerateOverlapEvents(true);
+	FrontCameraTrigger->OnComponentBeginOverlap.AddDynamic(this, &AIslandBridge::OnFrontTriggerOverlap);
+	FrontCameraTrigger->SetupAttachment(Bridge);
+
+	BackCameraTrigger = CreateDefaultSubobject<UBoxComponent>(TEXT("BackTrigger"));
+	BackCameraTrigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	BackCameraTrigger->SetCollisionProfileName("OverlapAll");
+	BackCameraTrigger->SetGenerateOverlapEvents(true);
+	BackCameraTrigger->OnComponentBeginOverlap.AddDynamic(this, &AIslandBridge::OnBackTriggerOverlap);
+	BackCameraTrigger->SetupAttachment(Bridge);
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -80,6 +95,22 @@ void AIslandBridge::OnRep_OnFinalBridgeChange()
 	{
 		Barrier->SetVisibility(false);
 		Barrier->SetCollisionProfileName("NoCollision");
+	}
+}
+
+void AIslandBridge::OnFrontTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->ActorHasTag("Player"))
+	{
+		OnFrontTrigger.Broadcast();
+	}
+}
+
+void AIslandBridge::OnBackTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->ActorHasTag("Player"))
+	{
+		OnBackTrigger.Broadcast();
 	}
 }
 

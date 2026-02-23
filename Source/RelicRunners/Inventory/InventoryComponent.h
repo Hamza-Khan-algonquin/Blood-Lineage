@@ -29,8 +29,12 @@ struct FEquippedStatsSummary
 {
     GENERATED_BODY()
 
+    UPROPERTY(BlueprintReadOnly)
+    int PlayerLevel = 0;
     UPROPERTY(BlueprintReadOnly) 
     int TotalHealth = 0;
+    UPROPERTY(BlueprintReadOnly)
+    int TotalResource = 0;
     UPROPERTY(BlueprintReadOnly) 
     int TotalArmor = 0;
     UPROPERTY(BlueprintReadOnly) 

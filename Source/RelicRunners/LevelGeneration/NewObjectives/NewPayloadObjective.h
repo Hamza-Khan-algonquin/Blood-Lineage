@@ -24,6 +24,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UStaticMeshComponent* PayloadBody;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* RadiusMesh;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UBoxComponent* PayloadBox;
 

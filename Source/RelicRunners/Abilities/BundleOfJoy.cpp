@@ -139,7 +139,25 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
     AActor* Avatar = GetAvatarActorFromActorInfo();
     UWorld* World = Avatar->GetWorld();
 
-    UNiagaraFunctionLibrary::SpawnSystemAtLocation(Avatar->GetWorld(),AbilityVFX,AttractionCenter, FRotator(0, 0, 0),FVector(1.f), true,true);
+    if (Avatar->HasAuthority())
+    {
+        AController* Controller = nullptr;
+
+        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+        {
+            Controller = CurrentActorInfo->PlayerController.Get();
+        }
+
+        if (Controller)
+        {
+            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+            if (PS)
+            {
+                PS->Multicast_SpawnVFX(AttractionCenter, FRotator(0, 0, 0), FVector(1.f), AbilityVFX, false);
+            }
+        }
+    }
 
     // start attraction loop
     World->GetTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::Attract, 0.016f, true);
@@ -230,10 +248,30 @@ void UBundleOfJoy::Explode()
             enemy->MovementComponent->IsAffectiveByBundleOfJoy = false;
         }
     }
-
+    
     //DrawDebugSphere(World, Center, ExplosionRadius, 32, FColor::Red, false, 2.f); // Draw debug sphere for explosion radius
 
-    UNiagaraFunctionLibrary::SpawnSystemAtLocation(AvatarActor->GetWorld(),AbilityVFX1,AttractionCenter, FRotator(0, 0, 0), FVector(2.f),true,true);
+
+	// Spawn explosion VFX
+    if (AvatarActor->HasAuthority())
+    {
+        AController* Controller = nullptr;
+
+        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+        {
+            Controller = CurrentActorInfo->PlayerController.Get();
+        }
+
+        if (Controller)
+        {
+            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+            if (PS)
+            {
+                PS->Multicast_SpawnVFX(AttractionCenter, FRotator(0, 0, 0), FVector(2.f), AbilityVFX1, false);
+            }
+        }
+    }
 
     // End the ability after explosion
     EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);

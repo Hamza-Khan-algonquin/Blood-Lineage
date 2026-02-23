@@ -21,6 +21,7 @@
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
+#include "RelicRunners/UserNavigation/UserNavigationConfig.h"
 
 void URelicRunnersGameInstance::Init()
 {
@@ -75,11 +76,11 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, EKeys::Mouse2D);
 
-        UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
-        NegateModifier->bX = Keys->InvertedXMouse;
-        NegateModifier->bY = Keys->InvertedYMouse;
+        //UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
+        //NegateModifier->bX = Keys->InvertedXMouse;
+        //NegateModifier->bY = Keys->InvertedYMouse;
 
-        Mapping.Modifiers.Add(NegateModifier);
+        //Mapping.Modifiers.Add(NegateModifier);
     }
 
     for (auto& Binding : Keys->KeyBinds)
@@ -101,6 +102,13 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     }
 
     Subsystem->AddMappingContext(MappingContext, 0);
+
+    TSharedRef<FUserNavigationConfig> NavConfig = MakeShared<FUserNavigationConfig>();
+
+    if (FSlateApplication::IsInitialized())
+    {
+        FSlateApplication::Get().SetNavigationConfig(NavConfig);
+    }
 }
 
 USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)

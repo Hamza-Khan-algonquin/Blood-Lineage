@@ -32,4 +32,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Title;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
+	TObjectPtr<UMaterialInterface> MinimapToonPostProcess;
 };

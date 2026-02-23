@@ -36,7 +36,19 @@ public:
     bool InvertedXMouse = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-    bool InvertedYMouse = true;
+    bool InvertedYMouse = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse Sens")
+    float HorizSens = 1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse Sens")
+    float VertSens = 1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
+    float Brightness = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    bool motionBlurEnabled = true;
 };
 
 static FString GetReadableKeyName(const FKey& Key)
@@ -74,13 +86,14 @@ static FString GetReadableKeyName(const FKey& Key)
         {TEXT("LeftAlt"), TEXT("LAlt")},
         {TEXT("RightAlt"), TEXT("RAlt")},
         {TEXT("Escape"), TEXT("Esc")},
-        {TEXT("Up"), TEXT("^")},
-        {TEXT("Down"), TEXT("v")},
-        {TEXT("Left"), TEXT("<")},
-        {TEXT("Right"), TEXT(">")},
+        {TEXT("Up"), TEXT("Up")},
+        {TEXT("Down"), TEXT("Down")},
+        {TEXT("Left"), TEXT("Left")},
+        {TEXT("Right"), TEXT("Right")},
         {TEXT("Middle Mouse Button"), TEXT("MMB")},
         {TEXT("Right Mouse Button"), TEXT("RMB")},
         {TEXT("Left Mouse Button"), TEXT("LMB")},
+        {TEXT("MouseWheelAxis"), TEXT("MWA")},
     };
 
     if (const FString* Replacement = KeyReplacements.Find(Name))

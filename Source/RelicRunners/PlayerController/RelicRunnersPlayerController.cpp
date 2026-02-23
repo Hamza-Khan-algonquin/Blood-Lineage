@@ -782,7 +782,11 @@ void ARelicRunnersPlayerController::SetupObjectives()
 			ObjectiveStageTitle->TotalZones = 5;
 			ObjectiveStageTitle->CurrentZones = 0;
 		}
-
+		else if (MapName.Contains(TEXT("BossLevel")))
+		{
+			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveStageTitle->CurrentZones = 0;
+		}
 		if (ObjectiveStageTitle->TotalZones != 0)
 		{
 			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
@@ -956,6 +960,21 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		{
 			PlayerHUD->AddToViewport();
 		}
+		UWorld* World = GetWorld();
+		if (!World) return;
+
+		const FString MapName = World->GetMapName();
+
+		if (MapName.Contains(TEXT("BossLevel")))
+		{
+			PlayerHUD->ToggleBossBar(true);
+			PlayerHUD->ToggleExpBar(false);
+		}
+		else
+		{
+			PlayerHUD->ToggleBossBar(false);
+			PlayerHUD->ToggleExpBar(true);
+		}
 	}
 
 	if (!MinimapWidget && MinimapClass)
@@ -979,6 +998,10 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			else if (MapName.Contains(TEXT("IslandTest")))
 			{
 				MinimapWidget->SetLevelTitle(FText::FromString("Stage"));
+			}
+			else if (MapName.Contains(TEXT("BossLevel")))
+			{
+				MinimapWidget->SetLevelTitle(FText::FromString("Hell"));
 			}
 		}
 	}
@@ -1029,6 +1052,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		}
 	}
 
+	float LoadingScreenTime = 3.0f;
 	if (!LoadingScreen && LoadingScreenClass)
 	{
 		FInputModeUIOnly InputMode;
@@ -1041,14 +1065,14 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (LoadingScreen)
 		{
 			LoadingScreen->AddToViewport();
-			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, 5.0f, false);
+			GetWorld()->GetTimerManager().SetTimer(LoadingScreenTimer, this, &ARelicRunnersPlayerController::LoadingScreenUI, LoadingScreenTime, false);
 		}
 	}
 
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
 		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, 10.0f, false);
+		GetWorldTimerManager().SetTimer(DelayHandle, [this, GI]() { GI->ApplyKeybindings(); }, LoadingScreenTime, false);
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
@@ -1180,8 +1204,8 @@ void ARelicRunnersPlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ARelicRunnersPlayerController::StopJumping);
+		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::Jump);
+		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ARelicRunnersPlayerController::StopJumping);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &ARelicRunnersPlayerController::MoveForward);
@@ -1209,7 +1233,10 @@ void ARelicRunnersPlayerController::SetupInputComponent()
 
 		// HeavyAttack
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::HeavyAttack);
+		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Completed, this, &ARelicRunnersPlayerController::ProjectileHeavyAttack);
 		
+
+
 		// Abilities
 		EnhancedInputComponent->BindAction(DamageAbilityAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::DamageAbility);
 		EnhancedInputComponent->BindAction(DefenceAbilityAction, ETriggerEvent::Started, this, &ARelicRunnersPlayerController::DefenceAbility);
@@ -1280,13 +1307,25 @@ void ARelicRunnersPlayerController::DamageAbility()
 		PossessedPawn->DamageAbility();
 	}
 }
+//void ARelicRunnersPlayerController::DefenceAbility()
+//{
+//	if (PossessedPawn)
+//	{
+//		PossessedPawn->DefenceAbility();
+//	}
+//}
+
 void ARelicRunnersPlayerController::DefenceAbility()
 {
-	if (PossessedPawn)
+	if (!IsLocalController())
+		return;
+
+	if (ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn()))
 	{
-		PossessedPawn->DefenceAbility();
+		Char->DefenceAbility();
 	}
 }
+
 
 void ARelicRunnersPlayerController::UtilityAbility()
 {
@@ -1320,13 +1359,21 @@ void ARelicRunnersPlayerController::HeavyAttack()
 	}
 }
 
-void ARelicRunnersPlayerController::Jump(const FInputActionValue& Value)
+void ARelicRunnersPlayerController::ProjectileHeavyAttack()
 {
 	if (PossessedPawn)
 	{
-		PossessedPawn->Jump();
+		PossessedPawn->ProjectileHeavyAttack();
 	}
 }
+
+//void ARelicRunnersPlayerController::Jump(const FInputActionValue& Value)
+//{
+//	if (PossessedPawn)
+//	{
+//		PossessedPawn->Jump();
+//	}
+//}
 
 void ARelicRunnersPlayerController::StopJumping(const FInputActionValue& Value)
 {

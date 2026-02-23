@@ -37,4 +37,7 @@ protected:
 	void GenerateNewIsland();
 
 	int CurrentSpawnedIsland;
+
+	UFUNCTION()
+	void ChangeIslandCamera(int islandIndex);
 };

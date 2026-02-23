@@ -7,6 +7,7 @@
 #include "IslandSpawningValuesComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "PackedLevelActor/PackedLevelActor.h"
+#include "NewObjectives/ObjectiveBase.h"
 #include "NewObjectives/NewCapturableFlag.h"
 #include "NewObjectives/NewEnemyZone.h"
 #include "NewObjectives/NewPayloadObjective.h"
@@ -34,18 +35,13 @@ Spawn regular obstacles at their appropriate location + Spawn their appropriate 
 
 /*TODO
 
-Fix the wall spawning | Done
-
-Each objective have their own max and min width and depth | Done
-
-Setup Dynamic navmesh in random level | Done
-
-Fix Camera in random level | Done
-
-Add flag and pandora's box meshes | Done
-
 Handle different difficulty
 
+Add mesh for the payload track
+
+Set up spawning decals
+
+Set up material that randomly offsets the texture to make it look more dynamic
 */
 
 // Sets default values
@@ -73,16 +69,6 @@ void AIslandGenerationTest::Generate()
 {
 	if (HasAuthority())
 	{
-		//Set Camera Position relative to size of map
-		if (CameraActor)
-		{
-			float tileScale = GenerationValuesComponent->IslandValues.TileScale;
-			float cameraX = IslandWidth * tileScale * 2 - tileScale;
-			float cameraY = IslandDepth * tileScale * 2 - tileScale;
-			CameraActor->SetActorLocation(FVector(cameraX+GetActorLocation().X, cameraY+GetActorLocation().Y, 0.0f));
-		}
-
-
 		//Initialize the starting and ending tiles.
 		int startingIndex = 0, endingIndex = (IslandDepth * IslandWidth) - 1;
 
@@ -168,6 +154,9 @@ void AIslandGenerationTest::Generate()
 			Bridge = GetWorld()->SpawnActor<AIslandBridge>(GenerationValuesComponent->IslandStartEnd.BridgePackedActor, posOffset, FRotator::ZeroRotator);
 
 			Bridge->SetFinalBridge(isFinalIsland);
+			Bridge->OnFrontTrigger.AddDynamic(this, &AIslandGenerationTest::UpdateCameraPos);
+			Bridge->OnBackTrigger.AddDynamic(this, &AIslandGenerationTest::SetNextCameraPos);
+
 
 			if (GenerationValuesComponent->IslandValues.LevelChangeTrigger && isFinalIsland)
 			{
@@ -190,6 +179,20 @@ void AIslandGenerationTest::Generate()
 	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
 
 	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset+GetActorLocation(), GetActorRotation());
+}
+
+void AIslandGenerationTest::ActivateIsland()
+{
+	/*
+	TODO:
+
+	Make it so that it generates every island but they spawn invisible and become visible when the objective is complete
+
+	Add the logic that makes everything visible
+
+	For loop of all objectives spawned -> Call Activate
+
+	*/
 }
 
 void AIslandGenerationTest::InitializeValues(EIslandObjectiveType islandObjective)
@@ -676,6 +679,10 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 
 					payload->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 					payload->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+					//payload->SetVisibility(false);
+
+					//TODO:
+					// Move Activate into ActivateIsland() to not activate them too early
 					payload->Activate();
 				}
 			}
@@ -1317,7 +1324,10 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 			newFlag->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newFlag->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+			//newFlag->SetVisibility(false);
 
+			//TODO:
+			// Move Activate into ActivateIsland() to not activate them too early
 			newFlag->Activate();
 		}
 
@@ -1333,7 +1343,10 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 				newEnemyZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 				newEnemyZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+				//newEnemyZone->SetVisibility(false);
 
+				//TODO:
+				// Move Activate into ActivateIsland() to not activate them too early
 				newEnemyZone->Activate();
 			}
 
@@ -1350,9 +1363,13 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			newZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 			newZone->Duration = GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
+			//newZone->SetVisibility(false);
 
-
+			//TODO:
+			// Move Activate into ActivateIsland() to not activate them too early
 			newZone->Activate();
+
+			ObjectiveArrays.Add(newZone);
 		}
 
 		if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
@@ -1517,6 +1534,23 @@ void AIslandGenerationTest::DecrementObjective()
 
 		OnObjectiveIslandObjectiveComplete.Broadcast();
 	}
+}
+
+void AIslandGenerationTest::UpdateCameraPos()
+{
+	//Set Camera Position relative to size of map
+	if (CameraActor)
+	{
+		float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+		float cameraX = IslandWidth * tileScale * 2 - tileScale;
+		float cameraY = IslandDepth * tileScale * 2 - tileScale;
+		CameraActor->SetActorLocation(FVector(cameraX + GetActorLocation().X, cameraY + GetActorLocation().Y, 0.0f));
+	}
+}
+
+void AIslandGenerationTest::SetNextCameraPos()
+{
+	OnSetCameraChange.Broadcast(IslandIndex);
 }
 
 void AIslandGenerationTest::OnRep_FloorValuesArrayChange()

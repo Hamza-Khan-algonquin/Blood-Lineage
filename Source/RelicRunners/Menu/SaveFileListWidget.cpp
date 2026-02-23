@@ -145,7 +145,9 @@ void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 
     SaveFileData->IsEmptySlot = false;
 
-    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetMetaLevel(), SaveFileData->GetUniqueID());
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetMetaLevel(), SaveFileData->GetUniqueID(), SaveFileData->GetMetaExp(),
+        SaveFileData->GetMetaExpToLevel(), SaveFileData->GetMetaPoints(), SaveFileData->GetMetaHealth(), SaveFileData->GetMetaDefence(), SaveFileData-> GetMetaLuck(), SaveFileData->GetMetaStrength(),
+        SaveFileData->GetMetaAgility(), SaveFileData->GetMetaIntelligence(), SaveFileData->GetMetaStartingLevel(), SaveFileData->GetMetaPotionEfficiency(), SaveFileData->GetMetaResourceRegen());
 
     Setup(SaveFileData);
 }
@@ -154,7 +156,9 @@ void USaveFileListWidget::FinalizeEdit(const FString& PlayerName)
 void USaveFileListWidget::FinalizeSaveCreation(const FString& PlayerName)
 {
     SaveFileData->IsEmptySlot = false;
-    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, 0, SaveFileData->GetMetaLevel(), SaveFileData->GetUniqueID());
+    SaveFileData->SaveData = USaveFileListData::MakeSaveData(PlayerName, SaveFileData->GetTimePlayed(), SaveFileData->GetMetaLevel(), SaveFileData->GetUniqueID(), SaveFileData->GetMetaExp(),
+        SaveFileData->GetMetaExpToLevel(), SaveFileData->GetMetaPoints(), SaveFileData->GetMetaHealth(), SaveFileData->GetMetaDefence(), SaveFileData->GetMetaLuck(), SaveFileData->GetMetaStrength(),
+        SaveFileData->GetMetaAgility(), SaveFileData->GetMetaIntelligence(), SaveFileData->GetMetaStartingLevel(), SaveFileData->GetMetaPotionEfficiency(), SaveFileData->GetMetaResourceRegen());
     Setup(SaveFileData);
 
     SpawnEmptySlot();

@@ -52,6 +52,7 @@ void AIslandSpawner::BeginPlay()
 					newIsland->CameraActor = CameraActor;
 
 				newIsland->OnObjectiveIslandObjectiveComplete.AddDynamic(this, &AIslandSpawner::GenerateNewIsland);
+				newIsland->OnSetCameraChange.AddDynamic(this, &AIslandSpawner::ChangeIslandCamera);
 
 				EIslandObjectiveType islandObjective = EIslandObjectiveType::None;
 				TArray<EIslandObjectiveType> ActiveFlags;
@@ -112,6 +113,7 @@ void AIslandSpawner::BeginPlay()
 			}
 
 			Islands[CurrentSpawnedIsland]->Generate();
+			Islands[CurrentSpawnedIsland]->UpdateCameraPos();
 		}
 	}
 }
@@ -127,5 +129,13 @@ void AIslandSpawner::GenerateNewIsland()
 		}
 
 		Islands[CurrentSpawnedIsland]->Generate();
+	}
+}
+
+void AIslandSpawner::ChangeIslandCamera(int islandIndex)
+{
+	if (Islands.IsValidIndex(islandIndex + 1))
+	{
+		Islands[islandIndex + 1]->UpdateCameraPos();
 	}
 }

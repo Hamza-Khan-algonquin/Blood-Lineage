@@ -69,9 +69,48 @@ public:
 	FGuid GetUniqueID() { return SaveData.UniqueID; }
 
 	UFUNCTION(BlueprintCallable)
+	float GetMetaExp() { return SaveData.MetaExperience; }
+
+	UFUNCTION(BlueprintCallable)
+	float GetMetaExpToLevel() { return SaveData.MetaExperienceToLevel; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaPoints() { return SaveData.MetaPoints; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaHealth() { return SaveData.MetaHealth; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaDefence() { return SaveData.MetaDefence; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaLuck() { return SaveData.MetaLuck; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaStrength() { return SaveData.MetaStrength; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaAgility() { return SaveData.MetaAgility; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaIntelligence() { return SaveData.MetaIntelligence; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaStartingLevel() { return SaveData.MetaStartingLevel; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaPotionEfficiency() { return SaveData.MetaPotionEfficiency; }
+
+	UFUNCTION(BlueprintCallable)
+	int GetMetaResourceRegen() { return SaveData.MetaResourceRegen; }
+
+	UFUNCTION(BlueprintCallable)
 	int GetMetaLevel() { return SaveData.MetaLevel; }
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID);
+    static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,
+		float MetaExperienceToLevel, int MetaPoints, int MetaHealth, int MetaDefence, int MetaLuck, int MetaStrength, int MetaAgility,
+		int MetaIntelligence, int MetaStartingLevel, int MetaPotionEfficiency, int MetaResourceRegen);
 
 	UFUNCTION(BlueprintCallable)
 	void SetParentWidget(UModeSelectionWidget* TheParentWidget) { ParentWidget = TheParentWidget; }

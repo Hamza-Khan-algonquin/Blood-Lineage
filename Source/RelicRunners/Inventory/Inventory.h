@@ -233,6 +233,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_Intelligence = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Purity = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Luck = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_Mana = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_PlayerLevel = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTileView* VendorSlots;
 
 	UPROPERTY(meta = (BindWidget))
@@ -391,6 +399,14 @@ public:
 	class UTextBlock* TB_InventorySlots;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Username;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Level;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Mana;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Luck;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_Purity;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Health;
 	UPROPERTY(meta = (BindWidget))

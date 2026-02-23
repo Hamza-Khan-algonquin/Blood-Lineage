@@ -27,6 +27,10 @@ ANewSurvivalZone::ANewSurvivalZone() :
 	TriggerZone->OnComponentEndOverlap.AddDynamic(this, &ANewSurvivalZone::OnOverlapEnd);
 	TriggerZone->SetupAttachment(Origin);
 
+	RadiusMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RadiusMesh"));
+	RadiusMesh->SetCollisionProfileName("NoCollision");
+	RadiusMesh->SetupAttachment(Origin);
+
 	PandoraBoxMesh = CreateDefaultSubobject<USkeletalMeshComponent>("Pandora's box");
 	PandoraBoxMesh->SetupAttachment(Origin);
 
@@ -138,6 +142,7 @@ void ANewSurvivalZone::OnTimelineEnd()
 	TriggerZone->SetGenerateOverlapEvents(false);
 
 	BeaconMesh->SetVisibility(false);
+	RadiusMesh->SetVisibility(false);
 
 	OnObjectiveActivated.Broadcast();
 

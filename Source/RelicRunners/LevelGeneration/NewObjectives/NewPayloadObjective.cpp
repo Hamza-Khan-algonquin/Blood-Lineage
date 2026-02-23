@@ -31,6 +31,10 @@ ANewPayloadObjective::ANewPayloadObjective() :
 	PayloadBody = CreateDefaultSubobject<UStaticMeshComponent>("PayloadBody");
 	PayloadBody->SetupAttachment(PayloadOrigin);
 
+	RadiusMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RadiusMesh"));
+	RadiusMesh->SetCollisionProfileName("NoCollision");
+	RadiusMesh->SetupAttachment(PayloadOrigin);
+
 	PayloadBox = CreateDefaultSubobject<UBoxComponent>("PayloadBox");
 	PayloadBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	PayloadBox->SetCollisionProfileName("BlockAllDynamic");
@@ -118,6 +122,7 @@ void ANewPayloadObjective::Tick(float DeltaTime)
 			PrimaryActorTick.bCanEverTick = false;
 
 			BeaconMesh->SetVisibility(false);
+			RadiusMesh->SetVisibility(false);
 
 			OnObjectiveActivated.Broadcast();
 		}
@@ -168,6 +173,7 @@ void ANewPayloadObjective::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AAc
 void ANewPayloadObjective::OnRep_HasReachedDestination()
 {
 	BeaconMesh->SetVisibility(false);
+	RadiusMesh->SetVisibility(false);
 }
 
 void ANewPayloadObjective::Multicast_OnTriggerChange_Implementation(AActor* OtherActor, bool OnOverlapBegin)

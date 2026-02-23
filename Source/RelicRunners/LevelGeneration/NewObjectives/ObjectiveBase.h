@@ -28,6 +28,8 @@ public:
 
 	void Activate();
 
+	void SetVisibility(bool newVisibility);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default Values")
 	class USceneComponent* Origin;
 

@@ -7,6 +7,7 @@
 #include "IslandGenerationTest.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnObjectiveIslandObjectiveComplete);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSetCameraChange, int, Index);
 
 enum class EIslandObjectiveType : uint8;
 
@@ -83,6 +84,8 @@ public:
 	void InitializeValues(EIslandObjectiveType islandObjective);
 
 	void Generate();
+
+	void ActivateIsland();
 
 	//Used to call the functions that will initialize each tile individually and set it as a walkable or non-walkable tile.
 	//Also used to set the regular modular obstacle that would spawn on it if it is set to walkable.
@@ -172,6 +175,13 @@ public:
 	void DecrementObjective();
 
 	void SetFinalIsland(bool isFinal) { isFinalIsland = isFinal; }
+
+	UFUNCTION()
+	void UpdateCameraPos();
+
+	UFUNCTION()
+	void SetNextCameraPos();
+
 public:
 	//Client only. Used to replicate the array of floor values.
 	UFUNCTION()
@@ -192,6 +202,7 @@ public:
 	uint8 IslandIndex;
 
 	FOnObjectiveIslandObjectiveComplete OnObjectiveIslandObjectiveComplete;
+	FOnSetCameraChange OnSetCameraChange;
 
 	int8 CurrentObjectives;
 
@@ -207,5 +218,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Default Values | Enemy Spawning Zone Actor");
 	TSubclassOf<class ASpawnZone> SpawnZoneTemplate;
+
+	TArray<class AObjectiveBase*> ObjectiveArrays;
 
 };

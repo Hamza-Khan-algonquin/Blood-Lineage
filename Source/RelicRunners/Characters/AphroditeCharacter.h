@@ -6,9 +6,19 @@
 #include "RelicRunners/RelicRunnersCharacter.h" 
 #include "AphroditeCharacter.generated.h"
 
-/**
- * 
- */
+USTRUCT()
+struct FBasicProjectile
+{
+	GENERATED_BODY()
+
+	FVector Location;
+	FVector Velocity;
+	FVector PreviousLocation;
+	float ElapsedTime = 0.f;
+
+	TSet<AActor*> AlreadyHitActors;
+};
+
 UCLASS()
 class RELICRUNNERS_API AAphroditeCharacter : public ARelicRunnersCharacter
 {
@@ -28,42 +38,49 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	void Tick(float DeltaTime);
-	virtual void GiveDamageAbilities() override;
-	virtual void GiveDefenceAbilities() override;
-	virtual void GiveUtilityAbilities() override;
-	virtual void GiveUltimateAbilities() override;
-	virtual void PerformSwingTrace() override;
+	virtual void ActivateDamageAbilities() override;
+	virtual void ActivateDefenceAbilities() override;
+	virtual void ActivateUtilityAbilities() override;
+	virtual void ActivateUltimateAbilities() override;
+
+	void GiveBundleOfJoy();
+	void GiveMirrorOfDesire();
+	void GiveKissOfLife();
+	void GiveGoddessOfLove();
 
 	virtual void PlayRandomAttackAnimation() override;
+	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
 	virtual void HeavyAttack() override;
+	virtual void ProjectileHeavyAttack() override;
+	virtual void UpdateCamera(float DeltaTime) override;
 
 	UPROPERTY()
 	bool bCanFire = true;
 
-	UPROPERTY()
-	FVector ProjectileLocation;
+	UPROPERTY(EditDefaultsOnly)
+	float ProjectileSpeed = 1200.f;
 
-	UPROPERTY()
-	FVector ProjectileVelocity;
+	UPROPERTY(EditDefaultsOnly)
+	float ProjectileLifetime = 2.0f;
 
-	UPROPERTY()
-	bool bProjectileActive;
-
-	UPROPERTY()
-	float ProjectileSpeed; 
-
-	UPROPERTY()
-	float ProjectileLifetime; 
-
-	UPROPERTY()
-	float ProjectileElapsed = 0.f;
-
-	UPROPERTY()
-	float ProjectileDamage;
-
-	FVector PreviousProjectileLocation;
+	UPROPERTY(EditDefaultsOnly)
+	float ProjectileDamage = 90.f;
 
 	FTimerHandle TimerHandle_AttackCooldown;
 
+	UPROPERTY()
+	TArray<FBasicProjectile> ActiveProjectiles;
+
+	bool bIsAiming = false;
+
+	// Camera offset when aiming
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
+	FVector AimingOffset = FVector(0.f, 0.f, 120.f);
+
+	// Camera distance/speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
+	float AimingInterpSpeed = 8.f;
+
+	float AimingArmLength = 150.f;
 };
