@@ -35,6 +35,14 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 		*Owner->GetName(),
 		FPlatformTime::Cycles());
 
+	UWorld* World = GetWorld();
+	FString MapName = World ? World->GetMapName() : "";
+
+	bool IsBossLevel = MapName.Contains(TEXT("BossLevel"));
+
+	float NormalZoom = 5000.f;
+	float BossZoom = 12000.f;
+
 	RenderTarget = NewObject<UTextureRenderTarget2D>(this, FName(*UniqueNameStr));
 	RenderTarget->RenderTargetFormat = RTF_RGBA16f;
 	RenderTarget->InitAutoFormat(1000, 1000);
@@ -42,6 +50,7 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 	RenderTarget->UpdateResource();
 	RenderTarget->Filter = TF_Bilinear;
 
+	Owner->MinimapCaptureComponent->SetUsingAbsoluteRotation(false);
 	Owner->MinimapCaptureComponent->TextureTarget = RenderTarget;
 	Owner->MinimapCaptureComponent->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	Owner->MinimapCaptureComponent->ShowFlags.SetDynamicShadows(false);
@@ -54,6 +63,21 @@ UTextureRenderTarget2D* UMinimap::CreateRenderTarget(ARelicRunnersCharacter* Own
 	Owner->MinimapCaptureComponent->ShowFlags.SetSpecular(false);
 	Owner->MinimapCaptureComponent->ShowFlags.SetFog(false);
 	Owner->MinimapCaptureComponent->bCaptureEveryFrame = true;
+	if (IsBossLevel)
+	{
+		Owner->MinimapCaptureComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		Owner->MinimapCaptureComponent->SetWorldLocation(FVector(0.f, 0.f, 5000.f));
+		Owner->MinimapCaptureComponent->SetUsingAbsoluteRotation(false);
+		Owner->MinimapCaptureComponent->OrthoWidth = BossZoom;
+	}
+	else
+	{
+		Owner->MinimapCaptureComponent->AttachToComponent(Owner->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		Owner->MinimapCaptureComponent->SetRelativeLocation(FVector(0.f, 0.f, 500.f));
+		Owner->MinimapCaptureComponent->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+		Owner->MinimapCaptureComponent->SetUsingAbsoluteRotation(true);
+		Owner->MinimapCaptureComponent->OrthoWidth = NormalZoom;
+	}
 
 	MinimapToonPostProcess = LoadObject<UMaterialInterface>(
 		nullptr, TEXT("/Game/Minimap/M_MinimapPostProcess.M_MinimapPostProcess"));
