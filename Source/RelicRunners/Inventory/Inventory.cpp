@@ -453,6 +453,8 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
         {
             ToggleShopUI(false);
             ToggleForgeUI(false);
+            UInventoryItemOptions::CloseAnyOpenPopup();
+            UInventorySortingOptions::CloseAnyOpenPopup();
         }
     }
     else

@@ -635,7 +635,6 @@ void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const F
 		return;
 	}
 
-
 	FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 	FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
 
@@ -644,7 +643,7 @@ void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const F
 	Params.Instigator = this;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+	AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
 	if (Dropped)
 	{
 		Dropped->Initialize(Data);
@@ -672,57 +671,42 @@ void ARelicRunnersCharacter::HealthPotions()
 
 FVector ARelicRunnersCharacter::CalculateValidDropLocation(FVector DesiredLoc) const
 {
-	const float MinDistance = 50.f;
-	TArray<AActor*> FoundItems;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundItems);
+	const float ItemRadius = 50.f; 
+	FCollisionShape CheckSphere = FCollisionShape::MakeSphere(ItemRadius);
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
 
-	//If no items exist, the desired location is perfectly fine
-	if (FoundItems.Num() == 0) return DesiredLoc;
-
-	FVector CurrentBestLoc = DesiredLoc;
-	bool NeedsRepositioning = false;
-
-	//Check if our desired spot is blocked
-	for (AActor* Item : FoundItems)
+	if (!GetWorld()->OverlapAnyTestByChannel(DesiredLoc, FQuat::Identity, ECC_Visibility, CheckSphere, QueryParams))
 	{
-		if (IsValid(Item) && FVector::Dist(Item->GetActorLocation(), DesiredLoc) < MinDistance)
-		{
-			NeedsRepositioning = true;
-			break;
-		}
+		return DesiredLoc;
 	}
 
-	if (!NeedsRepositioning) return DesiredLoc;
-
-	//Spiral search
-	for (int Radius = 60; Radius <= 300; Radius += 60)
+	for (int Radius = 80; Radius <= 400; Radius += 80)
 	{
 		for (int Angle = 0; Angle < 360; Angle += 45)
 		{
-			const float Radians = FMath::DegreesToRadians(Angle);
+			const float Radians = FMath::DegreesToRadians(static_cast<float>(Angle));
 			FVector Offset(FMath::Cos(Radians) * Radius, FMath::Sin(Radians) * Radius, 0.f);
 			FVector CandidateLoc = DesiredLoc + Offset;
 
-			//Check candidate against all world items
-			bool CollisionFound = false;
-			for (AActor* Item : FoundItems)
-			{
-				if (FVector::Dist(CandidateLoc, Item->GetActorLocation()) < MinDistance)
-				{
-					CollisionFound = true;
-					break;
-				}
-			}
+			bool bIsBlocked = GetWorld()->OverlapAnyTestByChannel(CandidateLoc, FQuat::Identity, ECC_Visibility, CheckSphere, QueryParams);
 
-			if (!CollisionFound)
+			if (!bIsBlocked)
 			{
+				FHitResult FloorHit;
+				FVector TraceStart = CandidateLoc + FVector(0, 0, 100);
+				FVector TraceEnd = CandidateLoc - FVector(0, 0, 200);
+
+				if (GetWorld()->LineTraceSingleByChannel(FloorHit, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
+				{
+					return FloorHit.ImpactPoint + FVector(0, 0, 100);
+				}
+
 				return CandidateLoc;
 			}
 		}
 	}
-
-	//Fallback: If everywhere is crowded
-	return DesiredLoc;
+	return DesiredLoc + (GetActorForwardVector() * 200.f);
 }
 
 void ARelicRunnersCharacter::SyncEquippedVisuals(const TArray<FEquippedItemEntry>& EquippedEntries)
