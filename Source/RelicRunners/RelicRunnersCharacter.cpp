@@ -201,11 +201,10 @@ void ARelicRunnersCharacter::BeginPlay()
 	respawnPoint = GetActorLocation();
 
 	const FString MapName = GetWorld()->GetMapName();
-	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
-
 	if (MapName.Contains(TEXT("BossLevel")))
 	{
 		CameraBoom->TargetArmLength = 3000;
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
 	}
 }
 
@@ -274,8 +273,14 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 			}
 		}
 	}
-
-	if (RelicPlayerState) RelicPlayerState->ModifyHealth(-ActualDamage);
+	
+	if (RelicPlayerState)
+	{
+		int Defence = RelicPlayerState->GetInventoryComponent()->CachedEquippedStats.TotalArmor;
+		float Reduction = (1.0f - (ItemStats::GetDefencePerc(Defence) / 100.0f));
+		int DamageTaken = ActualDamage * Reduction;
+		RelicPlayerState->ModifyHealth(-DamageTaken);
+	}
 
 	return ActualDamage;
 }
@@ -362,6 +367,14 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 		FVector Target(0.f, 0.f, -1000.f);
 		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(CurrentLocation, Target);
 		Controller->SetControlRotation(LookAtRot);
+	}
+}
+
+void ARelicRunnersCharacter::SetMovementSpeed(float value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = value;
 	}
 }
 

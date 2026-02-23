@@ -177,6 +177,7 @@ public:
 	class UInventory* Inventory;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UObjectiveLog* ObjectiveLog;
+	class AHades* CachedHades;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
@@ -244,6 +245,7 @@ protected:
 	virtual void SetupInputComponent() override;
 	virtual void PostSeamlessTravel() override;
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
+	virtual void Tick(float DeltaTime) override;
 
 	//Properties
 	class ARelicRunnersCharacter* PossessedPawn;
