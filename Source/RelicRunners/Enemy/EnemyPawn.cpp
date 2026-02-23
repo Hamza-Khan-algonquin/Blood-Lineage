@@ -326,7 +326,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = 0;
+	float chance = FMath::RandRange(0.f,1.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{

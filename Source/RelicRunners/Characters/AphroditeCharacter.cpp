@@ -164,6 +164,9 @@ void AAphroditeCharacter::PerformSwingTrace()
 
 void AAphroditeCharacter::UpdateCamera(float DeltaTime)
 {
+    const FString MapName = GetWorld()->GetMapName();
+    if (MapName.Contains(TEXT("BossLevel"))) return;
+
     if (!CameraBoom) return;
 
     if (bIsAiming)

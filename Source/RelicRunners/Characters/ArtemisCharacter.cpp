@@ -220,6 +220,9 @@ void AArtemisCharacter::HideReticle()
 
 void AArtemisCharacter::UpdateCamera(float DeltaTime)
 {
+	const FString MapName = GetWorld()->GetMapName();
+	if (MapName.Contains(TEXT("BossLevel"))) return;
+
 	if (!CameraBoom) return;
 
 	if (bIsAiming)

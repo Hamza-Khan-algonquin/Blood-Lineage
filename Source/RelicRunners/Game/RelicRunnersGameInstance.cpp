@@ -443,8 +443,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     UE_LOG(LogTemp, Warning, TEXT("NetDriver: %s"), NetDriver ? *NetDriver->GetName() : TEXT("NULL"));
     UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
 
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/ThirdPersonMap?listen");
-    //FString TravelURL = TEXT("/Game/ThirdPerson/Maps/GenerateLevelTest?listen");
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen");
     UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] Host starting travel to %s"), *TravelURL);
 
     TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin();

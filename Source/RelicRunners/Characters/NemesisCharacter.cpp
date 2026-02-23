@@ -244,6 +244,9 @@ void ANemesisCharacter::HeavyAttack()
 
 void ANemesisCharacter::UpdateCamera(float DeltaTime)
 {
+    const FString MapName = GetWorld()->GetMapName();
+    if (MapName.Contains(TEXT("BossLevel"))) return;
+
     // Movement info 
     FVector Velocity = GetVelocity();
     Velocity.Z = 0.f;
