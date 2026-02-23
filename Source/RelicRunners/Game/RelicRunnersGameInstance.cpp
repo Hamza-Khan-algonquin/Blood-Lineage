@@ -77,11 +77,11 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, EKeys::Mouse2D);
 
-        //UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
-        //NegateModifier->bX = Keys->InvertedXMouse;
-        //NegateModifier->bY = Keys->InvertedYMouse;
+       UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
+       NegateModifier->bX = Keys->InvertedXMouse;
+       NegateModifier->bY = Keys->InvertedYMouse;
 
-        //Mapping.Modifiers.Add(NegateModifier);
+       Mapping.Modifiers.Add(NegateModifier);
     }
 
     for (auto& Binding : Keys->KeyBinds)

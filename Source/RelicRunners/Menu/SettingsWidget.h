@@ -121,6 +121,19 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UComboBoxString* ResolutionDropDown;
+	
+	void ApplyResolution(const FString& Resolution);
+
+	UPROPERTY(meta = (BindWidget))
+	class UComboBoxString* WindowModeDropDown;
+	
+	UFUNCTION()
+	void HandleWindowModeSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+
+	void FillWindowOptions();
+	void SetWindowMode();
+
+	
 
 	UFUNCTION()
 	void HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType);
