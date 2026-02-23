@@ -22,6 +22,7 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
+#include "Components/SphereComponent.h"
 
 
 
@@ -49,6 +50,11 @@ AEnemyPawn::AEnemyPawn()
 
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
+
+	AttackCollider = CreateDefaultSubobject<USphereComponent>("Attack Collider");
+	AttackCollider->SetupAttachment(RootComponent);
+	AttackCollider->SetRelativeLocation(FVector(0, 25, 0));
+	AttackCollider->SetSphereRadius(25);
 
 	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
 	EnemyStatsComponent->SetEnemyType(EEnemyType::LIGHT);
@@ -265,8 +271,14 @@ void AEnemyPawn::AttackTick()
 {
 	if (MovementComponent->IsAtTarget())
 	{
-		if (AttackMontage.IsValid())
+		if (!AttackMontage.IsNull())
 		{
+
+			if (!AttackMontage.IsValid())
+			{
+				AttackMontage.LoadSynchronous();
+			}
+
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
 			
@@ -277,6 +289,7 @@ void AEnemyPawn::AttackTick()
 				{
 					if (this)
 					{
+						this->IsAttacking = false;
 						if(this->MovementComponent)
 							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 					}
@@ -289,7 +302,7 @@ void AEnemyPawn::AttackTick()
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 		}
 
-		IsAttacking = false;
+		
 		if (!HitFlashTimeline.IsPlaying())
 		{
 			SetActorTickEnabled(false);
@@ -326,7 +339,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = 0;
+	float chance = FMath::FRandRange(0.f, 1.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{
@@ -352,7 +365,7 @@ void AEnemyPawn::SpawnItem()
 
 		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
 
-		/*if (Dropped)
+		if (Dropped)
 
 		{
 			Dropped->Initialize(DroppedItem->ItemData);
@@ -360,7 +373,7 @@ void AEnemyPawn::SpawnItem()
 			Dropped->SetReplicateMovement(true);
 		}
 
-		FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
 
 		FActorSpawnParameters Params;

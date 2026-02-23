@@ -336,7 +336,7 @@ void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 			if (!IsValid(CurrentEnemy) || !IsValid(CurrentEnemy->MovementComponent)) continue;
 
 			float newDistance = FVector::DistSquared(CurrentPlayer->GetActorLocation(), CurrentEnemy->GetActorLocation());
-			if (newDistance < closestDistance)
+			if (newDistance < closestDistance && !CurrentEnemy->IsAttacking)
 			{
 				closestDistance = newDistance;
 				closestEnemy = CurrentEnemy;
