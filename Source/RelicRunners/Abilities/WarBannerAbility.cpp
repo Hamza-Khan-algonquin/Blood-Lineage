@@ -104,7 +104,6 @@ void UWarBannerAbility::SpawnBanner()
 
 }
 
-
 void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 {
     UWorld* World = GetWorld();
