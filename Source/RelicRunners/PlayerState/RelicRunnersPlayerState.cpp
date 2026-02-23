@@ -97,6 +97,10 @@ void ARelicRunnersPlayerState::BeginPlay()
 
 	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, 3.f, true);
 
+	if (PlayerHealth != PlayerMaxHealth)
+	{
+		PlayerHealth = PlayerMaxHealth;
+	}
 }
 void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 {
@@ -229,6 +233,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	else
 	{
 		//Fallback for testing
+		SelectedClass = "Ares";
 		StartingWeapon = "Greatsword";
 	}
 
@@ -301,23 +306,19 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 {
 	if (!HasAuthority()) return;
 
-	// use potion if player has one and isn’t at full health
 	if (HealthPotionCount > 0 && PlayerHealth < PlayerMaxHealth)
 	{
-		// Heal player by a percentage of max health
 		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * HealthGranted);
 
 
 		PlayerHealth += HealthToGrant;
 		HealthPotionCount--;
 
-		// if the player’s health exceeds max health, set it to max health
 		if (PlayerHealth > PlayerMaxHealth)
 		{
 			PlayerHealth = PlayerMaxHealth;
 		}
 
-		// Notify owning client to update HUD
 		UpdateRemoteHUDHealth();
 		UpdateRemoteHUDHealthPotions();
 	}

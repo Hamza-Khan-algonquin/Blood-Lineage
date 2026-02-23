@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,76 +7,104 @@
 UENUM(BlueprintType)
 enum class EBossPhase : uint8
 {
-	Phase1,
-	Phase2,
-	Phase3,
-	Phase4      
+    Phase1, Phase2, Phase3, Phase4
 };
 
 UCLASS()
 class RELICRUNNERS_API AHades : public AActor
 {
-	GENERATED_BODY()
-	
-public:	
-	AHades();
+    GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "Effects")
-	class UNiagaraSystem* GhostCycloneSystem;
+public:
+    AHades();
 
-	UPROPERTY()
-	class UNiagaraComponent* ActiveCycloneComp;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    class USkeletalMeshComponent* SkeletalMesh;
 
-	EBossPhase CurrentPhase;
-	float MaxHealth = 10000.0f;
-	float CurrentHealth = MaxHealth;
+    UPROPERTY(EditAnywhere, Category = "Effects")
+    class UNiagaraSystem* GhostCycloneSystem;
 
-	FTimerHandle AttackTimerHandle;
+    UPROPERTY()
+    class UNiagaraComponent* ActiveCycloneComp;
 
-	void CheckPhaseTransition();
-	void ExecuteAttack();
-	void ScheduleNextAttack(float Delay);
+    UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* FireballMontage;
 
+    UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* IdleMontage;
 
-	void PlaySlam();
-	void ExecuteSlamImpact(FVector ImpactLocation, float ImpactRadius);
-	void PlaySweep();
-	void UpdateSweep(float DeltaTime);
-	void PlayFireball();
-	void SpawnScatterFireball(FVector TargetLocation);
+    UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* SlamMontage;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Hades|AI", meta = (AllowPrivateAccess = "true"))
-	AActor* CurrentTarget;
+    UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* SweepMontage;
 
-	float RotationSpeed = 5.0f;
-	void SelectRandomTarget();
-	FVector AbilityLookAtTarget;
-	bool bIsLookingAtAbilityTarget = false;
-	FTimerHandle SlamDelayTimerHandle;
-	FVector DelayedSlamLocation;
-	float SlamRadius;
+    UPROPERTY(EditAnywhere, Category = "Classes")
+    TSubclassOf<AActor> FireballPredictionClass;
 
-	float RotationOffset = 90.0f;
+    UPROPERTY(EditAnywhere, Category = "Classes")
+    TSubclassOf<AActor> SlamPredictionClass;
 
-	bool bIsSweeping = false;
-	float SweepCurrentAngle = 0.0f;
-	float SweepSpeed = 0.0f;
-	float ArenaRadius = 2500.0f;
-	bool bIsInitialSlamming = false;
+    UPROPERTY(EditAnywhere, Category = "Classes")
+    TSubclassOf<AActor> SlamSweepPredictionClass;
 
-	FTimerHandle FireballDelayTimerHandle;
-	FVector DelayedFireballLocation;
-	float FireballRadius = 300.0f;
-	float SweepStartYaw = 0.0f;
-	float SweepElapsedTime = 0.0f;
-	float SweepDuration = 8.0f;
+    UPROPERTY(EditAnywhere, Category = "Classes")
+    TSubclassOf<AActor> SweepPredictionClass;
 
-	int ObelisksHit = 0;
+    EBossPhase CurrentPhase = EBossPhase::Phase1;
+
+    bool bIsBusy = false;           
+    bool bIsSweeping = false;       
+    bool bIsInitialSlamming = false; 
+
+    float MaxHealth = 10000.0f;
+    float CurrentHealth = MaxHealth;
+    int32 ObelisksHit = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    AActor* CurrentTarget;
+
+    UPROPERTY(EditAnywhere, Category = "Combat")
+    float RotationSpeed = 5.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Combat")
+    float RotationOffset = 90.0f;
+
+    FTimerHandle AttackLoopTimer;     
+    FTimerHandle AbilityLogicTimer;   
+    FTimerHandle RotationLockTimer;  
+
+    TWeakObjectPtr<AActor> ActiveSweepBeam;
+
 protected:
-	virtual void BeginPlay() override;
-	void Die();
-public:	
-	virtual void Tick(float DeltaTime) override;
-	void NotifyObeliskHit(AActor* Obelisk);
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
 
+    void ExecuteAttack();
+    void ScheduleNextAttack(float Delay);
+    void ResetAllStates(); 
+    void CheckPhaseTransition();
+    void SelectRandomTarget();
+    void PlaySlam();
+    void PlayFireball();
+    void PlaySweep();
+    void UpdateSweep(float DeltaTime);
+    void UpdateRotation(float DeltaTime);
+    void UpdateIdleAnimation();
+    void ExecuteDamage(FVector ImpactLocation, float ImpactRadius);
+    void LockRotationTo(FVector TargetLocation);
+    FVector CalculateFireballLocation(FVector Center);
+    void SetupPredictionScaling(AActor* Prediction, float Duration, FVector MaxScale);
+    AActor* SpawnPrediction(TSubclassOf<AActor> Class, FVector Location, float Duration, FVector Scale);
+
+    FVector AbilityLookAtTarget;
+    bool bIsLookingAtAbilityTarget = false;
+    float SweepStartYaw = 0.0f;
+    float SweepCurrentAngle = 0.0f;
+    float SweepElapsedTime = 0.0f;
+    float SweepDuration = 8.0f;
+
+    void Die();
+public:
+    void NotifyObeliskHit(AActor* Obelisk);
 };

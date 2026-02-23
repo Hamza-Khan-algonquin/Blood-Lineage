@@ -1,65 +1,264 @@
-
 #include "Hades.h"
-#include "NiagaraComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
-#include <Kismet/GameplayStatics.h>
+#include "NiagaraComponent.h"
 #include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 AHades::AHades()
 {
-	PrimaryActorTick.bCanEverTick = true;
-
+    PrimaryActorTick.bCanEverTick = true;
+    SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMesh"));
+    RootComponent = SkeletalMesh;
 }
 
 void AHades::BeginPlay()
 {
     Super::BeginPlay();
-
-    //Soul well animation
     if (GhostCycloneSystem)
     {
-        FVector ArenaCenter = FVector(0.f, 0.f, -300.f);
+        ActiveCycloneComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), GhostCycloneSystem, FVector(0.f, 0.f, -300.f));
+    }
+    ScheduleNextAttack(2.0f);
+}
 
-        ActiveCycloneComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            GetWorld(),
-            GhostCycloneSystem,
-            ArenaCenter,
-            FRotator::ZeroRotator,
-            FVector(1.f),
-            false
-        );
+void AHades::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
 
-        if (ActiveCycloneComp)
+    if (bIsSweeping)
+    {
+        UpdateSweep(DeltaTime);
+        return;
+    }
+
+    UpdateRotation(DeltaTime);
+    UpdateIdleAnimation();
+}
+
+void AHades::ScheduleNextAttack(float Delay)
+{
+    GetWorldTimerManager().SetTimer(AttackLoopTimer, this, &AHades::ExecuteAttack, Delay, false);
+}
+
+void AHades::ResetAllStates()
+{
+    GetWorldTimerManager().ClearTimer(AbilityLogicTimer);
+    GetWorldTimerManager().ClearTimer(AttackLoopTimer);
+
+    bIsBusy = false;
+    bIsSweeping = false;
+    bIsInitialSlamming = false;
+    bIsLookingAtAbilityTarget = false;
+
+    if (ActiveSweepBeam.IsValid())
+    {
+        ActiveSweepBeam->Destroy();
+        ActiveSweepBeam = nullptr;
+    }
+}
+
+void AHades::ExecuteAttack()
+{
+    UE_LOG(LogTemp, Warning, TEXT("HADES: ExecuteAttack Called!"));
+
+    if (bIsBusy)
+    {
+        UE_LOG(LogTemp, Error, TEXT("HADES: Aborted - I am Busy!"));
+        return;
+    }
+
+    if (GetWorldTimerManager().IsTimerActive(AbilityLogicTimer))
+    {
+        UE_LOG(LogTemp, Error, TEXT("HADES: Aborted - AbilityLogicTimer is still active!"));
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("HADES: All checks passed! Rolling for attack..."));
+
+    bIsBusy = true; 
+    GetWorldTimerManager().ClearTimer(AttackLoopTimer);
+
+    CheckPhaseTransition();
+    SelectRandomTarget();
+
+    int32 Roll = FMath::RandRange(1, 100);
+    if (Roll <= 30) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Slam")); PlaySlam(); }
+    else if (Roll <= 90) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Fireball")); PlayFireball(); }
+    else { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Sweep")); PlaySweep(); }
+}
+
+void AHades::PlaySlam()
+{
+    if (!CurrentTarget) { bIsBusy = false; ScheduleNextAttack(1.0f); return; }
+
+    FVector Origin = FVector(0, 0, 0);
+    FVector Dir = (CurrentTarget->GetActorLocation() - Origin).GetSafeNormal2D();
+    FVector SlamLoc = Origin + (Dir * 3450.0f);
+    SlamLoc.Z = 20.0f;
+
+    float Delay = 5.0f - (0.2f * (int)CurrentPhase);
+    LockRotationTo(SlamLoc);
+
+    AActor* Pred = SpawnPrediction(SlamPredictionClass, SlamLoc, Delay, FVector(1));
+    TWeakObjectPtr<AActor> WeakPred = Pred;
+
+    GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this, SlamLoc, WeakPred]() {
+        if (WeakPred.IsValid()) WeakPred->Destroy();
+        ExecuteDamage(SlamLoc, 1800.0f);
+
+        GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this]() {
+            bIsLookingAtAbilityTarget = false;
+            bIsBusy = false;
+            ScheduleNextAttack(2.0f);
+            }, 1.0f, false);
+
+        }, Delay, false);
+}
+
+void AHades::PlayFireball()
+{
+    if (!CurrentTarget)
+    {
+        ScheduleNextAttack(1.0f);
+        return;
+    }
+
+    bIsBusy = true;
+    bIsLookingAtAbilityTarget = true;
+    AbilityLookAtTarget = CurrentTarget->GetActorLocation();
+
+    if (SkeletalMesh)
+    {
+        UAnimInstance* AnimInst = SkeletalMesh->GetAnimInstance();
+        if (AnimInst && FireballMontage)
         {
-            ActiveCycloneComp->SetVariableFloat(FName("User.SpawnRate"), 1000.0f);
-            ActiveCycloneComp->SetVariableFloat(FName("User.VortexStrength"), 125.0f);
-            ActiveCycloneComp->SetTickBehavior(ENiagaraTickBehavior::ForceTickFirst);
+            AnimInst->Montage_Play(FireballMontage, 1.5f);
+            UE_LOG(LogTemp, Log, TEXT("Hades: Fireball Animation Started"));
         }
     }
 
-    GetWorldTimerManager().SetTimer(AttackTimerHandle, this, &AHades::ExecuteAttack, 2.0f, false);
+    GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this]() {
+
+        int Count = ((int)CurrentPhase * 5) + 7;
+        FVector Center = CurrentTarget ? CurrentTarget->GetActorLocation() : FVector(0, 0, 0);
+
+        for (int i = 0; i < Count; i++)
+        {
+            FVector Loc = CalculateFireballLocation(Center);
+            Loc.Z = 50.0f;
+
+            float FireballDuration = 2.0f;
+            AActor* Pred = SpawnPrediction(FireballPredictionClass, Loc, FireballDuration, FVector(1));
+            TWeakObjectPtr<AActor> WeakPred = Pred;
+
+            FTimerHandle FireHandle;
+            GetWorldTimerManager().SetTimer(FireHandle, [this, Loc, WeakPred]() {
+
+                DrawDebugSphere(GetWorld(), Loc, 400.0f, 12, FColor::Red, false, 2.0f);
+                UGameplayStatics::ApplyRadialDamage(GetWorld(), 30.0f, Loc, 400.0f, nullptr, { this }, nullptr, nullptr, true);
+
+                if (WeakPred.IsValid()) WeakPred->Destroy();
+                }, FireballDuration, false);
+        }
+
+        GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this]() {
+            bIsLookingAtAbilityTarget = false;
+            bIsBusy = false;
+            ScheduleNextAttack(1.5f);
+            }, 2.5f, false);
+
+        }, 0.8f, false);
 }
 
-void AHades::CheckPhaseTransition()
+void AHades::PlaySweep()
 {
-    float HealthPercentage = CurrentHealth / MaxHealth;
+    float SlamYaw = FMath::RandRange(0.f, 360.f);
+    SweepStartYaw = SlamYaw;
+    SetActorRotation(FRotator(0, SlamYaw, 0));
 
-    if (HealthPercentage <= 0.25f)
+    bIsLookingAtAbilityTarget = false;
+    bIsInitialSlamming = true;
+
+    FVector Origin = FVector(0, 0, 0);
+    FVector Forward = FRotator(0, SlamYaw, 0).Vector();
+    FVector SlamLoc = Origin + (Forward * 3450.0f);
+    SlamLoc.Z = 20.0f;
+
+    AActor* Pred = SpawnPrediction(SlamSweepPredictionClass, SlamLoc, 1.0f, FVector(1));
+    TWeakObjectPtr<AActor> WeakPred = Pred;
+
+    GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this, SlamLoc, WeakPred, Origin]() {
+        if (WeakPred.IsValid()) WeakPred->Destroy();
+        ExecuteDamage(SlamLoc, 800.0f);
+
+        bIsInitialSlamming = false;
+        bIsSweeping = true; 
+        SweepElapsedTime = 0.0f;
+
+        if (SweepPredictionClass)
+            ActiveSweepBeam = GetWorld()->SpawnActor<AActor>(SweepPredictionClass, Origin, GetActorRotation());
+
+        }, 1.0f, false);
+}
+
+void AHades::UpdateSweep(float DeltaTime)
+{
+    SweepElapsedTime += DeltaTime;
+    float Alpha = FMath::Clamp(SweepElapsedTime / SweepDuration, 0.0f, 1.0f);
+
+    SweepCurrentAngle = FMath::Pow(Alpha, 4.0f) * 360.0f;
+    FRotator NewRot = FRotator(0, SweepStartYaw + SweepCurrentAngle, 0);
+
+    SetActorRotation(NewRot);
+    if (ActiveSweepBeam.IsValid()) ActiveSweepBeam->SetActorRotation(NewRot);
+
+    if (Alpha >= 1.0f)
     {
-        CurrentPhase = EBossPhase::Phase4; 
-        SweepDuration = 5;
+        bIsSweeping = false;
+        if (ActiveSweepBeam.IsValid()) ActiveSweepBeam->Destroy();
+
+        bIsBusy = false;
+        ScheduleNextAttack(2.0f - (0.4f * (int)CurrentPhase));
     }
-    else if (HealthPercentage <= 0.50f)
+}
+
+void AHades::UpdateRotation(float DeltaTime)
+{
+    FVector LookTargetLoc;
+    if (bIsLookingAtAbilityTarget) LookTargetLoc = AbilityLookAtTarget;
+    else if (CurrentTarget)         LookTargetLoc = CurrentTarget->GetActorLocation();
+    else return;
+
+    FVector LookAtDir = (LookTargetLoc - GetActorLocation()).GetSafeNormal2D();
+    FRotator TargetRotation = LookAtDir.Rotation();
+    TargetRotation.Yaw -= RotationOffset;
+
+    float Speed = bIsLookingAtAbilityTarget ? RotationSpeed * 2.0f : RotationSpeed;
+    SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, Speed));
+}
+
+void AHades::UpdateIdleAnimation()
+{
+    if (!bIsBusy && !bIsInitialSlamming && !bIsSweeping && SkeletalMesh && IdleMontage)
     {
-        CurrentPhase = EBossPhase::Phase3;
-        SweepDuration = 6;
+        UAnimInstance* Anim = SkeletalMesh->GetAnimInstance();
+        if (Anim && !Anim->Montage_IsPlaying(IdleMontage))
+            Anim->Montage_Play(IdleMontage);
     }
-    else if (HealthPercentage <= 0.75f)
-    {
-        CurrentPhase = EBossPhase::Phase2;
-        SweepDuration = 7;
-    }
+}
+
+AActor* AHades::SpawnPrediction(TSubclassOf<AActor> Class, FVector Location, float Duration, FVector Scale)
+{
+    if (!Class) return nullptr;
+    AActor* Pred = GetWorld()->SpawnActor<AActor>(Class, Location + FVector(0, 0, 5), FRotator::ZeroRotator);
+    if (Pred) SetupPredictionScaling(Pred, Duration, Scale);
+    return Pred;
+}
+
+void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
+{
+    DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
+    UGameplayStatics::ApplyRadialDamage(GetWorld(), 40.0f * (1 + (int)CurrentPhase), ImpactLocation, ImpactRadius, nullptr, { this }, this, nullptr, true);
 }
 
 void AHades::SelectRandomTarget()
@@ -69,258 +268,61 @@ void AHades::SelectRandomTarget()
 
     if (Players.Num() > 0)
     {
-        int RandomIndex = FMath::RandRange(0, Players.Num() - 1);
+        int32 RandomIndex = FMath::RandRange(0, Players.Num() - 1);
         CurrentTarget = Players[RandomIndex];
     }
 }
 
-void AHades::ExecuteAttack()
+FVector AHades::CalculateFireballLocation(FVector Center)
 {
-    CheckPhaseTransition();
-    SelectRandomTarget();
+    float SearchRadius = 1800.0f + ((int)CurrentPhase * 200.0f);
 
-    int Roll = FMath::RandRange(1, 100);
+    FVector RandomOffset = FMath::VRand() * FMath::FRandRange(500.f, SearchRadius);
+    FVector TargetLoc = Center + RandomOffset;
+    TargetLoc.Z = 0;
 
-    if (Roll <= 40)           PlaySlam();     
-    else if (Roll <= 80)      PlayFireball(); 
-    else                      PlaySweep();    
+    FVector DirFromCenter = TargetLoc - FVector::ZeroVector;
+    float Dist = DirFromCenter.Size();
+
+    return DirFromCenter.GetSafeNormal() * FMath::Clamp(Dist, 2500.0f, 4400.0f);
 }
 
-void AHades::ScheduleNextAttack(float Delay)
+void AHades::SetupPredictionScaling(AActor* Prediction, float Duration, FVector MaxScale)
 {
-    GetWorldTimerManager().SetTimer(AttackTimerHandle, this, &AHades::ExecuteAttack, Delay, false);
-}
+    if (!Prediction) return;
 
-void AHades::PlaySlam()
-{
-    if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
+    TWeakObjectPtr<AActor> WeakPred = Prediction;
+    FVector StartScale = FVector(0.1f, 0.1f, 1.0f);
+    Prediction->SetActorScale3D(StartScale);
 
-    FVector ToPlayer = (CurrentTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
-    FVector SlamLocation = GetActorLocation() + (ToPlayer * 3450.0f);
+    float Interval = 0.02f;
 
-    AbilityLookAtTarget = SlamLocation;
-    bIsLookingAtAbilityTarget = true;
+    FVector GrowthStep = (MaxScale - StartScale) / (Duration / Interval);
 
-    float Radius = 1800.0f;
-    DrawDebugCircle(GetWorld(), SlamLocation, Radius, 100, FColor::Red, false, 5.0f, 0, 20.0f, FVector(0, 1, 0), FVector(1, 0, 0));
-
-    FTimerHandle UniqueSlamHandle;
-    GetWorldTimerManager().SetTimer(UniqueSlamHandle, FTimerDelegate::CreateLambda([this, SlamLocation, Radius]()
+    FTimerHandle ScaleTimer;
+    GetWorldTimerManager().SetTimer(ScaleTimer, [this, WeakPred, MaxScale, GrowthStep, ScaleTimer]() mutable {
+        if (WeakPred.IsValid())
         {
-            ExecuteSlamImpact(SlamLocation, Radius);
+            FVector Current = WeakPred->GetActorScale3D();
 
-            bIsLookingAtAbilityTarget = false;
-            ScheduleNextAttack(2.0f - (0.4f * (int)CurrentPhase));
-        }), 5.0f - (0.2f * (int)CurrentPhase), false);
-}
-
-void AHades::ExecuteSlamImpact(FVector ImpactLocation, float ImpactRadius)
-{
-    if (CurrentTarget) 
-    {
-        ImpactLocation.Z = CurrentTarget->GetActorLocation().Z;
-    }
-
-    DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
-
-    TArray<AActor*> IgnoredActors;
-    IgnoredActors.Add(this);
-
-    UGameplayStatics::ApplyRadialDamage(
-        GetWorld(),
-        40.0f * (1 + (int)CurrentPhase),
-        ImpactLocation,    
-        ImpactRadius,       
-        UDamageType::StaticClass(),
-        IgnoredActors,
-        this,
-        nullptr,    
-        true                
-    );
-}
-
-void AHades::PlaySweep()
-{
-    if (bIsSweeping) return;
-
-    float SlamYaw = FMath::RandRange(0.f, 360.f);
-    SweepStartYaw = SlamYaw;
-
-    SetActorRotation(FRotator(0, SlamYaw, 0));
-
-    bIsInitialSlamming = true;
-
-    FVector SlamDir = FRotator(0, SlamYaw, 0).Vector();
-    FVector SweepSlamLoc = GetActorLocation() + (SlamDir * 3450.0f);
-    float LocalSlamRadius = (CurrentPhase == EBossPhase::Phase4) ? 1000.0f : 800.0f;
-
-    DrawDebugCircle(GetWorld(), SweepSlamLoc, LocalSlamRadius, 50, FColor::Cyan, false, 1.0f, 0, 15.0f, FVector(0, 1, 0), FVector(1, 0, 0));
-
-    FTimerHandle SweepTransitionHandle;
-    GetWorldTimerManager().SetTimer(SweepTransitionHandle, FTimerDelegate::CreateLambda([this, SweepSlamLoc, LocalSlamRadius]()
-        {
-            ExecuteSlamImpact(SweepSlamLoc, LocalSlamRadius);
-
-            bIsInitialSlamming = false;
-            bIsSweeping = true;
-
-            SweepElapsedTime = 0.0f;
-
-            SweepCurrentAngle = 0.0f;
-            SweepSpeed = 40.0f;
-        }), 1.0f, false);
-}
-
-void AHades::UpdateSweep(float DeltaTime)
-{
-    SweepElapsedTime += DeltaTime;
-
-    float Alpha = FMath::Clamp(SweepElapsedTime / SweepDuration, 0.0f, 1.0f);
-    float CurvedAlpha = FMath::Pow(Alpha, 4.0f);
-
-    SweepCurrentAngle = CurvedAlpha * 360.0f;
-
-    float NewYaw = SweepStartYaw + SweepCurrentAngle;
-    SetActorRotation(FRotator(0, NewYaw, 0));
-
-    FVector CenterDir = GetActorForwardVector();
-    float InnerRadius = 2500.0f;
-    float OuterRadius = 4400.0f;
-    float DotThreshold = 0.985f;
-
-    float AngleOffsetDeg = FMath::RadiansToDegrees(FMath::Acos(DotThreshold));
-
-    FVector LeftEdgeDir = CenterDir.RotateAngleAxis(-AngleOffsetDeg, FVector::UpVector);
-    FVector RightEdgeDir = CenterDir.RotateAngleAxis(AngleOffsetDeg, FVector::UpVector);
-
-    DrawDebugLine(GetWorld(), GetActorLocation() + (LeftEdgeDir * InnerRadius), GetActorLocation() + (LeftEdgeDir * OuterRadius), FColor::Red, false, -1, 0, 40.f);
-    DrawDebugLine(GetWorld(), GetActorLocation() + (RightEdgeDir * InnerRadius), GetActorLocation() + (RightEdgeDir * OuterRadius), FColor::Red, false, -1, 0, 40.f);
-    DrawDebugLine(GetWorld(), GetActorLocation() + (CenterDir * InnerRadius), GetActorLocation() + (CenterDir * OuterRadius), FColor::Red, false, -1, 0, 20.f);
-
-    TArray<AActor*> Players;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), Players);
-
-    for (AActor* P : Players)
-    {
-        FVector ToPlayer = P->GetActorLocation() - GetActorLocation();
-        float Dist = ToPlayer.Size();
-
-        if (Dist >= InnerRadius && Dist <= OuterRadius)
-        {
-            ToPlayer.Normalize();
-            float Dot = FVector::DotProduct(CenterDir, ToPlayer);
-            if (Dot > DotThreshold)
+            if (Current.X >= MaxScale.X && Current.Y >= MaxScale.Y)
             {
-                UGameplayStatics::ApplyDamage(P, 200.0f * (1 + (int)CurrentPhase), nullptr, this, UDamageType::StaticClass());
+                GetWorldTimerManager().ClearTimer(ScaleTimer);
+                return;
             }
+
+            FVector NextScale = Current + GrowthStep;
+
+            NextScale.X = FMath::Min(NextScale.X, MaxScale.X);
+            NextScale.Y = FMath::Min(NextScale.Y, MaxScale.Y);
+
+            WeakPred->SetActorScale3D(NextScale);
         }
-    }
-
-    if (Alpha >= 1.0f)
-    {
-        bIsSweeping = false;
-        ScheduleNextAttack(2.0f - (0.4f * (int)CurrentPhase));
-    }
-}
-
-void AHades::PlayFireball()
-{
-    if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
-
-    FVector PlayerLoc = CurrentTarget->GetActorLocation();
-    PlayerLoc.Z -= 60.0f;
-
-    AbilityLookAtTarget = PlayerLoc;
-    bIsLookingAtAbilityTarget = true;
-
-    FTimerHandle LookResetHandle;
-    GetWorldTimerManager().SetTimer(LookResetHandle, [this]() {
-        bIsLookingAtAbilityTarget = false;
-        }, 1.5f, false);
-
-    int FireballCount = (int)CurrentPhase * 5 + 5;
-    float ScatterRadius = 1800.0f + ((int)CurrentPhase * 200.0f);
-
-    for (int i = 0; i < FireballCount; i++)
-    {
-        FVector RandomOffset = FMath::VRand() * FMath::FRandRange(0.f, ScatterRadius);
-        RandomOffset.Z = 0;
-        FVector FinalDropLoc = PlayerLoc + RandomOffset;
-
-        FVector DirFromCenter = FinalDropLoc - GetActorLocation();
-        float DistFromCenter = DirFromCenter.Size();
-        DirFromCenter.Normalize();
-
-        float ClampedDist = FMath::Clamp(DistFromCenter, 2500.0f, 4400.0f);
-        FinalDropLoc = GetActorLocation() + (DirFromCenter * ClampedDist);
-
-        SpawnScatterFireball(FinalDropLoc);
-    }
-
-    ScheduleNextAttack(4.0f - (0.4f * (int)CurrentPhase));
-}
-
-void AHades::SpawnScatterFireball(FVector TargetLocation)
-{
-    float Radius = 400.0f;
-
-    DrawDebugCircle(GetWorld(), TargetLocation, Radius, 40, FColor::Yellow, false, 2.0f, 0, 8.0f, FVector(0, 1, 0), FVector(1, 0, 0));
-
-    FTimerHandle ScatterTimer;
-    FTimerDelegate TimerDel;
-    TimerDel.BindLambda([this, TargetLocation, Radius]()
+        else
         {
-            DrawDebugSphere(GetWorld(), TargetLocation, Radius, 16, FColor::Orange, false, 0.5f);
-
-            TArray<AActor*> IgnoredActors;
-            IgnoredActors.Add(this);
-
-            UGameplayStatics::ApplyRadialDamage(
-                GetWorld(),
-                30.0f,
-                TargetLocation,
-                Radius,
-                UDamageType::StaticClass(),
-                IgnoredActors,
-                nullptr,
-                nullptr,
-                true
-            );
-        });
-
-    GetWorldTimerManager().SetTimer(ScatterTimer, TimerDel, 2.0f, false);
-}
-
-void AHades::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-
-    if (bIsSweeping || bIsInitialSlamming)
-    {
-        if (bIsSweeping)
-        {
-            UpdateSweep(DeltaTime);
+            GetWorldTimerManager().ClearTimer(ScaleTimer);
         }
-        return;
-    }
-
-    FVector LookTargetLoc;
-
-    if (bIsLookingAtAbilityTarget)
-    {
-        LookTargetLoc = AbilityLookAtTarget;
-    }
-    else if (CurrentTarget)
-    {
-        LookTargetLoc = CurrentTarget->GetActorLocation();
-    }
-    else { return; }
-
-    FVector LookAtDir = (LookTargetLoc - GetActorLocation()).GetSafeNormal2D();
-    FRotator TargetRotation = LookAtDir.Rotation();
-    TargetRotation.Yaw -= RotationOffset;
-
-    SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed));
+        }, Interval, true);
 }
 
 void AHades::NotifyObeliskHit(AActor* Obelisk)
@@ -328,9 +330,15 @@ void AHades::NotifyObeliskHit(AActor* Obelisk)
     ObelisksHit++;
 
     float DamageToSelf = MaxHealth * 0.25f;
-    CurrentHealth -= DamageToSelf;
+    CurrentHealth = FMath::Max(0.f, CurrentHealth - DamageToSelf);
 
-    UE_LOG(LogTemp, Warning, TEXT("Hades hit an obelisk! Total: %d"), ObelisksHit);
+    UE_LOG(LogTemp, Warning, TEXT("Hades hit an obelisk! Current Health: %f"), CurrentHealth);
+
+    if (bIsBusy || bIsSweeping)
+    {
+        ResetAllStates();
+        ScheduleNextAttack(3.0f);
+    }
 
     if (ObelisksHit >= 4 || CurrentHealth <= 0)
     {
@@ -341,6 +349,32 @@ void AHades::NotifyObeliskHit(AActor* Obelisk)
 void AHades::Die()
 {
     GetWorldTimerManager().ClearAllTimersForObject(this);
-    bIsSweeping = false;
+
+    if (ActiveSweepBeam.IsValid())
+    {
+        ActiveSweepBeam->Destroy();
+    }
+
+    if (ActiveCycloneComp)
+    {
+        ActiveCycloneComp->DestroyComponent();
+    }
+
     Destroy();
+}
+
+void AHades::CheckPhaseTransition()
+{
+    float HPPercent = CurrentHealth / MaxHealth;
+
+    if (HPPercent <= 0.25f) { CurrentPhase = EBossPhase::Phase4; SweepDuration = 5; }
+    else if (HPPercent <= 0.50f) { CurrentPhase = EBossPhase::Phase3; SweepDuration = 6; }
+    else if (HPPercent <= 0.75f) { CurrentPhase = EBossPhase::Phase2; SweepDuration = 7; }
+    else { CurrentPhase = EBossPhase::Phase1; SweepDuration = 8; }
+}
+
+void AHades::LockRotationTo(FVector TargetLocation)
+{
+    AbilityLookAtTarget = TargetLocation;
+    bIsLookingAtAbilityTarget = true;
 }
