@@ -101,9 +101,11 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		HitFlash();
 
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		//CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
+		CapsuleComponent->SetSimulatePhysics(true);
+		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
 
 		//this->MovementComponent->IsKnockedBack = true;
+		MovementComponent->IsKnockedBack = true;
 
 		FTimerHandle temp;
 	/*	GetWorldTimerManager().SetTimer(temp, [this]() {
@@ -115,6 +117,13 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 						this->MovementComponent->IsKnockedBack = false;
 					if (this->CapsuleComponent)
 						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+					if(MovementComponent)
+						MovementComponent->IsKnockedBack = false;
+					if (CapsuleComponent)
+					{
+						CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+						CapsuleComponent->SetSimulatePhysics(false);
+					}
 				}
 			}, HitFlashTimeline.GetTimelineLength(), false);*/
 	}
@@ -339,7 +348,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = FMath::FRandRange(0.f, 1.f);
+	float chance = FMath::RandRange(0.f,1.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{
