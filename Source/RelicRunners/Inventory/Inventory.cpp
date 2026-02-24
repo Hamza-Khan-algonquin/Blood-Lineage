@@ -49,6 +49,7 @@
 #include "InventorySlotsEntry.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include <Blueprint/SlateBlueprintLibrary.h>
+#include "Animation/WidgetAnimation.h"
 
 void UInventory::NativeConstruct()
 {
@@ -786,7 +787,12 @@ void UInventory::ForgeItem(UItemObject* Item)
     if (!ForgeCanvas->IsVisible() || !Item) return;
     if (Item->GetRarity() == "Relic") return;
 
+    if (InventoryComponent->ForgeItemResult)
+    {
+        CancelForgingAnimation();
+    }
     InventoryComponent->Server_AddToForge(Item->GetUniqueID());
+
     UpdateForgeUI();
 }
 
@@ -824,6 +830,12 @@ void UInventory::OnFuseButtonPressed()
 
     CycleCount = 0;
     GetWorld()->GetTimerManager().SetTimer(FuseTimerHandle, this, &UInventory::CycleRarityVisuals, 0.1f, true);
+}
+
+void UInventory::CancelForgingAnimation()
+{
+    StopAnimation(RollRarity);
+    GetWorld()->GetTimerManager().ClearTimer(FuseTimerHandle);
 }
 
 void UInventory::CycleRarityVisuals()

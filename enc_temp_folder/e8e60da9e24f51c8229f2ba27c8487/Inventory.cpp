@@ -453,6 +453,8 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
         {
             ToggleShopUI(false);
             ToggleForgeUI(false);
+            UInventoryItemOptions::CloseAnyOpenPopup();
+            UInventorySortingOptions::CloseAnyOpenPopup();
         }
     }
     else
@@ -785,6 +787,11 @@ void UInventory::ForgeItem(UItemObject* Item)
     if (Item->GetRarity() == "Relic") return;
 
     InventoryComponent->Server_AddToForge(Item->GetUniqueID());
+
+    if (InventoryComponent->ForgeItemResult)
+    {
+        CancelForgingAnimation();
+    }
     UpdateForgeUI();
 }
 
@@ -822,6 +829,12 @@ void UInventory::OnFuseButtonPressed()
 
     CycleCount = 0;
     GetWorld()->GetTimerManager().SetTimer(FuseTimerHandle, this, &UInventory::CycleRarityVisuals, 0.1f, true);
+}
+
+void UInventory::CancelForgingAnimation()
+{
+    StopAnimation(RollRarity);
+    GetWorld()->GetTimerManager().ClearTimer(FuseTimerHandle);
 }
 
 void UInventory::CycleRarityVisuals()

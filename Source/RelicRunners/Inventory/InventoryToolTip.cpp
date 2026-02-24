@@ -125,10 +125,12 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
             if (Diff != 0)
             {
                 const bool bPositive = Diff > 0;
-                FLinearColor DiffColor = bPositive ? FLinearColor::Green : FLinearColor::Red;
+                FLinearColor PositiveColor = FLinearColor(0, 0.2, 0);
+                FLinearColor NegativeColor = FLinearColor(0.2, 0, 0);
+                FLinearColor DiffColor = bPositive ? PositiveColor : NegativeColor;
                 if (Stat.ComparisonTextValue != nullptr)
                 {
-                    Stat.ComparisonTextValue->SetText(FText::FromString((bPositive ? "[+" : "[") + FString::FromInt(Diff) + ("]")));
+                    Stat.ComparisonTextValue->SetText(FText::FromString((bPositive ? "(+" : "(") + FString::FromInt(Diff) + (")")));
                     Stat.ComparisonTextValue->SetColorAndOpacity(DiffColor);
 
                     Stat.HoveredTextValue->SetText(FText::FromString(FString::FromInt(Stat.Value)));
@@ -141,8 +143,9 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
                 
                 if (Stat.ComparisonTextValue != nullptr)
                 {
-                    Stat.ComparisonTextValue->SetText(FText::FromString("[-]"));
-                    Stat.ComparisonTextValue->SetColorAndOpacity(FLinearColor(1,0.5f,0,1));
+                    FLinearColor NeutralColor = FLinearColor(0, 0.1, 0.45);
+                    Stat.ComparisonTextValue->SetText(FText::FromString("(-)"));
+                    Stat.ComparisonTextValue->SetColorAndOpacity(NeutralColor);
                 }
             }
         }
