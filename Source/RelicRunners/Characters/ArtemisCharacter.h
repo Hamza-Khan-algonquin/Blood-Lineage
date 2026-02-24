@@ -101,8 +101,8 @@ protected:
 
 	bool bExitingAim = false;
 
-	const float MinLookHeightOffset = 60.f;   
-	const float LookClampDistance = 10000.f;
+	//const float MinLookHeightOffset = 60.f;   
+	//const float LookClampDistance = 10000.f;
 
 
 };

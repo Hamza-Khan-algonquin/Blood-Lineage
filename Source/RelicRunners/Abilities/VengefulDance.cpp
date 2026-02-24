@@ -114,7 +114,6 @@ void UVengefulDance::ApplyRingDamage()
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius
 
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // Which kinds of objects the sphere check should detect
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Only pawns
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel1));
 
     // Find all actors overlapping a sphere around the origin, ignoring the owner
@@ -134,11 +133,11 @@ void UVengefulDance::ApplyRingDamage()
 
         UGameplayStatics::ApplyDamage(Actor, DamageAmount, AvatarActor->GetInstigatorController(), AvatarActor, nullptr); // Apply damage
 
-        if (ACharacter* HitCharacter = Cast<ACharacter>(Actor)) // If the actor is a character
+        if (APawn* HitCharacter = Cast<APawn>(Actor)) // If the actor is a character
         {
             FVector Knockback = Diff.GetSafeNormal() * KnockbackStrength; // Directional knockback
             Knockback.Z = 400.f; // Add upward force
-            HitCharacter->LaunchCharacter(Knockback, true, false); // Apply knockback
+            //HitCharacter->LaunchCharacter(Knockback, true, false); // Apply knockback
         }
     }
 

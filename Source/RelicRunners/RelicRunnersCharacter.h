@@ -288,7 +288,7 @@ protected:
 	float MinPitch = -10.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MaxPitch = 35.f;
+	float MaxPitch = -45.f;
 
 	// Optional bounce
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")

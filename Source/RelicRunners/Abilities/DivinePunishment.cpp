@@ -114,13 +114,12 @@ void UDivinePunishment::DivineDamageTick()
 
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(AvatarActor);
 
-    UKismetSystemLibrary::SphereOverlapActors(World,CachedCenter,AreaRadius,ObjectTypes,ACharacter::StaticClass(), ActorsToIgnore, FoundActors);
+    UKismetSystemLibrary::SphereOverlapActors(World,CachedCenter,AreaRadius,ObjectTypes,APawn::StaticClass(), ActorsToIgnore, FoundActors);
 
     for (AActor* Actor : FoundActors)
     {

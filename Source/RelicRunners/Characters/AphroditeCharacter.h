@@ -44,7 +44,8 @@ protected:
 	void GiveMirrorOfDesire();
 	void GiveKissOfLife();
 	void GiveGoddessOfLove();
-
+	void ShowReticle();
+	void HideReticle();
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
@@ -73,11 +74,17 @@ protected:
 
 	// Camera offset when aiming
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
-	FVector AimingOffset = FVector(0.f, 0.f, 120.f);
+	FVector AimingOffset = FVector(-20.f, 80.f, 100.f);
 
 	// Camera distance/speed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
 	float AimingInterpSpeed = 8.f;
 
-	float AimingArmLength = 150.f;
+	float AimingArmLength = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> ReticleWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* ReticleWidget;
 };
