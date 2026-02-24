@@ -190,9 +190,7 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
     if (MapName.Contains(TEXT("BossLevel"))) return;
     if (!CameraBoom) return;
 
-    // ---------------------------------------------------
-    // AIMING MODE
-    // ---------------------------------------------------
+    // Aiming mode
     if (bIsAiming)
     {
         ShowReticle();
@@ -202,20 +200,10 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         CameraBoom->bEnableCameraRotationLag = false;
 
         // Interpolate arm length
-        CameraBoom->TargetArmLength = FMath::FInterpTo(
-            CameraBoom->TargetArmLength,
-            AimingArmLength,
-            DeltaTime,
-            AimingInterpSpeed
-        );
+        CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength, DeltaTime, AimingInterpSpeed);
 
         // Interpolate socket offset
-        CameraBoom->SocketOffset = FMath::VInterpTo(
-            CameraBoom->SocketOffset,
-            AimingOffset,
-            DeltaTime,
-            AimingInterpSpeed
-        );
+        CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, AimingOffset, DeltaTime, AimingInterpSpeed);
 
         // Rotate player to controller yaw
         if (Controller)
@@ -232,21 +220,14 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         TargetRot.Pitch = 0.f;
         TargetRot.Roll = 0.f;
 
-        CameraBoom->SetWorldRotation(
-            FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, AimingInterpSpeed)
-        );
+        CameraBoom->SetWorldRotation(FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, AimingInterpSpeed));
     }
-    // ---------------------------------------------------
-    // NON-AIMING MODE
-    // ---------------------------------------------------
+    // non-aiming mode
     else
     {
-        // ---------------------------
-        // NON-AIMING CAMERA LOGIC
-        // ---------------------------
+        // Camera logic
         HideReticle();
 
-        // Always keep PawnControlRotation off — we manually handle rotation
         CameraBoom->bUsePawnControlRotation = true;
 
         // Re-enable lag smoothly
@@ -269,15 +250,7 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         TArray<AActor*> ActorsToIgnore;
         ActorsToIgnore.Add(this);
 
-        UKismetSystemLibrary::SphereOverlapActors(
-            GetWorld(),
-            GetActorLocation(),
-            300.f,
-            ObjectTypes,
-            APawn::StaticClass(),
-            ActorsToIgnore,
-            OverlappingActors
-        );
+        UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
 
         for (AActor* Actor : OverlappingActors)
         {
@@ -291,10 +264,7 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
                 NearestEnemy = Actor;
             }
         }
-
-        // ---------------------------
-        // Smoothly interpolate camera distance (fix snap)
-        // ---------------------------
+        // Smoothly interpolate camera distance
         float CombatArmLength = BaseArmLength + 50.f;
         float TargetArm = BaseArmLength;
 
@@ -304,20 +274,15 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
             TargetArm = SprintArmLength;
 
         CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 4.f);
-        //CameraBoom->TargetArmLength = FMath::Clamp(CameraBoom->TargetArmLength, BaseArmLength * 0.9f, SprintArmLength);
 
-        // ---------------------------
         // Camera lag speeds
-        // ---------------------------
         float TargetCameraLagSpeed = bEnemiesNearby ? 2.f : 8.f;
         float TargetCameraRotationLagSpeed = bEnemiesNearby ? 2.f : 6.f;
 
         CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetCameraLagSpeed, DeltaTime, 8.f);
         CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetCameraRotationLagSpeed, DeltaTime, 8.f);
 
-        // ---------------------------
         // Look-ahead
-        // ---------------------------
         FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
         CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 3.f);
 
@@ -327,9 +292,7 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         // Smoothly interpolate socket offset
         CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetOffset, DeltaTime, 6.f);
 
-        // ---------------------------------------------------
         // Rotation logic
-        // ---------------------------------------------------
         if (Speed > 10.f)
         {
             FRotator DesiredRot = Velocity.ToOrientationRotator();
@@ -435,10 +398,7 @@ void AAphroditeCharacter::HeavyAttack()
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
     FBasicProjectile NewProjectile;
-    NewProjectile.Location =
-        GetActorLocation()
-        + GetActorForwardVector() * 100.f
-        + FVector(0, 0, 50.f);
+    NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
 
     NewProjectile.Velocity =
         GetActorForwardVector() * ProjectileSpeed;
@@ -489,54 +449,44 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Params.AddIgnoredActor(this);
         FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-        bool bHit = GetWorld()->SweepMultiByChannel(
-            Hits,
-            Projectile.PreviousLocation,
-            Projectile.Location,
-            FQuat::Identity,
-            ECC_GameTraceChannel1,
-            Sphere,
-            Params
-        );
-            //if (bHit)
-            //{
-                for (const FHitResult& Hit : Hits)
-                {
-                    if (AActor* HitActor = Hit.GetActor())
-                    {
-                        if (Projectile.AlreadyHitActors.Contains(HitActor))
-                            continue;
-                        //Server_HitEnemy(Enemy);
+        bool bHit = GetWorld()->SweepMultiByChannel(Hits, Projectile.PreviousLocation, Projectile.Location, FQuat::Identity, ECC_GameTraceChannel1, Sphere, Params);
 
-                        else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                        {
-                            Server_HitEnemy(TEnemy);
-                        }
-                        else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                        {
-                            Server_HitEnemy(TPEnemy);
-                        }
-                        else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                        {
-                            Server_HitEnemy(Enemy);
-
-                        }
-
-                        Projectile.AlreadyHitActors.Add(HitActor);
-                        // Remove projectile after hit
-                        ActiveProjectiles.RemoveAt(i);
-                        break;
-                    }
-                }
-                continue;
-            //}
-
-            if (Projectile.ElapsedTime >= ProjectileLifetime)
+        for (const FHitResult& Hit : Hits)
+        {
+            if (AActor* HitActor = Hit.GetActor())
             {
+                if (Projectile.AlreadyHitActors.Contains(HitActor))
+                    continue;
+                //Server_HitEnemy(Enemy);
+
+                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                {
+                    Server_HitEnemy(TEnemy);
+                }
+                else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+                {
+                    Server_HitEnemy(TPEnemy);
+                }
+                else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+                {
+                    Server_HitEnemy(Enemy);
+
+                }
+
+                Projectile.AlreadyHitActors.Add(HitActor);
+                // Remove projectile after hit
                 ActiveProjectiles.RemoveAt(i);
+                break;
             }
         }
+        continue;
+
+        if (Projectile.ElapsedTime >= ProjectileLifetime)
+        {
+            ActiveProjectiles.RemoveAt(i);
+        }
     }
+}
 
 
 
