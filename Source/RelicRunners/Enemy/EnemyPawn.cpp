@@ -51,11 +51,6 @@ AEnemyPawn::AEnemyPawn()
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
 
-	AttackCollider = CreateDefaultSubobject<USphereComponent>("Attack Collider");
-	AttackCollider->SetupAttachment(RootComponent);
-	AttackCollider->SetRelativeLocation(FVector(0, 25, 0));
-	AttackCollider->SetSphereRadius(25);
-
 	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
 	EnemyStatsComponent->SetEnemyType(EEnemyType::LIGHT);
 	EnemyStatsComponent->SetChanceToDropItem(0.02f);
