@@ -68,7 +68,7 @@ void ACommanderController::Tick(float DeltaTime)
 		return;
 	}
 
-	if (!BTComp || !BTComp->IsRunning() && players[0])
+	if (players[0])
 	{
 		
 		float distance; 
@@ -100,7 +100,7 @@ void ACommanderController::Tick(float DeltaTime)
 
 		IsTargeting = distance <= DistanceToTargetPlayer;
 
-		if (IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+		if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
 		{
 			MoveToActor(TargetPlayer, 25);
 		}
@@ -108,7 +108,10 @@ void ACommanderController::Tick(float DeltaTime)
 		{
 			BoidShouldFocusePlayer = false;
 			TargetPlayer = nullptr;
-			StopMovement();
+			if (!BTComp || !BTComp->IsRunning())
+			{
+				StopMovement();
+			}
 		}
 	}
 	else

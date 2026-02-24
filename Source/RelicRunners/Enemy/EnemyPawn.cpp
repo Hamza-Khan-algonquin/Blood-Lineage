@@ -51,6 +51,8 @@ AEnemyPawn::AEnemyPawn()
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
 
+	//BasicAttackCollider = CreateDefaultSubobject<USphereComponent>("Basic Attack Collider");
+
 	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
 	EnemyStatsComponent->SetEnemyType(EEnemyType::LIGHT);
 	EnemyStatsComponent->SetChanceToDropItem(0.02f);
@@ -103,15 +105,11 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		MovementComponent->IsKnockedBack = true;
 
 		FTimerHandle temp;
-	/*	GetWorldTimerManager().SetTimer(temp, [this]() {
+		GetWorldTimerManager().SetTimer(temp, [this]() {
 				if (this)
 				{
 					if (!this)
 						return;
-					if(this->MovementComponent)
-						this->MovementComponent->IsKnockedBack = false;
-					if (this->CapsuleComponent)
-						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 					if(MovementComponent)
 						MovementComponent->IsKnockedBack = false;
 					if (CapsuleComponent)
@@ -120,7 +118,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 						CapsuleComponent->SetSimulatePhysics(false);
 					}
 				}
-			}, HitFlashTimeline.GetTimelineLength(), false);*/
+			}, HitFlashTimeline.GetTimelineLength(), false);
 	}
 	
 	//call the super for important stuff

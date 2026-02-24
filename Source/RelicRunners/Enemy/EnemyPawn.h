@@ -58,6 +58,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	UCurveFloat* HitFlashCurve;
 
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USphereComponent* BasicAttackCollider;*/
+
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
