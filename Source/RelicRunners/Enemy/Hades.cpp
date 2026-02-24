@@ -96,7 +96,7 @@ void AHades::PlaySlam()
         UAnimInstance* AnimInst = SkeletalMesh->GetAnimInstance();
         if (AnimInst && SlamMontage)
         {
-            AnimInst->Montage_Play(SlamMontage, 0.5f);
+            AnimInst->Montage_Play(SlamMontage, 0.25f);
             UE_LOG(LogTemp, Log, TEXT("Hades: Slam Animation Started"));
         }
     }
@@ -188,6 +188,16 @@ void AHades::PlaySweep()
 
     bIsLookingAtAbilityTarget = false;
     bIsInitialSlamming = true;
+
+    if (SkeletalMesh)
+    {
+        UAnimInstance* AnimInst = SkeletalMesh->GetAnimInstance();
+        if (AnimInst && SweepMontage)
+        {
+            AnimInst->Montage_Play(SweepMontage, 0.1f);
+            UE_LOG(LogTemp, Log, TEXT("Hades: Sweep Animation Started"));
+        }
+    }
 
     FVector Origin = FVector(0, 0, 0);
     FVector Forward = FRotator(0, SlamYaw, 0).Vector();
