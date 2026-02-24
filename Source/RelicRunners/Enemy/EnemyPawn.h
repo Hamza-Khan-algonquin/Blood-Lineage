@@ -65,7 +65,7 @@ public:
 	float KnockBackStrength;
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float AdditionalUpwardsKnockBackForces;
-
+	bool IsAttacking = false;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
@@ -77,7 +77,7 @@ protected:
 	bool SetControllerActiveStatus = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	FTimerHandle LifeSpanTimerHandle;
-	bool IsAttacking = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
 	FTimerHandle AttackHandle;

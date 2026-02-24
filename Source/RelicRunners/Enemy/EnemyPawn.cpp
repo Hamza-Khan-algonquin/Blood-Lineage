@@ -95,18 +95,22 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		HitFlash();
 
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		//CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
+		CapsuleComponent->SetSimulatePhysics(true);
+		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
 
-		this->MovementComponent->IsKnockedBack = true;
+		MovementComponent->IsKnockedBack = true;
 
 		FTimerHandle temp;
 		GetWorldTimerManager().SetTimer(temp, [this]() {
 				if (this)
 				{
-					if(this->MovementComponent)
-						this->MovementComponent->IsKnockedBack = false;
-					if (this->CapsuleComponent)
-						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+					if(MovementComponent)
+						MovementComponent->IsKnockedBack = false;
+					if (CapsuleComponent)
+					{
+						CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+						CapsuleComponent->SetSimulatePhysics(false);
+					}
 				}
 			}, HitFlashTimeline.GetTimelineLength(), false);
 	}
@@ -275,6 +279,7 @@ void AEnemyPawn::AttackTick()
 				{
 					if (this)
 					{
+						this->IsAttacking = false;
 						if(this->MovementComponent)
 							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 					}
@@ -287,7 +292,7 @@ void AEnemyPawn::AttackTick()
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 		}
 
-		IsAttacking = false;
+		
 		if (!HitFlashTimeline.IsPlaying())
 		{
 			SetActorTickEnabled(false);
@@ -324,7 +329,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = 0;
+	float chance = FMath::RandRange(0.f,1.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{
@@ -350,15 +355,14 @@ void AEnemyPawn::SpawnItem()
 
 		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
 
-		/*if (Dropped)
-
+		if (Dropped)
 		{
 			Dropped->Initialize(DroppedItem->ItemData);
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
 
-		FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
 
 		FActorSpawnParameters Params;

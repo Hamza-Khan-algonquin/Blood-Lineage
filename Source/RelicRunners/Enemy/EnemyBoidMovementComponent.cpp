@@ -377,7 +377,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	if (navSys && navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
 	{
 		//move it down slightly to trigger the slide along the surface, as when this is not down, the y jitter up and down sometimes
-		finalMovement.Z = navLocation.Location.Z + offset.Z - 15;
+		finalMovement.Z = navLocation.Location.Z + offset.Z;
 		EdgeAvoidanceVector = FVector::Zero();
 		LastValidPosition = navLocation.Location;
 	}
