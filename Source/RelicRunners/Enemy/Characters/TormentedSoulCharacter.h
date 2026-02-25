@@ -18,10 +18,6 @@ class RELICRUNNERS_API ATormentedSoulCharacter : public AEnemyCharacter
 	friend class UTormentedSoulAnimNotifyState;
 	GENERATED_BODY()
 public:
-	UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite)
-	//The attack damage of the enemy
-	float AttackDamage;
-
 	UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite)
 	//The collider object types to be check for with the attack collider
 	TArray<TEnumAsByte<EObjectTypeQuery>> AttackQuery;

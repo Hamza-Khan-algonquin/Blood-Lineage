@@ -10,6 +10,8 @@ class AEnemyPawn;
 class APawn;
 class UAIPerceptionComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetChange, APawn*, target);
+
 UCLASS()
 class RELICRUNNERS_API ACommanderController : public AAIController
 {
@@ -52,6 +54,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool BoidShouldFocusePlayer;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnTargetChange TargetChange;
 protected:
 	bool IsTargeting;
 public: 

@@ -126,6 +126,9 @@ public:
 	//A method to handle spawning an item on death using infromation from the provided loot pool
 	virtual void SpawnItem();
 
+	UFUNCTION(BlueprintCallable)
+	void ApplyForceToEnemy(FVector forces);
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif

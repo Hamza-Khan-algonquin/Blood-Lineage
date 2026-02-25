@@ -98,27 +98,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		HitFlash();
 
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		CapsuleComponent->SetSimulatePhysics(true);
-		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
-
-		//this->MovementComponent->IsKnockedBack = true;
-		MovementComponent->IsKnockedBack = true;
-
-		FTimerHandle temp;
-		GetWorldTimerManager().SetTimer(temp, [this]() {
-				if (this)
-				{
-					if (!this)
-						return;
-					if(MovementComponent)
-						MovementComponent->IsKnockedBack = false;
-					if (CapsuleComponent)
-					{
-						CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-						CapsuleComponent->SetSimulatePhysics(false);
-					}
-				}
-			}, HitFlashTimeline.GetTimelineLength(), false);
+		ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
 	}
 	
 	//call the super for important stuff
@@ -390,6 +370,31 @@ void AEnemyPawn::SpawnItem()
 			Dropped->SetReplicateMovement(true);
 		}*/
 	}
+}
+
+void AEnemyPawn::ApplyForceToEnemy(FVector forces)
+{
+	CapsuleComponent->SetSimulatePhysics(true);
+	CapsuleComponent->AddImpulse(forces, NAME_None, true);
+
+	//this->MovementComponent->IsKnockedBack = true;
+	MovementComponent->IsKnockedBack = true;
+
+	FTimerHandle temp;
+	GetWorldTimerManager().SetTimer(temp, [this]() {
+		if (this)
+		{
+			if (!this)
+				return;
+			if (MovementComponent)
+				MovementComponent->IsKnockedBack = false;
+			if (CapsuleComponent)
+			{
+				CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+				CapsuleComponent->SetSimulatePhysics(false);
+			}
+		}
+		}, HitFlashTimeline.GetTimelineLength(), false);
 }
 
 

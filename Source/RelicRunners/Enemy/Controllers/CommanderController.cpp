@@ -89,6 +89,7 @@ void ACommanderController::Tick(float DeltaTime)
 			}
 
 			TargetPlayer = closestPlayer;
+			TargetChange.Broadcast(TargetPlayer);
 			distance = FMath::Sqrt(distance);
 			BoidShouldFocusePlayer = false;
 		}
