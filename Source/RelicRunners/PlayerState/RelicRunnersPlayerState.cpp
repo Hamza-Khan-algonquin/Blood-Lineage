@@ -317,7 +317,7 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 		int Efficiency = InventoryComponent->CachedEquippedStats.TotalPotionEfficiency;
 		int ChanceToNotConsume = ItemStats::GetChanceToNotConsume(Efficiency);
 		int Roll = FMath::RandRange(1, 100);
-		if (Roll < ChanceToNotConsume)
+		if (Roll > ChanceToNotConsume)
 		{
 			HealthPotionCount--;
 		}
