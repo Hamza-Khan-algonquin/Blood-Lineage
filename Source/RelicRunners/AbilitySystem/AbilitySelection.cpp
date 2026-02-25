@@ -96,7 +96,7 @@ UAbilitySelection::StatBuff UAbilitySelection::RandomStatBuff()
     StatBuff RandomStatBuff;
 
     //Pick random stat and buff value
-    RandomStatBuff.Percentage = FMath::RandRange(3, 5);
+    RandomStatBuff.Percentage = FMath::RandRange(3, 7);
     RandomStatBuff.StatType = static_cast<UAbilitySelection::EStats>(FMath::RandRange(0, 4));
 
     //text display UI on buttons 

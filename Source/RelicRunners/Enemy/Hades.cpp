@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "Engine/OverlapResult.h"
 #include "CollisionQueryParams.h"
+#include <GameFramework/ProjectileMovementComponent.h>
 
 AHades::AHades()
 {
@@ -86,8 +87,8 @@ void AHades::ExecuteAttack()
     SelectRandomTarget();
 
     int32 Roll = FMath::RandRange(1, 100);
-    if (Roll <= 25) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Slam")); PlaySlam(); }
-    else if (Roll <= 60) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Fireball")); PlayFireball(); }
+    if (Roll <= 0) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Slam")); PlaySlam(); }
+    else if (Roll <= 100) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Fireball")); PlayFireball(); }
     else { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Sweep")); PlaySweep(); }
 }
 
@@ -136,54 +137,105 @@ void AHades::PlaySlam()
 
 void AHades::PlayFireball()
 {
-    if (!CurrentTarget)
-    {
-        ScheduleNextAttack(1.0f);
-        return;
-    }
+    if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
 
     bIsBusy = true;
     bIsLookingAtAbilityTarget = true;
     AbilityLookAtTarget = CurrentTarget->GetActorLocation();
 
-    if (SkeletalMesh)
+    if (SkeletalMesh && FireballMontage)
     {
         UAnimInstance* AnimInst = SkeletalMesh->GetAnimInstance();
-        if (AnimInst && FireballMontage)
-        {
-            AnimInst->Montage_Play(FireballMontage, 1.5f);
-            UE_LOG(LogTemp, Log, TEXT("Hades: Fireball Animation Started"));
-        }
+        if (AnimInst) AnimInst->Montage_Play(FireballMontage, 2.5f);
     }
 
-    GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this]() {
+    TWeakObjectPtr<AHades> WeakSelf(this);
 
-        int Count = ((int)CurrentPhase * 5) + 7;
-        FVector Center = CurrentTarget ? CurrentTarget->GetActorLocation() : FVector(0, 0, 0);
+    GetWorldTimerManager().SetTimer(AbilityLogicTimer, [WeakSelf]() {
+        if (!WeakSelf.IsValid()) return;
+
+        int Count = ((int)WeakSelf->CurrentPhase * 5) + 7;
+        FVector Center = WeakSelf->CurrentTarget ? WeakSelf->CurrentTarget->GetActorLocation() : FVector::ZeroVector;
 
         for (int i = 0; i < Count; i++)
         {
-            FVector Loc = CalculateFireballLocation(Center);
-            Loc.Z = 50.0f;
+            FVector TargetLoc = WeakSelf->CalculateFireballLocation(Center);
+            TargetLoc.Z = 50.0f;
 
-            float FireballDuration = 2.0f;
-            AActor* Pred = SpawnPrediction(FireballPredictionClass, Loc, FireballDuration, FVector(1));
+            float TotalDuration = 2.0f;
+            float Delay = 0.5f; //Time spent attached to hand
+
+            AActor* Pred = WeakSelf->SpawnPrediction(WeakSelf->FireballPredictionClass, TargetLoc, TotalDuration, FVector(1));
             TWeakObjectPtr<AActor> WeakPred = Pred;
 
-            FTimerHandle FireHandle;
-            GetWorldTimerManager().SetTimer(FireHandle, [this, Loc, WeakPred]() {
+            FName SocketName = (i % 2 == 0) ? FName("MainhandSocket") : FName("OffhandSocket");
+            FVector SpawnLoc = WeakSelf->SkeletalMesh->GetSocketLocation(SocketName);
 
-                DrawDebugSphere(GetWorld(), Loc, 400.0f, 12, FColor::Red, false, 2.0f);
-                UGameplayStatics::ApplyRadialDamage(GetWorld(), 30.0f, Loc, 400.0f, nullptr, { this }, nullptr, nullptr, true);
+            FActorSpawnParameters Params;
+            Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+            AActor* ProjectedFireball = WeakSelf->GetWorld()->SpawnActor<AActor>(WeakSelf->Fireball, SpawnLoc, FRotator::ZeroRotator, Params);
 
-                if (WeakPred.IsValid()) WeakPred->Destroy();
-                }, FireballDuration, false);
+            if (ProjectedFireball)
+            {
+                if (WeakSelf == nullptr) return;
+                ProjectedFireball->AttachToComponent(WeakSelf->SkeletalMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);
+                TWeakObjectPtr<AActor> WeakFireball = ProjectedFireball;
+
+                FTimerHandle LaunchHandle;
+                WeakSelf->GetWorldTimerManager().SetTimer(LaunchHandle, [WeakSelf, WeakFireball, TargetLoc, TotalDuration, Delay]() {
+                    if (!WeakSelf.IsValid() || !WeakFireball.IsValid()) return;
+
+                    //Detach fireball from hand
+                    WeakFireball->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+                    FVector ReleaseLoc = WeakFireball->GetActorLocation();
+                    float StartTime = WeakSelf->GetWorld()->GetTimeSeconds();
+                    float FlightDuration = TotalDuration - Delay;
+
+                    FTimerHandle TickHandle;
+                    WeakSelf->GetWorldTimerManager().SetTimer(TickHandle, [WeakSelf, WeakFireball, ReleaseLoc, TargetLoc, StartTime, FlightDuration, TickHandle]() mutable {
+                        if (!WeakSelf.IsValid() || !WeakFireball.IsValid())
+                        {
+                            if (WeakSelf.IsValid()) WeakSelf->GetWorldTimerManager().ClearTimer(TickHandle);
+                            return;
+                        }
+
+                        float Elapsed = WeakSelf->GetWorld()->GetTimeSeconds() - StartTime;
+                        float Alpha = FMath::Clamp(Elapsed / FlightDuration, 0.0f, 1.0f);
+
+                        FVector CurrentPos = FMath::Lerp(ReleaseLoc, TargetLoc, Alpha);
+                        WeakFireball->SetActorLocation(CurrentPos);
+                        FRotator FlyRotation = (TargetLoc - ReleaseLoc).Rotation();
+                        WeakFireball->SetActorRotation(FlyRotation);
+                        if (Alpha >= 1.0f) WeakSelf->GetWorldTimerManager().ClearTimer(TickHandle);
+                        }, 0.016f, true);
+
+                    }, Delay, false);
+                
+                //Damage
+                FTimerHandle FireHandle;
+                WeakSelf->GetWorldTimerManager().SetTimer(FireHandle, [WeakSelf, TargetLoc, WeakPred, WeakFireball]() {
+                    if (WeakPred.IsValid()) WeakPred->Destroy();
+                    if (WeakFireball.IsValid()) WeakFireball->Destroy();
+
+                    if (WeakSelf.IsValid())
+                    {
+                        DrawDebugSphere(WeakSelf->GetWorld(), TargetLoc, 400.0f, 12, FColor::Red, false, 2.0f);
+                        UGameplayStatics::ApplyRadialDamage(WeakSelf->GetWorld(), 30.0f, TargetLoc, 400.0f, nullptr, { WeakSelf.Get() }, nullptr, nullptr, true);
+                    }
+                    }, TotalDuration, false);
+            }
         }
 
-        GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this]() {
-            bIsLookingAtAbilityTarget = false;
-            bIsBusy = false;
-            ScheduleNextAttack(1.5f);
+        //Reset Hades state logic
+        FTimerHandle ResetHandle;
+        WeakSelf->GetWorldTimerManager().SetTimer(ResetHandle, [WeakSelf]() {
+            if (WeakSelf.IsValid())
+            {
+                WeakSelf->bIsLookingAtAbilityTarget = false;
+                WeakSelf->bIsBusy = false;
+                WeakSelf->ScheduleNextAttack(1.5f);
+            }
             }, 2.5f, false);
 
         }, 0.8f, false);
@@ -255,7 +307,8 @@ void AHades::UpdateSweep(float DeltaTime)
     }
 
     SweepElapsedTime += DeltaTime;
-    float Alpha = FMath::Clamp(SweepElapsedTime / SweepDuration, 0.0f, 1);
+    float TotalTime = SweepDuration + ((SweepDuration / 1.5) * (SweepRotationCount - 1));
+    float Alpha = FMath::Clamp(SweepElapsedTime / TotalTime, 0.0f, 1);
 
     float TotalDegrees = 360.0f * (SweepRotationCount);
     SweepCurrentAngle = FMath::Pow(Alpha, 4.0f) * TotalDegrees;
@@ -279,12 +332,12 @@ void AHades::UpdateSweep(float DeltaTime)
         BoxCenter,
         BeamRot.Quaternion(),
         ECC_Visibility,
-        FCollisionShape::MakeBox(FVector(1725.0f, 100.0f, 200.0f)),
+        FCollisionShape::MakeBox(FVector(1725.0f, 300.0f, 500.0f)),
         Params
     );
 
     //Visualize damage zone
-    //DrawDebugBox(GetWorld(), BoxCenter, FVector(1725.0f, 300.0f, 200.0f), BeamRot.Quaternion(), FColor::Yellow, false, -1.0f);
+    //DrawDebugBox(GetWorld(), BoxCenter, FVector(1725.0f, 300.0f, 500.0f), BeamRot.Quaternion(), FColor::Yellow, false, -1.0f);
 
     for (auto& Overlap : Overlaps)
     {
