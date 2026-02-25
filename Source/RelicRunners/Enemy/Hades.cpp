@@ -86,9 +86,9 @@ void AHades::ExecuteAttack()
     CheckPhaseTransition();
     SelectRandomTarget();
 
-    int32 Roll = FMath::RandRange(1, 100);
-    if (Roll <= 0) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Slam")); PlaySlam(); }
-    else if (Roll <= 100) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Fireball")); PlayFireball(); }
+    int Roll = FMath::RandRange(1, 100);
+    if (Roll <= 25) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Slam")); PlaySlam(); }
+    else if (Roll <= 70) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Fireball")); PlayFireball(); }
     else { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Sweep")); PlaySweep(); }
 }
 
@@ -163,7 +163,9 @@ void AHades::PlayFireball()
             TargetLoc.Z = 50.0f;
 
             float TotalDuration = 2.0f;
-            float Delay = 0.5f; //Time spent attached to hand
+            float BaseDelay = 0.2f;
+            float RandomOffset = FMath::FRandRange(0.0f, 0.8f);
+            float FinalDelay = BaseDelay + RandomOffset; //Time spent attached to hand
 
             AActor* Pred = WeakSelf->SpawnPrediction(WeakSelf->FireballPredictionClass, TargetLoc, TotalDuration, FVector(1));
             TWeakObjectPtr<AActor> WeakPred = Pred;
@@ -182,7 +184,7 @@ void AHades::PlayFireball()
                 TWeakObjectPtr<AActor> WeakFireball = ProjectedFireball;
 
                 FTimerHandle LaunchHandle;
-                WeakSelf->GetWorldTimerManager().SetTimer(LaunchHandle, [WeakSelf, WeakFireball, TargetLoc, TotalDuration, Delay]() {
+                WeakSelf->GetWorldTimerManager().SetTimer(LaunchHandle, [WeakSelf, WeakFireball, TargetLoc, TotalDuration, FinalDelay]() {
                     if (!WeakSelf.IsValid() || !WeakFireball.IsValid()) return;
 
                     //Detach fireball from hand
@@ -190,7 +192,7 @@ void AHades::PlayFireball()
 
                     FVector ReleaseLoc = WeakFireball->GetActorLocation();
                     float StartTime = WeakSelf->GetWorld()->GetTimeSeconds();
-                    float FlightDuration = TotalDuration - Delay;
+                    float FlightDuration = TotalDuration - FinalDelay;
 
                     FTimerHandle TickHandle;
                     WeakSelf->GetWorldTimerManager().SetTimer(TickHandle, [WeakSelf, WeakFireball, ReleaseLoc, TargetLoc, StartTime, FlightDuration, TickHandle]() mutable {
@@ -210,7 +212,7 @@ void AHades::PlayFireball()
                         if (Alpha >= 1.0f) WeakSelf->GetWorldTimerManager().ClearTimer(TickHandle);
                         }, 0.016f, true);
 
-                    }, Delay, false);
+                    }, FinalDelay, false);
                 
                 //Damage
                 FTimerHandle FireHandle;
