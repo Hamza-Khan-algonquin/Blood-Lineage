@@ -228,7 +228,7 @@ void AHades::PlaySweep()
         bIsInitialSlamming = false;
         bIsSweeping = true;
         SweepElapsedTime = 0.0f;
-
+        SweepRotationCount = FMath::RandRange(1, (int)CurrentPhase + 2);
         if (SweepPredictionClass)
         {
             FActorSpawnParameters SpawnParams;
@@ -255,9 +255,10 @@ void AHades::UpdateSweep(float DeltaTime)
     }
 
     SweepElapsedTime += DeltaTime;
-    float Alpha = FMath::Clamp(SweepElapsedTime / SweepDuration, 0.0f, 1.0f);
+    float Alpha = FMath::Clamp(SweepElapsedTime / SweepDuration, 0.0f, 1);
 
-    SweepCurrentAngle = FMath::Pow(Alpha, 4.0f) * 360.0f;
+    float TotalDegrees = 360.0f * (SweepRotationCount);
+    SweepCurrentAngle = FMath::Pow(Alpha, 4.0f) * TotalDegrees;
 
     float MathAngle = SweepStartYaw - SweepCurrentAngle;
     FRotator VisualRot = FRotator(0, (MathAngle - RotationOffset) - 90.0f, 0);
@@ -291,7 +292,7 @@ void AHades::UpdateSweep(float DeltaTime)
         {
             if (HitActor != this)
             {
-                UGameplayStatics::ApplyDamage(HitActor, 80.0f, nullptr, this, UDamageType::StaticClass());
+                UGameplayStatics::ApplyDamage(HitActor, 100.0f, nullptr, this, UDamageType::StaticClass());
             }
         }
     }
