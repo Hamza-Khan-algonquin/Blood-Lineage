@@ -57,6 +57,7 @@ protected:
 public: 
 	ACommanderController();
 	~ACommanderController();
+	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -89,4 +90,7 @@ protected:
 	void AttackCheck(TArray<APawn*> players, float delta);
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer);
+
+	
+
 };

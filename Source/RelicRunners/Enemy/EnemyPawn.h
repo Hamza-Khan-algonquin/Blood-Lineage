@@ -15,6 +15,7 @@ class UEnemyLODStaticMeshComponent;
 class UEnemyLODComponent;
 class UEnemyBoidMovementComponent;
 class UEnemyStats;
+class USphereComponent;
 
 UCLASS()
 class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
@@ -65,7 +66,7 @@ public:
 	float KnockBackStrength;
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float AdditionalUpwardsKnockBackForces;
-
+	bool IsAttacking = false;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
@@ -77,13 +78,14 @@ protected:
 	bool SetControllerActiveStatus = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	FTimerHandle LifeSpanTimerHandle;
-	bool IsAttacking = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
+	FTimerHandle AttackHandle;
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
-
+	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 

@@ -4,6 +4,8 @@
 #include "RelicRunners/AbilitySystem/AbilityBase.h"
 #include "BundleOfJoy.generated.h"
 
+class AEnemyPawn;
+
 UCLASS()
 class RELICRUNNERS_API UBundleOfJoy : public UAbilityBase
 {
@@ -40,6 +42,8 @@ private:
 
     UPROPERTY()
     FVector AttractionCenter;
+
+    TArray<AEnemyPawn*> EffectedEnemies;
 
     void Explode();
     void Attract();

@@ -97,6 +97,10 @@ void ARelicRunnersPlayerState::BeginPlay()
 
 	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, 3.f, true);
 
+	if (PlayerHealth != PlayerMaxHealth)
+	{
+		PlayerHealth = PlayerMaxHealth;
+	}
 }
 void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 {
@@ -209,7 +213,6 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		InventoryComponent->AddItem(Item);
 	}
 
-	//Starting Weapon
 	FString StartingWeapon = "";
 	if (SelectedClass == "Ares")
 	{
@@ -230,6 +233,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	else
 	{
 		//Fallback for testing
+		SelectedClass = "Ares";
 		StartingWeapon = "Greatsword";
 	}
 
@@ -288,27 +292,33 @@ void ARelicRunnersPlayerState::SetPlayerMaxHealth(int value)
 	UpdateRemoteHUDHealth();
 }
 
+void ARelicRunnersPlayerState::SetPlayerMaxResource(int value)
+{
+	if (!HasAuthority()) return;
+
+	PlayerMaxResource = value;
+
+	//For server
+	UpdateRemoteHUDResource();
+}
+
 void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 {
 	if (!HasAuthority()) return;
 
-	// use potion if player has one and isn’t at full health
 	if (HealthPotionCount > 0 && PlayerHealth < PlayerMaxHealth)
 	{
-		// Heal player by a percentage of max health
 		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * HealthGranted);
 
 
 		PlayerHealth += HealthToGrant;
 		HealthPotionCount--;
 
-		// if the player’s health exceeds max health, set it to max health
 		if (PlayerHealth > PlayerMaxHealth)
 		{
 			PlayerHealth = PlayerMaxHealth;
 		}
 
-		// Notify owning client to update HUD
 		UpdateRemoteHUDHealth();
 		UpdateRemoteHUDHealthPotions();
 	}
@@ -322,31 +332,10 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	PlayerLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
 
-	//Starting stats / base stats
-	PlayerStartingMaxHealth++;
-	PlayerStartingMaxResource++;
-	PlayerStartingArmor++;
-	PlayerStartingDexterity++;
-	PlayerStartingStrength++;
-	PlayerStartingIntelligence++;
-
-	//Current health / max health
-	PlayerMaxHealth++;
-	PlayerHealth = PlayerMaxHealth;
-
-	//Current resource / max resource
-	PlayerMaxResource++;
-
-	//Current stats
-	PlayerArmor++;
-	PlayerDexterity++;
-	PlayerStrength++;
-	PlayerIntelligence++;
-	PlayerNumInventorySlots++;
-
 	//Ability points
 	PlayerAbilityPoints++;
 
+	//Weapon Upgrade
 	int HealthIncrease = 0;
 	int ArmorIncrease = 0;
 	int DexterityIncrease = 0;
@@ -647,10 +636,7 @@ void ARelicRunnersPlayerState::ModifyHealth(float Value)
 	if (!HasAuthority()) return;
 
 	//this is where i put the invicibility logic
-	if (bIsInvincible && Value < 0.f)
-	{
-		return;
-	}
+	if (bIsInvincible && Value < 0.f) return;
 
 	PlayerHealth = FMath::Clamp(PlayerHealth + Value, 0.f, (float)PlayerMaxHealth);
 
@@ -748,11 +734,6 @@ void ARelicRunnersPlayerState::OnRep_Ability()
 {
 	UpdateRemoteHUDAbility();
 }
-
-
-
-
-
 
 void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

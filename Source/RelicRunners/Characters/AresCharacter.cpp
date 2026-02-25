@@ -167,7 +167,6 @@ void AAresCharacter::GiveRageofTheGods()
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
 	const FString MapName = GetWorld()->GetMapName();
-	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
 
 	if (MapName.Contains(TEXT("BossLevel"))) return;
 
@@ -332,7 +331,8 @@ void AAresCharacter::PerformSwingTrace()
 	Params.AddIgnoredActor(this);
 
 	TArray<FHitResult> Hits;
-	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_Pawn, FCollisionShape::MakeSphere(100.0f), Params);
+
+	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params);
 
 	AlreadyHitActors.Empty();
 

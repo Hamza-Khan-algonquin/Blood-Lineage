@@ -33,6 +33,8 @@ public:
 	TObjectPtr<ACommanderController> Commander;
 	
 	bool IsKnockedBack;
+	bool IsAffectiveByBundleOfJoy = false;
+	FVector BundleOfJoyLocation;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float VisualRange;
@@ -65,6 +67,8 @@ protected:
 	float AlignmentWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float TargetWeight;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float EdgeAvoidanceWeight;
 	
 
 	//UPROPERTY(EditAnywhere, Category = "Boid Behavior")
@@ -81,10 +85,23 @@ protected:
 	FVector NavMeshClampExtent;
 	UPROPERTY(EditAnywhere, Category = "Other")
 	float FocuseOnTargetDistance;
+	UPROPERTY(EditAnywhere, Category = "Other")
+	float StepHeight;
+	UPROPERTY(EditAnywhere, Category = "Other")
+	//the normal at which the movement stop trying to slide along a surface and instead does a step check
+	float MaxStepNormal;
 
 	UPROPERTY(VisibleAnywhere)
 	EBoidMovementMode MovementMode = EBoidMovementMode::Boid;
 	EBoidFocuseMode FocuseMode = EBoidFocuseMode::Velocity;
+
+	FVector EdgeAvoidanceVector = FVector::Zero();
+	FVector LastValidPosition = FVector::Zero();
+	FVector LastEdgeVector = FVector::Zero();
+
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float BundleOfJoyWeight;
+
 
 public:
 	UEnemyBoidMovementComponent();

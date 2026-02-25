@@ -58,7 +58,11 @@
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include "RelicRunners/Objective/ObjectiveLog.h"
 
+#include "RelicRunners/Enemy/Hades.h"
+
 #include "Components/TreeView.h"
+#include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include <RelicRunners/Objective/TitleData.h>
 #include <RelicRunners/Objective/PayloadData.h>
@@ -76,6 +80,43 @@ ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 	{
 		LoadingScreenClass = BP_LoadingScreen.Class;
 		UE_LOG(LogTemp, Warning, TEXT("Character Assigned Loading Screen"));
+	}
+}
+
+void ARelicRunnersPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	const FString MapName = World->GetMapName();
+	if (MapName.Contains(TEXT("BossLevel")))
+	{
+		if (!CachedHades)
+		{
+			CachedHades = Cast<AHades>(UGameplayStatics::GetActorOfClass(GetWorld(), AHades::StaticClass()));
+		}
+
+		if (CachedHades && PlayerHUD)
+		{
+			if (PlayerHUD->BossBar)
+			{
+				float NewPercent = CachedHades->CurrentHealth / CachedHades->MaxHealth;
+				if (!FMath::IsNearlyEqual(PlayerHUD->BossBar->GetPercent(), NewPercent, 0.001f))
+				{
+					PlayerHUD->BossBar->SetPercent(NewPercent);
+				}
+			}
+			if (PlayerHUD->TB_BossName)
+			{
+				FText NewName = FText::FromString("HADES");
+				if (!PlayerHUD->TB_BossName->GetText().EqualTo(NewName))
+				{
+					PlayerHUD->TB_BossName->SetText(NewName);
+				}
+			}
+		}
 	}
 }
 

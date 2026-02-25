@@ -31,22 +31,7 @@ void AAphroditeCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-
-
- //   //Starting Stats
- //   if (ClassInfo)
- //   {
- //       FClassData Stats = ClassInfo->GetStats("Aphrodite");
- //       SetPlayerStartingHealth(Stats.Health);
- //       PlayerMaxHealth = Stats.Health;
- //       PlayerHealth = PlayerMaxHealth;
- //       SetPlayerStartingArmor(Stats.Armor);
- //       SetPlayerStartingStrength(Stats.Strength);
- //       SetPlayerStartingDexterity(Stats.Dexterity);
- //       SetPlayerStartingIntelligence(Stats.Intelligence);
- //   }
 }
-
 
 // Called when player takes control of this character
 void AAphroditeCharacter::PossessedBy(AController* NewController)
@@ -179,6 +164,9 @@ void AAphroditeCharacter::PerformSwingTrace()
 
 void AAphroditeCharacter::UpdateCamera(float DeltaTime)
 {
+    const FString MapName = GetWorld()->GetMapName();
+    if (MapName.Contains(TEXT("BossLevel"))) return;
+
     if (!CameraBoom) return;
 
     if (bIsAiming)
@@ -186,7 +174,6 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         CameraBoom->bEnableCameraRotationLag = false;
         CameraBoom->bUsePawnControlRotation = false;
         CameraBoom->bEnableCameraLag = false;
-        GetCharacterMovement()->MaxWalkSpeed = 300.f;
         CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength, DeltaTime, AimingInterpSpeed);
 
         // Smoothly interpolate socket offset 
@@ -214,7 +201,6 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         CameraBoom->bEnableCameraLag = true;
         CameraBoom->bEnableCameraRotationLag = true;
         CameraBoom->bUsePawnControlRotation = true;
-        GetCharacterMovement()->MaxWalkSpeed = 500.f;
         // Movement info 
         FVector Velocity = GetVelocity();
         Velocity.Z = 0.f;
@@ -369,17 +355,16 @@ void AAphroditeCharacter::PlayRandomAttackAnimation()
 
 void AAphroditeCharacter::BasicAttack()
 {
-    if (!bIsAiming) return;
+    //if (!bIsAiming) return;
     if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    if (!CanBasicAttack) return;
+    //if (!CanBasicAttack) return;
 
-    CanBasicAttack = false;
+    CanBasicAttack = true;
 
     ProjectileDamage = 90.0f;
 
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-    // === SPAWN NEW PROJECTILE ===
     FBasicProjectile NewProjectile;
     NewProjectile.Location = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
     NewProjectile.Velocity = GetActorForwardVector() * ProjectileSpeed;
@@ -406,7 +391,6 @@ void AAphroditeCharacter::HeavyAttack()
 
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-    // === SPAWN NEW PROJECTILE ===
     FBasicProjectile NewProjectile;
     NewProjectile.Location =
         GetActorLocation()
@@ -467,12 +451,12 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             Projectile.PreviousLocation,
             Projectile.Location,
             FQuat::Identity,
-            ECC_Pawn,
+            ECC_GameTraceChannel1,
             Sphere,
             Params
         );
-            if (bHit)
-            {
+            //if (bHit)
+            //{
                 for (const FHitResult& Hit : Hits)
                 {
                     if (AActor* HitActor = Hit.GetActor())
@@ -502,7 +486,7 @@ void AAphroditeCharacter::Tick(float DeltaTime)
                     }
                 }
                 continue;
-            }
+            //}
 
             if (Projectile.ElapsedTime >= ProjectileLifetime)
             {

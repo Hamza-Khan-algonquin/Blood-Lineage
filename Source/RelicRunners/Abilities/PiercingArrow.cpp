@@ -8,6 +8,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacterAI.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -117,8 +118,9 @@ void UPiercingArrow::TickArrow()
     TArray<AActor*> HitActorsArray;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    UKismetSystemLibrary::SphereOverlapActors(World, ArrowLocation, CurrentRadius, ObjectTypes, ACharacter::StaticClass(), { AvatarActor }, HitActorsArray);
+    UKismetSystemLibrary::SphereOverlapActors(World, ArrowLocation, CurrentRadius, ObjectTypes, APawn::StaticClass(), { AvatarActor }, HitActorsArray);
 
     for (AActor* Actor : HitActorsArray)
     {
@@ -127,7 +129,7 @@ void UPiercingArrow::TickArrow()
             continue;
         }
 
-        if (!Actor->IsA(AEnemyCharacter::StaticClass()) && !Actor->IsA(AEnemyCharacterAI::StaticClass()))
+        if (!Actor->IsA(AEnemyCharacter::StaticClass()) && !Actor->IsA(AEnemyCharacterAI::StaticClass()) && !Actor->IsA(AEnemyPawn::StaticClass()))
         {
             continue;
         }
