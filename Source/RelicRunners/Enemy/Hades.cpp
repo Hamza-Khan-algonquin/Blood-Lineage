@@ -436,10 +436,17 @@ void AHades::SelectRandomTarget()
 {
     TArray<AActor*> Players;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), Players);
-
+    for (int i = 0; i < Players.Num(); i++)
+    {
+        if (!Players[i]->ActorHasTag("Player"))
+        {
+            Players.RemoveAt(i);
+            i--;
+        }
+    }
     if (Players.Num() > 0)
     {
-        int32 RandomIndex = FMath::RandRange(0, Players.Num() - 1);
+        int RandomIndex = FMath::RandRange(0, Players.Num() - 1);
         CurrentTarget = Players[RandomIndex];
     }
 }

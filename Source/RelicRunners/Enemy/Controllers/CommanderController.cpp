@@ -183,14 +183,16 @@ void ACommanderController::SpawnPawnEnemy()
 
 
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
+	//AEnemyPawn* newEnemy = Cast<AEnemyPawn>(PawnEnemyToSpawn);
 	
+
 	//giving time for the enemy to set
 	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
 		{
-			
+			//newEnemy->SetActorLocation(spawnPosition);
 			AddPawnEnemy(newEnemy);
 		});
 }
