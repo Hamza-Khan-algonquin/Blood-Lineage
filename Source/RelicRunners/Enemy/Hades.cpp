@@ -86,10 +86,36 @@ void AHades::ExecuteAttack()
     CheckPhaseTransition();
     SelectRandomTarget();
 
-    int Roll = FMath::RandRange(1, 100);
-    if (Roll <= 25) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Slam")); PlaySlam(); }
-    else if (Roll <= 70) { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Fireball")); PlayFireball(); }
-    else { UE_LOG(LogTemp, Log, TEXT("HADES: Chose Sweep")); PlaySweep(); }
+    FString NewAttack = "";
+    do
+    {
+        int SlamOdds = 50 - ((int)CurrentPhase * 10);
+        int RemainingOdds = 100 - SlamOdds;
+        int FireballOdds = RemainingOdds * 0.6;
+        int SweepOdds = RemainingOdds * 0.4;
+
+        int Roll = FMath::RandRange(1, 100);
+
+        if (Roll <= SlamOdds)                       NewAttack = "Slam";
+        else if (Roll <= SlamOdds + FireballOdds)   NewAttack = "Fireball";
+        else                                        NewAttack = "Sweep";
+    } while (NewAttack == LastAttack && NewAttack != "Fireball");
+
+    if (NewAttack == "Slam")
+    {
+        PlaySlam(); 
+        LastAttack = "Slam";
+    }
+    else if (NewAttack == "Fireball")
+    {
+        PlayFireball();
+        LastAttack = "Fireball";
+    }
+    else if (NewAttack == "Sweep")
+    {
+        PlaySweep();
+        LastAttack = "Sweep";
+    }
 }
 
 void AHades::PlaySlam()

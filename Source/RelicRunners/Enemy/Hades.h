@@ -62,6 +62,8 @@ public:
 
     EBossPhase CurrentPhase = EBossPhase::Phase1;
 
+    FString LastAttack = "";
+
     bool bIsBusy = false;           
     bool bIsSweeping = false;       
     bool bIsInitialSlamming = false; 
