@@ -17,6 +17,14 @@ UKissOfLife::UKissOfLife()
     CooldownTimer = 12.f;
     LastUseTime = -100.f;
     Cost = 30;
+    AreaRadius = 600.f;
+
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/KissOfLife/NS_Healing_Aura.NS_Healing_Aura"));
+
+    if (VFXAsset.Succeeded())
+    {
+        AbilityVFX = VFXAsset.Object;
+    }
 }
 
 void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -55,24 +63,22 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
-    // This part spawns my debug sphere and attaches to the aphrodite character we should replace it with VFX later on thats what tristan said
-    DebugHealSphere = NewObject<USphereComponent>(AvatarActor);
-    if (DebugHealSphere)
-    {
-        DebugHealSphere->RegisterComponent();
-        DebugHealSphere->AttachToComponent(AvatarActor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 
-        DebugHealSphere->SetSphereRadius(HealRadius);
-        DebugHealSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        DebugHealSphere->SetHiddenInGame(false);
-        DebugHealSphere->SetVisibility(true);
+    APawn* OwnerPawn = Cast<APawn>(AvatarActor);
+    if (!OwnerPawn) return;
 
-        DebugHealSphere->SetGenerateOverlapEvents(false);
-        DebugHealSphere->ShapeColor = FColor(255, 105, 180); // Sexy Pink Color 
-    }
+    const FVector PawnLocation = OwnerPawn->GetActorLocation();
+    const FVector Center = ActorInfo->AvatarActor->GetActorLocation();
+
+    DrawDebugCircle(World, Center, AreaRadius, 64, FColor::Green, false, Duration, 0, 2.f, OwnerPawn->GetActorRightVector(), OwnerPawn->GetActorForwardVector(), false);
 
     // This is where is starts healing the players
     World->GetTimerManager().SetTimer(HealTickTimer, this, &UKissOfLife::ApplyHealTick, HealInterval, true);
+
+    if (ActorInfo->AvatarActor->HasAuthority())
+    {
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
+    }
 
     // This is where is ends the healing stuff
     World->GetTimerManager().SetTimer(EndTimer,FTimerDelegate::CreateUObject(this,&UKissOfLife::EndAbility,Handle,ActorInfo,ActivationInfo,true,false),Duration,false);
@@ -100,7 +106,7 @@ void UKissOfLife::ApplyHealTick()
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     // Healing part that heals both allies and self
-    UKismetSystemLibrary::SphereOverlapActors(World, Origin, HealRadius, ObjectTypes, APawn::StaticClass(), TArray<AActor*>(), OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, Origin, AreaRadius, ObjectTypes, APawn::StaticClass(), TArray<AActor*>(), OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {
