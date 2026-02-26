@@ -7,7 +7,7 @@
 #include "IslandSpawningValuesComponent.h"
 #include "PayloadActor.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
-
+#include "RelicRunners/PlayerController/RelicRunnersPlayerController.h"
 
 // Sets default values
 AIslandSpawner::AIslandSpawner():
@@ -22,18 +22,39 @@ AIslandSpawner::AIslandSpawner():
 
 }
 
+void AIslandSpawner::UpdateControllerZonesUI(int CurrentZone, int MaxZones)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			TargetPC->Client_UpdateZones(CurrentZone, MaxZones);
+		}
+	}
+}
+
+void AIslandSpawner::UpdateControllerStageUI(int StageNumber)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			TargetPC->Client_UpdateStage(StageNumber);
+		}
+	}
+}
+
 // Called when the game starts or when spawned
 void AIslandSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
+	URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
 	if (HasAuthority())
 	{
-
 		if (IslandGenerationTestTemplate != nullptr)
 		{
-
-			URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
 			if (gameInstance)
 			{
 				gameInstance->StageNumber += 1;
@@ -124,6 +145,8 @@ void AIslandSpawner::BeginPlay()
 			Islands[CurrentSpawnedIsland]->UpdateCameraPos();
 		}
 	}
+	UpdateControllerStageUI(gameInstance->StageNumber);
+	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::GenerateNewIsland()
@@ -138,6 +161,7 @@ void AIslandSpawner::GenerateNewIsland()
 
 		Islands[CurrentSpawnedIsland]->Generate();
 	}
+	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::ChangeIslandCamera(int islandIndex)

@@ -8,6 +8,7 @@
 #include <RelicRunners/RelicRunnersCharacter.h>
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
 void UMinimap::SetMinimapImage(UTextureRenderTarget2D* NewRenderTarget)
 {

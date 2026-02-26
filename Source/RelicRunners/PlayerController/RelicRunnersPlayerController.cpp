@@ -118,6 +118,17 @@ void ARelicRunnersPlayerController::Tick(float DeltaTime)
 			}
 		}
 	}
+	//else if (MapName.Contains(TEXT("IslandTest")))
+	//{
+	//	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	//	{
+	//		FText FinalText = FText::Format(FText::FromString("Stage {0}"), GI->StageNumber);
+	//		if (MinimapWidget && !MinimapWidget->TB_Title->GetText().EqualTo(FinalText))
+	//		{
+	//			MinimapWidget->SetLevelTitle(FinalText);
+	//		}
+	//	}
+	//}
 }
 
 void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -564,6 +575,26 @@ void ARelicRunnersPlayerController::TrySetupMinimap()
 	SetupMinimapRenderTarget();
 }
 
+void ARelicRunnersPlayerController::Client_UpdateZones_Implementation(int CurrentZone, int MaxZones)
+{
+	if (ObjectiveLog)
+	{
+		ObjectiveStageTitle->CurrentZones = CurrentZone;
+		ObjectiveStageTitle->TotalZones = MaxZones;
+		ObjectiveLog->RefreshLog(ObjectiveStageTitle);
+		ObjectiveLog->UpdateObjective(ObjectiveStageTitle);
+	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdateStage_Implementation(int StageNumber)
+{
+	if (MinimapWidget)
+	{
+		FText FinalText = FText::Format(FText::FromString("Stage {0}"), StageNumber);
+		MinimapWidget->SetLevelTitle(FinalText);
+	}
+}
+
 void ARelicRunnersPlayerController::RetrySetup()
 {
 	FTimerHandle RetryHandle;
@@ -867,11 +898,6 @@ void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
 			return;
 		}
 	}
-}
-
-void ARelicRunnersPlayerController::UpdateFlagObjective(int FlagIndex, bool bIsActive)
-{
-
 }
 
 void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FString NewTimeText)

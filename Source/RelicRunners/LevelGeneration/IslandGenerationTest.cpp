@@ -604,9 +604,6 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
 		ObjectiveAmount = flagAmount;
-
-		AddFlagObjectiveToAll(ObjectiveAmount);
-
 		//Override previously initialized tiles with capturable flag tiles
 		for (int i = 0; i < ObjectiveAmount; i++)
 		{
@@ -631,7 +628,6 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 			if (whileLoopLimit < 10)
 			{
 				SetFlagTile(keyTileIndex);
-
 				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
 			}
 		}
@@ -1504,6 +1500,7 @@ void AIslandGenerationTest::IncrementObjective()
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
 		objectiveName = "Flags";
+		AddFlagObjectiveToAll(CurrentObjectives);
 		break;
 	case EIslandObjectiveType::DefeatAllEnemies:
 		objectiveName = "Enemies";
@@ -1516,7 +1513,7 @@ void AIslandGenerationTest::IncrementObjective()
 		break;
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
 }
 
 void AIslandGenerationTest::DecrementObjective()
@@ -1541,7 +1538,7 @@ void AIslandGenerationTest::DecrementObjective()
 		break;
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
 	if (CurrentObjectives <= 0)
 	{
 		if (Bridge)
@@ -1577,7 +1574,7 @@ void AIslandGenerationTest::OnRep_FloorValuesArrayChange()
 
 	if (gameInstance)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Client Stage Number: %i"), gameInstance->StageNumber));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Client Stage Number: %i"), gameInstance->StageNumber));
 	}
 
 

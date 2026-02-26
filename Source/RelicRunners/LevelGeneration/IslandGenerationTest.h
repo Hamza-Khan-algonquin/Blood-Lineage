@@ -220,5 +220,4 @@ public:
 	TSubclassOf<class ASpawnZone> SpawnZoneTemplate;
 
 	TArray<class AObjectiveBase*> ObjectiveArrays;
-
 };

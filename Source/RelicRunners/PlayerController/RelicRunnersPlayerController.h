@@ -46,7 +46,6 @@ public:
 	void TravelCleanUI();
 	void UpdatePayloadObjective(float NewProgress);
 	void UpdateEnemiesObjective(int EnemiesLeft);
-	void UpdateFlagObjective(int FlagIndex, bool bIsActive);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
 	void AnimateOldObjectives();
@@ -118,6 +117,10 @@ public:
 	UFUNCTION()
 	void TrySetupMinimap();
 
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateStage(int StageNumber);
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateZones(int CurrentZone, int MaxZones);
 	//Getters
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	UInputMappingContext* GetInputMappingContext() const { return InputMappingContext; }
