@@ -436,7 +436,7 @@ void AAphroditeCharacter::HeavyAttack()
     PlayRandomAttackAnimation();
 
     // Cooldown
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
+    GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
 }
 
 

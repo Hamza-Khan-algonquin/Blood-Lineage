@@ -389,7 +389,7 @@ void AAresCharacter::HeavyAttack()
 		PlayRandomAttackAnimation();
 	}
 
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+	GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AAresCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
