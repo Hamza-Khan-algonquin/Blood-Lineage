@@ -204,6 +204,28 @@ public:
 	UFUNCTION()
 	void OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& Devices);
 
+	//Volume Slider
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	USlider* MasterVolumeSlider = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* TB_MasterVolumeValue = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Audio")
+	USoundClass* MasterSoundClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Audio")
+	USoundMix* MasterSoundMix;
+
+	float MinVolume = 0.0f;
+	float MaxVolume = 1.0f;
+
+	UFUNCTION()
+	void OnMasterVolumeChanged(float Value);
+
+	void ApplyMasterVolume(float Volume);
+	void UpdateMasterVolumeText(float Volume);
+
 protected:
 	UFUNCTION()
 	void BackButtonClicked();

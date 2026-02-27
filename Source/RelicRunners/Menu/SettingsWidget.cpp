@@ -21,7 +21,7 @@
 #include "Engine/Engine.h"
 #include "GameFramework/GameUserSettings.h"
 #include "AudioMixerBlueprintLibrary.h"
-#include <AudioEditorSettings.h>
+#include "AudioEditorSettings.h"
 
 
 
@@ -190,6 +190,28 @@ void USettingsWidget::NativeConstruct()
 		UAudioMixerBlueprintLibrary::GetAvailableAudioOutputDevices(this, DevicesDelegate);
 	}
 
+	if (MasterVolumeSlider)
+	{
+		MasterVolumeSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnMasterVolumeChanged);
+
+		float CurrentVolume = 1.0f;
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				CurrentVolume = GI->Keys->MasterVolume;
+			}
+		}
+
+		const float Normalized = FMath::Clamp(
+			(CurrentVolume - MinVolume) / (MaxVolume - MinVolume),
+			0.f, 1.f);
+
+		MasterVolumeSlider->SetValue(Normalized);
+		ApplyMasterVolume(CurrentVolume);
+		UpdateMasterVolumeText(CurrentVolume);
+	}
 	InitializeDefaultKeybindings();
 }
 
@@ -603,6 +625,38 @@ void USettingsWidget::OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& 
 	}
 }
 
+void USettingsWidget::OnMasterVolumeChanged(float Value)
+{
+	const float NewVolume = FMath::Lerp(MinVolume, MaxVolume, Value);
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->MasterVolume = NewVolume;
+		}
+	}
+
+	ApplyMasterVolume(NewVolume);
+	UpdateMasterVolumeText(NewVolume);
+}
+
+void USettingsWidget::ApplyMasterVolume(float Volume)
+{
+	if (!MasterSoundClass || !MasterSoundMix) return;
+
+	UGameplayStatics::PushSoundMixModifier(GetWorld(), MasterSoundMix);
+
+	UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MasterSoundMix, MasterSoundClass, Volume, 1.0f, 0.0f, true);
+}
+
+void USettingsWidget::UpdateMasterVolumeText(float Volume)
+{
+	if (!TB_MasterVolumeValue) return;
+
+	const int32 Percent = FMath::RoundToInt(Volume * 100.f);
+	TB_MasterVolumeValue->SetText(FText::FromString(FString::Printf(TEXT("%d%%"), Percent)));
+}
 void USettingsWidget::BackButtonClicked()
 {
 	if (MainParentMenu)
