@@ -23,6 +23,7 @@
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
 #include "Components/SphereComponent.h"
+#include "NiagaraComponent.h"
 
 
 
@@ -110,7 +111,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//check if we meet the conditions to be dead and then die
 	if (IsDead())
 	{
-		Die(EventInstigator);
+		Die(EventInstigator, (GetActorLocation() - DamageCauser->GetActorLocation().GetSafeNormal()));
 	}
 	//if we are not dead check the damage events for stun
 	else
@@ -175,7 +176,7 @@ void AEnemyPawn::EndHitFlash()
 	}
 }
 
-void AEnemyPawn::Die(AController* EventInstigator)
+void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 {
 	//make sure we are server side
 	if (HasAuthority())
@@ -198,6 +199,8 @@ void AEnemyPawn::Die(AController* EventInstigator)
 		OnDied.Clear();
 		//OnDestroyed.Clear();
 
+		PlayDeathEffet_Implementation(hitDirection);
+
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
@@ -209,6 +212,18 @@ void AEnemyPawn::Die(AController* EventInstigator)
 			Destroy();
 		}
 	}
+}
+
+void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
+{
+	if (!DeathEffect)
+	{
+		return;
+	}
+
+	UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
+
+	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
 }
 
 inline bool AEnemyPawn::IsDead()
@@ -406,6 +421,11 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!MovementComponent || !CapsuleComponent || !OtherComp)
+	{
+		return;
+	}
+
+	if (!FMath::IsNearlyZero(CapsuleComponent->GetComponentVelocity().Length()) && Hit.Normal.Z < 0.1)
 	{
 		return;
 	}
