@@ -591,7 +591,7 @@ void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 	PPS.ColorGradingLUT = LUT;
 
 	PPS.bOverride_ColorGradingIntensity = true;
-	PPS.ColorGradingIntensity = 1.0f;
+	PPS.ColorGradingIntensity = 0.3f;
 }
 
 
