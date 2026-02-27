@@ -376,11 +376,17 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 {
 	CapsuleComponent->SetSimulatePhysics(true);
 	CapsuleComponent->AddImpulse(forces, NAME_None, true);
+	CapsuleComponent->SetNotifyRigidBodyCollision(true);
+	if (!CapsuleComponent->OnComponentHit.Contains(this, FName(TEXT("GroundCheck"))))
+	{
+		CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
+	}
+	
 
 	//this->MovementComponent->IsKnockedBack = true;
 	MovementComponent->IsKnockedBack = true;
 
-	FTimerHandle temp;
+	/*FTimerHandle temp;
 	GetWorldTimerManager().SetTimer(temp, [this]() {
 		if (this)
 		{
@@ -394,7 +400,26 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 				CapsuleComponent->SetSimulatePhysics(false);
 			}
 		}
-		}, HitFlashTimeline.GetTimelineLength(), false);
+		}, HitFlashTimeline.GetTimelineLength(), false);*/
+}
+
+void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!MovementComponent || !CapsuleComponent || !OtherComp)
+	{
+		return;
+	}
+
+	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
+
+	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	{
+		MovementComponent->IsKnockedBack = false;
+		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		CapsuleComponent->SetSimulatePhysics(false);
+		CapsuleComponent->OnComponentHit.RemoveDynamic(this, &AEnemyPawn::GroundCheck);
+		CapsuleComponent->SetNotifyRigidBodyCollision(false);
+	}
 }
 
 

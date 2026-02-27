@@ -129,6 +129,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyForceToEnemy(FVector forces);
 
+	UFUNCTION(BlueprintCallable)
+	void GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
