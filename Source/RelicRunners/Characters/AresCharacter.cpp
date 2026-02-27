@@ -167,7 +167,6 @@ void AAresCharacter::GiveRageofTheGods()
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
 	const FString MapName = GetWorld()->GetMapName();
-
 	if (MapName.Contains(TEXT("BossLevel"))) return;
 
 	// Movement info 
@@ -182,12 +181,12 @@ void AAresCharacter::UpdateCamera(float DeltaTime)
 
 	TArray<AActor*> OverlappingActors;
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
 
-	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, ACharacter::StaticClass(), ActorsToIgnore, OverlappingActors);
+	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
 
 	for (AActor* Actor : OverlappingActors)
 	{
@@ -301,7 +300,6 @@ void AAresCharacter::UpdateCamera(float DeltaTime)
 		SetActorRotation(ActorRot);
 	}
 
-
 }
 
 void AAresCharacter::PlayRandomAttackAnimation()
@@ -367,7 +365,7 @@ void AAresCharacter::BasicAttack()
 	if (!CanBasicAttack) return;
 	CanBasicAttack = false;
 
-	Damage = 8.0f;
+	Damage = 2.0f;
 
 	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 	{
