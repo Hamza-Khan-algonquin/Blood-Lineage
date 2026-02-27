@@ -78,7 +78,11 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerDexterity = PlayerStartingLevel - 1;
 	PlayerStrength = PlayerStartingLevel - 1;
 	PlayerIntelligence = PlayerStartingLevel - 1;
-
+	UpgradedHealth = 0;
+	UpgradedArmor = 0;
+	UpgradedDexterity = 0;
+	UpgradedStrength = 0;
+	UpgradedIntelligence = 0;
 	//Gold
 	PlayerStartingGold = 0;
 	PlayerGold = 0;
@@ -116,6 +120,11 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerAbilityPoints = this->PlayerAbilityPoints;
 		PS->HasReceivedStarterItems = this->HasReceivedStarterItems;
 		PS->SelectedClass = this->SelectedClass;
+		PS->UpgradedHealth = this->UpgradedHealth;
+		PS->UpgradedArmor = this->UpgradedArmor;
+		PS->UpgradedDexterity = this->UpgradedDexterity;
+		PS->UpgradedStrength = this->UpgradedStrength;
+		PS->UpgradedIntelligence = this->UpgradedIntelligence;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)

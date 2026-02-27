@@ -80,15 +80,15 @@ void UAbilitySelection::BuffStatValue(StatBuff Buff)
     if (!PS) return;
 
     if (Buff.StatType == EStats::Health)
-        PS->SetPlayerStartingHealth(PS->GetPlayerStartingMaxHealth() + Buff.Percentage);
+        PS->UpgradedHealth += Buff.Percentage;
     if (Buff.StatType == EStats::Intelligence)
-        PS->SetPlayerStartingIntelligence(PS->GetPlayerStartingIntelligence() + Buff.Percentage);
+        PS->UpgradedIntelligence += Buff.Percentage;
     if (Buff.StatType == EStats::Strength)
-        PS->SetPlayerStartingStrength(PS->GetPlayerStartingStrength() + Buff.Percentage);
+        PS->UpgradedStrength += Buff.Percentage;
     if (Buff.StatType == EStats::Armor)
-        PS->SetPlayerStartingArmor(PS->GetPlayerStartingArmor() + Buff.Percentage);
+        PS->UpgradedArmor += Buff.Percentage;
     if (Buff.StatType == EStats::Dexterity)
-        PS->SetPlayerStartingDexterity(PS->GetPlayerStartingDexterity() + Buff.Percentage);
+        PS->UpgradedDexterity += Buff.Percentage;
 }
 
 UAbilitySelection::StatBuff UAbilitySelection::RandomStatBuff()

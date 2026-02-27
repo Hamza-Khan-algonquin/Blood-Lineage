@@ -547,7 +547,7 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     FEquippedStatsSummary Summary;
 
     const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner());
-    if (!PS || !ClassInfo || PS->SelectedClass.IsNone()) return Summary;
+    if (!PS || PS->SelectedClass.IsNone()) return Summary;
 
     //Starting stats
     Summary.PlayerLevel = PS->GetPlayerStartingLevel();
@@ -562,22 +562,22 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     Summary.TotalResourceTime = PS->GetPassiveResourceTime();
     Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
 
+    //Upgraded from ability selection
+    Summary.TotalHealth += PS->UpgradedHealth;
+    Summary.TotalArmor += PS->UpgradedArmor;
+    Summary.TotalDexterity += PS->UpgradedDexterity;
+    Summary.TotalStrength += PS->UpgradedStrength;
+    Summary.TotalIntelligence += PS->UpgradedIntelligence;
+
     //Class stat bonuses
     if (ClassInfo)
     {
-        if (PS->SelectedClass.IsNone())
-        {
-            UE_LOG(LogTemp, Error, TEXT("STATS FAILED: SelectedClass is NONE. CopyProperties hasn't run yet!"));
-        }
-        else
-        {
-            FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
-            Summary.TotalHealth += (Stats.Health - 100);
-            Summary.TotalArmor += Stats.Armor;
-            Summary.TotalDexterity += Stats.Dexterity;
-            Summary.TotalStrength += Stats.Strength;
-            Summary.TotalIntelligence += Stats.Intelligence;
-        } 
+        FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
+        Summary.TotalHealth += (Stats.Health - 100);
+        Summary.TotalArmor += Stats.Armor;
+        Summary.TotalDexterity += Stats.Dexterity;
+        Summary.TotalStrength += Stats.Strength;
+        Summary.TotalIntelligence += Stats.Intelligence;
     }
 
     //Equipped Stats

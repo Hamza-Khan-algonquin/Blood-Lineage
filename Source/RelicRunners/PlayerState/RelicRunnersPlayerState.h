@@ -160,9 +160,8 @@ public:
 	UPROPERTY()
 	int PlayerStartingGold;
 	UPROPERTY()
-
 	float HealthGranted;
-
+	UPROPERTY()
 	int PlayerStartingLuck;
 	UPROPERTY()
 	int PlayerStartingResourceRegen;
@@ -171,6 +170,17 @@ public:
 
 	UPROPERTY()
 	int PassiveResourceTime;
+
+	UPROPERTY()
+	int UpgradedHealth;
+	UPROPERTY()
+	int UpgradedArmor;
+	UPROPERTY()
+	int UpgradedDexterity;
+	UPROPERTY()
+	int UpgradedStrength;
+	UPROPERTY()
+	int UpgradedIntelligence;
 
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
