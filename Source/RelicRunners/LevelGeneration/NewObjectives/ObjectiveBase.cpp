@@ -37,9 +37,3 @@ void AObjectiveBase::Activate()
 {
 	OnObjectiveCreated.Broadcast();
 }
-
-void AObjectiveBase::SetVisibility(bool newVisibility)
-{
-	SetActorHiddenInGame(!newVisibility);
-}
-

@@ -61,6 +61,7 @@ void AIslandSpawner::BeginPlay()
 
 				newIsland->OnObjectiveIslandObjectiveComplete.AddDynamic(this, &AIslandSpawner::GenerateNewIsland);
 				newIsland->OnSetCameraChange.AddDynamic(this, &AIslandSpawner::ChangeIslandCamera);
+				newIsland->OnSetCameraChangeBack.AddDynamic(this, &AIslandSpawner::ChangeIslandVisibility);
 
 				EIslandObjectiveType islandObjective = EIslandObjectiveType::None;
 				TArray<EIslandObjectiveType> ActiveFlags;
@@ -122,6 +123,17 @@ void AIslandSpawner::BeginPlay()
 
 			Islands[CurrentSpawnedIsland]->Generate();
 			Islands[CurrentSpawnedIsland]->UpdateCameraPos();
+			Islands[CurrentSpawnedIsland]->ActivateIsland();
+
+			for (int i = 1; i < NumIslands; i++)
+			{
+				if (i == NumIslands - 1)
+				{
+					Islands[i]->SetFinalIsland(true);
+				}
+
+				Islands[i]->Generate();
+			}
 		}
 	}
 }
@@ -136,14 +148,33 @@ void AIslandSpawner::GenerateNewIsland()
 			Islands[CurrentSpawnedIsland]->SetFinalIsland(true);
 		}
 
-		Islands[CurrentSpawnedIsland]->Generate();
+		//Islands[CurrentSpawnedIsland]->Generate();
+		Islands[CurrentSpawnedIsland]->ActivateIsland();
 	}
 }
 
 void AIslandSpawner::ChangeIslandCamera(int islandIndex)
 {
-	if (Islands.IsValidIndex(islandIndex + 1))
+	if (Islands.IsValidIndex(islandIndex+1))
 	{
-		Islands[islandIndex + 1]->UpdateCameraPos();
+		Islands[islandIndex+1]->UpdateCameraPos();
+	}
+}
+
+void AIslandSpawner::ChangeIslandVisibility(int islandIndex)
+{
+	for (int i = 0; i < NumIslands;i++)
+	{
+		if (i == islandIndex - 1 ||
+			i == islandIndex ||
+			i == islandIndex + 1 && Islands[i]->IsActivated)
+		{
+			Islands[i]->SetIslandVisibility(true);
+		}
+		else
+		{
+			Islands[i]->SetIslandVisibility(false);
+		}
+
 	}
 }
