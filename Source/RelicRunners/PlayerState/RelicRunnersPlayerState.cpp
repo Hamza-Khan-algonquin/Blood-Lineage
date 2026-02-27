@@ -33,6 +33,7 @@
 #include "TimerManager.h"
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include "RelicRunners/Menu/JoinUserWidget.h"
+#include <ClassInfo.h>
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {
@@ -125,6 +126,11 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->UpgradedDexterity = this->UpgradedDexterity;
 		PS->UpgradedStrength = this->UpgradedStrength;
 		PS->UpgradedIntelligence = this->UpgradedIntelligence;
+		PS->PlayerStartingMaxHealth = this->PlayerStartingMaxHealth;
+		PS->PlayerStartingArmor = this->PlayerStartingArmor;
+		PS->PlayerStartingDexterity = this->PlayerStartingDexterity;
+		PS->PlayerStartingStrength = this->PlayerStartingStrength;
+		PS->PlayerStartingIntelligence = this->PlayerStartingIntelligence;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)
@@ -148,8 +154,6 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 			PS->InventoryComponent->InventoryItems.Num(),
 			PS->InventoryComponent->EquippedItems.Num());
 	}
-
-	PS->InventoryComponent->CalculateEquippedStats();
 	PS->ForceNetUpdate();
 }
 
@@ -252,6 +256,16 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	InventoryComponent->AddItem(Item);
 	Server_EquipItemByID(Item->ItemData.UniqueID);
 
+	if (InventoryComponent->ClassInfo)
+	{
+		FClassData Stats = InventoryComponent->ClassInfo->GetStats(SelectedClass.ToString());
+		PlayerStartingMaxHealth += (Stats.Health - 100);
+		PlayerHealth = PlayerStartingMaxHealth;
+		PlayerStartingArmor += Stats.Armor;
+		PlayerStartingDexterity += Stats.Dexterity;
+		PlayerStartingStrength += Stats.Strength;
+		PlayerStartingIntelligence += Stats.Intelligence;
+	}
 	HasReceivedStarterItems = true;
 }
 
@@ -341,8 +355,6 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 		UpdateRemoteHUDHealthPotions();
 	}
 }
-
-
 
 void ARelicRunnersPlayerState::OnLevelUp()
 {
@@ -578,7 +590,7 @@ void ARelicRunnersPlayerState::Server_EquipItemByID_Implementation(FGuid ID)
 		{
 			Char->UpdateItemVisuals(Item);
 			InventoryComponent->EquipItem(Item, Cast<ARelicRunnersPlayerController>(Char->GetController()));
-			InventoryComponent->UpdateTotalEquippedStats(GetPawn());
+			InventoryComponent->UpdateTotalEquippedStats(Char);
 		}
 	}
 }
@@ -606,7 +618,7 @@ void ARelicRunnersPlayerState::Server_UnequipItemByID_Implementation(FGuid ID)
 		{
 			Char->UpdateItemVisuals(nullptr, ItemType);
 			InventoryComponent->UnequipItem(EquippedItem, Cast<ARelicRunnersPlayerController>(Char->GetController()));
-			InventoryComponent->UpdateTotalEquippedStats(GetPawn());
+			InventoryComponent->UpdateTotalEquippedStats(Char);
 		}
 	}
 

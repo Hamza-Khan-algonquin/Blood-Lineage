@@ -361,15 +361,7 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
 {
     if (!PawnOwner) return;
 
-    FEquippedStatsSummary NewStats = CalculateEquippedStats();
-    if (NewStats.PlayerLevel > 0)
-    {
-        CachedEquippedStats = NewStats;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Stats calculation returned empty; Cache not updated."));
-    }
+    CachedEquippedStats = CalculateEquippedStats();
 
     //Player
     if (ARelicRunnersPlayerState* PS = PawnOwner->GetPlayerState<ARelicRunnersPlayerState>())
@@ -388,16 +380,6 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
         float BaseMovementSpeed = 700.0f;
         float NewMovementSpeed = BaseMovementSpeed * (1 + (PercentMovementSpeedIncrease / 100.0f));
         Character->SetMovementSpeed(NewMovementSpeed);
-    }
-    
-    //Enemies
-    else if (AEnemyCharacterAI* Enemy = Cast<AEnemyCharacterAI>(PawnOwner))
-    {
-        if (Enemy->HasAuthority())
-        {
-            Enemy->SetMaxHealth(CachedEquippedStats.TotalHealth);
-            Enemy->Client_UpdateEquippedStats(CachedEquippedStats);
-        }
     }
 
     OnStatsChanged.Broadcast(CachedEquippedStats);
@@ -542,12 +524,12 @@ void UInventoryComponent::RemoveItemByID(FGuid ItemID)
     }
 }
 
-FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
+FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRunnersPlayerState* InPS) const
 {
     FEquippedStatsSummary Summary;
 
-    const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner());
-    if (!PS || PS->SelectedClass.IsNone()) return Summary;
+    const ARelicRunnersPlayerState* PS = InPS ? InPS : Cast<ARelicRunnersPlayerState>(GetOwner());
+    if (!PS) return Summary;
 
     //Starting stats
     Summary.PlayerLevel = PS->GetPlayerStartingLevel();
@@ -568,17 +550,6 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     Summary.TotalDexterity += PS->UpgradedDexterity;
     Summary.TotalStrength += PS->UpgradedStrength;
     Summary.TotalIntelligence += PS->UpgradedIntelligence;
-
-    //Class stat bonuses
-    if (ClassInfo)
-    {
-        FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
-        Summary.TotalHealth += (Stats.Health - 100);
-        Summary.TotalArmor += Stats.Armor;
-        Summary.TotalDexterity += Stats.Dexterity;
-        Summary.TotalStrength += Stats.Strength;
-        Summary.TotalIntelligence += Stats.Intelligence;
-    }
 
     //Equipped Stats
     for (const FEquippedItemEntry& Entry : EquippedItems)

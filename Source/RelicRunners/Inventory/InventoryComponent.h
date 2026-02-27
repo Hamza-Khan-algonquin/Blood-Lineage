@@ -124,7 +124,7 @@ public:
     void UpdateTotalEquippedStats(APawn* PawnOwner);
     UFUNCTION()
     UItemObject* FindItemByID(FGuid ItemID) const;
-    FEquippedStatsSummary CalculateEquippedStats() const;
+    FEquippedStatsSummary CalculateEquippedStats(const class ARelicRunnersPlayerState* InPS = nullptr) const;
     FEquippedStatsSummary CachedEquippedStats;
     UFUNCTION()
     void OnRep_SortingMethod();
