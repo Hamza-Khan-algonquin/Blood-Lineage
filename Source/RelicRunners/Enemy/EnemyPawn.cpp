@@ -410,6 +410,11 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 		return;
 	}
 
+	if (!FMath::IsNearlyZero(CapsuleComponent->GetComponentVelocity().Length()) && Hit.Normal.Z < 0.1)
+	{
+		return;
+	}
+
 	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
 
 	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
