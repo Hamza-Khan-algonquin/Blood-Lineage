@@ -41,6 +41,8 @@ public:
 
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
+    UAnimMontage* PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage);
+
     virtual FName GetAbilityName() const { return FName(TEXT("AbilityBase")); }
 
 public:
@@ -86,6 +88,12 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
     TObjectPtr<UNiagaraSystem> AbilityVFX1 = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* AbilityAnim;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* AbilityAnim1;
 
 };
 

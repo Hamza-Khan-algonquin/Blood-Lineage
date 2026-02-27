@@ -36,7 +36,7 @@ public:
     bool InvertedXMouse = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-    bool InvertedYMouse = true;
+    bool InvertedYMouse = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse Sens")
     float HorizSens = 1.0f;
@@ -49,6 +49,9 @@ public:
 
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     bool motionBlurEnabled = true;
+
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    float MasterVolume = 1.0f;
 };
 
 static FString GetReadableKeyName(const FKey& Key)

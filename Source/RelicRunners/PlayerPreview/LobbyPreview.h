@@ -54,6 +54,21 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* NecklaceMesh;
 
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* AresModel;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* NemesisModel;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* ArtemisModel;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* AphroditeModel;
+
+	UPROPERTY(EditAnywhere)
+	UStaticMesh* ShieldAsset;
+
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MainhandItemMesh;
 

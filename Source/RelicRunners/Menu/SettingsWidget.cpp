@@ -20,11 +20,15 @@
 #include "PauseMenuWidget.h"
 #include "Engine/Engine.h"
 #include "GameFramework/GameUserSettings.h"
+#include "AudioMixerBlueprintLibrary.h"
+#include "AudioEditorSettings.h"
+
 
 
 void USettingsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
 
 	if (BackButton)
 	{
@@ -34,11 +38,6 @@ void USettingsWidget::NativeConstruct()
 	if (B_RestoreDefaults)
 	{
 		B_RestoreDefaults->OnClicked.AddDynamic(this, &USettingsWidget::OnRestoreDefaultsClicked);
-	}
-
-	if (ResolutionDropDown)
-	{
-		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleSelectionChanged);
 	}
 
 	if (FOVSlider)
@@ -69,6 +68,7 @@ void USettingsWidget::NativeConstruct()
 			}
 		}
 	}
+
 	if (B_InvertedYMouse)
 	{
 		B_InvertedYMouse->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::ToggleInvertedYMouse);
@@ -79,15 +79,18 @@ void USettingsWidget::NativeConstruct()
 			{
 				B_InvertedYMouse->SetIsChecked(GI->Keys->InvertedYMouse);
 			}
+			
 		}
 	}
 
 	if (XSlider)
 	{
+		XSlider->SetValue(0.5f);
 		XSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensXChanged);
 	}
 	if (YSlider)
 	{
+		YSlider->SetValue(0.5f);
 		YSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensYChanged);
 	}
 
@@ -99,7 +102,6 @@ void USettingsWidget::NativeConstruct()
 			const float XSens = GI->Keys->HorizSens;
 			const float YSens = GI->Keys->VertSens;
 
-			// Convert Sens -> slider 0..1
 			const float XNorm = FMath::Clamp((XSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
 			const float YNorm = FMath::Clamp((YSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
 
@@ -113,8 +115,8 @@ void USettingsWidget::NativeConstruct()
 
 	if (BrightnessSlider)
 	{
-		BrightnessSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnBrightnessChanged);
-
+		BrightnessSlider->OnValueChanged.RemoveDynamic(this, &USettingsWidget::OnBrightnessChanged);
+		
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
 			if (GI->Keys)
@@ -126,6 +128,7 @@ void USettingsWidget::NativeConstruct()
 				UpdateBrightnessText(B);
 			}
 		}
+		BrightnessSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnBrightnessChanged);
 	}
 
 	if (B_MotionBlur)
@@ -139,6 +142,76 @@ void USettingsWidget::NativeConstruct()
 				ApplyMotionBlur(GI->Keys->motionBlurEnabled);
 			}
 		}
+	}
+
+	if (ResolutionDropDown)
+	{
+		ResolutionDropDown->ClearOptions();
+		ResMap.Empty();
+
+		TArray<FIntPoint> Resolutions =
+		{ {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440} };
+
+		for (const FIntPoint& Res : Resolutions)
+		{
+			FString Label = FString::Printf(TEXT("%dx%d"), Res.X, Res.Y);
+			ResolutionDropDown->AddOption(Label);
+			ResMap.Add(Label, Res);
+		}
+
+		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleResolutionSelectionChanged);
+	}
+
+	if (WindowModeDropDown)
+	{
+		FillWindowOptions();
+		SetWindowMode();
+		WindowModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleWindowModeSelectionChanged);
+	}
+
+	if (ColourModeDropDown)
+	{
+		ColourModeDropDown->ClearOptions();
+		ColourModeDropDown->AddOption("Normal");
+		ColourModeDropDown->AddOption("Protanopia");
+		ColourModeDropDown->AddOption("Deutranopia");
+		ColourModeDropDown->AddOption("Tritanopia");
+		ColourModeDropDown->RefreshOptions();
+
+		ColourModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleColorModeChanged);
+
+		ColourModeDropDown->SetSelectedOption("Normal");
+
+	}
+
+	if (OutputDeviceDropDown)
+	{
+		OutputDeviceDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleOutputDeviceChanged);
+		FOnAudioOutputDevicesObtained DevicesDelegate;
+		UAudioMixerBlueprintLibrary::GetAvailableAudioOutputDevices(this, DevicesDelegate);
+	}
+
+	if (MasterVolumeSlider)
+	{
+		MasterVolumeSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnMasterVolumeChanged);
+
+		float CurrentVolume = 1.0f;
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				CurrentVolume = GI->Keys->MasterVolume;
+			}
+		}
+
+		const float Normalized = FMath::Clamp(
+			(CurrentVolume - MinVolume) / (MaxVolume - MinVolume),
+			0.f, 1.f);
+
+		MasterVolumeSlider->SetValue(Normalized);
+		ApplyMasterVolume(CurrentVolume);
+		UpdateMasterVolumeText(CurrentVolume);
 	}
 	InitializeDefaultKeybindings();
 }
@@ -350,27 +423,84 @@ void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 	}
 }
 
-void USettingsWidget::HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType)
+void USettingsWidget::HandleResolutionSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (Item == "1280x720")
+	if (SelectionType == ESelectInfo::Direct) return;
+	
+	if (!ResMap.Contains(SelectedItem)) return;
+
+	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 1080x720."));
-	}
-	else if (Item == "1920x1080")
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 1920x1080."));
-	}
-	else if (Item == "2560x1440")
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 2560x1440."));
-	}
-	else if (Item == "3840x2160")
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Resolution has been set to 3840x2160."));
+		const FIntPoint NewRes = ResMap[SelectedItem];
+
+		GS->SetFullscreenMode(EWindowMode::Windowed);
+		GS->SetScreenResolution(NewRes);
+		GS->ApplyResolutionSettings(false);
+		GS->SaveSettings();
 	}
 }
 
+void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	if(SelectionType == ESelectInfo::OnMouseClick)
+		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+		{
+			EWindowMode::Type Mode = EWindowMode::Windowed;
+			if (SelectedItem == "FullScreen")
+			{
+				FIntPoint NewRes(2560, 1440);
+				GS->SetFullscreenMode(EWindowMode::Fullscreen);
+				GS->SetScreenResolution(NewRes);
+			}
+			else if (SelectedItem == "WindowedFullscreen")
+			{
+				GS->SetFullscreenMode(EWindowMode::WindowedFullscreen);
+			}
+			else if (SelectedItem == "Windowed")
+			{
+				GS->SetFullscreenMode(EWindowMode::Windowed);
+			}
 
+			GS->ApplySettings(false);
+			GS->SaveSettings();
+
+		}
+}
+
+void USettingsWidget::FillWindowOptions()
+{
+	WindowModeDropDown->ClearOptions();
+
+	WindowModeDropDown->AddOption(TEXT("FullScreen"));
+	WindowModeDropDown->AddOption(TEXT("WindowedFullscreen"));
+	WindowModeDropDown->AddOption(TEXT("Windowed"));
+}
+
+//to make it show the current mode selected whne the menu opens
+void USettingsWidget::SetWindowMode()
+{
+	if (!WindowModeDropDown) return;
+
+	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+	{
+		const EWindowMode::Type Mode = GS->GetFullscreenMode();
+
+		FString Label = "Windowed";
+		if (Mode == EWindowMode::Fullscreen)
+		{
+			Label = "FullScreen";
+		}
+		else if (Mode == EWindowMode::WindowedFullscreen)
+		{
+			Label = "WindowedFullscreen";
+		}
+		else if (Mode == EWindowMode::Windowed)
+		{
+			Label = "Windowed";
+		}
+		WindowModeDropDown->SetSelectedOption(Label);
+	}
+}
 
 //fov settings
 void USettingsWidget::OnFOVSliderChanged(float Value)
@@ -419,11 +549,114 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 			FPostProcessSettings& PPS = Camera->PostProcessSettings;
 
 			PPS.bOverride_MotionBlurAmount = true;
-			PPS.MotionBlurAmount = bEnabled ? 0.5f : 0.0f;
+			PPS.MotionBlurAmount = bEnabled ? 0.8f : 0.0f;
 
 			Camera->PostProcessBlendWeight = 1.0f;
 		}
 	}
+}
+void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (Item == "Normal")
+	{
+		ApplyColorLUT(LUT_Normal);
+	}
+	else if (Item == "Protanopia")
+	{
+		ApplyColorLUT(LUT_Protanopia);
+	}
+	else if (Item == "Deutranopia")
+	{
+		ApplyColorLUT(LUT_Deuternopia);
+	}
+	else if (Item == "Tritanopia")
+	{
+		ApplyColorLUT(LUT_Tritanopia);
+	}
+}
+
+void USettingsWidget::ApplyColorLUT(UTexture* LUT)
+{
+	ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+	if (!Character) return;
+
+	UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>();
+	if (!Camera) return;
+	
+	Camera->PostProcessBlendWeight = 1.0f;
+
+	FPostProcessSettings& PPS = Camera->PostProcessSettings;
+
+	PPS.bOverride_ColorGradingLUT = true;
+	PPS.ColorGradingLUT = LUT;
+
+	PPS.bOverride_ColorGradingIntensity = true;
+	PPS.ColorGradingIntensity = 0.3f;
+}
+
+
+
+
+void USettingsWidget::HandleOutputDeviceChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType == ESelectInfo::Direct) return;
+
+	const FString* DeviceId = OutputDeviceMap.Find(Item);
+	if (!DeviceId) return;
+
+
+}
+
+void USettingsWidget::OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& Devices)
+{
+	if (!OutputDeviceDropDown) return;
+
+	OutputDeviceDropDown->ClearOptions();
+	OutputDeviceMap.Empty();
+
+	for (const FAudioOutputDeviceInfo& D : Devices)
+	{
+		OutputDeviceDropDown->AddOption(D.Name);
+		OutputDeviceMap.Add(D.Name, D.DeviceId);
+	}
+
+	if (Devices.Num() > 0)
+	{
+		OutputDeviceDropDown->SetSelectedOption(Devices[0].Name);
+	}
+}
+
+void USettingsWidget::OnMasterVolumeChanged(float Value)
+{
+	const float NewVolume = FMath::Lerp(MinVolume, MaxVolume, Value);
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->MasterVolume = NewVolume;
+		}
+	}
+
+	ApplyMasterVolume(NewVolume);
+	UpdateMasterVolumeText(NewVolume);
+}
+
+void USettingsWidget::ApplyMasterVolume(float Volume)
+{
+	if (!MasterSoundClass || !MasterSoundMix) return;
+
+	UGameplayStatics::PushSoundMixModifier(GetWorld(), MasterSoundMix);
+
+	UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MasterSoundMix, MasterSoundClass, Volume, 1.0f, 0.0f, true);
+}
+
+void USettingsWidget::UpdateMasterVolumeText(float Volume)
+{
+	if (!TB_MasterVolumeValue) return;
+
+	const int32 Percent = FMath::RoundToInt(Volume * 100.f);
+	TB_MasterVolumeValue->SetText(FText::FromString(FString::Printf(TEXT("%d%%"), Percent)));
 }
 void USettingsWidget::BackButtonClicked()
 {
@@ -475,6 +708,7 @@ void USettingsWidget::ToggleInvertedXMouse(bool isChecked)
 	if (GI->Keys)
 	{
 		GI->Keys->InvertedXMouse = isChecked;
+		GI->ApplyKeybindings();
 	}
 }
 
@@ -484,5 +718,6 @@ void USettingsWidget::ToggleInvertedYMouse(bool isChecked)
 	if (GI->Keys)
 	{
 		GI->Keys->InvertedYMouse = isChecked;
+		GI->ApplyKeybindings();
 	}
 }

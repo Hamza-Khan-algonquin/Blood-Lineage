@@ -91,11 +91,6 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 	TArray<UPrimitiveComponent*> otherColliders;
 	collider->GetOverlappingComponents(otherColliders);
 
-	if (otherColliders.Num() <= 0)
-	{
-		return;
-	}
-
 	for (UPrimitiveComponent* otherCollider : otherColliders)
 	{
 		if (!otherCollider)
@@ -112,6 +107,13 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 
 void UAnimNotifyState_BindAttackMethod::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
+#if WITH_EDITOR
+	if (CallEditorDebugMessages)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Notify End Attack"));
+	}
+#endif
+
 	if (!Owner)
 	{
 		return;
