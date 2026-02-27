@@ -112,6 +112,10 @@ public:
     TMap<FUniqueNetIdRepl, FPendingClientTravel> PendingClientTravels;
     TWeakPtr<class IOnlineSession, ESPMode::ThreadSafe> SessionInterface;
 
+
+    UPROPERTY(Replicated)
+    int StageNumber = 0;
+
 private:
 
 

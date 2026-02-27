@@ -49,6 +49,6 @@ void ATormentedSoulCharacter::BasicAttack(UPrimitiveComponent* OverlappedCompone
 	//check to make sure we are attacking and that we did overlap with the player
 	if (IsAttacking && OtherActor->Tags.Contains("Player"))
 	{
-		UGameplayStatics::ApplyDamage(OtherActor, AttackDamage, this->Controller, this, nullptr);
+		UGameplayStatics::ApplyDamage(OtherActor, EnemyStatsComponent->GetAttackDamage(), this->Controller, this, nullptr);
 	}
 }

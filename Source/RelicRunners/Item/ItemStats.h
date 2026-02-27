@@ -118,16 +118,16 @@ public:
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot chance."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot quality."), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot chance."), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot quality."), FText::AsNumber(GetLootQuality(StatValue))));
         }
         else if (BorderType == "Purity")
         {
             Data.Name = FText::FromString("Purity");
             Data.Icon = LoadIcon("PurityIcon");
             Data.IconColor = GetIconColor("Purity");
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Heal amount."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Chance to not consume."), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Heal."), FText::AsNumber(GetHealPercent(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Chance to not consume."), FText::AsNumber(GetChanceToNotConsume(StatValue))));
         }
         else if (BorderType == "Level")
         {
@@ -135,7 +135,6 @@ public:
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("Level");
             Data.Descriptions.Add(FText::Format(FText::FromString("Current Level"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0} From Meta-Upgrade"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
         }
         else if (BorderType == "Mana")
         {
@@ -143,7 +142,6 @@ public:
             Data.Icon = LoadIcon("ResourceIcon");
             Data.IconColor = GetIconColor("Mana");
             Data.Descriptions.Add(FText::Format(FText::FromString("Mana pool."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0} From Meta-Upgrade"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
         }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {
@@ -336,6 +334,33 @@ public:
     {
         float Multiplier = FMath::Pow(10.0f, Decimals); 
         return FMath::RoundToFloat(Value * Multiplier) / Multiplier;
+    }
+
+    static float GetLootQuality(int Value)
+    {
+        float Percent = Value * 2.3f;
+
+        return RoundToDecimal(Percent, 1);
+    }
+    static float GetLootChance(int Value)
+    {
+        float Percent = Value * 1.75f;
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static float GetHealPercent(int Value)
+    {
+        float Percent = Value;
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static float GetChanceToNotConsume(int Value)
+    {
+        float Percent = Value / 3;
+
+        return RoundToDecimal(Percent, 1);
     }
 
     static float GetDefencePerc(int Value)

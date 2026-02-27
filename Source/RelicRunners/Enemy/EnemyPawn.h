@@ -15,6 +15,7 @@ class UEnemyLODStaticMeshComponent;
 class UEnemyLODComponent;
 class UEnemyBoidMovementComponent;
 class UEnemyStats;
+class USphereComponent;
 
 UCLASS()
 class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
@@ -57,6 +58,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	UCurveFloat* HitFlashCurve;
 
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USphereComponent* BasicAttackCollider;*/
+
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
@@ -65,7 +69,7 @@ public:
 	float KnockBackStrength;
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float AdditionalUpwardsKnockBackForces;
-
+	bool IsAttacking = false;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
@@ -77,7 +81,7 @@ protected:
 	bool SetControllerActiveStatus = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	FTimerHandle LifeSpanTimerHandle;
-	bool IsAttacking = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
 	FTimerHandle AttackHandle;
@@ -121,6 +125,12 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
 	virtual void SpawnItem();
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyForceToEnemy(FVector forces);
+
+	UFUNCTION(BlueprintCallable)
+	void GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

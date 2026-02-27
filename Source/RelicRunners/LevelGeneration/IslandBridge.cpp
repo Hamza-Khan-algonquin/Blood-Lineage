@@ -93,8 +93,8 @@ void AIslandBridge::OnRep_OnFinalBridgeChange()
 	}
 	else
 	{
-		Barrier->SetVisibility(false);
-		Barrier->SetCollisionProfileName("NoCollision");
+		BackBarrier->SetVisibility(false);
+		BackBarrier->SetCollisionProfileName("NoCollision");
 	}
 }
 

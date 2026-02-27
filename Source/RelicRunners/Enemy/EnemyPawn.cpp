@@ -22,6 +22,7 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
+#include "Components/SphereComponent.h"
 
 
 
@@ -49,6 +50,8 @@ AEnemyPawn::AEnemyPawn()
 
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
+
+	//BasicAttackCollider = CreateDefaultSubobject<USphereComponent>("Basic Attack Collider");
 
 	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
 	EnemyStatsComponent->SetEnemyType(EEnemyType::LIGHT);
@@ -95,20 +98,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		HitFlash();
 
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		//CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
-
-		this->MovementComponent->IsKnockedBack = true;
-
-		FTimerHandle temp;
-		GetWorldTimerManager().SetTimer(temp, [this]() {
-				if (this)
-				{
-					if(this->MovementComponent)
-						this->MovementComponent->IsKnockedBack = false;
-					if (this->CapsuleComponent)
-						this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-				}
-			}, HitFlashTimeline.GetTimelineLength(), false);
+		ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
 	}
 	
 	//call the super for important stuff
@@ -263,8 +253,14 @@ void AEnemyPawn::AttackTick()
 {
 	if (MovementComponent->IsAtTarget())
 	{
-		if (AttackMontage.IsValid())
+		if (!AttackMontage.IsNull())
 		{
+
+			if (!AttackMontage.IsValid())
+			{
+				AttackMontage.LoadSynchronous();
+			}
+
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
 			
@@ -275,6 +271,7 @@ void AEnemyPawn::AttackTick()
 				{
 					if (this)
 					{
+						this->IsAttacking = false;
 						if(this->MovementComponent)
 							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 					}
@@ -287,7 +284,7 @@ void AEnemyPawn::AttackTick()
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 		}
 
-		IsAttacking = false;
+		
 		if (!HitFlashTimeline.IsPlaying())
 		{
 			SetActorTickEnabled(false);
@@ -324,7 +321,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = 0;
+	float chance = FMath::RandRange(0.f,1.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{
@@ -350,14 +347,14 @@ void AEnemyPawn::SpawnItem()
 
 		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
 
-		/*if (Dropped)
+		if (Dropped)
 		{
 			Dropped->Initialize(DroppedItem->ItemData);
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
 
-		FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
 
 		FActorSpawnParameters Params;
@@ -372,6 +369,56 @@ void AEnemyPawn::SpawnItem()
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}*/
+	}
+}
+
+void AEnemyPawn::ApplyForceToEnemy(FVector forces)
+{
+	CapsuleComponent->SetSimulatePhysics(true);
+	CapsuleComponent->AddImpulse(forces, NAME_None, true);
+	CapsuleComponent->SetNotifyRigidBodyCollision(true);
+	if (!CapsuleComponent->OnComponentHit.Contains(this, FName(TEXT("GroundCheck"))))
+	{
+		CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
+	}
+	
+
+	//this->MovementComponent->IsKnockedBack = true;
+	MovementComponent->IsKnockedBack = true;
+
+	/*FTimerHandle temp;
+	GetWorldTimerManager().SetTimer(temp, [this]() {
+		if (this)
+		{
+			if (!this)
+				return;
+			if (MovementComponent)
+				MovementComponent->IsKnockedBack = false;
+			if (CapsuleComponent)
+			{
+				CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+				CapsuleComponent->SetSimulatePhysics(false);
+			}
+		}
+		}, HitFlashTimeline.GetTimelineLength(), false);*/
+}
+
+void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!MovementComponent || !CapsuleComponent || !OtherComp)
+	{
+		return;
+	}
+
+	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
+
+	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	{
+		MovementComponent->IsKnockedBack = false;
+		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		CapsuleComponent->SetSimulatePhysics(false);
+		CapsuleComponent->OnComponentHit.RemoveDynamic(this, &AEnemyPawn::GroundCheck);
+		CapsuleComponent->SetNotifyRigidBodyCollision(false);
 	}
 }
 

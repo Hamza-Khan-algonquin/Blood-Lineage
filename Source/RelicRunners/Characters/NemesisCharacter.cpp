@@ -16,26 +16,18 @@
 ANemesisCharacter::ANemesisCharacter()
 {
     Damage = 20.0f;
+
+    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_lightattack1_Montage.melee_lightattack1_Montage"));
+
+    if (AnimAsset.Succeeded())
+    {
+        BasicAnim = AnimAsset.Object;
+    }
 }
 
 void ANemesisCharacter::BeginPlay()
 {
     Super::BeginPlay();
-
-
-
-    ////Starting Stats
-    //if (ClassInfo)
-    //{
-    //    FClassData Stats = ClassInfo->GetStats("Nemesis");
-    //    SetPlayerStartingHealth(Stats.Health);
-    //    PlayerMaxHealth = Stats.Health;
-    //    PlayerHealth = Stats.Health;
-    //    SetPlayerStartingArmor(Stats.Armor);
-    //    SetPlayerStartingStrength(Stats.Strength);
-    //    SetPlayerStartingDexterity(Stats.Dexterity);
-    //    SetPlayerStartingIntelligence(Stats.Intelligence);
-    //}
 }
 
 // Called when player takes control of this character
@@ -161,26 +153,23 @@ void ANemesisCharacter::ActivateUltimateAbilities()
     {
         // Activate Vengeful Dance ability
         AbilitySystem->TryActivateAbilityByClass(UDivinePunishment::StaticClass());
-
     }
 }
 
 void ANemesisCharacter::PlayRandomAttackAnimation()
 {
-    UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-    if (!AnimInstance) return;
+    if (!BasicAnim)
+        return;
 
-    TArray<UAnimSequence*> SwordAttacks;
-    if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
-    if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
-    if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
-    if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+    USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+    if (!SkeletalMeshComponent)
+        return;
 
-    if (SwordAttacks.Num() > 0)
-    {
-        int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
-        AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
-    }
+    UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
+    if (!AnimInstance)
+        return;
+
+    AnimInstance->Montage_Play(BasicAnim, 1.f);
 }
 
 void ANemesisCharacter::PerformSwingTrace()
@@ -230,7 +219,7 @@ void ANemesisCharacter::BasicAttack()
     if (!CanBasicAttack) return;
     CanBasicAttack = false;
 
-    Damage = 5.0f;
+    Damage = 1.0f;
 
     if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
     {
@@ -259,6 +248,9 @@ void ANemesisCharacter::HeavyAttack()
 
 void ANemesisCharacter::UpdateCamera(float DeltaTime)
 {
+    const FString MapName = GetWorld()->GetMapName();
+    if (MapName.Contains(TEXT("BossLevel"))) return;
+
     // Movement info 
     FVector Velocity = GetVelocity();
     Velocity.Z = 0.f;
@@ -271,12 +263,12 @@ void ANemesisCharacter::UpdateCamera(float DeltaTime)
 
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(this);
 
-    UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, ACharacter::StaticClass(), ActorsToIgnore,OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore,OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {

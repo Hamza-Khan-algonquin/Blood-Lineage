@@ -167,8 +167,6 @@ void AAresCharacter::GiveRageofTheGods()
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
 	const FString MapName = GetWorld()->GetMapName();
-	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
-
 	if (MapName.Contains(TEXT("BossLevel"))) return;
 
 	// Movement info 
@@ -183,12 +181,12 @@ void AAresCharacter::UpdateCamera(float DeltaTime)
 
 	TArray<AActor*> OverlappingActors;
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
 
-	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, ACharacter::StaticClass(), ActorsToIgnore, OverlappingActors);
+	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
 
 	for (AActor* Actor : OverlappingActors)
 	{
@@ -302,7 +300,6 @@ void AAresCharacter::UpdateCamera(float DeltaTime)
 		SetActorRotation(ActorRot);
 	}
 
-
 }
 
 void AAresCharacter::PlayRandomAttackAnimation()
@@ -332,8 +329,8 @@ void AAresCharacter::PerformSwingTrace()
 	Params.AddIgnoredActor(this);
 
 	TArray<FHitResult> Hits;
-	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params);
 
+	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params);
 
 	AlreadyHitActors.Empty();
 
@@ -368,7 +365,7 @@ void AAresCharacter::BasicAttack()
 	if (!CanBasicAttack) return;
 	CanBasicAttack = false;
 
-	Damage = 8.0f;
+	Damage = 2.0f;
 
 	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 	{

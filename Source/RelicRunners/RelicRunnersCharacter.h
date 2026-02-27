@@ -86,6 +86,10 @@ class ARelicRunnersCharacter : public ACharacter
 
 public:
 
+	//void OnPause();
+
+	//void ContinueMontage();
+
 	//Functions
 	ARelicRunnersCharacter();
 	void Die();
@@ -109,6 +113,7 @@ public:
 	virtual void PerformSwingTrace();
 	void UpdatePlayerHUDWorldFacing();
 	void TraceForInteractables();
+	void SetMovementSpeed(float value);
 	UFUNCTION()
     void ResetBasicAttack();
 	UFUNCTION()
@@ -183,8 +188,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
 	
-
-// Mirror of Desire, For my mergers :)
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Mirror")
 	bool bMirrorActive = false;
 
@@ -202,9 +205,7 @@ public:
 
 	UFUNCTION()
 	void DrawMirrorDebug();
-// Mirror of Desire, For my mergers :)
 
-// Guard For Ares, For my mergers :)
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Guard")
 	bool bGuardActive = false;
 
@@ -220,9 +221,8 @@ public:
 	bool IsDamageFromFront(AActor* DamageCauser) const;
 
 	UFUNCTION()
-	void DrawGuardDebug(); 
+	void DrawGuardDebug();
 
-// Guard For Ares, For my mergers :)
 
 protected:
 
@@ -276,7 +276,7 @@ protected:
 
 	// Height & offset tweaks
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
-	float HeightOffset = 80.f;
+	float HeightOffset = 100.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
 	float ShoulderOffset = 40.f;
@@ -290,10 +290,10 @@ protected:
 
 	// Pitch limits
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MinPitch = -45.f;
+	float MinPitch = 60.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MaxPitch = -5.f;
+	float MaxPitch = 25.f;
 
 	// Optional bounce
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")

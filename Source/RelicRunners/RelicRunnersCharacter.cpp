@@ -55,7 +55,8 @@
 #include "RelicRunners/Menu/Keybinds.h"
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
 #include <Kismet/KismetMathLibrary.h>
-
+#include "Components/SkeletalMeshComponent.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -79,28 +80,22 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 
-	// Slightly closer than before
-	CameraBoom->TargetArmLength = 500.0f; 
+	CameraBoom->TargetArmLength = 500.0f;
 
-	// Slightly higher
-	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 10.f)); 
-
-	// Slight downward angle to see enemies
-	CameraBoom->SetRelativeRotation(FRotator(-10.f, 0.f, 0.f));
-
-	// Smooth follow
 	CameraBoom->bUsePawnControlRotation = true;
+
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->CameraLagSpeed = 8.f;
+
 	CameraBoom->bEnableCameraRotationLag = true;
 	CameraBoom->CameraRotationLagSpeed = 6.f;
-	CameraBoom->bDoCollisionTest = false;
-	//CameraBoom->SocketOffset = FVector(0.f, 40.f, 0.f); // shoulder offset
 
-	// Follow camera
+	CameraBoom->bDoCollisionTest = false;
+
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+
 
 	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
 	MinimapSpringArm->SetupAttachment(RootComponent);
@@ -201,11 +196,17 @@ void ARelicRunnersCharacter::BeginPlay()
 	respawnPoint = GetActorLocation();
 
 	const FString MapName = GetWorld()->GetMapName();
-	UE_LOG(LogTemp, Log, TEXT("BeginPlay LocalController - MapName: %s"), *MapName);
-
 	if (MapName.Contains(TEXT("BossLevel")))
 	{
 		CameraBoom->TargetArmLength = 3000;
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
+	}
+
+	APlayerController* PC = Cast<APlayerController>(Controller);
+	if (PC)
+	{
+		PC->PlayerCameraManager->ViewPitchMin = -60.f;
+		PC->PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 
@@ -274,8 +275,14 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 			}
 		}
 	}
-
-	if (RelicPlayerState) RelicPlayerState->ModifyHealth(-ActualDamage);
+	
+	if (RelicPlayerState)
+	{
+		int Defence = RelicPlayerState->GetInventoryComponent()->CachedEquippedStats.TotalArmor;
+		float Reduction = (1.0f - (ItemStats::GetDefencePerc(Defence) / 100.0f));
+		int DamageTaken = ActualDamage * Reduction;
+		RelicPlayerState->ModifyHealth(-DamageTaken);
+	}
 
 	return ActualDamage;
 }
@@ -362,6 +369,14 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 		FVector Target(0.f, 0.f, -1000.f);
 		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(CurrentLocation, Target);
 		Controller->SetControlRotation(LookAtRot);
+	}
+}
+
+void ARelicRunnersCharacter::SetMovementSpeed(float value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = value;
 	}
 }
 
@@ -520,15 +535,18 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 				XSens = GI->Keys->HorizSens;
 				YSens = GI->Keys->VertSens;
 
-				//to invert mouse controls
 				if (GI->Keys->InvertedXMouse) XSens *= -1.f;
-				if (GI->Keys->InvertedYMouse) YSens *= 1.f;
+				if (GI->Keys->InvertedYMouse) YSens *= -1.f;
+			
 			}
 		}
 
 		AddControllerYawInput(LookAxisVector.X * XSens);
+		
 		AddControllerPitchInput(LookAxisVector.Y * YSens);
 	}
+
+	
 }
 
 void ARelicRunnersCharacter::Interact()
@@ -920,3 +938,16 @@ void ARelicRunnersCharacter::DrawGuardDebug()
 
     DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.11f, 0, 4.f);
 }
+
+//void ARelicRunnersCharacter::OnPause()
+//{
+//	UWorld* World = GetWorld();
+//	FTimerHandle PauseHandle;
+//	World->GetTimerManager().SetTimer(PauseHandle,this,&ARelicRunnersCharacter::ContinueMontage,5.f,false);
+//}
+//
+//void ARelicRunnersCharacter::ContinueMontage()
+//{
+//	
+//}
+
