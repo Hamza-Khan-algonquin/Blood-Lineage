@@ -66,8 +66,6 @@ public:
 	float KnockBackStrength;
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float AdditionalUpwardsKnockBackForces;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USphereComponent* AttackCollider;
 	bool IsAttacking = false;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
