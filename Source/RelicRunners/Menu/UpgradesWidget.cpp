@@ -22,7 +22,7 @@ void UUpgradesWidget::NativeConstruct()
 	if (IconSTR)	IconSTR->SetColorAndOpacity(ItemStats::GetIconColor("Strength"));
 	if (IconAGI)	IconAGI->SetColorAndOpacity(ItemStats::GetIconColor("Agility"));
 	if (IconINT)	IconINT->SetColorAndOpacity(ItemStats::GetIconColor("Intelligence"));
-	if (IconRegen)	IconRegen->SetColorAndOpacity(ItemStats::GetIconColor("Resource"));
+	if (IconRegen)	IconRegen->SetColorAndOpacity(ItemStats::GetIconColor("Mana"));
 	if (IconLevel)	IconLevel->SetColorAndOpacity(ItemStats::GetIconColor("Level"));
 
 	if (B_HP)			B_HP->OnClicked.AddDynamic(this, &UUpgradesWidget::OnHPClicked);

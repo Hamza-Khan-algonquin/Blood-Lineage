@@ -33,6 +33,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* ShieldComponent;
 
+	UPROPERTY(EditAnywhere, Category = Materials)
+	UMaterialInterface* GlowBlue;
+
+	UPROPERTY(EditAnywhere, Category = Materials)
+	UMaterialInterface* GlowRed;
+
 	virtual void BeginPlay() override;
 	UPROPERTY(VisibleAnywhere)
 	bool bWasTriggered = false;

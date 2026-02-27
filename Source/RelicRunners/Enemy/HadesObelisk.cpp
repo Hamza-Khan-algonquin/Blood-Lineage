@@ -35,7 +35,7 @@ void AHadesObelisk::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    float Speed = 90.0f * CurrentRotationMultiplier;
+    float Speed = 200.0f * CurrentRotationMultiplier;
     AddActorLocalRotation(FRotator(0, Speed * DeltaTime, 0));
 }
 
@@ -77,6 +77,10 @@ void AHadesObelisk::TriggerRageMode()
     if (ShieldComponent)
     {
         ShieldComponent->SetVisibility(true);
+        if (ObeliskComponent && GlowRed)
+        {
+            ObeliskComponent->SetMaterial(1, GlowRed);
+        }
     }
 
     GetWorldTimerManager().SetTimer(RageTimerHandle, this, &AHadesObelisk::EndRageMode, 20.0f, false);
@@ -89,6 +93,10 @@ void AHadesObelisk::EndRageMode()
 
     if (ShieldComponent)
     {
+        if (ObeliskComponent && GlowBlue)
+        {
+            ObeliskComponent->SetMaterial(1, GlowBlue);
+        }
         ShieldComponent->SetVisibility(false);
     }
 }

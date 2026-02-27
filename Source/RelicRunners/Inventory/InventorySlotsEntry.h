@@ -69,6 +69,8 @@ public:
     UPROPERTY(meta = (BindWidgetAnim), Transient)
     class UWidgetAnimation* Shake;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DragVisual")
+    TSubclassOf<UUserWidget> DragVisualClass;
 protected:
     virtual void NativeConstruct() override;
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;

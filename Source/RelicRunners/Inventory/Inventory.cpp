@@ -49,6 +49,7 @@
 #include "InventorySlotsEntry.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include <Blueprint/SlateBlueprintLibrary.h>
+#include "Animation/WidgetAnimation.h"
 
 void UInventory::NativeConstruct()
 {
@@ -453,6 +454,8 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
         {
             ToggleShopUI(false);
             ToggleForgeUI(false);
+            UInventoryItemOptions::CloseAnyOpenPopup();
+            UInventorySortingOptions::CloseAnyOpenPopup();
         }
     }
     else
@@ -570,7 +573,15 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = Stats.PlayerLevel; }
     else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = Stats.TotalPotionEfficiency; }
 
-    FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, "", "");
+    FTooltipData TD;
+    if (HoveredBorder == B_Mana)
+    {
+        TD = ItemStats::GetStatTooltipData(StatKey, RawValue, Stats.TotalResourceRegen, Stats.TotalResourceTime, "", "");
+    }
+    else
+    {
+        TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, "", "");
+    }
 
     FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
 
@@ -766,6 +777,8 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
         DropItem(DraggedItem);
     }
 
+    InventorySlots->RequestRefresh();
+
     return true;
 }
 
@@ -774,7 +787,12 @@ void UInventory::ForgeItem(UItemObject* Item)
     if (!ForgeCanvas->IsVisible() || !Item) return;
     if (Item->GetRarity() == "Relic") return;
 
+    if (InventoryComponent->ForgeItemResult)
+    {
+        CancelForgingAnimation();
+    }
     InventoryComponent->Server_AddToForge(Item->GetUniqueID());
+
     UpdateForgeUI();
 }
 
@@ -812,6 +830,12 @@ void UInventory::OnFuseButtonPressed()
 
     CycleCount = 0;
     GetWorld()->GetTimerManager().SetTimer(FuseTimerHandle, this, &UInventory::CycleRarityVisuals, 0.1f, true);
+}
+
+void UInventory::CancelForgingAnimation()
+{
+    StopAnimation(RollRarity);
+    GetWorld()->GetTimerManager().ClearTimer(FuseTimerHandle);
 }
 
 void UInventory::CycleRarityVisuals()

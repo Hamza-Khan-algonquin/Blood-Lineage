@@ -14,6 +14,13 @@ UNaturesBlessing::UNaturesBlessing()
 	CooldownTimer = 14.f;
 	Cost = 25;
 	LastUseTime = -100.f;
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NatureBlessing/NewNiagaraSystem.NewNiagaraSystem"));
+
+	if (VFXAsset.Succeeded())
+	{
+		AbilityVFX = VFXAsset.Object;
+	}
 }
 
 void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

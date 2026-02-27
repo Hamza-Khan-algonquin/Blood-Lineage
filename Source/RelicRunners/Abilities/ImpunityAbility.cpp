@@ -13,6 +13,20 @@ UImpunityAbility::UImpunityAbility()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 	Cost = 40;
+
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/ImpunityAbility/P_Trail.P_Trail"));
+
+    if (VFXAsset.Succeeded())
+    {
+        AbilityVFX = VFXAsset.Object;
+    }
+
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset1(TEXT("/Game/Particles/ImpunityAbility/NS_SprintEffect.NS_SprintEffect"));
+
+    if (VFXAsset1.Succeeded())
+    {
+        AbilityVFX1 = VFXAsset1.Object;
+    }
 }
 
 void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -79,6 +93,14 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
     PS->UpdateRemoteHUDResource();
 
     bIsActive = true;
+
+    if (ActorInfo->AvatarActor->HasAuthority())
+    {
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, true);
+    }
+    
+
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.75f;
     AvatarChar->GetWorldTimerManager().SetTimer(SpeedResetTimer, FTimerDelegate::CreateUObject(this, &UImpunityAbility::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
@@ -88,6 +110,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 void UImpunityAbility::ResetSpeed()
 {
+
     ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
     if (AvatarChar)
     {
@@ -117,6 +140,7 @@ void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
                 }
             }
         }
+
         ResetSpeed();
     }
 

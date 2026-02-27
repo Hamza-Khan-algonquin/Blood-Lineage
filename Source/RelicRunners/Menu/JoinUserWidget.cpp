@@ -194,7 +194,7 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 	else if (HoveredBorder == B_Ability3)		{ StatKey = "Ability3"; AbilityName = Info.Ability3; AbilityDesc = Info.Ability3Description1; }
 	else if (HoveredBorder == B_Ability4)		{ StatKey = "Ability4"; AbilityName = Info.Ability4; AbilityDesc = Info.Ability4Description1; }
 
-	FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, AbilityName, AbilityDesc);
+	FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
 
 	StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
 	StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);

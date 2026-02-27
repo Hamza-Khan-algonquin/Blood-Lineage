@@ -7,6 +7,7 @@
 #include <Components/Slider.h>
 #include <Components/TextBlock.h>
 #include <Components/CheckBox.h>
+#include "AudioMixerBlueprintLibrary.h"
 #include "SettingsWidget.generated.h"
 
 
@@ -119,11 +120,16 @@ public:
 
 	void InitializeDefaultKeybindings();
 
+	//Resolution setting
 	UPROPERTY(meta = (BindWidget))
-	class UComboBoxString* ResolutionDropDown;
-	
-	void ApplyResolution(const FString& Resolution);
+	class UComboBoxString* ResolutionDropDown = nullptr;
 
+	TMap<FString, FIntPoint> ResMap;
+	
+	UFUNCTION()
+	void HandleResolutionSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+
+	//Window mode setting
 	UPROPERTY(meta = (BindWidget))
 	class UComboBoxString* WindowModeDropDown;
 	
@@ -132,11 +138,6 @@ public:
 
 	void FillWindowOptions();
 	void SetWindowMode();
-
-	
-
-	UFUNCTION()
-	void HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType);
 
 
 	//FOV SLIDER setting
@@ -169,6 +170,61 @@ public:
 	void OnMotionBlurClicked(bool isChecked);
 
 	void ApplyMotionBlur(bool bEnabled);
+
+	//Colourblind settings
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UComboBoxString* ColourModeDropDown = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess="true"))
+	UTexture2D* LUT_Normal = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Protanopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Deuternopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Tritanopia = nullptr;
+
+	UFUNCTION()
+	void HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType);
+	
+	void ApplyColorLUT(UTexture* LUT);
+
+	//Output devices
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	UComboBoxString* OutputDeviceDropDown = nullptr;
+
+	TMap<FString, FString> OutputDeviceMap;
+
+	UFUNCTION()
+	void HandleOutputDeviceChanged(FString Item, ESelectInfo::Type SelectionType);
+
+	UFUNCTION()
+	void OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& Devices);
+
+	//Volume Slider
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	USlider* MasterVolumeSlider = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* TB_MasterVolumeValue = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Audio")
+	USoundClass* MasterSoundClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Audio")
+	USoundMix* MasterSoundMix;
+
+	float MinVolume = 0.0f;
+	float MaxVolume = 1.0f;
+
+	UFUNCTION()
+	void OnMasterVolumeChanged(float Value);
+
+	void ApplyMasterVolume(float Volume);
+	void UpdateMasterVolumeText(float Volume);
 
 protected:
 	UFUNCTION()

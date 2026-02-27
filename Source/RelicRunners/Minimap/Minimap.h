@@ -20,7 +20,6 @@ public:
 	class UTextureRenderTarget2D* CreateRenderTarget(class ARelicRunnersCharacter* Owner);
 
 	void SetLevelTitle(FText title);
-
 	UPROPERTY(meta = (BindWidget))
 	class UImage* I_Minimap;
 	

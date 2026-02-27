@@ -118,6 +118,17 @@ void ARelicRunnersPlayerController::Tick(float DeltaTime)
 			}
 		}
 	}
+	//else if (MapName.Contains(TEXT("IslandTest")))
+	//{
+	//	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	//	{
+	//		FText FinalText = FText::Format(FText::FromString("Stage {0}"), GI->StageNumber);
+	//		if (MinimapWidget && !MinimapWidget->TB_Title->GetText().EqualTo(FinalText))
+	//		{
+	//			MinimapWidget->SetLevelTitle(FinalText);
+	//		}
+	//	}
+	//}
 }
 
 void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -299,6 +310,7 @@ void ARelicRunnersPlayerController::SyncUI()
 
 			Inventory->RefreshEquippedUI();
 			RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
+			RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
 			UpdateHUDAll();
 
 			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
@@ -323,7 +335,7 @@ void ARelicRunnersPlayerController::TryBindUI()
 		Inv->OnEquipmentChanged.AddDynamic(this, &ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems);
 
 		Inventory->RefreshEquippedUI();
-		Inv->UpdateTotalEquippedStats(GetPawn());
+		Inv->UpdateTotalEquippedStats(PossessedPawn);
 		UpdateHUDAll();
 
 		UE_LOG(LogTemp, Warning, TEXT("[UI] Post-Travel: Forced manual UI refresh."));
@@ -562,6 +574,26 @@ void ARelicRunnersPlayerController::TrySetupMinimap()
 	}
 
 	SetupMinimapRenderTarget();
+}
+
+void ARelicRunnersPlayerController::Client_UpdateZones_Implementation(int CurrentZone, int MaxZones)
+{
+	if (ObjectiveLog)
+	{
+		ObjectiveStageTitle->CurrentZones = CurrentZone;
+		ObjectiveStageTitle->TotalZones = MaxZones;
+		ObjectiveLog->RefreshLog(ObjectiveStageTitle);
+		ObjectiveLog->UpdateObjective(ObjectiveStageTitle);
+	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdateStage_Implementation(int StageNumber)
+{
+	if (MinimapWidget)
+	{
+		FText FinalText = FText::Format(FText::FromString("Stage {0}"), StageNumber);
+		MinimapWidget->SetLevelTitle(FinalText);
+	}
 }
 
 void ARelicRunnersPlayerController::RetrySetup()
@@ -869,11 +901,6 @@ void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
 	}
 }
 
-void ARelicRunnersPlayerController::UpdateFlagObjective(int FlagIndex, bool bIsActive)
-{
-
-}
-
 void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FString NewTimeText)
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
@@ -900,7 +927,7 @@ void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int NumFlags)
@@ -917,7 +944,7 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation()
@@ -947,7 +974,7 @@ void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(in
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(float Time)
@@ -962,7 +989,7 @@ void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(fl
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::AnimateOldObjectives()

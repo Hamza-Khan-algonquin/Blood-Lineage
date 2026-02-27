@@ -28,7 +28,7 @@ protected:
 	UPROPERTY(Category = "Stats", EditAnywhere, Replicated, BlueprintReadWrite, BlueprintGetter = GetChanceToDropItem, BlueprintSetter = SetChanceToDropItem, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
 	//The Chance the enemy has to drop an item on death from 0.0 to 1.0
 	float ChanceToDropItem;
-	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintGetter = GetRemainingStunTime, BlueprintSetter = SetRemainingStunTime, meta = (Delta = 0.1))
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintGetter = GetAttackDamage, BlueprintSetter = SetAttackDamage, meta = (Delta = 0.1))
 	float AttackDamage;
 
 public:	

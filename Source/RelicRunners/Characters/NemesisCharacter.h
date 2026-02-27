@@ -46,4 +46,8 @@ protected:
 
     UPROPERTY()
     float Damage;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* BasicAnim;
+
 };

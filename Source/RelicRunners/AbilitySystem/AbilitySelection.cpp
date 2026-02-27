@@ -80,15 +80,15 @@ void UAbilitySelection::BuffStatValue(StatBuff Buff)
     if (!PS) return;
 
     if (Buff.StatType == EStats::Health)
-        PS->SetPlayerStartingHealth(PS->GetPlayerStartingMaxHealth() + Buff.Percentage);
+        PS->UpgradedHealth += Buff.Percentage;
     if (Buff.StatType == EStats::Intelligence)
-        PS->SetPlayerStartingIntelligence(PS->GetPlayerStartingIntelligence() + Buff.Percentage);
+        PS->UpgradedIntelligence += Buff.Percentage;
     if (Buff.StatType == EStats::Strength)
-        PS->SetPlayerStartingStrength(PS->GetPlayerStartingStrength() + Buff.Percentage);
+        PS->UpgradedStrength += Buff.Percentage;
     if (Buff.StatType == EStats::Armor)
-        PS->SetPlayerStartingArmor(PS->GetPlayerStartingArmor() + Buff.Percentage);
+        PS->UpgradedArmor += Buff.Percentage;
     if (Buff.StatType == EStats::Dexterity)
-        PS->SetPlayerStartingDexterity(PS->GetPlayerStartingDexterity() + Buff.Percentage);
+        PS->UpgradedDexterity += Buff.Percentage;
 }
 
 UAbilitySelection::StatBuff UAbilitySelection::RandomStatBuff()
@@ -96,7 +96,7 @@ UAbilitySelection::StatBuff UAbilitySelection::RandomStatBuff()
     StatBuff RandomStatBuff;
 
     //Pick random stat and buff value
-    RandomStatBuff.Percentage = FMath::RandRange(3, 5);
+    RandomStatBuff.Percentage = FMath::RandRange(3, 7);
     RandomStatBuff.StatType = static_cast<UAbilitySelection::EStats>(FMath::RandRange(0, 4));
 
     //text display UI on buttons 

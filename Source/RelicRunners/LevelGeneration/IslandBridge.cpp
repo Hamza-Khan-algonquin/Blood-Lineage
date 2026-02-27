@@ -102,7 +102,10 @@ void AIslandBridge::OnFrontTriggerOverlap(UPrimitiveComponent* OverlapComponent,
 {
 	if (OtherActor->ActorHasTag("Player"))
 	{
-		OnFrontTrigger.Broadcast();
+		if (HasAuthority())
+		{
+			OnFrontTrigger.Broadcast();
+		}
 	}
 }
 
@@ -110,7 +113,10 @@ void AIslandBridge::OnBackTriggerOverlap(UPrimitiveComponent* OverlapComponent, 
 {
 	if (OtherActor->ActorHasTag("Player"))
 	{
-		OnBackTrigger.Broadcast();
+		if (HasAuthority())
+		{
+			OnBackTrigger.Broadcast();
+		}
 	}
 }
 

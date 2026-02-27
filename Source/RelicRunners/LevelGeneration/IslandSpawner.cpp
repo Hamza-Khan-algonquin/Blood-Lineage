@@ -7,7 +7,7 @@
 #include "IslandSpawningValuesComponent.h"
 #include "PayloadActor.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
-
+#include "RelicRunners/PlayerController/RelicRunnersPlayerController.h"
 
 // Sets default values
 AIslandSpawner::AIslandSpawner():
@@ -22,18 +22,39 @@ AIslandSpawner::AIslandSpawner():
 
 }
 
+void AIslandSpawner::UpdateControllerZonesUI(int CurrentZone, int MaxZones)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			TargetPC->Client_UpdateZones(CurrentZone, MaxZones);
+		}
+	}
+}
+
+void AIslandSpawner::UpdateControllerStageUI(int StageNumber)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			TargetPC->Client_UpdateStage(StageNumber);
+		}
+	}
+}
+
 // Called when the game starts or when spawned
 void AIslandSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
+	URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
 	if (HasAuthority())
 	{
-
 		if (IslandGenerationTestTemplate != nullptr)
 		{
-
-			URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
 			if (gameInstance)
 			{
 				gameInstance->StageNumber += 1;
@@ -61,6 +82,7 @@ void AIslandSpawner::BeginPlay()
 
 				newIsland->OnObjectiveIslandObjectiveComplete.AddDynamic(this, &AIslandSpawner::GenerateNewIsland);
 				newIsland->OnSetCameraChange.AddDynamic(this, &AIslandSpawner::ChangeIslandCamera);
+				newIsland->OnSetCameraChangeBack.AddDynamic(this, &AIslandSpawner::ChangeIslandVisibility);
 
 				EIslandObjectiveType islandObjective = EIslandObjectiveType::None;
 				TArray<EIslandObjectiveType> ActiveFlags;
@@ -122,8 +144,21 @@ void AIslandSpawner::BeginPlay()
 
 			Islands[CurrentSpawnedIsland]->Generate();
 			Islands[CurrentSpawnedIsland]->UpdateCameraPos();
+			Islands[CurrentSpawnedIsland]->ActivateIsland();
+
+			for (int i = 1; i < NumIslands; i++)
+			{
+				if (i == NumIslands - 1)
+				{
+					Islands[i]->SetFinalIsland(true);
+				}
+
+				Islands[i]->Generate();
+			}
 		}
 	}
+	UpdateControllerStageUI(gameInstance->StageNumber);
+	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::GenerateNewIsland()
@@ -136,14 +171,34 @@ void AIslandSpawner::GenerateNewIsland()
 			Islands[CurrentSpawnedIsland]->SetFinalIsland(true);
 		}
 
-		Islands[CurrentSpawnedIsland]->Generate();
+		//Islands[CurrentSpawnedIsland]->Generate();
+		Islands[CurrentSpawnedIsland]->ActivateIsland();
 	}
+	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::ChangeIslandCamera(int islandIndex)
 {
-	if (Islands.IsValidIndex(islandIndex + 1))
+	if (Islands.IsValidIndex(islandIndex+1))
 	{
-		Islands[islandIndex + 1]->UpdateCameraPos();
+		Islands[islandIndex+1]->UpdateCameraPos();
+	}
+}
+
+void AIslandSpawner::ChangeIslandVisibility(int islandIndex)
+{
+	for (int i = 0; i < NumIslands;i++)
+	{
+		if (i == islandIndex - 1 ||
+			i == islandIndex ||
+			i == islandIndex + 1 && Islands[i]->IsActivated)
+		{
+			Islands[i]->SetIslandVisibility(true);
+		}
+		else
+		{
+			Islands[i]->SetIslandVisibility(false);
+		}
+
 	}
 }

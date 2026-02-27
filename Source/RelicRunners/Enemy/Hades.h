@@ -57,7 +57,12 @@ public:
     UPROPERTY(EditAnywhere, Category = "Classes")
     TSubclassOf<AActor> SweepPredictionClass;
 
+    UPROPERTY(EditAnywhere, Category = "Classes")
+    TSubclassOf<AActor> Fireball;
+
     EBossPhase CurrentPhase = EBossPhase::Phase1;
+
+    FString LastAttack = "";
 
     bool bIsBusy = false;           
     bool bIsSweeping = false;       
@@ -109,7 +114,7 @@ protected:
     float SweepCurrentAngle = 0.0f;
     float SweepElapsedTime = 0.0f;
     float SweepDuration = 8.0f;
-
+    float SweepRotationCount = 1.0f;
     void Die();
 public:
     void NotifyObeliskHit(AActor* Obelisk);
