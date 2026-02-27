@@ -20,6 +20,9 @@
 #include "PauseMenuWidget.h"
 #include "Engine/Engine.h"
 #include "GameFramework/GameUserSettings.h"
+#include "AudioMixerBlueprintLibrary.h"
+#include <AudioEditorSettings.h>
+
 
 
 void USettingsWidget::NativeConstruct()
@@ -81,10 +84,12 @@ void USettingsWidget::NativeConstruct()
 
 	if (XSlider)
 	{
+		XSlider->SetValue(0.5f);
 		XSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensXChanged);
 	}
 	if (YSlider)
 	{
+		YSlider->SetValue(0.5f);
 		YSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensYChanged);
 	}
 
@@ -140,32 +145,20 @@ void USettingsWidget::NativeConstruct()
 
 	if (ResolutionDropDown)
 	{
-		
 		ResolutionDropDown->ClearOptions();
+		ResMap.Empty();
 
-		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+		TArray<FIntPoint> Resolutions =
+		{ {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440} };
+
+		for (const FIntPoint& Res : Resolutions)
 		{
-			const FIntPoint cur = GS->GetScreenResolution();
-			const FString current = FString::Printf(TEXT("%dx%d"), cur.X, cur.Y);
-
-			TArray<FIntPoint> Options = { {1280, 720}, {1920,1080}, {2560, 1440},{3840, 2160} };
-
-			for (const FIntPoint& R : Options)
-			{
-				ResolutionDropDown->AddOption(FString::Printf(TEXT("%dx%d"), R.X, R.Y));
-			}
-			if (ResolutionDropDown->FindOptionIndex(current) != INDEX_NONE) 
-			{
-				ResolutionDropDown->SetSelectedOption(current); 
-			}
-			else {
-				ResolutionDropDown->AddOption(current);
-				ResolutionDropDown->SetSelectedOption(current);
-			}
-			
-
+			FString Label = FString::Printf(TEXT("%dx%d"), Res.X, Res.Y);
+			ResolutionDropDown->AddOption(Label);
+			ResMap.Add(Label, Res);
 		}
-		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleSelectionChanged);
+
+		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleResolutionSelectionChanged);
 	}
 
 	if (WindowModeDropDown)
@@ -173,6 +166,28 @@ void USettingsWidget::NativeConstruct()
 		FillWindowOptions();
 		SetWindowMode();
 		WindowModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleWindowModeSelectionChanged);
+	}
+
+	if (ColourModeDropDown)
+	{
+		ColourModeDropDown->ClearOptions();
+		ColourModeDropDown->AddOption("Normal");
+		ColourModeDropDown->AddOption("Protanopia");
+		ColourModeDropDown->AddOption("Deutranopia");
+		ColourModeDropDown->AddOption("Tritanopia");
+		ColourModeDropDown->RefreshOptions();
+
+		ColourModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleColorModeChanged);
+
+		ColourModeDropDown->SetSelectedOption("Normal");
+
+	}
+
+	if (OutputDeviceDropDown)
+	{
+		OutputDeviceDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleOutputDeviceChanged);
+		FOnAudioOutputDevicesObtained DevicesDelegate;
+		UAudioMixerBlueprintLibrary::GetAvailableAudioOutputDevices(this, DevicesDelegate);
 	}
 
 	InitializeDefaultKeybindings();
@@ -385,9 +400,21 @@ void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 	}
 }
 
-void USettingsWidget::ApplyResolution(const FString& Resolution)
+void USettingsWidget::HandleResolutionSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
+	if (SelectionType == ESelectInfo::Direct) return;
+	
+	if (!ResMap.Contains(SelectedItem)) return;
 
+	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+	{
+		const FIntPoint NewRes = ResMap[SelectedItem];
+
+		GS->SetFullscreenMode(EWindowMode::Windowed);
+		GS->SetScreenResolution(NewRes);
+		GS->ApplyResolutionSettings(false);
+		GS->SaveSettings();
+	}
 }
 
 void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
@@ -452,12 +479,6 @@ void USettingsWidget::SetWindowMode()
 	}
 }
 
-void USettingsWidget::HandleSelectionChanged(FString Item, ESelectInfo::Type SelectionType)
-{
-}
-
-
-
 //fov settings
 void USettingsWidget::OnFOVSliderChanged(float Value)
 {
@@ -505,12 +526,83 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 			FPostProcessSettings& PPS = Camera->PostProcessSettings;
 
 			PPS.bOverride_MotionBlurAmount = true;
-			PPS.MotionBlurAmount = bEnabled ? 0.5f : 0.0f;
+			PPS.MotionBlurAmount = bEnabled ? 0.8f : 0.0f;
 
 			Camera->PostProcessBlendWeight = 1.0f;
 		}
 	}
 }
+void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (Item == "Normal")
+	{
+		ApplyColorLUT(LUT_Normal);
+	}
+	else if (Item == "Protanopia")
+	{
+		ApplyColorLUT(LUT_Protanopia);
+	}
+	else if (Item == "Deutranopia")
+	{
+		ApplyColorLUT(LUT_Deuternopia);
+	}
+	else if (Item == "Tritanopia")
+	{
+		ApplyColorLUT(LUT_Tritanopia);
+	}
+}
+
+void USettingsWidget::ApplyColorLUT(UTexture* LUT)
+{
+	ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+	if (!Character) return;
+
+	UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>();
+	if (!Camera) return;
+	
+	Camera->PostProcessBlendWeight = 1.0f;
+
+	FPostProcessSettings& PPS = Camera->PostProcessSettings;
+
+	PPS.bOverride_ColorGradingLUT = true;
+	PPS.ColorGradingLUT = LUT;
+
+	PPS.bOverride_ColorGradingIntensity = true;
+	PPS.ColorGradingIntensity = 1.0f;
+}
+
+
+
+
+void USettingsWidget::HandleOutputDeviceChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType == ESelectInfo::Direct) return;
+
+	const FString* DeviceId = OutputDeviceMap.Find(Item);
+	if (!DeviceId) return;
+
+
+}
+
+void USettingsWidget::OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& Devices)
+{
+	if (!OutputDeviceDropDown) return;
+
+	OutputDeviceDropDown->ClearOptions();
+	OutputDeviceMap.Empty();
+
+	for (const FAudioOutputDeviceInfo& D : Devices)
+	{
+		OutputDeviceDropDown->AddOption(D.Name);
+		OutputDeviceMap.Add(D.Name, D.DeviceId);
+	}
+
+	if (Devices.Num() > 0)
+	{
+		OutputDeviceDropDown->SetSelectedOption(Devices[0].Name);
+	}
+}
+
 void USettingsWidget::BackButtonClicked()
 {
 	if (MainParentMenu)
