@@ -551,27 +551,6 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
     Summary.TotalStrength += PS->UpgradedStrength;
     Summary.TotalIntelligence += PS->UpgradedIntelligence;
 
-    //Class stat bonuses
-    if (ClassInfo)
-    {
-        if (PS->SelectedClass.IsNone())
-        {
-            UE_LOG(LogTemp, Error, TEXT("Stats Failed: SelectedClass is NONE. Aborting calculation."));
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("STATS_DEBUG: Class found: [%s]. Proceeding with calculation."), *PS->SelectedClass.ToString());
-
-            FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
-            Summary.TotalHealth += (Stats.Health - 100);
-            Summary.TotalArmor += Stats.Armor;
-            Summary.TotalDexterity += Stats.Dexterity;
-            Summary.TotalStrength += Stats.Strength;
-            Summary.TotalIntelligence += Stats.Intelligence;
-        }
-
-    }
-
     //Equipped Stats
     for (const FEquippedItemEntry& Entry : EquippedItems)
     {

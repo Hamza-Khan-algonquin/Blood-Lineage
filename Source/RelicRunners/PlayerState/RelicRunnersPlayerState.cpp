@@ -102,11 +102,6 @@ void ARelicRunnersPlayerState::BeginPlay()
 	Super::BeginPlay();
 
 	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, PassiveResourceTime, true);
-
-	if (PlayerHealth != PlayerMaxHealth)
-	{
-		PlayerHealth = PlayerMaxHealth;
-	}
 }
 void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 {
@@ -256,11 +251,11 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	InventoryComponent->AddItem(Item);
 	Server_EquipItemByID(Item->ItemData.UniqueID);
 
+	//Initialize class specific starting stats
 	if (InventoryComponent->ClassInfo)
 	{
 		FClassData Stats = InventoryComponent->ClassInfo->GetStats(SelectedClass.ToString());
 		PlayerStartingMaxHealth += (Stats.Health - 100);
-		PlayerHealth = PlayerStartingMaxHealth;
 		PlayerStartingArmor += Stats.Armor;
 		PlayerStartingDexterity += Stats.Dexterity;
 		PlayerStartingStrength += Stats.Strength;
@@ -312,7 +307,7 @@ void ARelicRunnersPlayerState::SetPlayerMaxHealth(int value)
 	if (!HasAuthority()) return;
 
 	PlayerMaxHealth = value;
-
+	if (PlayerHealth > PlayerMaxHealth) PlayerHealth = PlayerMaxHealth;
 	//For server
 	UpdateRemoteHUDHealth();
 }
@@ -322,6 +317,7 @@ void ARelicRunnersPlayerState::SetPlayerMaxResource(int value)
 	if (!HasAuthority()) return;
 
 	PlayerMaxResource = value;
+	if (PlayerResource > PlayerMaxResource) PlayerResource = PlayerMaxResource;
 
 	//For server
 	UpdateRemoteHUDResource();

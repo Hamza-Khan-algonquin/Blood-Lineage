@@ -334,7 +334,7 @@ void ARelicRunnersPlayerController::TryBindUI()
 		Inv->OnEquipmentChanged.AddDynamic(this, &ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems);
 
 		Inventory->RefreshEquippedUI();
-		Inv->UpdateTotalEquippedStats(GetPawn());
+		Inv->UpdateTotalEquippedStats(PossessedPawn);
 		UpdateHUDAll();
 
 		UE_LOG(LogTemp, Warning, TEXT("[UI] Post-Travel: Forced manual UI refresh."));

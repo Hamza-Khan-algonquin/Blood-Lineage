@@ -310,6 +310,7 @@ void ARelicRunnersPlayerController::SyncUI()
 
 			Inventory->RefreshEquippedUI();
 			RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
+			RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
 			UpdateHUDAll();
 
 			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
@@ -926,7 +927,7 @@ void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int NumFlags)
@@ -943,7 +944,7 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation()
@@ -973,7 +974,7 @@ void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(in
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(float Time)
@@ -988,7 +989,7 @@ void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(fl
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::AnimateOldObjectives()
