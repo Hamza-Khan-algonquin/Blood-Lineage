@@ -40,4 +40,6 @@ protected:
 
 	UFUNCTION()
 	void ChangeIslandCamera(int islandIndex);
+	UFUNCTION()
+	void ChangeIslandVisibility(int islandIndex);
 };
