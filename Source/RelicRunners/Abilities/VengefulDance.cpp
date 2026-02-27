@@ -24,11 +24,17 @@ UVengefulDance::UVengefulDance()
 
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
-  if (VFXAsset.Succeeded())
-  {
-      AbilityVFX = VFXAsset.Object;
-  }
+    if (VFXAsset.Succeeded())
+    {
+        AbilityVFX = VFXAsset.Object;
+    }
 
+    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_vengefuldance_Montage.melee_vengefuldance_Montage"));
+
+    if (AnimAsset.Succeeded())
+    {
+        AbilityAnim = AnimAsset.Object;
+    }
 }
 
 void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -89,6 +95,11 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+    }
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
 
     if (ActorInfo->AvatarActor->HasAuthority())
@@ -114,7 +125,6 @@ void UVengefulDance::ApplyRingDamage()
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius
 
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // Which kinds of objects the sphere check should detect
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Only pawns
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel1));
 
     // Find all actors overlapping a sphere around the origin, ignoring the owner
@@ -134,11 +144,11 @@ void UVengefulDance::ApplyRingDamage()
 
         UGameplayStatics::ApplyDamage(Actor, DamageAmount, AvatarActor->GetInstigatorController(), AvatarActor, nullptr); // Apply damage
 
-        if (ACharacter* HitCharacter = Cast<ACharacter>(Actor)) // If the actor is a character
+        if (APawn* HitCharacter = Cast<APawn>(Actor)) // If the actor is a character
         {
             FVector Knockback = Diff.GetSafeNormal() * KnockbackStrength; // Directional knockback
             Knockback.Z = 400.f; // Add upward force
-            HitCharacter->LaunchCharacter(Knockback, true, false); // Apply knockback
+            //HitCharacter->LaunchCharacter(Knockback, true, false); // Apply knockback
         }
     }
 

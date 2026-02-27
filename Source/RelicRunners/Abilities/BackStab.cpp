@@ -40,6 +40,13 @@ UBackStab::UBackStab()
     //{
     //    BackStabMeshAsset = MeshObj.Object;
     //}
+
+    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_backslash_Montage.melee_backslash_Montage"));
+
+    if (AnimAsset.Succeeded())
+    {
+        AbilityAnim = AnimAsset.Object;
+    }
 }
 
 void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -106,7 +113,6 @@ AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
 
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,APawn::StaticClass(),{ AvatarActor },FoundActors);
@@ -148,7 +154,6 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
@@ -175,24 +180,24 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
         {
             UGameplayStatics::ApplyDamage(Actor,DamageAmount,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
 
-            if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
-            {
-                if (EnemyChar->GetCharacterMovement())
-                {
-                    EnemyChar->GetCharacterMovement()->DisableMovement();
+            //if (APawn* EnemyChar = Cast<APawn>(Actor))
+            //{
+            //    if (EnemyChar->GetCharacterMovement())
+            //    {
+            //        EnemyChar->GetCharacterMovement()->DisableMovement();
 
-                    FTimerHandle RestoreHandle;
-                    World->GetTimerManager().SetTimer(
-                        RestoreHandle,
-                        FTimerDelegate::CreateLambda([EnemyChar]()
-                            {
-                                if (EnemyChar && EnemyChar->GetCharacterMovement())
-                                {
-                                    EnemyChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-                                }
-                            }), 0.6f, false);
-                }
-            }
+            //        FTimerHandle RestoreHandle;
+            //        World->GetTimerManager().SetTimer(
+            //            RestoreHandle,
+            //            FTimerDelegate::CreateLambda([EnemyChar]()
+            //                {
+            //                    if (EnemyChar && EnemyChar->GetCharacterMovement())
+            //                    {
+            //                        EnemyChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+            //                    }
+            //                }), 0.6f, false);
+            //    }
+            //}
         }
     }
 }
@@ -261,6 +266,12 @@ void UBackStab::ExecuteBackStabSequence()
     FVector DashLocation = TargetEnemy->GetActorLocation() - TargetEnemy->GetActorForwardVector() * DashDistance;
     AvatarActor->SetActorLocation(DashLocation, false, nullptr, ETeleportType::TeleportPhysics);
     AvatarActor->SetActorRotation(TargetEnemy->GetActorRotation());
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+    }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);
     if (!Char || !Char->GetCharacterMovement())
