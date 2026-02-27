@@ -140,6 +140,7 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 			PS->InventoryComponent->EquippedItems.Num());
 	}
 
+	PS->InventoryComponent->CalculateEquippedStats();
 	PS->ForceNetUpdate();
 }
 

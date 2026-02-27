@@ -361,7 +361,15 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
 {
     if (!PawnOwner) return;
 
-    CachedEquippedStats = CalculateEquippedStats();
+    FEquippedStatsSummary NewStats = CalculateEquippedStats();
+    if (NewStats.PlayerLevel > 0)
+    {
+        CachedEquippedStats = NewStats;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Stats calculation returned empty; Cache not updated."));
+    }
 
     //Player
     if (ARelicRunnersPlayerState* PS = PawnOwner->GetPlayerState<ARelicRunnersPlayerState>())
@@ -539,7 +547,7 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     FEquippedStatsSummary Summary;
 
     const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner());
-    if (!PS) return Summary;
+    if (!PS || !ClassInfo || PS->SelectedClass.IsNone()) return Summary;
 
     //Starting stats
     Summary.PlayerLevel = PS->GetPlayerStartingLevel();
@@ -557,12 +565,19 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     //Class stat bonuses
     if (ClassInfo)
     {
-        FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
-        Summary.TotalHealth += (Stats.Health - 100);
-        Summary.TotalArmor += Stats.Armor;
-        Summary.TotalDexterity += Stats.Dexterity;
-        Summary.TotalStrength += Stats.Strength;
-        Summary.TotalIntelligence += Stats.Intelligence;
+        if (PS->SelectedClass.IsNone())
+        {
+            UE_LOG(LogTemp, Error, TEXT("STATS FAILED: SelectedClass is NONE. CopyProperties hasn't run yet!"));
+        }
+        else
+        {
+            FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
+            Summary.TotalHealth += (Stats.Health - 100);
+            Summary.TotalArmor += Stats.Armor;
+            Summary.TotalDexterity += Stats.Dexterity;
+            Summary.TotalStrength += Stats.Strength;
+            Summary.TotalIntelligence += Stats.Intelligence;
+        } 
     }
 
     //Equipped Stats
