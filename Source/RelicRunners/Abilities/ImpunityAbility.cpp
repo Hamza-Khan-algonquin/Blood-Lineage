@@ -93,6 +93,14 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
     PS->UpdateRemoteHUDResource();
 
     bIsActive = true;
+
+    if (ActorInfo->AvatarActor->HasAuthority())
+    {
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, true);
+    }
+    
+
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.75f;
     AvatarChar->GetWorldTimerManager().SetTimer(SpeedResetTimer, FTimerDelegate::CreateUObject(this, &UImpunityAbility::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
@@ -102,6 +110,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 void UImpunityAbility::ResetSpeed()
 {
+
     ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
     if (AvatarChar)
     {
@@ -131,6 +140,7 @@ void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
                 }
             }
         }
+
         ResetSpeed();
     }
 
