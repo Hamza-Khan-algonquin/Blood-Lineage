@@ -234,10 +234,10 @@ void AArtemisCharacter::UpdateCamera(float DeltaTime)
 		CameraBoom->bEnableCameraRotationLag = false;
 
 		// Interpolate arm length
-		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength,AimingArmLength,DeltaTime,AimingInterpSpeed);
+		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength, DeltaTime, AimingInterpSpeed);
 
 		// Interpolate socket offset
-		CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset,AimingOffset,DeltaTime,AimingInterpSpeed);
+		CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, AimingOffset, DeltaTime, AimingInterpSpeed);
 
 		// Rotate player to controller yaw
 		if (Controller)
@@ -284,7 +284,7 @@ void AArtemisCharacter::UpdateCamera(float DeltaTime)
 		TArray<AActor*> ActorsToIgnore;
 		ActorsToIgnore.Add(this);
 
-		UKismetSystemLibrary::SphereOverlapActors(GetWorld(),GetActorLocation(),300.f,ObjectTypes,APawn::StaticClass(),ActorsToIgnore,OverlappingActors);
+		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
 
 		for (AActor* Actor : OverlappingActors)
 		{
@@ -386,7 +386,7 @@ void AArtemisCharacter::BasicAttack()
 
 	CanBasicAttack = true;
 
-	ProjectileDamage = 70.0f;
+	ProjectileDamage = 30.f;
 
 	// Spawn projectile
 	bProjectileActive = true;
@@ -428,7 +428,7 @@ void AArtemisCharacter::HeavyAttack()
 
 	CanHeavyAttack = false;
 
-	ProjectileDamage = 100.0f;
+	ProjectileDamage = 40.0f;
 
 	// Spawn projectile
 	bProjectileActive = true;

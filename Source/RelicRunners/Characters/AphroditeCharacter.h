@@ -53,6 +53,8 @@ protected:
 	virtual void ProjectileHeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
 
+	float GetMinAllowedPitch() const;
+
 	UPROPERTY()
 	bool bCanFire = true;
 

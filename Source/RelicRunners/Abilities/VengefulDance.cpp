@@ -24,11 +24,17 @@ UVengefulDance::UVengefulDance()
 
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
-  if (VFXAsset.Succeeded())
-  {
-      AbilityVFX = VFXAsset.Object;
-  }
+    if (VFXAsset.Succeeded())
+    {
+        AbilityVFX = VFXAsset.Object;
+    }
 
+    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_vengefuldance_Montage.melee_vengefuldance_Montage"));
+
+    if (AnimAsset.Succeeded())
+    {
+        AbilityAnim = AnimAsset.Object;
+    }
 }
 
 void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -89,6 +95,11 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+    }
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
 
     if (ActorInfo->AvatarActor->HasAuthority())

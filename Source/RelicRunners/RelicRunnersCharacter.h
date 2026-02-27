@@ -86,6 +86,10 @@ class ARelicRunnersCharacter : public ACharacter
 
 public:
 
+	//void OnPause();
+
+	//void ContinueMontage();
+
 	//Functions
 	ARelicRunnersCharacter();
 	void Die();
@@ -217,7 +221,8 @@ public:
 	bool IsDamageFromFront(AActor* DamageCauser) const;
 
 	UFUNCTION()
-	void DrawGuardDebug(); 
+	void DrawGuardDebug();
+
 
 protected:
 
@@ -285,10 +290,10 @@ protected:
 
 	// Pitch limits
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MinPitch = -10.f;
+	float MinPitch = 60.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MaxPitch = -45.f;
+	float MaxPitch = 25.f;
 
 	// Optional bounce
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")

@@ -55,8 +55,8 @@
 #include "RelicRunners/Menu/Keybinds.h"
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
 #include <Kismet/KismetMathLibrary.h>
-
-
+#include "Components/SkeletalMeshComponent.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -200,6 +200,13 @@ void ARelicRunnersCharacter::BeginPlay()
 	{
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
+	}
+
+	APlayerController* PC = Cast<APlayerController>(Controller);
+	if (PC)
+	{
+		PC->PlayerCameraManager->ViewPitchMin = -60.f;
+		PC->PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 
@@ -931,3 +938,16 @@ void ARelicRunnersCharacter::DrawGuardDebug()
 
     DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.11f, 0, 4.f);
 }
+
+//void ARelicRunnersCharacter::OnPause()
+//{
+//	UWorld* World = GetWorld();
+//	FTimerHandle PauseHandle;
+//	World->GetTimerManager().SetTimer(PauseHandle,this,&ARelicRunnersCharacter::ContinueMontage,5.f,false);
+//}
+//
+//void ARelicRunnersCharacter::ContinueMontage()
+//{
+//	
+//}
+

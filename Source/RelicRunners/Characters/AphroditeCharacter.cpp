@@ -17,7 +17,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
 #include "Engine/CollisionProfile.h"
-
+#include "Components/CapsuleComponent.h"
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
@@ -309,7 +309,6 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
             }
 
             FRotator CurrentRot = CameraBoom->GetComponentRotation();
-            DesiredRot.Pitch = FMath::Clamp(CurrentRot.Pitch, MinPitch, MaxPitch);
             DesiredRot.Roll = 0.f;
 
             float DeltaYaw = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
@@ -322,7 +321,7 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         else if (Controller)
         {
             FRotator ControlRot = Controller->GetControlRotation();
-            ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
+            ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, 0.f, MaxPitch);
             ControlRot.Roll = 0.f;
 
             FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
@@ -338,6 +337,33 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
             SetActorRotation(ActorRot);
         }
     }
+
+
+}
+
+float AAphroditeCharacter::GetMinAllowedPitch() const
+{
+    if (!CameraBoom) return MinPitch;
+
+    float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    float FootZ = GetActorLocation().Z - CapsuleHalfHeight;
+
+    float ArmLength = CameraBoom->TargetArmLength;
+
+    FVector PivotLocation = CameraBoom->GetComponentLocation();
+
+    float HeightDifference = PivotLocation.Z - FootZ;
+
+    if (HeightDifference <= 0.f)
+        return 0.f;
+
+    // Calculate angle where camera would exactly hit foot level
+    float AngleRadians = FMath::Asin(HeightDifference / ArmLength);
+
+    float AngleDegrees = FMath::RadiansToDegrees(AngleRadians);
+
+    // Convert to UE pitch convention (negative = looking up)
+    return -AngleDegrees;
 }
 
 void AAphroditeCharacter::PlayRandomAttackAnimation()
@@ -367,7 +393,7 @@ void AAphroditeCharacter::BasicAttack()
 
     CanBasicAttack = true;
 
-    ProjectileDamage = 90.0f;
+    ProjectileDamage = 40.0f;
 
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
@@ -393,7 +419,7 @@ void AAphroditeCharacter::HeavyAttack()
 
     CanHeavyAttack = false;
 
-    ProjectileDamage = 120.0f;
+    ProjectileDamage = 40.0f;
 
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 

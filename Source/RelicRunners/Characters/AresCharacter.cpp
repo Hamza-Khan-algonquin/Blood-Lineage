@@ -167,7 +167,6 @@ void AAresCharacter::GiveRageofTheGods()
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
 	const FString MapName = GetWorld()->GetMapName();
-
 	if (MapName.Contains(TEXT("BossLevel"))) return;
 
 	// Movement info 
@@ -301,7 +300,6 @@ void AAresCharacter::UpdateCamera(float DeltaTime)
 		SetActorRotation(ActorRot);
 	}
 
-
 }
 
 void AAresCharacter::PlayRandomAttackAnimation()
@@ -367,7 +365,7 @@ void AAresCharacter::BasicAttack()
 	if (!CanBasicAttack) return;
 	CanBasicAttack = false;
 
-	Damage = 8.0f;
+	Damage = 2.0f;
 
 	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 	{
