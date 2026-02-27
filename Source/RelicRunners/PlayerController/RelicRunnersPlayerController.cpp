@@ -646,6 +646,11 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 		else if (UIWidget == Inventory)
 		{
 			Inventory->PlayAnimation(Inventory->InventoryOpen);
+
+			if (InventoryOpenSound)
+			{
+				UGameplayStatics::PlaySound2D(this, InventoryOpenSound);
+			}
 		}
 		UIWidget->SetVisibility(ESlateVisibility::Visible);
 		UIWidget->SetIsEnabled(true);
@@ -669,6 +674,12 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 		UInventorySortingOptions::CloseAnyOpenPopup();
 
 		Inventory->PlayAnimation(Inventory->InventoryClose);
+
+		if (InventoryCloseSound)
+		{
+			UGameplayStatics::PlaySound2D(this, InventoryCloseSound);
+		}
+
 		Inventory->ToggleShopUI(false);
 		Inventory->ToggleForgeUI(false);
 

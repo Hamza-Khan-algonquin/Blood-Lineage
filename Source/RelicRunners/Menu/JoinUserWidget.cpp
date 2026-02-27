@@ -29,6 +29,7 @@
 #include <RelicRunners/PlayerHUD/LobbyHUDWorld.h>
 #include "Components/WidgetComponent.h"
 #include "RelicRunners/RelicRunnersGameState.h"
+#include "Sound/SoundBase.h"
 
 void UJoinUserWidget::NativeConstruct()
 {
@@ -279,26 +280,31 @@ void UJoinUserWidget::SetButtonOutlineColor(UButton* Button, const FLinearColor&
 
 void UJoinUserWidget::OnDifficultyClicked_Boar()
 {
+	PlayButtonClickSound();
 	SetSelectedDifficulty("Boar");
 }
 
 void UJoinUserWidget::OnDifficultyClicked_Bull()
 {
+	PlayButtonClickSound();
 	SetSelectedDifficulty("Bull");
 }
 
 void UJoinUserWidget::OnDifficultyClicked_Lion()
 {
+	PlayButtonClickSound();
 	SetSelectedDifficulty("Lion");
 }
 
 void UJoinUserWidget::OnDifficultyClicked_Hydra()
 {
+	PlayButtonClickSound();
 	SetSelectedDifficulty("Hydra");
 }
 
 void UJoinUserWidget::OnDifficultyClicked_Cerberus()
 {
+	PlayButtonClickSound();
 	SetSelectedDifficulty("Cerberus");
 }
 
@@ -354,10 +360,20 @@ void UJoinUserWidget::UpdateClientDifficultyUI()
 	TB_CurrentLuck->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].LuckAmount));
 }
 
-void UJoinUserWidget::OnAresClicked() { SetSelectedClass("Ares"); }
-void UJoinUserWidget::OnArtemisClicked() { SetSelectedClass("Artemis"); }
-void UJoinUserWidget::OnAphroditeClicked() { SetSelectedClass("Aphrodite"); }
-void UJoinUserWidget::OnNemesisClicked() { SetSelectedClass("Nemesis"); }
+void UJoinUserWidget::PlayButtonClickSound()
+{
+	if (!ButtonClickSound) return;
+
+	if (UWorld* World = GetWorld())
+	{
+		UGameplayStatics::PlaySound2D(World, ButtonClickSound);
+	}
+}
+
+void UJoinUserWidget::OnAresClicked() { PlayButtonClickSound(); SetSelectedClass("Ares"); }
+void UJoinUserWidget::OnArtemisClicked() { PlayButtonClickSound(); SetSelectedClass("Artemis"); }
+void UJoinUserWidget::OnAphroditeClicked() { PlayButtonClickSound(); SetSelectedClass("Aphrodite"); }
+void UJoinUserWidget::OnNemesisClicked() { PlayButtonClickSound(); SetSelectedClass("Nemesis"); }
 
 void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
@@ -473,6 +489,8 @@ void UJoinUserWidget::RefreshMenu()
 
 void UJoinUserWidget::BackButtonClicked()
 {
+	PlayButtonClickSound();
+
 	URelicRunnersGameInstance* GameInstance = GetGameInstance<URelicRunnersGameInstance>();
 	if (GameInstance)
 	{
@@ -482,6 +500,8 @@ void UJoinUserWidget::BackButtonClicked()
 
 void UJoinUserWidget::FindGamesButtonClicked()
 {
+	PlayButtonClickSound();
+
 	URelicRunnersGameInstance* GameInstance = GetGameInstance<URelicRunnersGameInstance>();
 	if (!GameInstance) return;
 
@@ -490,6 +510,8 @@ void UJoinUserWidget::FindGamesButtonClicked()
 
 void UJoinUserWidget::LeaveGameButtonClicked()
 {
+	PlayButtonClickSound();
+
 	URelicRunnersGameInstance* GameInstance = GetGameInstance<URelicRunnersGameInstance>();
 	if (!GameInstance) return;
 
@@ -498,6 +520,8 @@ void UJoinUserWidget::LeaveGameButtonClicked()
 
 void UJoinUserWidget::JoinGameButtonClicked()
 {
+	PlayButtonClickSound();
+
 	if (LastSelectedItem && SessionTileView)
 	{
 		int32 ItemIndex = SessionTileView->GetIndexForItem(LastSelectedItem);
@@ -511,6 +535,8 @@ void UJoinUserWidget::JoinGameButtonClicked()
 
 void UJoinUserWidget::StartGameButtonClicked()
 {
+	PlayButtonClickSound();
+
 	APlayerController* PC = GetOwningPlayer();
 	if (!PC) return;
 
@@ -531,6 +557,8 @@ void UJoinUserWidget::UpdateCountdownUI(int RemainingTime) {
 
 void UJoinUserWidget::HandleSessionClicked(USessionListItemData* ClickedSession)
 {
+	PlayButtonClickSound();
+
 	LastSelectedItem = ClickedSession;
 	ShowJoinButton(true);
 

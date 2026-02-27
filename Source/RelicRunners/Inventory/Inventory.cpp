@@ -49,6 +49,7 @@
 #include "InventorySlotsEntry.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include <Blueprint/SlateBlueprintLibrary.h>
+#include "Components/AudioComponent.h"
 
 void UInventory::NativeConstruct()
 {
@@ -376,6 +377,8 @@ void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)
 
 void UInventory::EquipItem(UItemObject* Item)
 {
+    PlayUISound(ArmorEquipSound);
+
     if (Item->IsNewItem) Item->IsNewItem = false;
 
     if (OwningCharacter->RelicPlayerState)
@@ -388,6 +391,8 @@ void UInventory::EquipItem(UItemObject* Item)
 
 void UInventory::UnequipItem(UItemObject* Item)
 {
+    PlayUISound(ArmorUnequipSound);
+
     if (OwningCharacter && Item)
     {
         OwningCharacter->RelicPlayerState->Server_UnequipItemByID(Item->GetUniqueID());
@@ -411,6 +416,8 @@ void UInventory::BuyItem(UItemObject* Item)
 {
     if (!Item) return;
 
+    PlayUISound(BuySound);
+
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
         AVendor* Shop = Cast<AVendor>(CurrentVendor);
@@ -421,6 +428,8 @@ void UInventory::BuyItem(UItemObject* Item)
 void UInventory::SellItem(UItemObject* Item)
 {
     if (!Item) return;
+
+    PlayUISound(SellSound);
 
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
@@ -581,6 +590,24 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
     StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
+}
+
+void UInventory::PlayUISound(USoundBase* Sound)
+{
+    if (!Sound) return;
+
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        const float RandomPitch = FMath::FRandRange(0.80f, 1.80f);
+        
+        if (UAudioComponent* AC = UGameplayStatics::SpawnSound2D(PC, Sound))
+        {
+            AC->SetPitchMultiplier(RandomPitch);
+            return;
+        }
+
+        UGameplayStatics::PlaySound2D(PC, Sound);
+    }
 }
 
 void UInventory::HelmetSlotClicked()
@@ -774,6 +801,7 @@ void UInventory::ForgeItem(UItemObject* Item)
     if (!ForgeCanvas->IsVisible() || !Item) return;
     if (Item->GetRarity() == "Relic") return;
 
+    PlayUISound(ForgePlaceSound);
     InventoryComponent->Server_AddToForge(Item->GetUniqueID());
     UpdateForgeUI();
 }
@@ -803,6 +831,8 @@ void UInventory::SetForgeTooltip(UImage* IconWidget, UBorder* BorderWidget, UIte
 void UInventory::OnFuseButtonPressed()
 {
     if (!InventoryComponent->ForgeItemLeft || !InventoryComponent->ForgeItemRight) return;
+
+    PlayUISound(ForgePressSound);
 
     InventoryComponent->Server_FuseItems();
 
@@ -843,6 +873,8 @@ void UInventory::CycleRarityVisuals()
 void UInventory::CompleteForgeSequence()
 {
     if (!InventoryComponent->ForgeItemResult) return;
+
+    PlayUISound(ForgeSuccessSound);
 
     FLinearColor FinalColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color;
 

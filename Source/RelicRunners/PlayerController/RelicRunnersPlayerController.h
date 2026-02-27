@@ -177,6 +177,10 @@ public:
 	class UInventory* Inventory;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UObjectiveLog* ObjectiveLog;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	USoundBase* InventoryOpenSound = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	USoundBase* InventoryCloseSound = nullptr;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
