@@ -40,6 +40,13 @@ ALobbyPreview::ALobbyPreview()
         RangedAnim = RangedAnimBP.Class;
     }
 
+    static ConstructorHelpers::FClassFinder<UAnimInstance> TankAnimBP(TEXT("/Game/Assets/Characters/Tank/Model/ABP_tank_model"));
+
+    if (TankAnimBP.Succeeded())
+    {
+        TankAnim = TankAnimBP.Class;
+    }
+
     MeshComp->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
     MeshComp->SetIsReplicated(true);
 
@@ -147,6 +154,7 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     {
         ItemType = "Greatsword";
         Character = AresModel;
+        DesiredAnimBP = TankAnim;
     }
     else if (NewClass == "Nemesis")
     {
@@ -186,7 +194,7 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     {
         MeshComp->SetSkeletalMesh(Character);
 
-        if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim)
+        if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim || DesiredAnimBP == TankAnim)
         {
             MeshComp->SetAnimationMode(EAnimationMode::AnimationBlueprint);
             MeshComp->SetAnimInstanceClass(DesiredAnimBP);
@@ -211,7 +219,7 @@ UStaticMeshComponent* ALobbyPreview::GetStaticMeshComponentByItemType(const FStr
     if (ItemType == "Greatsword") return MainhandItemMesh;
     if (ItemType == "Sword") return MainhandItemMesh;
     if (ItemType == "Staff") return MainhandItemMesh;
-    if (ItemType == "Bow") return OffhandItemMesh;
+    if (ItemType == "Bow") return MainhandItemMesh;
     return nullptr;
 }
 
@@ -264,9 +272,9 @@ void ALobbyPreview::SetPreviewMeshByItemType(const FString& ItemType, UObject* M
     }
     else if (ItemType == "Bow")
     {
-        MainhandItemMesh->SetStaticMesh(nullptr);
+        OffhandItemMesh->SetStaticMesh(nullptr);
 
         UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
-        if (OffhandItemMesh && Mesh) OffhandItemMesh->SetStaticMesh(Mesh);
+        if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
     }
 }

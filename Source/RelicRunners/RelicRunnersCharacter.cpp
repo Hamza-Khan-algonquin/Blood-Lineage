@@ -756,8 +756,15 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 {
 	if (!HasAuthority()) return;
 
-	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff") 
+	if (ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff") 
 		ReplicatedVisuals.Mainhand = Cast<UStaticMesh>(MeshAsset);
+	else if (ItemType == "Greatsword")
+	{
+		ReplicatedVisuals.Mainhand = Cast<UStaticMesh>(MeshAsset);
+		const FString MeshPath = GetMeshPathByItemType("Shield");
+		UStaticMesh* NewMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *MeshPath));
+		ReplicatedVisuals.Offhand = Cast<UStaticMesh>(NewMesh);
+	}
 	else if (ItemType == "Offhand") 
 		ReplicatedVisuals.Offhand = Cast<UStaticMesh>(MeshAsset);
 	else if (ItemType == "Upper")    
