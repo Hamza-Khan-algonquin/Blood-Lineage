@@ -174,7 +174,6 @@ void ARelicRunnersPlayerState::Multicast_SpawnVFX_Implementation(FVector Locatio
 		if (!RootComp) return;
 
 		UNiagaraFunctionLibrary::SpawnSystemAttached(NiagaraAsset,RootComp, NAME_None,Location,Rotation,EAttachLocation::KeepRelativeOffset,true, true,ENCPoolMethod::None );
-
 	}
 }
 

@@ -10,6 +10,8 @@ class AEnemyPawn;
 class APawn;
 class UAIPerceptionComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetChangeSignature, APawn*, target);
+
 UCLASS()
 class RELICRUNNERS_API ACommanderController : public AAIController
 {
@@ -52,6 +54,13 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool BoidShouldFocusePlayer;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnTargetChangeSignature TargetChange;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//The Behavoir tree to use on being play
+	UBehaviorTree* StartingBehaviorTree;
 protected:
 	bool IsTargeting;
 public: 
@@ -80,6 +89,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	APawn* GetCurrentTarget();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void UpdateTarget(APawn* newTarget);
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;

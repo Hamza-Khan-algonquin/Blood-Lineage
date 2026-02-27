@@ -68,7 +68,7 @@ void ACommanderController::Tick(float DeltaTime)
 		return;
 	}
 
-	if (!BTComp || !BTComp->IsRunning() && players[0])
+	if (players[0])
 	{
 		
 		float distance; 
@@ -88,7 +88,8 @@ void ACommanderController::Tick(float DeltaTime)
 				}
 			}
 
-			TargetPlayer = closestPlayer;
+			UpdateTarget(closestPlayer);
+			TargetChange.Broadcast(TargetPlayer);
 			distance = FMath::Sqrt(distance);
 			BoidShouldFocusePlayer = false;
 		}
@@ -100,20 +101,23 @@ void ACommanderController::Tick(float DeltaTime)
 
 		IsTargeting = distance <= DistanceToTargetPlayer;
 
-		if (IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+		if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
 		{
 			MoveToActor(TargetPlayer, 25);
 		}
 		else if (!IsTargeting)
 		{
 			BoidShouldFocusePlayer = false;
-			TargetPlayer = nullptr;
-			StopMovement();
+			UpdateTarget(nullptr);
+			if (!BTComp || !BTComp->IsRunning())
+			{
+				StopMovement();
+			}
 		}
 	}
 	else
 	{
-		TargetPlayer = nullptr;
+		UpdateTarget(nullptr);
 	}
 
 	UpdateLODs(players, pawn->GetActorLocation());
@@ -233,6 +237,11 @@ APawn* ACommanderController::GetCurrentTarget()
 	return GetPawn();
 }
 
+void ACommanderController::UpdateTarget_Implementation(APawn* newTarget)
+{
+	TargetPlayer = newTarget;
+}
+
 void ACommanderController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -266,7 +275,10 @@ void ACommanderController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-
+	if (StartingBehaviorTree)
+	{
+		RunBehaviorTree(StartingBehaviorTree);
+	}
 }
 
 void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLocation)

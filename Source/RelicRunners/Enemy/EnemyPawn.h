@@ -58,6 +58,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	UCurveFloat* HitFlashCurve;
 
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USphereComponent* BasicAttackCollider;*/
+
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
@@ -122,6 +125,12 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
 	virtual void SpawnItem();
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyForceToEnemy(FVector forces);
+
+	UFUNCTION(BlueprintCallable)
+	void GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

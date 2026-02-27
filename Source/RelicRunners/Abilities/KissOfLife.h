@@ -22,8 +22,6 @@ public:
     virtual FName GetAbilityName() const override { return FName("KissOfLife"); }
 
 protected:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "KissOfLife")
-    float HealRadius = 600.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "KissOfLife")
     float HealInterval = 1.f;

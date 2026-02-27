@@ -8,6 +8,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnObjectiveIslandObjectiveComplete);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSetCameraChange, int, Index);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSetCameraChangeBack, int, Index);
 
 enum class EIslandObjectiveType : uint8;
 
@@ -86,6 +87,8 @@ public:
 	void Generate();
 
 	void ActivateIsland();
+
+	void SetIslandVisibility(bool visible);
 
 	//Used to call the functions that will initialize each tile individually and set it as a walkable or non-walkable tile.
 	//Also used to set the regular modular obstacle that would spawn on it if it is set to walkable.
@@ -203,6 +206,7 @@ public:
 
 	FOnObjectiveIslandObjectiveComplete OnObjectiveIslandObjectiveComplete;
 	FOnSetCameraChange OnSetCameraChange;
+	FOnSetCameraChangeBack OnSetCameraChangeBack;
 
 	int8 CurrentObjectives;
 
@@ -220,4 +224,10 @@ public:
 	TSubclassOf<class ASpawnZone> SpawnZoneTemplate;
 
 	TArray<class AObjectiveBase*> ObjectiveArrays;
+
+	TArray<class APackedLevelActor*> ObstacleArrays;
+	TArray<class UInstancedStaticMeshComponent*> InstanceMeshComponentArray;
+
+	bool IsActivated;
+
 };
