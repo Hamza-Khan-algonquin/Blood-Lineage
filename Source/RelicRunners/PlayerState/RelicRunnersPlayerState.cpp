@@ -212,7 +212,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 
 	UE_LOG(LogTemp, Log, TEXT("SERVER: Generating items using PlayerState MeshData."));
 
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		FString RandomType = ItemStats::GetRandomItemType();
 		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, "Common", ItemMeshData);
