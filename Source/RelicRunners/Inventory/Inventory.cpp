@@ -557,8 +557,8 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         StandardTooltip = CreateWidget<UStandardTooltip>(PC, StandardTooltipClass);
         StandardTooltip->AddToViewport();
     }
-
-    FEquippedStatsSummary Stats = InventoryComponent->GetCachedEquippedStats();
+    FEquippedStatsSummary Stats;
+    if (InventoryComponent) Stats = InventoryComponent->GetCachedEquippedStats();
 
     FString StatKey = "";
     int RawValue = 0;
