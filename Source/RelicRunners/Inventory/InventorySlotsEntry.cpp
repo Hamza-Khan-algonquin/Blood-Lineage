@@ -180,10 +180,6 @@ void UInventorySlotsEntry::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
     {
         Item->IsNewItem = false;
         B_NewItem->SetVisibility(ESlateVisibility::Collapsed);
-        if (ParentInventory && ParentInventory->InventoryComponent)
-        {
-            ParentInventory->InventoryComponent->SortInventoryByCurrentMethod();
-        }
     }
 
     StopAnimation(Shake);

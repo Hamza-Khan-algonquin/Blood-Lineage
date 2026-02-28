@@ -571,7 +571,7 @@ void ARelicRunnersPlayerState::Server_SellItem_Implementation(const FItemData& I
 
 EInventorySorting ARelicRunnersPlayerState::GetCurrentSortingMethod() const
 {
-	return InventoryComponent ? InventoryComponent->CurrentSortingMethod : EInventorySorting::SortByNewest;
+	return InventoryComponent ? InventoryComponent->CurrentSortingMethod : EInventorySorting::SortByRarity;
 }
 
 void ARelicRunnersPlayerState::Server_EquipItemByID_Implementation(FGuid ID)
