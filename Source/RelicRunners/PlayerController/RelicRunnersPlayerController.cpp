@@ -1009,8 +1009,6 @@ void ARelicRunnersPlayerController::ClearOldObjectives()
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
-	SetupObjectives();
-
 	if (BuildVersion && !BuildVersion->IsInViewport())
 	{
 		BuildVersion->AddToViewport();
@@ -1039,6 +1037,8 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			PlayerHUD->ToggleExpBar(true);
 		}
 	}
+
+	SetupObjectives();
 
 	if (!MinimapWidget && MinimapClass)
 	{
