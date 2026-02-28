@@ -201,13 +201,6 @@ void ARelicRunnersCharacter::BeginPlay()
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
 	}
-
-	APlayerController* PC = Cast<APlayerController>(Controller);
-	if (PC)
-	{
-		PC->PlayerCameraManager->ViewPitchMin = -60.f;
-		PC->PlayerCameraManager->ViewPitchMax = 10.f;
-	}
 }
 
 void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

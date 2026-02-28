@@ -21,10 +21,10 @@
 ALobbyGameMode::ALobbyGameMode()
 {
     LobbySpawnPositions = {
-        FVector(-2235,110,330),
-        FVector(-2235,230,330),
-        FVector(-2319,340,340),
-        FVector(-2320,0,340)
+        FVector(-2230,230,270),
+        FVector(-2300,100,280),
+        FVector(-2300,360,280),
+        FVector(-2370,-30,290)
     };
 
     PlayerControllerClass = ARelicRunnersPlayerController::StaticClass();

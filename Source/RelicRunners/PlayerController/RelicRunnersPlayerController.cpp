@@ -118,17 +118,6 @@ void ARelicRunnersPlayerController::Tick(float DeltaTime)
 			}
 		}
 	}
-	//else if (MapName.Contains(TEXT("IslandTest")))
-	//{
-	//	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
-	//	{
-	//		FText FinalText = FText::Format(FText::FromString("Stage {0}"), GI->StageNumber);
-	//		if (MinimapWidget && !MinimapWidget->TB_Title->GetText().EqualTo(FinalText))
-	//		{
-	//			MinimapWidget->SetLevelTitle(FinalText);
-	//		}
-	//	}
-	//}
 }
 
 void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -154,6 +143,12 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 		}
 
 		UpdateCharacterVisuals();
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ViewPitchMin = -60.f;
+		PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 
