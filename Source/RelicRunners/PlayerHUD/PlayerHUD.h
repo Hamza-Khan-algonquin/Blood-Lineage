@@ -111,6 +111,9 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_HealthPotion;
 
+	UPROPERTY(meta = (BindWidget))
+	class UImage* BloodyOverlay;
+
 	FTimerHandle DamageCooldownHandle;
 	FTimerHandle DefenceCooldownHandle;
 	FTimerHandle UtilityCooldownHandle;
