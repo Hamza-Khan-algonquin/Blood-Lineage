@@ -206,13 +206,6 @@ void AIslandGenerationTest::Generate()
 	{
 		NavSys->Build();
 	}
-
-	if (SpawnZoneTemplate == nullptr || IslandObjective == EIslandObjectiveType::DefeatAllEnemies)
-		return;
-	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
-	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
-
-	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset+GetActorLocation(), GetActorRotation());
 }
 
 void AIslandGenerationTest::ActivateIsland()
@@ -244,6 +237,13 @@ void AIslandGenerationTest::ActivateIsland()
 	}
 
 	CreateFloor();
+
+	if (SpawnZoneTemplate == nullptr || IslandObjective == EIslandObjectiveType::DefeatAllEnemies)
+		return;
+	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
+
+	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset + GetActorLocation(), GetActorRotation());
 }
 
 void AIslandGenerationTest::SetIslandVisibility(bool visible)
@@ -971,7 +971,7 @@ void AIslandGenerationTest::SetTopLeftFloorShape(int x, int y, int width)
 			break;
 		case EIslandFloorNeighbours::MiddleLeft:
 		case EIslandFloorNeighbours::MiddleLeft | EIslandFloorNeighbours::TopLeft:
-			rotationOffset.Yaw = 90.0f;
+			//rotationOffset.Yaw = 90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
@@ -1605,7 +1605,7 @@ void AIslandGenerationTest::CreateFloor()
 
 		ISMComp->RegisterComponent();
 
-		InstanceMeshComponentArray.Add(ISMComp);
+		//InstanceMeshComponentArray.Add(ISMComp);
 	}
 }
 
