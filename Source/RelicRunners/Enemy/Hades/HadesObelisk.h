@@ -43,9 +43,20 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	bool bWasTriggered = false;
 
-	bool bIsRaging = false;
-	float CurrentRotationMultiplier = 1.0f;
 	FTimerHandle RageTimerHandle;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsRaging)
+	bool bIsRaging = false;
+
+	UPROPERTY(Replicated)
+	float CurrentRotationMultiplier = 1.0f;
+
+	UFUNCTION()
+	void OnRep_IsRaging();
+
+	void UpdateRageVisuals();
 public:	
 
 	virtual void Tick(float DeltaTime) override;

@@ -2,6 +2,7 @@
 #include "HadesObelisk.h"
 #include "Hades.h"
 #include "Engine/DamageEvents.h"
+#include "Net/UnrealNetwork.h"
 #include <Kismet/GameplayStatics.h>
 
 AHadesObelisk::AHadesObelisk()
@@ -13,8 +14,35 @@ AHadesObelisk::AHadesObelisk()
     ShieldComponent->SetupAttachment(RootComponent);
     ShieldComponent->SetVisibility(false);
     ShieldComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+
+    bReplicates = true;
 }
 
+void AHadesObelisk::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AHadesObelisk, bIsRaging);
+    DOREPLIFETIME(AHadesObelisk, CurrentRotationMultiplier);
+}
+
+void AHadesObelisk::OnRep_IsRaging()
+{
+    UpdateRageVisuals();
+}
+
+void AHadesObelisk::UpdateRageVisuals()
+{
+    if (ShieldComponent)
+    {
+        ShieldComponent->SetVisibility(bIsRaging);
+
+        UMaterialInterface* TargetMat = bIsRaging ? GlowRed : GlowBlue;
+        if (ObeliskComponent && TargetMat)
+        {
+            ObeliskComponent->SetMaterial(1, TargetMat);
+        }
+    }
+}
 
 void AHadesObelisk::BeginPlay()
 {
@@ -71,32 +99,22 @@ float AHadesObelisk::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 
 void AHadesObelisk::TriggerRageMode()
 {
+    if (!HasAuthority()) return;
+
     bIsRaging = true;
     CurrentRotationMultiplier = 3.0f;
 
-    if (ShieldComponent)
-    {
-        ShieldComponent->SetVisibility(true);
-        if (ObeliskComponent && GlowRed)
-        {
-            ObeliskComponent->SetMaterial(1, GlowRed);
-        }
-    }
+    UpdateRageVisuals();
 
     GetWorldTimerManager().SetTimer(RageTimerHandle, this, &AHadesObelisk::EndRageMode, 20.0f, false);
 }
 
 void AHadesObelisk::EndRageMode()
 {
+    if (!HasAuthority()) return;
+
     bIsRaging = false;
     CurrentRotationMultiplier = 1.0f;
 
-    if (ShieldComponent)
-    {
-        if (ObeliskComponent && GlowBlue)
-        {
-            ObeliskComponent->SetMaterial(1, GlowBlue);
-        }
-        ShieldComponent->SetVisibility(false);
-    }
+    UpdateRageVisuals();
 }

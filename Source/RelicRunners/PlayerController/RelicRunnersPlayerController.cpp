@@ -58,7 +58,7 @@
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include "RelicRunners/Objective/ObjectiveLog.h"
 
-#include "RelicRunners/Enemy/Hades.h"
+#include "RelicRunners/Enemy/Hades/Hades.h"
 
 #include "Components/TreeView.h"
 #include "Components/TextBlock.h"

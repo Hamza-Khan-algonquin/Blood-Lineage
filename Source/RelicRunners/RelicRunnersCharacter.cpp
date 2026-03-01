@@ -355,11 +355,12 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 		Die();
 	}
 
-	if (GetWorld()->GetMapName().Contains("BossLevel"))
+	if (IsLocallyControlled() && Controller && GetWorld()->GetMapName().Contains("BossLevel"))
 	{
 		FVector CurrentLocation = GetActorLocation();
 		FVector Target(0.f, 0.f, -1000.f);
 		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(CurrentLocation, Target);
+
 		Controller->SetControlRotation(LookAtRot);
 	}
 }
