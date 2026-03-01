@@ -605,6 +605,11 @@ void ARelicRunnersPlayerController::TrySetupPreviewRenderTarget()
 
 void ARelicRunnersPlayerController::Client_UpdateCountdown_Implementation(int NewTime)
 {
+	if (CountdownTickSound && NewTime > 0)
+	{
+		UGameplayStatics::PlaySound2D(this, CountdownTickSound);
+	}
+
 	if (LobbyWidget)
 	{
 		LobbyWidget->UpdateCountdownUI(NewTime);

@@ -18,6 +18,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Sound/SoundBase.h"
 #include "RelicRunnersPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -181,6 +182,9 @@ public:
 	USoundBase* InventoryOpenSound = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
 	USoundBase* InventoryCloseSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> CountdownTickSound = nullptr;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;

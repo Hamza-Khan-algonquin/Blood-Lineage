@@ -33,6 +33,7 @@
 #include "TimerManager.h"
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include "RelicRunners/Menu/JoinUserWidget.h"
+#include <Kismet/GameplayStatics.h>
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {
@@ -308,6 +309,8 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 			PlayerHealth = PlayerMaxHealth;
 		}
 
+		PlayHealPotionSound();
+
 		// Notify owning client to update HUD
 		UpdateRemoteHUDHealth();
 		UpdateRemoteHUDHealthPotions();
@@ -444,6 +447,16 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 	//For server
 	UpdateRemoteHUDAbility();
 	UpdateRemoteHUDExperience();
+}
+
+void ARelicRunnersPlayerState::PlayHealPotionSound_Implementation()
+{
+	if (!HealPotionSound) return;
+
+	APawn* Pawn = GetPawn();
+	if (!Pawn) return;
+
+	UGameplayStatics::PlaySoundAtLocation(Pawn,HealPotionSound,Pawn->GetActorLocation());
 }
 
 void ARelicRunnersPlayerState::Client_OnLevelUp_Implementation()
