@@ -133,37 +133,36 @@ void AHades::ExecuteAttack()
     CheckPhaseTransition();
     SelectRandomTarget();
 
-    //FString NewAttack = "";
-    //do
-    //{
-    //    int SlamOdds = 50 - ((int)CurrentPhase * 10);
-    //    int RemainingOdds = 100 - SlamOdds;
-    //    int FireballOdds = RemainingOdds * 0.6;
-    //    int SweepOdds = RemainingOdds * 0.4;
+    FString NewAttack = "";
+    do
+    {
+        int SlamOdds = 50 - ((int)CurrentPhase * 10);
+        int RemainingOdds = 100 - SlamOdds;
+        int FireballOdds = RemainingOdds * 0.6;
+        int SweepOdds = RemainingOdds * 0.4;
 
-    //    int Roll = FMath::RandRange(1, 100);
+        int Roll = FMath::RandRange(1, 100);
 
-    //    if (Roll <= SlamOdds)                       NewAttack = "Slam";
-    //    else if (Roll <= SlamOdds + FireballOdds)   NewAttack = "Fireball";
-    //    else                                        NewAttack = "Sweep";
-    //} while (NewAttack == LastAttack && NewAttack != "Fireball");
+        if (Roll <= SlamOdds)                       NewAttack = "Slam";
+        else if (Roll <= SlamOdds + FireballOdds)   NewAttack = "Fireball";
+        else                                        NewAttack = "Sweep";
+    } while (NewAttack == LastAttack && NewAttack != "Fireball");
 
-    //if (NewAttack == "Slam")
-    //{
-    //    PlaySlam(); 
-    //    LastAttack = "Slam";
-    //}
-    //else if (NewAttack == "Fireball")
-    //{
-    //    PlayFireball();
-    //    LastAttack = "Fireball";
-    //}
-    //else if (NewAttack == "Sweep")
-    //{
-    //    PlaySweep();
-    //    LastAttack = "Sweep";
-    //}
-    PlaySweep();
+    if (NewAttack == "Slam")
+    {
+        PlaySlam(); 
+        LastAttack = "Slam";
+    }
+    else if (NewAttack == "Fireball")
+    {
+        PlayFireball();
+        LastAttack = "Fireball";
+    }
+    else if (NewAttack == "Sweep")
+    {
+        PlaySweep();
+        LastAttack = "Sweep";
+    }
 }
 
 void AHades::PlaySlam()
