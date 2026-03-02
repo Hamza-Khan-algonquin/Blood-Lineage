@@ -337,8 +337,6 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
             SetActorRotation(ActorRot);
         }
     }
-
-
 }
 
 float AAphroditeCharacter::GetMinAllowedPitch() const

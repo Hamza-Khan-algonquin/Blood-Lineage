@@ -14,7 +14,7 @@ UGoddessOfLove::UGoddessOfLove()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-	DamageAmount = 400.f;
+	Damage = 400.f;
 	AreaRadius = 1000.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
@@ -172,7 +172,7 @@ void UGoddessOfLove::TickDamage()
 
         // Damage per second with minimum DPS
         const float MinDPS = 50.f;
-        float EffectiveDPS = FMath::Max(DamageAmount * DamageMultiplier, MinDPS);
+        float EffectiveDPS = FMath::Max(Damage * DamageMultiplier, MinDPS);
 
         float ScaledDamage = EffectiveDPS * DeltaTime;
 

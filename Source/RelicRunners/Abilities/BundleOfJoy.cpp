@@ -15,7 +15,7 @@ UBundleOfJoy::UBundleOfJoy()
     AttractionRadius = 600.f;
     ExplosionRadius = 400.f;
     AttractionStrength = 1500.f;
-    DamageAmount = 100.f;
+    Damage = 100.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -238,7 +238,7 @@ void UBundleOfJoy::Explode()
     {
         if (!Actor) continue; // Skip null actors
         if (!Actor->Tags.Contains("Enemy")) continue;
-        UGameplayStatics::ApplyDamage(Actor, DamageAmount, nullptr, AvatarActor, nullptr); // Apply damage to each actor
+        UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, AvatarActor, nullptr); // Apply damage to each actor
     }
 
     for (AEnemyPawn* enemy : EffectedEnemies)

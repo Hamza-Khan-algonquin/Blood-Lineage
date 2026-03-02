@@ -188,41 +188,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
 	
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Mirror")
-	bool bMirrorActive = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mirror")
-	float MirrorReflectPercent = 0.35f; 
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mirror")
-	float MirrorRadius = 150.f;
-
-	FTimerHandle MirrorDurationHandle;
-	FTimerHandle MirrorDebugDrawHandle;
-
-	UFUNCTION()
-	void SetMirrorActive(bool bActive);
-
-	UFUNCTION()
-	void DrawMirrorDebug();
-
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Guard")
-	bool bGuardActive = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Guard")
-	float GuardAngleDegrees = 100.f;
-
-	FTimerHandle GuardDebugDrawHandle;
-
-	UFUNCTION()
-	void SetGuardActive(bool bActive);
-
-	UFUNCTION()
-	bool IsDamageFromFront(AActor* DamageCauser) const;
-
-	UFUNCTION()
-	void DrawGuardDebug();
-
 
 protected:
 
@@ -265,10 +230,10 @@ protected:
 
 	// Camera smoothing
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
-	float CameraYawSmoothSpeed = 6.f;
+	float CameraYawSmoothSpeed = 10.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
-	float CameraPitchSmoothSpeed = 4.f;
+	float CameraPitchSmoothSpeed = 10.f;
 
 	// Camera look-ahead offset
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")

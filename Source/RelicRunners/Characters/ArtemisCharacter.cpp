@@ -42,7 +42,7 @@ void AArtemisCharacter::BeginPlay()
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
 
 		// Give NatureBlessing ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
 
         // Give PiercingArrow ability
 		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
@@ -105,7 +105,7 @@ void AArtemisCharacter::ActivateDefenceAbilities()
 	if (AbilitySystem)
 	{
 
-		AbilitySystem->TryActivateAbilityByClass(UNaturesBlessing::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(UImpunityAbility::StaticClass());
 	}
 }
 

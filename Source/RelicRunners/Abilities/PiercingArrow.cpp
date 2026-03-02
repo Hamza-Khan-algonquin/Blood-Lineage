@@ -17,10 +17,8 @@ UPiercingArrow::UPiercingArrow()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    DamageAmount = 150.f;    
-    ArrowSpeed = 2200.f;     
-    MaxRange = 3000.f;        
-
+    Damage = 150.f;    
+    Duration = 10.f;    
     CooldownTimer = 6.f;
     Cost = 25;
     LastUseTime = -100.f;
@@ -72,77 +70,127 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
-    ArrowLocation = AvatarActor->GetActorLocation()
-        + AvatarActor->GetActorForwardVector() * 100.f
-        + FVector(0, 0, 50.f);
 
-    ArrowDirection = AvatarActor->GetActorForwardVector();
-    TraveledDistance = 0.f;
-    HitActors.Empty();
-    bIsFlying = true;
 
-    World->GetTimerManager().SetTimer(ArrowTickTimer, this, &UPiercingArrow::TickArrow, 0.016f, true);
+    // Initial projectile setup
+    ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+
+    // Arc trajectory
+    ProjectileVelocity = AvatarActor->GetActorForwardVector() * 3200.f + FVector(0, 0, 100.f);
+
+    // Start ticking projectile
+    World->GetTimerManager().SetTimer(
+        ProjectileTimer,
+        this,
+        &UPiercingArrow::TickArrow,
+        0.016f,
+        true
+    );
+
+    // Duration failsafe (auto explode if never hits)
+    World->GetTimerManager().SetTimer(
+        DurationTimer,
+        [this]()
+        {
+            Explode(ProjectileLocation);
+        },
+        Duration,
+        false
+    );
 }
 
 void UPiercingArrow::TickArrow()
 {
-    if (!bIsFlying)
-    {
-        return;
-    }
-
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
-
-    if (!AvatarActor)
-    {
-        return;
-    }
+    if (!AvatarActor) return;
 
     UWorld* World = AvatarActor->GetWorld();
-    if (!World)
+    if (!World) return;
+
+    const float DeltaTime = 0.016f;
+
+    // Apply gravity
+    ProjectileVelocity.Z += Gravity * DeltaTime;
+
+    FVector NewLocation = ProjectileLocation + ProjectileVelocity * DeltaTime;
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(AvatarActor);
+
+    bool bHit = World->SweepSingleByChannel(
+        Hit,
+        ProjectileLocation,
+        NewLocation,
+        FQuat::Identity,
+        ECC_GameTraceChannel1,
+        FCollisionShape::MakeSphere(ProjectileRadius),
+        Params
+    );
+
+    // Draw debug sphere at the projectile location
+    DrawDebugSphere(World, NewLocation, ProjectileRadius, 12, FColor::Yellow, false, 0.1f);
+
+    if (bHit)
     {
+        // Draw impact debug sphere
+        DrawDebugSphere(World, Hit.ImpactPoint, ExplosionRadius, 16, FColor::Red, false, 2.f);
+
+        Explode(Hit.ImpactPoint);
         return;
     }
 
-    float Delta = World->GetDeltaSeconds();
+    ProjectileLocation = NewLocation;
+}
 
-    FVector Move = ArrowDirection * ArrowSpeed * Delta;
-    ArrowLocation += Move;
-    TraveledDistance += Move.Size();
+void UPiercingArrow::Explode(FVector ImpactPoint)
+{
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!AvatarActor) return;
 
-    float CurrentRadius = ArrowRadius + (TraveledDistance / MaxRange) * GrowthRate;
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World) return;
 
-    // the visual Debug thing for the arrow
-    DrawDebugSphere(World, ArrowLocation, CurrentRadius, 12, FColor::Cyan, false, 0.05f);
+    World->GetTimerManager().ClearTimer(ProjectileTimer);
 
-    TArray<AActor*> HitActorsArray;
-    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+    // Draw debug sphere for explosion radius
+    DrawDebugSphere(World, ImpactPoint, ExplosionRadius, 16, FColor::Red, false, 2.f);
 
-    UKismetSystemLibrary::SphereOverlapActors(World, ArrowLocation, CurrentRadius, ObjectTypes, APawn::StaticClass(), { AvatarActor }, HitActorsArray);
+    // Sweep to detect enemies in AoE
+    TArray<FHitResult> HitResults;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(AvatarActor);
 
-    for (AActor* Actor : HitActorsArray)
+    bool bHitAny = World->SweepMultiByChannel(
+        HitResults,
+        ImpactPoint,
+        ImpactPoint + FVector(0, 0, 1.f),
+        FQuat::Identity,
+        ECC_GameTraceChannel1,
+        FCollisionShape::MakeSphere(ExplosionRadius),
+        Params
+    );
+
+    if (bHitAny)
     {
-        if (!Actor || HitActors.Contains(Actor))
+        for (const FHitResult& Hit : HitResults)
         {
-            continue;
-        }
+            APawn* Pawn = Cast<APawn>(Hit.GetActor());
+            if (!Pawn) continue;
 
-        if (!Actor->IsA(AEnemyCharacter::StaticClass()) && !Actor->IsA(AEnemyCharacterAI::StaticClass()) && !Actor->IsA(AEnemyPawn::StaticClass()))
-        {
-            continue;
-        }
+            if (!Pawn->Tags.Contains("Enemy")) continue;
 
-        HitActors.Add(Actor);
-        UGameplayStatics::ApplyDamage(Actor, DamageAmount, GetCurrentActorInfo()->PlayerController.Get(), AvatarActor, nullptr);
+            UGameplayStatics::ApplyDamage(
+                Pawn,
+                DamageAmount,
+                AvatarActor->GetInstigatorController(),
+                AvatarActor,
+                nullptr
+            );
+        }
     }
 
-    // i gave a max range for the piercing arrow ability so it has a limit ;>
-    if (TraveledDistance >= MaxRange)
-    {
-        EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);
-    }
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UPiercingArrow::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -152,8 +200,8 @@ void UPiercingArrow::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
-            World->GetTimerManager().ClearTimer(ArrowTickTimer);
-
+            World->GetTimerManager().ClearTimer(ProjectileTimer);
+            World->GetTimerManager().ClearTimer(DurationTimer);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();
@@ -170,6 +218,5 @@ void UPiercingArrow::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         }
     }
 
-    bIsFlying = false;
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

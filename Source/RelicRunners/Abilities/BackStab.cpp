@@ -19,7 +19,7 @@ UBackStab::UBackStab()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    DamageAmount = 200.f;
+    Damage = 200.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 5.f;
@@ -178,7 +178,7 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
         if (FVector::DotProduct(Forward, DirToActor) >= FMath::Cos(HalfConeRad))
         {
-            UGameplayStatics::ApplyDamage(Actor,DamageAmount,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+            UGameplayStatics::ApplyDamage(Actor,Damage,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
 
             //if (APawn* EnemyChar = Cast<APawn>(Actor))
             //{
