@@ -21,10 +21,39 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <Kismet/GameplayStatics.h>
 
 APlayerPreview::APlayerPreview()
 {
+	static ConstructorHelpers::FClassFinder<UAnimInstance> HealerAnimBP(TEXT("/Game/Assets/Characters/Healer/Model/ABP_healer_model"));
+
+	if (HealerAnimBP.Succeeded())
+	{
+		HealerAnim = HealerAnimBP.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> MeleeAnimBP(TEXT("/Game/Assets/Characters/Melee/Model/ABP_melee_model"));
+
+	if (MeleeAnimBP.Succeeded())
+	{
+		MeleeAnim = MeleeAnimBP.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> RangedAnimBP(TEXT("/Game/Assets/Characters/Ranged/Model/ABP_ranged_model"));
+
+	if (RangedAnimBP.Succeeded())
+	{
+		RangedAnim = RangedAnimBP.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> TankAnimBP(TEXT("/Game/Assets/Characters/Tank/Model/ABP_tank_model"));
+
+	if (TankAnimBP.Succeeded())
+	{
+		TankAnim = TankAnimBP.Class;
+	}
+
 	PrimaryActorTick.bCanEverTick = true;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	SetRootComponent(RootComponent);
@@ -72,6 +101,51 @@ APlayerPreview::APlayerPreview()
 void APlayerPreview::BeginPlay()
 {
 	Super::BeginPlay();
+
+	USkeletalMesh* Character = nullptr;
+	TSubclassOf<UAnimInstance> DesiredAnimBP = nullptr;
+
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (PC)
+	{
+		ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
+		if (PS)
+		{
+			if (PS->SelectedClass == "Ares")
+			{
+				Character = AresModel;
+				DesiredAnimBP = TankAnim;
+			}
+			else if (PS->SelectedClass == "Nemesis")
+			{
+				Character = NemesisModel;
+				DesiredAnimBP = MeleeAnim;
+			}
+			else if (PS->SelectedClass == "Aphrodite")
+			{
+				Character = AphroditeModel;
+				DesiredAnimBP = HealerAnim;
+			}
+			else if (PS->SelectedClass == "Artemis")
+			{
+				Character = ArtemisModel;
+				DesiredAnimBP = RangedAnim;
+			}
+
+			BodyMesh->SetSkeletalMesh(Character);
+			if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim || DesiredAnimBP == TankAnim)
+			{
+				BodyMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+				BodyMesh->SetAnimInstanceClass(DesiredAnimBP);
+			}
+			else
+			{
+				BodyMesh->SetAnimInstanceClass(nullptr);
+				BodyMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+				BodyMesh->SetAnimation(nullptr);
+			}
+		}
+	}
 }
 
 void APlayerPreview::Tick(float DeltaTime)
