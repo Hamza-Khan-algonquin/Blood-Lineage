@@ -210,6 +210,34 @@ void USettingsWidget::NativeConstruct()
 		ApplyMasterVolume(CurrentVolume);
 		UpdateMasterVolumeText(CurrentVolume);
 	}
+
+	if (AntiAliasingDropDown)
+	{
+		AntiAliasingDropDown->ClearOptions();
+
+		AntiAliasingDropDown->AddOption(TEXT("Low"));
+		AntiAliasingDropDown->AddOption(TEXT("Medium"));
+		AntiAliasingDropDown->AddOption(TEXT("High"));
+		AntiAliasingDropDown->AddOption(TEXT("Epic"));
+		AntiAliasingDropDown->AddOption(TEXT("Cinematic"));
+
+		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+		{
+			const int32 AAQuality = GS->GetAntiAliasingQuality();
+
+			switch (AAQuality)
+			{
+			case 0: AntiAliasingDropDown->SetSelectedOption(TEXT("Low")); break;
+			case 1: AntiAliasingDropDown->SetSelectedOption(TEXT("Medium")); break;
+			case 2: AntiAliasingDropDown->SetSelectedOption(TEXT("High")); break;
+			case 3: AntiAliasingDropDown->SetSelectedOption(TEXT("Epic")); break;
+			case 4: AntiAliasingDropDown->SetSelectedOption(TEXT("Cinematic")); break;
+			default: AntiAliasingDropDown->SetSelectedOption(TEXT("High")); break;
+			}
+		}
+		AntiAliasingDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleAntiAliasingChanged);
+
+	}
 	InitializeDefaultKeybindings();
 }
 
@@ -654,6 +682,26 @@ void USettingsWidget::UpdateMasterVolumeText(float Volume)
 
 	const int32 Percent = FMath::RoundToInt(Volume * 100.f);
 	TB_MasterVolumeValue->SetText(FText::FromString(FString::Printf(TEXT("%d%%"), Percent)));
+}
+
+void USettingsWidget::HandleAntiAliasingChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType == ESelectInfo::Direct) return;
+
+	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+	{
+		int32 Quality = 2; // default High
+
+		if (Item == TEXT("Low")) Quality = 0;
+		else if (Item == TEXT("Medium")) Quality = 1;
+		else if (Item == TEXT("High")) Quality = 2;
+		else if (Item == TEXT("Epic")) Quality = 3;
+		else if (Item == TEXT("Cinematic")) Quality = 4;
+
+		GS->SetAntiAliasingQuality(Quality);
+		GS->ApplyNonResolutionSettings();
+		GS->SaveSettings();
+	}
 }
 void USettingsWidget::BackButtonClicked()
 {

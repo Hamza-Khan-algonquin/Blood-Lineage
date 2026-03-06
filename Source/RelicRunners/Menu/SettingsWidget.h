@@ -226,6 +226,14 @@ public:
 	void ApplyMasterVolume(float Volume);
 	void UpdateMasterVolumeText(float Volume);
 
+	//anti-aliasing
+	UPROPERTY(meta = (BindWidget))
+	UComboBoxString* AntiAliasingDropDown = nullptr;
+
+	UFUNCTION()
+	void HandleAntiAliasingChanged(FString Item, ESelectInfo::Type SelectionType);
+
+
 protected:
 	UFUNCTION()
 	void BackButtonClicked();
