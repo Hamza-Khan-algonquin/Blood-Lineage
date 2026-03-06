@@ -238,6 +238,21 @@ void USettingsWidget::NativeConstruct()
 		AntiAliasingDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleAntiAliasingChanged);
 
 	}
+
+	if (AutoLoot)
+	{
+		
+		AutoLoot->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::OnAutoLootChanged);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				AutoLoot->SetIsChecked(GI->Keys->bAutoLoot);
+			}
+		}
+
+	}
 	InitializeDefaultKeybindings();
 }
 
@@ -701,6 +716,17 @@ void USettingsWidget::HandleAntiAliasingChanged(FString Item, ESelectInfo::Type 
 		GS->SetAntiAliasingQuality(Quality);
 		GS->ApplyNonResolutionSettings();
 		GS->SaveSettings();
+	}
+}
+void USettingsWidget::OnAutoLootChanged(bool bIsChecked)
+{
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->bAutoLoot = bIsChecked;
+
+		}
 	}
 }
 void USettingsWidget::BackButtonClicked()

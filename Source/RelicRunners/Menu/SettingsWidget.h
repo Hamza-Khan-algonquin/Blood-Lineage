@@ -233,6 +233,12 @@ public:
 	UFUNCTION()
 	void HandleAntiAliasingChanged(FString Item, ESelectInfo::Type SelectionType);
 
+	//auto loot
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UCheckBox* AutoLoot = nullptr;
+
+	UFUNCTION()
+	void OnAutoLootChanged(bool bIsChecked);
 
 protected:
 	UFUNCTION()

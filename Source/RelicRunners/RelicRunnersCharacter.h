@@ -39,7 +39,7 @@
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
 #include "TimerManager.h"
-
+#include "Components/SphereComponent.h"
 
 #include "RelicRunnersCharacter.generated.h"
 
@@ -127,6 +127,12 @@ public:
 	void UpdateItemVisuals(class UItemObject* Item);
 	UFUNCTION(Server, Reliable)
 	virtual void Server_HitEnemy(AActor* HitActor);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Loot")
+	USphereComponent* AutoLootSphere = nullptr;
+
+	UFUNCTION()
+	void OnAutoLootSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	//Getters
 	FString GetMeshPathByItemType(const FString& ItemType);

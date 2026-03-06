@@ -173,6 +173,14 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	PlayerHUDWorld->SetVisibility(true);
 	PlayerHUDWorld->CastShadow = false;
 
+	//Autoloot 
+	AutoLootSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AutoLootSphere"));
+	AutoLootSphere->SetupAttachment(RootComponent);
+	AutoLootSphere->SetSphereRadius(200.f);
+	AutoLootSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	AutoLootSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+	AutoLootSphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+
 	bAlwaysRelevant = true;
 	SetReplicates(true);
 	SetReplicateMovement(true);
@@ -200,6 +208,11 @@ void ARelicRunnersCharacter::BeginPlay()
 	{
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
+	}
+
+	if (AutoLootSphere)
+	{
+		AutoLootSphere->OnComponentBeginOverlap.AddDynamic(this, &ARelicRunnersCharacter::OnAutoLootSphereBeginOverlap);
 	}
 }
 
@@ -774,6 +787,22 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 
 	//Server
 	OnRep_VisualsChanged();
+}
+
+void ARelicRunnersCharacter::OnAutoLootSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AItemActor* Item = Cast<AItemActor>(OtherActor);
+	if (!Item) return;
+
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GI || !GI->Keys) return;
+
+	if (!GI->Keys->bAutoLoot) return;
+
+	ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetController());
+	if (!PC) return;
+	PC->Server_RequestPickup(Item);
+
 }
 
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
