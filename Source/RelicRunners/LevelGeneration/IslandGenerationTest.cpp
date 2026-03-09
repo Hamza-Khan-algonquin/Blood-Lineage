@@ -45,6 +45,14 @@ Change the way the floor spawns by removing the corner and wall piece so that th
 
 Make packed level actors with props ian made
 
+Add randomized props to modules
+
+Add Collision to Pandora's Box | Done
+
+Make portal invisible until needed in-game | done
+
+Make it so objectives can spawn specific modules on their own tile | Right now only Flag Objective is set up
+
 */
 
 /* Maybe TODO
@@ -76,7 +84,11 @@ AIslandGenerationTest::AIslandGenerationTest() :
 	IslandIndex(0),
 	CurrentObjectives(0),
 	isFinalIsland(false),
-	ObjectiveAmount(0)
+	ObjectiveAmount(0),
+	CameraActor(nullptr),
+	LevelTrigger(nullptr),
+	IsActivated(false)
+
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -188,13 +200,15 @@ void AIslandGenerationTest::Generate()
 			{
 				if (GenerationValuesComponent->IslandValues.LevelChangeTrigger && isFinalIsland)
 				{
-					ALevelChangeTrigger* levelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
+					LevelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
+
+					LevelTrigger->SetActorHiddenInGame(true);
 
 					FString TargetLevel = gameInstance->StageNumber > 1 ?
 						GenerationValuesComponent->IslandValues.BossLevel :
 						GenerationValuesComponent->IslandValues.TargetLevel;
 
-					levelTrigger->Server_SetTargetLevel(FName(TargetLevel));
+					LevelTrigger->Server_SetTargetLevel(FName(TargetLevel));
 				}
 			}
 		}
@@ -251,6 +265,11 @@ void AIslandGenerationTest::SetIslandVisibility(bool visible)
 	if (Bridge)
 	{
 		Bridge->SetActorHiddenInGame(!visible);
+	}
+
+	if (LevelTrigger)
+	{
+		LevelTrigger->SetActorHiddenInGame(true);
 	}
 
 	for (APackedLevelActor* obstac : ObstacleArrays)
@@ -971,7 +990,7 @@ void AIslandGenerationTest::SetTopLeftFloorShape(int x, int y, int width)
 			break;
 		case EIslandFloorNeighbours::MiddleLeft:
 		case EIslandFloorNeighbours::MiddleLeft | EIslandFloorNeighbours::TopLeft:
-			//rotationOffset.Yaw = 90.0f;
+			rotationOffset.Yaw = 90.0f;
 			newTransform.SetRotation(rotationOffset.Quaternion());
 			SideFloorPieceTransforms.Add(newTransform);
 			break;
@@ -1445,6 +1464,16 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			ObjectiveArrays.Add(newFlag);
 		}
 
+		if (GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor.Num())
+		{
+			int moduleIndex = FMath::RandRange(0, GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor.Num()-1);
+			int randYaw = FMath::RandRange(0, 3) * 90;
+			APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
+			aModule->SetActorHiddenInGame(true);
+			ObstacleArrays.Add(aModule);
+
+		}
+
 		if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
 		{
 			SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
@@ -1605,7 +1634,7 @@ void AIslandGenerationTest::CreateFloor()
 
 		ISMComp->RegisterComponent();
 
-		//InstanceMeshComponentArray.Add(ISMComp);
+		InstanceMeshComponentArray.Add(ISMComp);
 	}
 }
 

@@ -4,12 +4,14 @@
 #include "NewSurvivalZone.h"
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include <Net/UnrealNetwork.h>
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 
 // Sets default values
 ANewSurvivalZone::ANewSurvivalZone() :
 	TriggerZone(nullptr),
+	PandoraCollision(nullptr),
 	SurvivalTimelineComp(nullptr),
 	SurvivalTimelineFloatCurve(nullptr),
 	Duration(0.0f),
@@ -26,6 +28,10 @@ ANewSurvivalZone::ANewSurvivalZone() :
 	TriggerZone->OnComponentBeginOverlap.AddDynamic(this, &ANewSurvivalZone::OnTriggerOverlap);
 	TriggerZone->OnComponentEndOverlap.AddDynamic(this, &ANewSurvivalZone::OnOverlapEnd);
 	TriggerZone->SetupAttachment(Origin);
+
+	PandoraCollision = CreateDefaultSubobject<UBoxComponent>("PandoraCollision");
+	PandoraCollision->SetCollisionProfileName("BlockAllDynamic");
+	PandoraCollision->SetupAttachment(Origin);
 
 	RadiusMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RadiusMesh"));
 	RadiusMesh->SetCollisionProfileName("NoCollision");
