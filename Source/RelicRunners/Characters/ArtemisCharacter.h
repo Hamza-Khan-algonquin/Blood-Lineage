@@ -37,6 +37,10 @@ protected:
 	void GiveMarkOfTheHunt();
 	void GiveMoonBeam(); 
    
+	void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
+	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
+	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
+
     virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	void ShowReticle();

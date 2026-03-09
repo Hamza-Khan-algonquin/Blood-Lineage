@@ -51,7 +51,7 @@ public:
     float Duration = 0.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Combat")
-    float DamageAmount = 0.f;
+    float Damage = 0.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Combat")
     float AreaRadius = 0.f;

@@ -44,6 +44,9 @@ protected:
 	virtual void BasicAttack() override;
 	virtual void HeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
+	void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
+	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
+	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
 
 	UPROPERTY()
 	float Damage;
