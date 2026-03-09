@@ -25,14 +25,21 @@ protected:
 
     void Explode(FVector ImpactPoint);
 
+    void ApplyDotTick();
+
     FTimerHandle ProjectileTimer;
     FTimerHandle DurationTimer;
+    FTimerHandle DotTimer;
 
     FVector ProjectileLocation;
     FVector ProjectileVelocity;
+    FVector DotCenter;
+    float Gravity;
+    float ProjectileRadius;
+    float DotTickRate;
+    float DotDuration;
+    float DamagePerTick;
+    float DotTimeElapsed;
 
-    float Gravity = -980.f;
-    float ProjectileRadius = 40.f;
-    float ExplosionRadius = 500.f;
-    float DamageAmount = 100.f;
+
 };

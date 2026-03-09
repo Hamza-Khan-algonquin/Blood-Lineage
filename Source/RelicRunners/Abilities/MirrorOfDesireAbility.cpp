@@ -79,7 +79,7 @@ void UMirrorOfDesireAbility::OnOwnerTakeDamage(AActor* DamagedActor, float Damag
         return;
 
 
-    float DamageToReflect = DamageAmount * 50.f; // 40% reflect
+    float DamageToReflect = DamageAmount * 50.f; 
 
     // Apply reflected damage
     UGameplayStatics::ApplyDamage(EnemyPawn, DamageToReflect, DamagedActor->GetInstigatorController(), DamagedActor, nullptr);

@@ -83,26 +83,33 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorInfo)
 {
-    UWorld* World = GetWorld();
-    if (!World || !ActorInfo || !ActorInfo->AvatarActor.IsValid())
+    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
     {
         return;
     }
 
-    FVector Center = ActorInfo->AvatarActor->GetActorLocation();
+    AActor* OwnerActor = ActorInfo->AvatarActor.Get();
+    DamageOrigin = OwnerActor->GetActorLocation(); // initialize origin at player
 
-    DrawDebugSphere(World,Center,AreaRadius,32,FColor::Purple,false,DOTDuration);
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
 
+    // Draw the DOT area around the player at start
+    DrawDebugSphere(World, DamageOrigin, AreaRadius, 32, FColor::Purple, false, DOTDuration);
+
+    // Track overlapping enemies initially
     TArray<AActor*> OverlappedActors;
-
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
-    ActorsToIgnore.Add(ActorInfo->AvatarActor.Get());
+    ActorsToIgnore.Add(OwnerActor);
 
-    UKismetSystemLibrary::SphereOverlapActors(World, Center, AreaRadius, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappedActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, DamageOrigin, AreaRadius, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappedActors);
 
     for (AActor* Actor : OverlappedActors)
     {
@@ -113,7 +120,7 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
 
         AffectedEnemies.AddUnique(Actor);
 
-        DrawDebugLine(World,Center, Actor->GetActorLocation(), FColor::Red,false,DOTDuration, 0,2.f);
+        DrawDebugLine(World, DamageOrigin, Actor->GetActorLocation(), FColor::Red, false, DOTDuration, 0, 2.f);
     }
 }
 
@@ -141,6 +148,15 @@ void UGoddessOfLove::ApplyPassiveHealthRegen()
 
 void UGoddessOfLove::TickDamage()
 {
+    if (!CurrentActorInfo || !CurrentActorInfo->AvatarActor.IsValid())
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* OwnerActor = CurrentActorInfo->AvatarActor.Get();
+    DamageOrigin = OwnerActor->GetActorLocation(); // update origin to player each tick
+
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -181,14 +197,12 @@ void UGoddessOfLove::TickDamage()
             continue;
         }
 
-
+        // Draw debug lines and strings from player to each enemy
         const FColor LineColor = FColor::MakeRedToGreenColorFromScalar(DamageMultiplier);
+        DrawDebugLine(World, DamageOrigin, Enemy->GetActorLocation(), LineColor, false, DOTTickInterval, 0, 2.f);
+        DrawDebugString(World, Enemy->GetActorLocation() + FVector(0, 0, 80.f), FString::Printf(TEXT("DPS x%.2f"), DamageMultiplier), nullptr, LineColor, DOTTickInterval);
 
-        DrawDebugLine(World, DamageOrigin, Enemy->GetActorLocation(), LineColor,false, DOTTickInterval,0, 2.f);
-
-        DrawDebugString(World, Enemy->GetActorLocation() + FVector(0, 0, 80.f), FString::Printf(TEXT("DPS x%.2f"), DamageMultiplier), nullptr,LineColor,DOTTickInterval);
-
-        UGameplayStatics::ApplyDamage( Enemy,ScaledDamage,CurrentActorInfo->PlayerController.Get(), CurrentActorInfo->AvatarActor.Get(), nullptr);
+        UGameplayStatics::ApplyDamage(Enemy, ScaledDamage, CurrentActorInfo->PlayerController.Get(), OwnerActor, nullptr);
     }
 
     if (ElapsedDOTTime >= DOTDuration)

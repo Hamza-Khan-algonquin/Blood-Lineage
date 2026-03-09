@@ -17,11 +17,18 @@ UPiercingArrow::UPiercingArrow()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Damage = 150.f;    
     Duration = 10.f;    
-    CooldownTimer = 6.f;
+    CooldownTimer = 10.f;
     Cost = 25;
     LastUseTime = -100.f;
+    AreaRadius = 600.f;
+
+    Gravity = -980.f;
+    ProjectileRadius = 40.f;
+    DotTickRate = 0.5f;
+    DotDuration = 6.f;
+    DamagePerTick = 15.f;
+    DotTimeElapsed = 0.f;
 }
 
 void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -79,24 +86,10 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     ProjectileVelocity = AvatarActor->GetActorForwardVector() * 3200.f + FVector(0, 0, 100.f);
 
     // Start ticking projectile
-    World->GetTimerManager().SetTimer(
-        ProjectileTimer,
-        this,
-        &UPiercingArrow::TickArrow,
-        0.016f,
-        true
-    );
+    World->GetTimerManager().SetTimer(ProjectileTimer, this, &UPiercingArrow::TickArrow, 0.016f, true);
 
-    // Duration failsafe (auto explode if never hits)
-    World->GetTimerManager().SetTimer(
-        DurationTimer,
-        [this]()
-        {
-            Explode(ProjectileLocation);
-        },
-        Duration,
-        false
-    );
+    // Duration failsafe 
+    World->GetTimerManager().SetTimer(DurationTimer,[this](){Explode(ProjectileLocation);},3.f,false);
 }
 
 void UPiercingArrow::TickArrow()
@@ -118,23 +111,15 @@ void UPiercingArrow::TickArrow()
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(AvatarActor);
 
-    bool bHit = World->SweepSingleByChannel(
-        Hit,
-        ProjectileLocation,
-        NewLocation,
-        FQuat::Identity,
-        ECC_GameTraceChannel1,
-        FCollisionShape::MakeSphere(ProjectileRadius),
-        Params
-    );
+    bool bHit = World->SweepSingleByChannel(Hit,ProjectileLocation,NewLocation,FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(ProjectileRadius),Params);
 
-    // Draw debug sphere at the projectile location
+    //debug sphere at the projectile location
     DrawDebugSphere(World, NewLocation, ProjectileRadius, 12, FColor::Yellow, false, 0.1f);
 
     if (bHit)
     {
-        // Draw impact debug sphere
-        DrawDebugSphere(World, Hit.ImpactPoint, ExplosionRadius, 16, FColor::Red, false, 2.f);
+        // debug sphere
+        DrawDebugSphere(World, Hit.ImpactPoint, AreaRadius, 16, FColor::Red, false, 2.f);
 
         Explode(Hit.ImpactPoint);
         return;
@@ -152,24 +137,33 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
     if (!World) return;
 
     World->GetTimerManager().ClearTimer(ProjectileTimer);
+    World->GetTimerManager().ClearTimer(DurationTimer);
 
-    // Draw debug sphere for explosion radius
-    DrawDebugSphere(World, ImpactPoint, ExplosionRadius, 16, FColor::Red, false, 2.f);
+    DotCenter = ImpactPoint;
+    DotTimeElapsed = 0.f;
 
-    // Sweep to detect enemies in AoE
+    // Draw debug explosion field
+    DrawDebugSphere(World, DotCenter, AreaRadius, 16, FColor::Red, false, DotDuration);
+
+    // Start DoT ticking
+    World->GetTimerManager().SetTimer(DotTimer,this,&UPiercingArrow::ApplyDotTick,DotTickRate,true);
+}
+
+void UPiercingArrow::ApplyDotTick()
+{
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!AvatarActor) return;
+
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World) return;
+
+    DotTimeElapsed += DotTickRate;
+
     TArray<FHitResult> HitResults;
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(AvatarActor);
 
-    bool bHitAny = World->SweepMultiByChannel(
-        HitResults,
-        ImpactPoint,
-        ImpactPoint + FVector(0, 0, 1.f),
-        FQuat::Identity,
-        ECC_GameTraceChannel1,
-        FCollisionShape::MakeSphere(ExplosionRadius),
-        Params
-    );
+    bool bHitAny = World->SweepMultiByChannel(HitResults, DotCenter, DotCenter + FVector(0, 0, 1.f), FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(AreaRadius), Params);
 
     if (bHitAny)
     {
@@ -180,17 +174,17 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
 
             if (!Pawn->Tags.Contains("Enemy")) continue;
 
-            UGameplayStatics::ApplyDamage(
-                Pawn,
-                DamageAmount,
-                AvatarActor->GetInstigatorController(),
-                AvatarActor,
-                nullptr
-            );
+            UGameplayStatics::ApplyDamage(Pawn,DamagePerTick, AvatarActor->GetInstigatorController(), AvatarActor, nullptr);
         }
     }
 
-    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+    // End DoT after duration
+    if (DotTimeElapsed >= DotDuration)
+    {
+        World->GetTimerManager().ClearTimer(DotTimer);
+
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+    }
 }
 
 void UPiercingArrow::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -202,6 +196,7 @@ void UPiercingArrow::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         {
             World->GetTimerManager().ClearTimer(ProjectileTimer);
             World->GetTimerManager().ClearTimer(DurationTimer);
+            World->GetTimerManager().ClearTimer(DotTimer);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();

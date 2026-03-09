@@ -1,12 +1,13 @@
 #include "DivinePunishment.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h" 
 #include "Kismet/GameplayStatics.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "TimerManager.h"
-#include "GameFramework/CharacterMovementComponent.h" 
+
 
 UDivinePunishment::UDivinePunishment()
 {
