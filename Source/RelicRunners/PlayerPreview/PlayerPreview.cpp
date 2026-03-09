@@ -255,7 +255,13 @@ void APlayerPreview::SetPreviewMeshByItemType(const FString& ItemType, UObject* 
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
 		if (NecklaceMesh && Mesh) NecklaceMesh->SetSkeletalMesh(Mesh);
 	}
-	else if (ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Staff" || ItemType == "Bow")
+	else if (ItemType == "Greatsword")
+	{
+		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
+		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
+		if (OffhandItemMesh) OffhandItemMesh->SetStaticMesh(ShieldAsset);
+	}
+	else if (ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow")
 	{
 		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
 		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);

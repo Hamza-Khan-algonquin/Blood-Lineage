@@ -104,6 +104,7 @@ void APlayerPreview::BeginPlay()
 
 	USkeletalMesh* Character = nullptr;
 	TSubclassOf<UAnimInstance> DesiredAnimBP = nullptr;
+	float ModelScale = 1.0f;
 
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
 	if (PC)
@@ -115,6 +116,7 @@ void APlayerPreview::BeginPlay()
 			{
 				Character = AresModel;
 				DesiredAnimBP = TankAnim;
+				ModelScale = 0.8f;
 			}
 			else if (PS->SelectedClass == "Nemesis")
 			{
@@ -130,9 +132,11 @@ void APlayerPreview::BeginPlay()
 			{
 				Character = ArtemisModel;
 				DesiredAnimBP = RangedAnim;
+				ModelScale = 0.85f;
 			}
 
 			BodyMesh->SetSkeletalMesh(Character);
+			BodyMesh->SetRelativeScale3D(FVector(ModelScale));
 			if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim || DesiredAnimBP == TankAnim)
 			{
 				BodyMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
@@ -251,7 +255,13 @@ void APlayerPreview::SetPreviewMeshByItemType(const FString& ItemType, UObject* 
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
 		if (NecklaceMesh && Mesh) NecklaceMesh->SetSkeletalMesh(Mesh);
 	}
-	else if (ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Staff" || ItemType == "Bow")
+	else if (ItemType == "Greatsword")
+	{
+		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
+		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
+		if (OffhandItemMesh && Mesh) OffhandItemMesh->SetStaticMesh(ShieldAsset);
+	}
+	else if (ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow")
 	{
 		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
 		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);

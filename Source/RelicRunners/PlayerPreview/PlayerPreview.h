@@ -59,6 +59,9 @@ public:
 	TSubclassOf<UAnimInstance> TankAnim;
 
 	UPROPERTY(EditAnywhere)
+	UStaticMesh* ShieldAsset;
+
+	UPROPERTY(EditAnywhere)
 	USkeletalMesh* AresModel;
 
 	UPROPERTY(EditAnywhere)
