@@ -25,7 +25,7 @@
 void USettingsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
+	
 
 	if (BackButton)
 	{

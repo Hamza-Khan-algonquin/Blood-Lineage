@@ -42,6 +42,12 @@ public:
     UFUNCTION(BlueprintCallable)
     void Initialize(const FItemData& InItemData);
     void SetupVisuals();
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Loot")
+    class USphereComponent* AutoLootSphere = nullptr;
+
+    UFUNCTION()
+    void OnAutoLootSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
     UFUNCTION()
     void OnRep_ItemData();
     void HandlePickup(class ARelicRunnersCharacter* Char);
@@ -59,6 +65,9 @@ public:
     TSubclassOf<UUserWidget> TooltipWidgetClass;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UStaticMeshComponent* ItemCoverMesh;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float AutoLootSphereRadius = 200.f;
 
 protected:
     // IInteractInterface overrides

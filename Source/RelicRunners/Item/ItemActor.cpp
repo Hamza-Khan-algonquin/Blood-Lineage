@@ -26,6 +26,9 @@
 #include "RelicRunners/Inventory/InventoryToolTip.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/RelicRunnersCharacter.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include "RelicRunners/Menu/Keybinds.h"
 
 AItemActor::AItemActor()
 {
@@ -55,6 +58,17 @@ AItemActor::AItemActor()
         TooltipWidgetClass = TooltipWidgetBPClass.Class;
         TooltipWidgetComponent->SetWidgetClass(TooltipWidgetClass);
     }
+
+    //Autoloot 
+    AutoLootSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AutoLootSphere"));
+    AutoLootSphere->SetupAttachment(RootComponent);
+    AutoLootSphere->SetSphereRadius(AutoLootSphereRadius);
+    AutoLootSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    AutoLootSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+    AutoLootSphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+
+
+
 }
 
 void AItemActor::InitializeTooltipWidget()
@@ -77,6 +91,11 @@ void AItemActor::InitializeTooltipWidget()
 void AItemActor::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (AutoLootSphere)
+    {
+        AutoLootSphere->OnComponentBeginOverlap.AddDynamic(this, &AItemActor::OnAutoLootSphereBeginOverlap);
+    }
 }
 
 void AItemActor::Tick(float DeltaTime)
@@ -101,6 +120,8 @@ void AItemActor::Tick(float DeltaTime)
             TooltipWidgetComponent->SetWorldRotation(LookAtRotation);
         }
     }
+
+  
 }
 
 void AItemActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -211,6 +232,17 @@ void AItemActor::Interact_Implementation(ARelicRunnersCharacter* Char)
 FItemData AItemActor::GetItemData_Implementation()
 {
     return ItemData;
+}
+void AItemActor::OnAutoLootSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
+    if (!OtherActor) return;
+    if (!OtherActor->ActorHasTag("Player")) return;
+    if (GI->Keys->bAutoLoot == false) return;
+
+    HandlePickup(Cast<ARelicRunnersCharacter>(OtherActor));
+    DrawDebugSphere(GetWorld(), GetActorLocation(), AutoLootSphereRadius, 12, FColor::Red, false, 5.0f, 0, 2.0f);
 }
 
 void AItemActor::HandlePickup(ARelicRunnersCharacter* Char)
