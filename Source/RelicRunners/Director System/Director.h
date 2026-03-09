@@ -19,6 +19,9 @@ To do:
 #include "Director.generated.h"
 
 class ARelicRunnersCharacter;
+class ARecastNavMesh;
+
+
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerAdd, APawn*, Player);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerRemoved, APawn*, Player);
@@ -59,6 +62,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy In Scene", meta = (AllowPrivateAccess = "true", ToolTip = "The enemies currently in the scene"))
 	TArray<APawn*> EnemiesInWorld;
 	
+	//NavNodeRef is just a uint64 so I use that instead of a FNavNodeRef to avoid a include
+	TMap<uint64, FVector> FlowField;
+
+	ARecastNavMesh* ActiveNavMesh;
+
+
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	FVector DebugFlowTargetLocation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	float DebugFlowRadius;
+#endif
 public:	
 	static ADirector* GetInstance(const UObject* WorldContext);
 
@@ -82,8 +98,6 @@ public:
 	UFUNCTION()
 	void RemovePlayer(AActor* player);
 
-
-
 public:
 	// Sets default values for this actor's properties
 	ADirector();
@@ -95,7 +109,12 @@ protected:
 	//A method to try and spawn enemies on near by spawnPoints
 	void SpawnCheck();
 
-
+#if WITH_EDITOR
+	UFUNCTION(CallInEditor)
+	void GenerateFlowField();
+#endif
+	void GenerateFlowField(FVector targetLocation, float radius);
+  
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

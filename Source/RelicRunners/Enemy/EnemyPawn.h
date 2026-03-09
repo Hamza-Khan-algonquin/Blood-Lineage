@@ -61,6 +61,8 @@ public:
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
+	
+
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;

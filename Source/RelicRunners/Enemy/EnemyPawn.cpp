@@ -487,19 +487,6 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-
-	if (HitFlashCurve)
-	{
-		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-		FOnTimelineFloat inProgressFunc;
-		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
-
-		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
-
-		//putting this here for a future note of what do if I want to call something at the end
-		//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
-	}
 	
 	if (HasAuthority())
 	{
@@ -512,6 +499,21 @@ void AEnemyPawn::BeginPlay()
 
 		IsAttacking = false;
 		SetActorTickEnabled(false);
+
+		if (HitFlashCurve)
+		{
+			HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+			FOnTimelineFloat inProgressFunc;
+			inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
+
+			HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
+
+			//putting this here for a future note of what do if I want to call something at the end
+			//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
+		}
+
+		MovementComponent->InitializeNavMeshPointer();
 	}
 }
 

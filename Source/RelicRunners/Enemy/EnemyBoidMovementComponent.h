@@ -23,6 +23,7 @@ enum class EBoidFocuseMode : uint8
 };
 
 class ACommanderController;
+class ARecastNavMesh;
 
 UCLASS()
 class RELICRUNNERS_API UEnemyBoidMovementComponent : public UPawnMovementComponent
@@ -58,6 +59,8 @@ protected:
 	float TargetDeadZone;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float MaxTargetDistanceMultiplier;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float DistanceToStartAvoidingWalls;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float CoherenceWeight;
@@ -69,7 +72,8 @@ protected:
 	float TargetWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float EdgeAvoidanceWeight;
-	
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float WallAvoidanceWeight;
 
 	//UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	//float OrbitWeight;
@@ -83,6 +87,8 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Other")
 	FVector NavMeshClampExtent;
+	UPROPERTY(EditAnywhere, Category = "Other")
+	FVector WallAvoidanceExtent;
 	UPROPERTY(EditAnywhere, Category = "Other")
 	float FocuseOnTargetDistance;
 	UPROPERTY(EditAnywhere, Category = "Other")
@@ -98,9 +104,13 @@ protected:
 	FVector EdgeAvoidanceVector = FVector::Zero();
 	FVector LastValidPosition = FVector::Zero();
 	FVector LastEdgeVector = FVector::Zero();
+	FVector LastWallAvoidanceDirection = FVector::Zero();
 
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float BundleOfJoyWeight;
+
+	UPROPERTY()
+	ARecastNavMesh* ActiveNavMesh;
 
 
 public:
@@ -128,4 +138,5 @@ public:
 	void SetMovementMode(EBoidMovementMode newMode) { MovementMode = newMode; }
 	EBoidMovementMode GetMovementMode() { return MovementMode; }
 	bool IsAtTarget();
+	void InitializeNavMeshPointer();
 };

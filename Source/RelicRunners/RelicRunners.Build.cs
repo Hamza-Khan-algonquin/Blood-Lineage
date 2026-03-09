@@ -27,7 +27,8 @@ public class RelicRunners : ModuleRules
 			"GameplayAbilities",    
 			"GameplayTasks",        
 			"GameplayTags",
-            "Niagara"
+            "Niagara",
+            "Navmesh"
         });
     }
 }

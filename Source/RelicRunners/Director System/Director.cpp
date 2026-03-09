@@ -6,6 +6,12 @@
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/Enemy/Controllers/SoldierController.h"
+#include "NavMesh/RecastNavMesh.h"
+#include "Detour/DetourNavMeshQuery.h"
+#include "NavigationSystem.h"
+#include "NavMesh/RecastQueryFilter.h"
+#include "NavFilters/NavigationQueryFilter.h"
+
 
 TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
 
@@ -41,6 +47,7 @@ void ADirector::BeginPlay()
 
 		//reseting some varialbes
 		SpawnTimer = 0;
+		
 	}
 	//if we are not the server make sure we don't tick
 	else if (GetLocalRole() == ROLE_AutonomousProxy)
@@ -158,6 +165,7 @@ void ADirector::RemovePlayer(AActor* player)
 	}
 }
 
+
 void ADirector::SpawnCheck()
 {
 	//Setting up the array
@@ -186,6 +194,58 @@ void ADirector::SpawnCheck()
 				point->SpawnEnemies();
 			}
 		}
+	}
+}
+
+#if WITH_EDITOR
+void ADirector::GenerateFlowField()
+{
+	GenerateFlowField(DebugFlowTargetLocation, DebugFlowRadius);
+}
+#endif
+
+void ADirector::GenerateFlowField(FVector targetLocation, float radius)
+{
+	UNavigationSystemV1* navSys = UNavigationSystemV1::GetCurrent(GetWorld());
+	if (!navSys)
+	{
+		return;
+	}
+
+	ARecastNavMesh* recastNavMesh = Cast<ARecastNavMesh>(navSys->GetDefaultNavDataInstance());
+	if (!recastNavMesh)
+	{
+		return;
+	}
+
+	ActiveNavMesh = recastNavMesh;
+	FlowField.Empty();
+
+
+	FNavLocation targetNavLocation;
+	ActiveNavMesh->ProjectPoint(targetLocation, targetNavLocation, { 100,100,100 });
+	TArray<NavNodeRef> polys;
+	TArray<NavNodeRef> parentPolys;
+	TArray<float> costs;
+	int polyCount;
+
+	ActiveNavMesh->FindPolysAroundCircle(targetNavLocation.Location, targetNavLocation.NodeRef, radius, ActiveNavMesh->GetDefaultQueryFilter(), this, &polys, &parentPolys, &costs, &polyCount);
+
+	for (int i = 0; i < polyCount; i++)
+	{
+		if (!parentPolys[i] || !polys[i] || FlowField.Contains(polys[i]))
+		{
+			continue;
+		}
+
+		FVector polyCentre;
+		FVector parentPolyCentre;
+		ActiveNavMesh->GetPolyCenter(polys[i], polyCentre);
+		ActiveNavMesh->GetPolyCenter(parentPolys[i], parentPolyCentre);
+
+		FVector direction = (parentPolyCentre - polyCentre).GetSafeNormal();
+		FlowField.Add(polys[i], direction);
+		DrawDebugDirectionalArrow(GetWorld(), polyCentre, polyCentre + direction * 100, 100, FColor::Red, true, 5.f, 0, 20.f);
 	}
 }
 

@@ -7,6 +7,8 @@
 #include "NavigationSystem.h"
 #include <Net/UnrealNetwork.h>
 #include "DrawDebugHelpers.h"
+#include "NavMesh/RecastNavMesh.h"
+#include "Detour/DetourNavMeshQuery.h"
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -27,6 +29,7 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxTargetDistanceMultiplier = 5.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
+	WallAvoidanceExtent = FVector(100.f, 100.f, 300.f);
 	EdgeAvoidanceWeight = 1;
 	MaxStepNormal = 0.1;
 	IsKnockedBack = false;
@@ -216,36 +219,20 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		
 	}
 
-	FVector edgeVector = FVector::Zero();
+/*	FVector edgeVector = FVector::Zero();
 	FVector inVector = (LastValidPosition - GetActorLocation());
 	inVector.Z = 0;
 	inVector = inVector.GetSafeNormal();
 	if (!EdgeAvoidanceVector.IsNearlyZero())
 	{
 		edgeVector = -EdgeAvoidanceVector.GetSafeNormal();
-		//edgeVector = (finalInflunceVector - (((finalInflunceVector | edgeVector) / (edgeVector | edgeVector)) * edgeVector)).GetSafeNormal();
-		//edgeVector = -(edgeVector - edgeVector.ProjectOnTo(targetDirection)).GetSafeNormal();
 
-		/*float edgeOffSet = FVector::DotProduct(finalInflunceVector, edgeVector);
-
-		if (edgeOffSet > 0)
-		{
-			//float strength = FMath::Clamp(edgeOffSet / MaxSpeed, 0.f, 1.f);
-			finalInflunceVector -= edgeOffSet * edgeVector;// *EdgeAvoidanceWeight;
-
-		}*/
-
-		//note for future self "|" is dot operator for vectors
+		
 		FVector leftDirection = FVector::CrossProduct(FVector::UpVector, edgeVector);
-		//FVector rightDirection = -leftDirection;
-		/*leftDirection = (edgeVector + leftDirection * 0.5);
-		rightDirection = (edgeVector + leftDirection * 0.5);*/
 		FVector goal = finalInflunceVector.GetSafeNormal();
-/*		if ((edgeVector | goal) > 0.9f)
-		{
-			
-		}*/
-		if ((goal | leftDirection) > 0)//< (goal | rightDirection))
+
+		//"|" is the dot product. I just felt like
+		if ((goal | leftDirection) > 0)
 		{
 			edgeVector = leftDirection.GetSafeNormal();
 		}
@@ -255,9 +242,9 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		}
 		
 		if (FVector::DotProduct(edgeVector, LastEdgeVector) < 0.f)
+		{
 			edgeVector = -edgeVector;
-		
-		//finalInflunceVector += edgeVector.GetSafeNormal() * EdgeAvoidanceWeight;
+		}
 	}
 	
 	if (!LastEdgeVector.IsNearlyZero() || !edgeVector.IsZero())
@@ -265,6 +252,58 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		edgeVector = FMath::VInterpTo(LastEdgeVector, edgeVector, delta, 5);
 		LastEdgeVector = edgeVector;
 		finalInflunceVector += (edgeVector + inVector * 0.5).GetSafeNormal() * finalInflunceVector.Length();//EdgeAvoidanceWeight;
+	}*/
+
+
+	if (ActiveNavMesh)
+	{
+		FNavLocation navLocation;
+
+		if (ActiveNavMesh->ProjectPoint(GetActorLocation(), navLocation, WallAvoidanceExtent))
+		{
+			NavNodeRef polyRef = navLocation.NodeRef;
+			TArray<FNavigationPortalEdge> wallPoints;
+	
+			ActiveNavMesh->GetPolyWallSegments(polyRef, ActiveNavMesh->GetDefaultQueryFilter(), this, wallPoints);
+
+			for (const FNavigationPortalEdge& wallPoint : wallPoints)
+			{
+				FVector closestPointOnWall = FMath::ClosestPointOnSegment(navLocation.Location, wallPoint.Left, wallPoint.Right);
+				float distanceToWall = FVector::Dist(navLocation.Location, closestPointOnWall);
+				FVector direction;
+				float strength;
+				if (distanceToWall > DistanceToStartAvoidingWalls)
+				{
+					continue;
+				}
+
+				if (!FMath::IsNearlyZero(distanceToWall))
+				{
+					strength = FMath::Clamp((1 - distanceToWall / DistanceToStartAvoidingWalls), 0, 1);
+					direction = (navLocation.Location - closestPointOnWall).GetSafeNormal2D();
+					
+				}
+				else
+				{
+					strength = 1;
+					FVector edgeDirection = (wallPoint.Left - wallPoint.Right).GetSafeNormal();
+
+					//it the cross product. Don't believe me go look at the body of FVector::CrossProduct. I just felt like being a dick to anyone who tries to read this mess
+					direction = edgeDirection ^ FVector::UpVector;
+
+					FVector polyCenter;
+					ActiveNavMesh->GetPolyCenter(wallPoint.ToRef, polyCenter);
+
+					if ((direction | polyCenter - wallPoint.GetMiddlePoint()) < 0)
+					{
+						direction *= -1;
+					}
+				}
+
+				finalInflunceVector += direction * strength * WallAvoidanceWeight;
+				//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + direction * strength * WallAvoidanceWeight * 100, FColor::Cyan, false, 0.1, 0, 3);
+			}
+		}
 	}
 
 	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + inVector.GetSafeNormal() * 100, FColor::Cyan, false, 0.1, 0, 3);
@@ -368,11 +407,13 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	FNavLocation navLocation;
 	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	FVector offset;
-	FVector standIn;
-	GetOwner()->GetActorBounds(false, standIn, offset, false);
+	FVector origin;
+	GetOwner()->GetActorBounds(false, origin, offset, false);
 	offset.X = 0;
 	offset.Y = 0;
-	FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
+	//FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
+
+	DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
 
 	if (navSys && navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
 	{
@@ -549,4 +590,21 @@ bool UEnemyBoidMovementComponent::IsAtTarget()
 	
 
 	//return false;
+}
+
+void UEnemyBoidMovementComponent::InitializeNavMeshPointer()
+{
+	UNavigationSystemV1* navSys = UNavigationSystemV1::GetCurrent(GetWorld());
+	if (!navSys)
+	{
+		return;
+	}
+
+	ARecastNavMesh* recastNavMesh = Cast<ARecastNavMesh>(navSys->GetDefaultNavDataInstance());
+	if (!recastNavMesh)
+	{
+		return;
+	}
+
+	ActiveNavMesh = recastNavMesh;
 }
