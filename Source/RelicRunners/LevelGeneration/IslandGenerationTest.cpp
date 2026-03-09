@@ -202,7 +202,7 @@ void AIslandGenerationTest::Generate()
 				{
 					LevelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
 
-					LevelTrigger->SetActorHiddenInGame(true);
+					//LevelTrigger->SetActorHiddenInGame(true);
 
 					FString TargetLevel = gameInstance->StageNumber > 1 ?
 						GenerationValuesComponent->IslandValues.BossLevel :
@@ -228,11 +228,15 @@ void AIslandGenerationTest::ActivateIsland()
 
 	SetIslandVisibility(true);
 
+	//if (isFinalIsland)
+	//{
+	//	LevelTrigger->SetActorHiddenInGame(false);
+	//}
+
 	for (AObjectiveBase* obj : ObjectiveArrays)
 	{
 		obj->Activate();
 	}
-
 
 	switch (IslandObjective)
 	{
@@ -607,6 +611,19 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 				SplinePath->AddSplinePoint(pointPos, ESplineCoordinateSpace::World, true);
 
 				bValueHasChanged = false;
+
+				if (GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor.Num())
+				{
+					int moduleIndex = FMath::RandRange(0, GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor.Num() - 1);
+					if (GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor[moduleIndex] != nullptr)
+					{
+						int randYaw = FMath::RandRange(0, 3) * 90;
+						APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor[moduleIndex], pointPos, FRotator(0.0f, randYaw, 0.0f));
+						aModule->SetActorHiddenInGame(true);
+						ObstacleArrays.Add(aModule);
+					}
+				}
+
 			}
 		}
 		bReachEndX = currentX == targetX;
@@ -1467,11 +1484,13 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 		if (GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor.Num())
 		{
 			int moduleIndex = FMath::RandRange(0, GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor.Num()-1);
-			int randYaw = FMath::RandRange(0, 3) * 90;
-			APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
-			aModule->SetActorHiddenInGame(true);
-			ObstacleArrays.Add(aModule);
-
+			if (GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor[moduleIndex] != nullptr)
+			{
+				int randYaw = FMath::RandRange(0, 3) * 90;
+				APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
+				aModule->SetActorHiddenInGame(true);
+				ObstacleArrays.Add(aModule);
+			}
 		}
 
 		if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
@@ -1507,6 +1526,18 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			newZone->SetActorHiddenInGame(true);
 
 			ObjectiveArrays.Add(newZone);
+		}
+
+		if (GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor.Num())
+		{
+			int moduleIndex = FMath::RandRange(0, GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor.Num() - 1);
+			if (GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor[moduleIndex] != nullptr)
+			{
+				int randYaw = FMath::RandRange(0, 3) * 90;
+				APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
+				aModule->SetActorHiddenInGame(true);
+				ObstacleArrays.Add(aModule);
+			}
 		}
 
 		if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
