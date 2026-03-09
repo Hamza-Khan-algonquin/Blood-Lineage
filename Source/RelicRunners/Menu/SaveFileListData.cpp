@@ -4,7 +4,19 @@
 #include "SaveFileListData.h"
 #include "ModeSelectionWidget.h"
 
-FSaveData USaveFileListData::MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience, 
+void USaveFileListData::AddMetaExp(int Value)
+{
+    SaveData.MetaExperience += Value;
+    while (SaveData.MetaExperience >= SaveData.MetaExperienceToLevel && SaveData.MetaLevel > 0)
+    {
+        SaveData.MetaExperience -= SaveData.MetaExperienceToLevel;
+        SaveData.MetaExperienceToLevel *= 2;
+        SaveData.MetaPoints++;
+        SaveData.MetaLevel++;
+    }
+}
+
+FSaveData USaveFileListData::MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,
     float MetaExperienceToLevel, int MetaPoints, int MetaHealth, int MetaDefence, int MetaLuck, int MetaStrength, int MetaAgility, 
     int MetaIntelligence, int MetaStartingLevel, int MetaPotionEfficiency, int MetaResourceRegen )
 {
