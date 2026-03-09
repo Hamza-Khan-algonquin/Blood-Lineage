@@ -21,19 +21,7 @@ UBundleOfJoy::UBundleOfJoy()
     CooldownTimer = 10.f;
     Cost = 60;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Attract.NS_BundleOfJoy_Attract"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset1(TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Explosion.NS_BundleOfJoy_Explosion"));
-
-    if (VFXAsset1.Succeeded())
-    {
-        AbilityVFX1 = VFXAsset1.Object;
-    }
 }
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -94,6 +82,11 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
     StartLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50);
     Velocity = AvatarActor->GetActorForwardVector() * 700.f + FVector(0, 0, 600.f);
     bIsFlying = true;
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);
 

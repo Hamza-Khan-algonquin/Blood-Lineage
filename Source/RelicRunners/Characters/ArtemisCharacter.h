@@ -105,8 +105,15 @@ protected:
 
 	bool bExitingAim = false;
 
-	//const float MinLookHeightOffset = 60.f;   
-	//const float LookClampDistance = 10000.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UPiercingArrow> BP_PiercingArrowClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UImpunityAbility> BP_ImpunityClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UMarkOfTheHunt> BP_MarkOfTheHuntClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UMoonbeam> BP_MoonbeamClass;
 };

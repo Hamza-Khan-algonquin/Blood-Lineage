@@ -50,4 +50,16 @@ protected:
 
 	UPROPERTY()
 	float Damage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<UEarthquakeAbility> BP_EarthquakeClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<UGuardAbility> BP_GuardClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<UWarBannerAbility> BP_WarBannerClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<URageOfTheGods> BP_RageOfTheGodsClass;
 };

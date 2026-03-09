@@ -1,5 +1,4 @@
 #include "NemesisCharacter.h"
-//#include "RelicRunners/AbilitySystem/AbilityPointCounter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include "RelicRunners/Inventory/InventoryComponent.h"
@@ -70,6 +69,45 @@ void ANemesisCharacter::OnRep_PlayerState()
     }
 }
 
+void ANemesisCharacter::GiveImpunity()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_NaturesBlessingClass))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_NaturesBlessingClass, 1, 0));
+    }
+}
+
+void ANemesisCharacter::GiveBackStab()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_BackStabClass))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_BackStabClass, 1, 0));
+    }
+}
+
+void ANemesisCharacter::GiveVengefulDance()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_VengefulDanceClass))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_VengefulDanceClass, 1, 0));
+    }
+}
+
+void ANemesisCharacter::GiveDivinePunishment()
+{
+    if (!AbilitySystem) return;
+
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_DivinePunishmentClass))
+    {
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_DivinePunishmentClass, 1, 0));
+    }
+}
 
 void ANemesisCharacter::ActivateDamageAbilities()
 {
@@ -78,47 +116,7 @@ void ANemesisCharacter::ActivateDamageAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UBackStab::StaticClass());
-    }
-}
-
-void ANemesisCharacter::GiveImpunity()
-{
-    if (!AbilitySystem) return;
-
-    if (!AbilitySystem->FindAbilitySpecFromClass(UImpunityAbility::StaticClass()))
-    {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
-    }
-}
-
-void ANemesisCharacter::GiveBackStab()
-{
-    if (!AbilitySystem) return;
-
-    if (!AbilitySystem->FindAbilitySpecFromClass(UBackStab::StaticClass()))
-    {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBackStab::StaticClass(), 1, 0));
-    }
-}
-
-void ANemesisCharacter::GiveVengefulDance()
-{
-    if (!AbilitySystem) return;
-
-    if (!AbilitySystem->FindAbilitySpecFromClass(UVengefulDance::StaticClass()))
-    {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UVengefulDance::StaticClass(), 1, 0));
-    }
-}
-
-void ANemesisCharacter::GiveDivinePunishment()
-{
-    if (!AbilitySystem) return;
-
-    if (!AbilitySystem->FindAbilitySpecFromClass(UDivinePunishment::StaticClass()))
-    {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UDivinePunishment::StaticClass(), 1, 0));
+        AbilitySystem->TryActivateAbilityByClass(BP_BackStabClass);
     }
 }
 
@@ -127,7 +125,7 @@ void ANemesisCharacter::ActivateDefenceAbilities()
     if (AbilitySystem)
     {
         // Activate Impunity ability
-        AbilitySystem->TryActivateAbilityByClass(UNaturesBlessing::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_NaturesBlessingClass);
 
     }
 }
@@ -140,7 +138,7 @@ void ANemesisCharacter::ActivateUtilityAbilities()
     if (AbilitySystem)
     {
         // Activate Vengeful Dance ability
-        AbilitySystem->TryActivateAbilityByClass(UVengefulDance::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_VengefulDanceClass);
 
     }
 }
@@ -152,7 +150,7 @@ void ANemesisCharacter::ActivateUltimateAbilities()
     if (AbilitySystem)
     {
         // Activate Vengeful Dance ability
-        AbilitySystem->TryActivateAbilityByClass(UDivinePunishment::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_DivinePunishmentClass);
     }
 }
 

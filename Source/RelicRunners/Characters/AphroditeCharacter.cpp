@@ -80,7 +80,7 @@ void AAphroditeCharacter::ActivateDamageAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UBundleOfJoy::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_BundleOfJoyClass);
     }
 
 }
@@ -92,7 +92,7 @@ void AAphroditeCharacter::ActivateDefenceAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UMirrorOfDesireAbility::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_MirrorOfDesireClass);
     }
 }
 
@@ -103,7 +103,7 @@ void AAphroditeCharacter::ActivateUtilityAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UKissOfLife::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_KissOfLifeClass);
     }
 }
 
@@ -114,7 +114,7 @@ void AAphroditeCharacter::ActivateUltimateAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UGoddessOfLove::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_GoddessOfLoveClass);
     }
 }
 
@@ -124,7 +124,7 @@ void AAphroditeCharacter::GiveBundleOfJoy()
 
     if (!AbilitySystem->FindAbilitySpecFromClass(UBundleOfJoy::StaticClass()))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_BundleOfJoyClass, 1, 0));
     }
 }
 
@@ -134,7 +134,7 @@ void AAphroditeCharacter::GiveMirrorOfDesire()
 
     if (!AbilitySystem->FindAbilitySpecFromClass(UMirrorOfDesireAbility::StaticClass()))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMirrorOfDesireAbility::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MirrorOfDesireClass, 1, 0));
     }
 }
 
@@ -144,7 +144,7 @@ void AAphroditeCharacter::GiveKissOfLife()
 
     if (!AbilitySystem->FindAbilitySpecFromClass(UKissOfLife::StaticClass()))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_KissOfLifeClass, 1, 0));
     }
 }
 
@@ -154,7 +154,7 @@ void AAphroditeCharacter::GiveGoddessOfLove()
 
     if (!AbilitySystem->FindAbilitySpecFromClass(UGoddessOfLove::StaticClass()))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGoddessOfLove::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_GoddessOfLoveClass, 1, 0));
     }
 }
 

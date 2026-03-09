@@ -19,19 +19,6 @@ UDivinePunishment::UDivinePunishment()
 	Damage = 100.f;
     AreaRadius = 500.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_DivinePunishment.NS_DivinePunishment"));
-
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_divinepunishment_down_Montage.melee_divinepunishment_down_Montage"));
-
-    if (AnimAsset.Succeeded())
-    {
-        AbilityAnim = AnimAsset.Object;
-    }
 }
 
 void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

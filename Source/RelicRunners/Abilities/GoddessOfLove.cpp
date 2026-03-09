@@ -68,6 +68,11 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
+
     LastUseTime = World->GetTimeSeconds();
 
     DamageOrigin = ActorInfo->AvatarActor->GetActorLocation();

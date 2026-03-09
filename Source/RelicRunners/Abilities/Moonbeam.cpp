@@ -54,6 +54,11 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
     PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - Cost);
     PlayerState->UpdateRemoteHUDResource();
     
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
+
     if (OwnerChar->HasAuthority())
     {
         // Disable movement

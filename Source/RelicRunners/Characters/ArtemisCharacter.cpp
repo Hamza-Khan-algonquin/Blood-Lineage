@@ -33,20 +33,6 @@ void AArtemisCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (AbilitySystem)
-	{
-		// Give Mark of the Hunt ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
-
-		// Give Moonbeam ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
-
-		// Give NatureBlessing ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
-
-        // Give PiercingArrow ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
-	}
 }
 
 // Called when player takes control of this character
@@ -94,7 +80,7 @@ void AArtemisCharacter::ActivateDamageAbilities()
 
 	if (AbilitySystem)
 	{
-		AbilitySystem->TryActivateAbilityByClass(UPiercingArrow::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_PiercingArrowClass);
 	}
 }
 
@@ -105,7 +91,7 @@ void AArtemisCharacter::ActivateDefenceAbilities()
 	if (AbilitySystem)
 	{
 
-		AbilitySystem->TryActivateAbilityByClass(UImpunityAbility::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_ImpunityClass);
 	}
 }
 
@@ -116,7 +102,7 @@ void AArtemisCharacter::ActivateUtilityAbilities()
 	if (AbilitySystem)
 	{
 		// Activate Mark of the Hunt
-		AbilitySystem->TryActivateAbilityByClass(UMarkOfTheHunt::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_MarkOfTheHuntClass);
 	}
 }
 
@@ -127,7 +113,7 @@ void AArtemisCharacter::ActivateUltimateAbilities()
 	if (AbilitySystem)
 	{
 		// Activate Moonbeam now (fires the beam)
-		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_MoonbeamClass);
 	}
 
 }
@@ -136,9 +122,9 @@ void AArtemisCharacter::GivePiercingArrow()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UPiercingArrow::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_PiercingArrowClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_PiercingArrowClass, 1, 0));
 	}
 }
 
@@ -146,9 +132,9 @@ void AArtemisCharacter::GiveNaturesBlessing()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UNaturesBlessing::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_ImpunityClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_ImpunityClass, 1, 0));
 	}
 }
 
@@ -156,9 +142,9 @@ void AArtemisCharacter::GiveMarkOfTheHunt()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UMarkOfTheHunt::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_MarkOfTheHuntClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MarkOfTheHuntClass, 1, 0));
 	}
 }
 
@@ -166,9 +152,9 @@ void AArtemisCharacter::GiveMoonBeam()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UMoonbeam::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_MoonbeamClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MoonbeamClass, 1, 0));
 	}
 }
 

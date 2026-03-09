@@ -64,6 +64,11 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
+
     LastUseTime = World->GetTimeSeconds();
 
     PulsesExecuted = 0;

@@ -28,25 +28,7 @@ UBackStab::UBackStab()
 	Range = 600.f;
 	BehindOffset = 120.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    //static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshObj(TEXT("/Game/ThirdPerson/Blueprints/Combat/AbilityCircleBase.AbilityCircleBase"));
-    //if (MeshObj.Succeeded())
-    //{
-    //    BackStabMeshAsset = MeshObj.Object;
-    //}
-
-    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_backslash_Montage.melee_backslash_Montage"));
-
-    if (AnimAsset.Succeeded())
-    {
-        AbilityAnim = AnimAsset.Object;
-    }
 }
 
 void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -270,7 +252,6 @@ void UBackStab::ExecuteBackStabSequence()
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
-
     }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);
