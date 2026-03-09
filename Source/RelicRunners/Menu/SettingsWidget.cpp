@@ -185,6 +185,8 @@ void USettingsWidget::NativeConstruct()
 	{
 		OutputDeviceDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleOutputDeviceChanged);
 		FOnAudioOutputDevicesObtained DevicesDelegate;
+		DevicesDelegate.BindUFunction(this, FName("OnAudioDevicesFound"));
+
 		UAudioMixerBlueprintLibrary::GetAvailableAudioOutputDevices(this, DevicesDelegate);
 	}
 
@@ -644,6 +646,10 @@ void USettingsWidget::HandleOutputDeviceChanged(FString Item, ESelectInfo::Type 
 	const FString* DeviceId = OutputDeviceMap.Find(Item);
 	if (!DeviceId) return;
 
+	FOnCompletedDeviceSwap SwapDelegate;
+	SwapDelegate.BindUFunction(this, FName("OnOutputChanged"));
+
+	UAudioMixerBlueprintLibrary::SwapAudioOutputDevice(this, *DeviceId, SwapDelegate);
 
 }
 
@@ -660,10 +666,20 @@ void USettingsWidget::OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& 
 		OutputDeviceMap.Add(D.Name, D.DeviceId);
 	}
 
-	if (Devices.Num() > 0)
+	for (const FAudioOutputDeviceInfo& Device : Devices)
 	{
-		OutputDeviceDropDown->SetSelectedOption(Devices[0].Name);
+		if (Device.bIsCurrentDevice)
+		{
+			OutputDeviceDropDown->SetSelectedOption(Device.Name);
+			break;
+		}
 	}
+}
+
+void USettingsWidget::OnOutputDevicesSwapped(const FSwapAudioOutputResult& Result)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Swap finished"));
+
 }
 
 void USettingsWidget::OnMasterVolumeChanged(float Value)

@@ -176,7 +176,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	//Autoloot 
 	AutoLootSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AutoLootSphere"));
 	AutoLootSphere->SetupAttachment(RootComponent);
-	AutoLootSphere->SetSphereRadius(200.f);
+	AutoLootSphere->SetSphereRadius(300.f);
 	AutoLootSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	AutoLootSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 	AutoLootSphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);

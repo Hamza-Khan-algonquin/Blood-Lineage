@@ -204,6 +204,9 @@ public:
 	UFUNCTION()
 	void OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& Devices);
 
+	UFUNCTION()
+	void OnOutputDevicesSwapped(const FSwapAudioOutputResult& Result);
+
 	//Volume Slider
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	USlider* MasterVolumeSlider = nullptr;
