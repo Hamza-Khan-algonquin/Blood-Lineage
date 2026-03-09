@@ -12,7 +12,7 @@ URageOfTheGods::URageOfTheGods()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    DamageAmount = 100.f;
+    Damage = 100.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -130,7 +130,7 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 
         HitActorsThisPulse.Add(Actor);
 
-        UGameplayStatics::ApplyDamage(Actor, DamageAmount, AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+        UGameplayStatics::ApplyDamage(Actor, Damage, AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
 
         if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
         {

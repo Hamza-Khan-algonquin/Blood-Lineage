@@ -6,6 +6,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 
 UVengefulDance::UVengefulDance()
 {
@@ -14,9 +15,9 @@ UVengefulDance::UVengefulDance()
     AbilityName = FName("VengefulDance");
 
     DamageInterval = 0.5f;
-    KnockbackStrength = 1800.f;
+    KnockbackStrength = 3000.f;
     Duration = 1.f;
-    DamageAmount = 25.f;
+    Damage = 25.f;
     AreaRadius = 300.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -142,13 +143,12 @@ void UVengefulDance::ApplyRingDamage()
         if (Diff.Size() > AreaRadius) // Skip actors outside the area radius
             continue;
 
-        UGameplayStatics::ApplyDamage(Actor, DamageAmount, AvatarActor->GetInstigatorController(), AvatarActor, nullptr); // Apply damage
+        UGameplayStatics::ApplyDamage(Actor, Damage, AvatarActor->GetInstigatorController(), AvatarActor, nullptr); // Apply damage
 
-        if (APawn* HitCharacter = Cast<APawn>(Actor)) // If the actor is a character
+        if (AEnemyPawn* HitCharacter = Cast<AEnemyPawn>(Actor)) // Cast as EnemyCharacter
         {
-            FVector Knockback = Diff.GetSafeNormal() * KnockbackStrength; // Directional knockback
-            Knockback.Z = 400.f; // Add upward force
-            //HitCharacter->LaunchCharacter(Knockback, true, false); // Apply knockback
+            FVector Direction = Diff.GetSafeNormal();
+            HitCharacter->ApplyForceToEnemy(Direction * KnockbackStrength + FVector(0, 0, 400));
         }
     }
 

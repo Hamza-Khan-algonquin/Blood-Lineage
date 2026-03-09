@@ -58,34 +58,51 @@ public:
     TSubclassOf<AActor> SweepPredictionClass;
 
     UPROPERTY(EditAnywhere, Category = "Classes")
-    TSubclassOf<AActor> Fireball;
+    TSubclassOf<AActor> FireballClass;
 
+    UPROPERTY(Replicated)
     EBossPhase CurrentPhase = EBossPhase::Phase1;
 
     FString LastAttack = "";
 
-    bool bIsBusy = false;           
-    bool bIsSweeping = false;       
+    UPROPERTY(Replicated)
+    bool bIsBusy = false;      
+
+    UPROPERTY(Replicated)
+    bool bIsSweeping = false;     
+
+    UPROPERTY(Replicated)
     bool bIsInitialSlamming = false; 
 
     float MaxHealth = 10000.0f;
+    UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
     float CurrentHealth = MaxHealth;
-    int32 ObelisksHit = 0;
+    UFUNCTION()
+    void OnRep_CurrentHealth();
+    int ObelisksHit = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "AI")
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "AI")
     AActor* CurrentTarget;
 
     UPROPERTY(EditAnywhere, Category = "Combat")
     float RotationSpeed = 5.0f;
-
+    UPROPERTY(EditAnywhere, Category = "Combat")
+    float SweepTotalTime;
     UPROPERTY(EditAnywhere, Category = "Combat")
     float RotationOffset = 90.0f;
+    UPROPERTY(Replicated)
+    FRotator QuickTurnTarget;
 
+    UPROPERTY(Replicated)
+    bool bIsQuickTurning = false;
     FTimerHandle AttackLoopTimer;     
     FTimerHandle AbilityLogicTimer;   
     FTimerHandle RotationLockTimer;  
 
     TWeakObjectPtr<AActor> ActiveSweepBeam;
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastPlayAttackMontage(UAnimMontage* Montage, float Speed, float StartPosition);
 
 protected:
     virtual void BeginPlay() override;
@@ -103,12 +120,16 @@ protected:
     void UpdateRotation(float DeltaTime);
     void UpdateIdleAnimation();
     void ExecuteDamage(FVector ImpactLocation, float ImpactRadius);
-    void LockRotationTo(FVector TargetLocation);
+    void LockRotationTo(FVector TargetLocation, bool bInstant);
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastQuickTurn(FRotator NewRotation);
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastSnapRotation(FRotator NewRotation);
     FVector CalculateFireballLocation(FVector Center);
-    void SetupPredictionScaling(AActor* Prediction, float Duration, FVector MaxScale);
-    AActor* SpawnPrediction(TSubclassOf<AActor> Class, FVector Location, float Duration, FVector Scale);
 
+    UPROPERTY(Replicated)
     FVector AbilityLookAtTarget;
+    UPROPERTY(Replicated)
     bool bIsLookingAtAbilityTarget = false;
     float SweepStartYaw = 0.0f;
     float SweepCurrentAngle = 0.0f;

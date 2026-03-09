@@ -88,7 +88,7 @@ void ANemesisCharacter::GiveImpunity()
 
     if (!AbilitySystem->FindAbilitySpecFromClass(UImpunityAbility::StaticClass()))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
     }
 }
 
@@ -127,7 +127,7 @@ void ANemesisCharacter::ActivateDefenceAbilities()
     if (AbilitySystem)
     {
         // Activate Impunity ability
-        AbilitySystem->TryActivateAbilityByClass(UImpunityAbility::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(UNaturesBlessing::StaticClass());
 
     }
 }
@@ -251,15 +251,26 @@ void ANemesisCharacter::UpdateCamera(float DeltaTime)
     const FString MapName = GetWorld()->GetMapName();
     if (MapName.Contains(TEXT("BossLevel"))) return;
 
-    // Movement info 
     FVector Velocity = GetVelocity();
     Velocity.Z = 0.f;
     float Speed = Velocity.Size();
 
-    // Detect nearby enemies 
     bool bEnemiesNearby = false;
     AActor* NearestEnemy = nullptr;
     float NearestDistSq = FLT_MAX;
+
+    DetectEnemies(bEnemiesNearby, NearestEnemy, NearestDistSq);
+
+    UpdateCameraPosition(DeltaTime, Velocity, Speed, bEnemiesNearby);
+
+    UpdateCameraRotation(DeltaTime, Velocity, Speed);
+}
+
+void ANemesisCharacter::DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy,float& NearestDistSq)
+{
+    bEnemiesNearby = false;
+    NearestEnemy = nullptr;
+    NearestDistSq = FLT_MAX;
 
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -268,7 +279,7 @@ void ANemesisCharacter::UpdateCamera(float DeltaTime)
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(this);
 
-    UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore,OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(GetWorld(),GetActorLocation(),500.f,ObjectTypes,APawn::StaticClass(),ActorsToIgnore,OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {
@@ -277,6 +288,7 @@ void ANemesisCharacter::UpdateCamera(float DeltaTime)
         bEnemiesNearby = true;
 
         float DistSq = FVector::DistSquared(Actor->GetActorLocation(), GetActorLocation());
+
         if (DistSq < NearestDistSq)
         {
             NearestDistSq = DistSq;
@@ -284,106 +296,98 @@ void ANemesisCharacter::UpdateCamera(float DeltaTime)
         }
     }
 
-    // Dynamic zoom 
-    float CombatArmLength = BaseArmLength + 50.f;
+}
+void ANemesisCharacter::UpdateCameraPosition(float DeltaTime,const FVector& Velocity, float Speed, bool bEnemiesNearby)
+{
+    // arm length adjustments
+    float CombatArmLength = BaseArmLength + 150.f;
 
     float TargetArm;
     if (bEnemiesNearby)
-    {
         TargetArm = CombatArmLength;
-    }
     else if (Speed > 600.f)
-    {
         TargetArm = SprintArmLength;
-    }
     else
-    {
         TargetArm = BaseArmLength;
-    }
 
-    if (bEnemiesNearby)
-    {
-        TargetArm = FMath::Max(TargetArm, BaseArmLength + 75.f);
-    }
+    CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength,TargetArm,DeltaTime,3.5f);
 
-    CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 4.f);
+    // lag
+    float TargetLag = bEnemiesNearby ? 15.f : 10.f;
+    float TargetRotLag = bEnemiesNearby ? 16.f : 10.f;
 
-    CameraBoom->TargetArmLength = FMath::Clamp(CameraBoom->TargetArmLength, BaseArmLength * 0.9f, SprintArmLength);
+    CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed,TargetLag, DeltaTime, 10.f);
 
-    // Camera lag
-    float TargetCameraLagSpeed = bEnemiesNearby ? 2.f : 8.f;
-    float TargetCameraRotationLagSpeed = bEnemiesNearby ? 2.f : 6.f;
+    CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed,TargetRotLag,DeltaTime,10.f);
 
-    CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetCameraLagSpeed, DeltaTime, 8.f);
-
-    CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetCameraRotationLagSpeed, DeltaTime, 8.f);
-
-    // Look-ahead
+    // look ahead
     FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
-    CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 3.f);
 
-    float AdjustedHeight = HeightOffset + (bEnemiesNearby ? 20.f : 0.f);
-    CameraBoom->SocketOffset = FVector(0.f, 0.f, AdjustedHeight) + CurrentLookAhead;
+    CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead,DesiredLookAhead,DeltaTime, 5.f);
 
+    float TargetHeightOffset = bEnemiesNearby ? HeightOffset + 60.f : HeightOffset;
+
+    float SmoothedHeight = FMath::FInterpTo(CameraBoom->SocketOffset.Z,TargetHeightOffset,DeltaTime,3.5f);
+
+    FVector TargetSocketOffset = FVector(0.f, 0.f, SmoothedHeight) + CurrentLookAhead;
+
+    CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetSocketOffset, DeltaTime,4.f);
+}
+
+void ANemesisCharacter::UpdateCameraRotation( float DeltaTime,const FVector& Velocity,float Speed)
+{
+    // moving
     if (Speed > 10.f)
     {
-        FRotator DesiredRot = Velocity.ToOrientationRotator();
-
-        if (NearestEnemy && NearestDistSq > FMath::Square(150.f))
-        {
-            FVector DirToEnemy = NearestEnemy->GetActorLocation() - GetActorLocation();
-            DirToEnemy.Z = 0.f;
-            DirToEnemy.Normalize();
-
-            float EnemyYaw = DirToEnemy.Rotation().Yaw;
-            float DeltaYaw = FMath::FindDeltaAngleDegrees(DesiredRot.Yaw, EnemyYaw);
-            DesiredRot.Yaw += DeltaYaw * 0.2f;
-        }
-
         FRotator CurrentRot = CameraBoom->GetComponentRotation();
 
-        DesiredRot.Pitch = FMath::Clamp(CurrentRot.Pitch, MinPitch, MaxPitch);
+        FRotator DesiredRot = CurrentRot;
+
+        FRotator MovementRot = Velocity.ToOrientationRotator();
+
+        float MoveDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw,MovementRot.Yaw);
+
+        DesiredRot.Yaw = CurrentRot.Yaw + MoveDelta * 0.35f;
+
         DesiredRot.Roll = 0.f;
 
-        float DeltaYaw = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
+        float FinalDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw,DesiredRot.Yaw);
 
-        float NewYaw = CurrentRot.Yaw + DeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+        float NewYaw = CurrentRot.Yaw + FinalDelta * DeltaTime * 30.f;
 
-        float NewPitch = FMath::FInterpTo( CurrentRot.Pitch,DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+        float NewPitch = FMath::FInterpTo(CurrentRot.Pitch,DesiredRot.Pitch,DeltaTime, CameraPitchSmoothSpeed);
 
-        float BounceOffset = FMath::Sin(GetWorld()->GetTimeSeconds() * BounceSpeed) * BounceAmplitude;
-
-        FRotator Smoothed(NewPitch + BounceOffset * 0.1f, NewYaw, 0.f);
-        CameraBoom->SetWorldRotation(Smoothed);
+        CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
     }
+    // idle
     else
     {
         if (!Controller) return;
+
         FRotator ControlRot = Controller->GetControlRotation();
+
         ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
         ControlRot.Roll = 0.f;
 
         FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
 
-        float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
+        float CamDeltaYaw = FMath::FindDeltaAngleDegrees( CurrentCamRot.Yaw, ControlRot.Yaw);
 
         float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
 
-        float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch,ControlRot.Pitch,DeltaTime,CameraPitchSmoothSpeed);
+        float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch,ControlRot.Pitch, DeltaTime,CameraPitchSmoothSpeed);
 
-        CameraBoom->SetWorldRotation( FRotator(NewCamPitch, NewCamYaw, 0.f));
-
+        CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
 
         FRotator ActorRot = GetActorRotation();
 
-        float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
+        float ActorDeltaYaw = FMath::FindDeltaAngleDegrees( ActorRot.Yaw, NewCamYaw);
 
-        ActorRot.Yaw += ActorDeltaYaw * DeltaTime * 2.5f;
+        ActorRot.Yaw += ActorDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+
         SetActorRotation(ActorRot);
     }
-
 }
-
 
 void ANemesisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {

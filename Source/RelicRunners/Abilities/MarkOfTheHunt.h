@@ -28,7 +28,6 @@ private:
 	FVector StartLocation;
 	FVector EndLocation;
 	float ProjectileAlpha;
-	FTimerHandle TravelTimer;
 	FTimerHandle ProjectileTickTimer;
 	FVector InitialVelocity;
 	UPROPERTY(EditDefaultsOnly, Category = "Ability")

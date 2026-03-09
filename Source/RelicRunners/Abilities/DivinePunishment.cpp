@@ -1,12 +1,13 @@
 #include "DivinePunishment.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h" 
 #include "Kismet/GameplayStatics.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "TimerManager.h"
-#include "GameFramework/CharacterMovementComponent.h" 
+
 
 UDivinePunishment::UDivinePunishment()
 {
@@ -15,7 +16,7 @@ UDivinePunishment::UDivinePunishment()
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
 	Cost = 20;
-	DamageAmount = 100.f;
+	Damage = 100.f;
     AreaRadius = 500.f;
 
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_DivinePunishment.NS_DivinePunishment"));
@@ -184,7 +185,7 @@ void UDivinePunishment::DivineDamageTick()
     {
         if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
 
-        UGameplayStatics::ApplyDamage(Actor,DamageAmount,InstigatorController, AvatarActor,UDamageType::StaticClass());
+        UGameplayStatics::ApplyDamage(Actor,Damage,InstigatorController, AvatarActor,UDamageType::StaticClass());
     }
 
     if (DamageTicksElapsed >= Duration)
