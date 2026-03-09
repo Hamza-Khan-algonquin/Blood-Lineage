@@ -202,7 +202,7 @@ void AIslandGenerationTest::Generate()
 				{
 					LevelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
 
-					//LevelTrigger->SetActorHiddenInGame(true);
+					LevelTrigger->SetActorHiddenInGame(true);
 
 					FString TargetLevel = gameInstance->StageNumber > 1 ?
 						GenerationValuesComponent->IslandValues.BossLevel :
@@ -227,11 +227,6 @@ void AIslandGenerationTest::ActivateIsland()
 	IsActivated = true;
 
 	SetIslandVisibility(true);
-
-	//if (isFinalIsland)
-	//{
-	//	LevelTrigger->SetActorHiddenInGame(false);
-	//}
 
 	for (AObjectiveBase* obj : ObjectiveArrays)
 	{
@@ -273,7 +268,7 @@ void AIslandGenerationTest::SetIslandVisibility(bool visible)
 
 	if (LevelTrigger)
 	{
-		LevelTrigger->SetActorHiddenInGame(true);
+		LevelTrigger->SetActorHiddenInGame(!visible);
 	}
 
 	for (APackedLevelActor* obstac : ObstacleArrays)
