@@ -105,6 +105,9 @@ protected:
 
 	bool bExitingAim = false;
 
+	int32 MaxPierces = 10;
+	int32 CurrentPierces = 0;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
 	TSubclassOf<UPiercingArrow> BP_PiercingArrowClass;
 

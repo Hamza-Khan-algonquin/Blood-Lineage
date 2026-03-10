@@ -413,29 +413,29 @@ void AAphroditeCharacter::HeavyAttack()
 {
     bIsAiming = true;
 
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    if (!CanHeavyAttack) return;
+    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+    //if (!CanHeavyAttack) return;
 
-    CanHeavyAttack = false;
+    //CanHeavyAttack = false;
 
-    ProjectileDamage = 40.0f;
+    //ProjectileDamage = 40.0f;
 
-    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+    //if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-    FBasicProjectile NewProjectile;
-    NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    //FBasicProjectile NewProjectile;
+    //NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
 
-    NewProjectile.Velocity =
-        GetActorForwardVector() * ProjectileSpeed;
+    //NewProjectile.Velocity =
+    //    GetActorForwardVector() * ProjectileSpeed;
 
-    NewProjectile.ElapsedTime = 0.f;
+    //NewProjectile.ElapsedTime = 0.f;
 
-    ActiveProjectiles.Add(NewProjectile);
+    //ActiveProjectiles.Add(NewProjectile);
 
-    PlayRandomAttackAnimation();
+    //PlayRandomAttackAnimation();
 
-    // Cooldown
-    GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
+    //// Cooldown
+    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
 }
 
 
@@ -482,21 +482,27 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             {
                 if (Projectile.AlreadyHitActors.Contains(HitActor))
                     continue;
-                //Server_HitEnemy(Enemy);
 
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                 {
                     Server_HitEnemy(TEnemy);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+
                 }
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
                 {
                     Server_HitEnemy(TPEnemy);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+
                 }
                 else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
                 {
                     Server_HitEnemy(Enemy);
+                    ExplodeProjectile(HitActor->GetActorLocation());
 
                 }
+
+                ExplodeProjectile(Hit.ImpactPoint);
 
                 Projectile.AlreadyHitActors.Add(HitActor);
                 // Remove projectile after hit
@@ -504,7 +510,6 @@ void AAphroditeCharacter::Tick(float DeltaTime)
                 break;
             }
         }
-        continue;
 
         if (Projectile.ElapsedTime >= ProjectileLifetime)
         {
@@ -513,6 +518,40 @@ void AAphroditeCharacter::Tick(float DeltaTime)
     }
 }
 
+void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)
+{
+    TArray<FHitResult> Hits;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(ExplosionRadius);
+
+    bool bHit = GetWorld()->SweepMultiByChannel(Hits,ImpactPoint,ImpactPoint, FQuat::Identity,ECC_GameTraceChannel1,Sphere,Params);
+
+    if (!bHit) return;
+
+    for (const FHitResult& Hit : Hits)
+    {
+        if (AActor* HitActor = Hit.GetActor())
+        {
+            if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+            {
+                Server_HitEnemy(TEnemy);
+            }
+            else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+            {
+                Server_HitEnemy(TPEnemy);
+            }
+            else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+            {
+                Server_HitEnemy(Enemy);
+            }
+        }
+    }
+
+    DrawDebugSphere(GetWorld(), ImpactPoint, ExplosionRadius, 20, FColor::Orange, false, 1.f);
+}
 
 
 

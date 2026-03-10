@@ -229,19 +229,19 @@ void ANemesisCharacter::BasicAttack()
 
 void ANemesisCharacter::HeavyAttack()
 {
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-    if (!CanHeavyAttack) return;
-    CanHeavyAttack = false;
+    //if (!CanHeavyAttack) return;
+    //CanHeavyAttack = false;
 
-    Damage = 10.0f;
+    //Damage = 10.0f;
 
-    if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-    {
-        PlayRandomAttackAnimation();
-    }
+    //if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+    //{
+    //    PlayRandomAttackAnimation();
+    //}
 
-    GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void ANemesisCharacter::UpdateCamera(float DeltaTime)
