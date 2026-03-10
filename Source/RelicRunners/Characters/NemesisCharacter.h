@@ -42,12 +42,24 @@ protected:
     virtual void PerformSwingTrace() override;
     virtual void BasicAttack() override;
     virtual void HeavyAttack() override;
+
     virtual void UpdateCamera(float DeltaTime) override;
+    void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
+    void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
+    void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
 
     UPROPERTY()
     float Damage;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Animation")
-    UAnimMontage* BasicAnim;
+    UPROPERTY(EditDefaultsOnly, Category = "Nemesis")
+    TSubclassOf<UBackStab> BP_BackStabClass;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Nemesis")
+    TSubclassOf<UNaturesBlessing> BP_NaturesBlessingClass;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Nemesis")
+    TSubclassOf<UVengefulDance> BP_VengefulDanceClass;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Nemesis")
+    TSubclassOf<UDivinePunishment> BP_DivinePunishmentClass;
 };

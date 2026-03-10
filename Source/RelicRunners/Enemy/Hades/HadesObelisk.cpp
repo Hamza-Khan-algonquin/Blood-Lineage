@@ -57,14 +57,39 @@ void AHadesObelisk::BeginPlay()
     {
         ShieldComponent->SetStaticMesh(ShieldMeshAsset);
     }
+
+    InitialZ = GetActorLocation().Z;
+    RunningTime = 0.0f;
 }
 
 void AHadesObelisk::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    float Speed = 200.0f * CurrentRotationMultiplier;
-    AddActorLocalRotation(FRotator(0, Speed * DeltaTime, 0));
+    float RotationSpeed = 200.0f * CurrentRotationMultiplier;
+    AddActorLocalRotation(FRotator(0, RotationSpeed * DeltaTime, 0));
+
+    FVector CurrentLocation = GetActorLocation();
+    float TargetZ = InitialZ;
+
+    if (!bIsRaging)
+    {
+        RunningTime += DeltaTime;
+
+        float BobSpeed = 2.0f;
+        float BobAmount = 100.0f;
+
+        float DeltaZ = FMath::Sin(RunningTime * BobSpeed) * BobAmount;
+        TargetZ = InitialZ + DeltaZ;
+
+        CurrentLocation.Z = TargetZ;
+    }
+    else
+    {
+        CurrentLocation.Z = FMath::FInterpTo(CurrentLocation.Z, InitialZ, DeltaTime, 5.0f);
+    }
+
+    SetActorLocation(CurrentLocation);
 }
 
 float AHadesObelisk::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

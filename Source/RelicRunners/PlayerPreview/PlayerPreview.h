@@ -47,6 +47,33 @@ public:
 	class ARelicRunnersCharacter* OwningCharacter;
 
 	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<UAnimInstance> HealerAnim;
+
+	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<UAnimInstance> MeleeAnim;
+
+	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<UAnimInstance> RangedAnim;
+
+	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<UAnimInstance> TankAnim;
+
+	UPROPERTY(EditAnywhere)
+	UStaticMesh* ShieldAsset;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* AresModel;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* NemesisModel;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* ArtemisModel;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* AphroditeModel;
+
+	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* BodyMesh;
 
 	UPROPERTY(VisibleAnywhere)
