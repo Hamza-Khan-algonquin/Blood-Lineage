@@ -89,6 +89,7 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
 
     }
+
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
 
     if (ActorInfo->AvatarActor->HasAuthority())
