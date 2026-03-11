@@ -3,6 +3,7 @@
 
 #include "StandardTooltip.h"
 #include "Components/TextBlock.h"
+#include "Components/RichTextBlock.h"
 #include "Components/Image.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanelSlot.h"
@@ -67,13 +68,9 @@ void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArra
 	//Description 1
 	if (NewDescriptions.Num() > 0)
 	{
-		if (TB_Description1)
+		if (TB_Desc1)
 		{
-			TB_Description1->SetText(NewDescriptions[0]);
-		}
-
-		if (B_Description1)
-		{
+			TB_Desc1->SetText(NewDescriptions[0]);
 			B_Description1->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}
@@ -81,13 +78,9 @@ void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArra
 	//Description 2
 	if (NewDescriptions.Num() > 1)
 	{
-		if (TB_Description2)
+		if (TB_Desc2)
 		{
-			TB_Description2->SetText(NewDescriptions[1]);
-		}
-
-		if (B_Description2)
-		{
+			TB_Desc2->SetText(NewDescriptions[1]);
 			B_Description2->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}
@@ -95,13 +88,9 @@ void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArra
 	//Description 3
 	if (NewDescriptions.Num() > 2)
 	{
-		if (TB_Description3)
+		if (TB_Desc3)
 		{
-			TB_Description3->SetText(NewDescriptions[2]);
-		}
-
-		if (B_Description3)
-		{
+			TB_Desc3->SetText(NewDescriptions[2]);
 			B_Description3->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}
@@ -109,13 +98,9 @@ void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArra
 	//Description 4
 	if (NewDescriptions.Num() > 3)
 	{
-		if (TB_Description4)
+		if (TB_Desc4)
 		{
-			TB_Description4->SetText(NewDescriptions[3]);
-		}
-
-		if (B_Description4)
-		{
+			TB_Desc4->SetText(NewDescriptions[3]);
 			B_Description4->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}
@@ -123,13 +108,9 @@ void UStandardTooltip::Setup(const FText& Title, const FText& Value, const TArra
 	//Description 5
 	if (NewDescriptions.Num() > 4)
 	{
-		if (TB_Description5)
+		if (TB_Desc5)
 		{
-			TB_Description5->SetText(NewDescriptions[4]);
-		}
-
-		if (B_Description5)
-		{
+			TB_Desc5->SetText(NewDescriptions[4]);
 			B_Description5->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}

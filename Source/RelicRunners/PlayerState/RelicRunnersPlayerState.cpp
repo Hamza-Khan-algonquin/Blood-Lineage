@@ -59,27 +59,27 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerXPToLevel = 100;
 
 	//Health
-	PlayerStartingMaxHealth = 99 + PlayerStartingLevel;
+	PlayerStartingMaxHealth = 100;
 	PlayerMaxHealth = PlayerStartingMaxHealth;
 	PlayerHealth = PlayerMaxHealth;
 
 	//Resource
-	PlayerStartingMaxResource = 99 + PlayerStartingLevel;
+	PlayerStartingMaxResource = 100;
 	PlayerMaxResource = PlayerStartingMaxResource;
 	PlayerResource = PlayerMaxResource;
 	PlayerStartingResourceRegen = 5; //Percent
 	PassiveResourceTime = 3; //Time in seconds
 
 	//Stats
-	PlayerStartingArmor = PlayerStartingLevel - 1;
-	PlayerStartingDexterity = PlayerStartingLevel - 1;
-	PlayerStartingStrength = PlayerStartingLevel - 1;
-	PlayerStartingIntelligence = PlayerStartingLevel - 1;
+	PlayerStartingArmor = 0;
+	PlayerStartingDexterity = 0;
+	PlayerStartingStrength = 0;
+	PlayerStartingIntelligence = 0;
 	PlayerStartingLuck = 0;
-	PlayerArmor = PlayerStartingLevel - 1;
-	PlayerDexterity = PlayerStartingLevel - 1;
-	PlayerStrength = PlayerStartingLevel - 1;
-	PlayerIntelligence = PlayerStartingLevel - 1;
+	PlayerArmor = 0;
+	PlayerDexterity = 0;
+	PlayerStrength = 0;
+	PlayerIntelligence = 0;
 	UpgradedHealth = 0;
 	UpgradedArmor = 0;
 	UpgradedDexterity = 0;
@@ -113,6 +113,7 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 	{
 		PS->PlayerGold = this->PlayerGold;
 		PS->PlayerLevel = this->PlayerLevel;
+		PS->PlayerStartingLevel = this->PlayerStartingLevel;
 		PS->PlayerXP = this->PlayerXP;
 		PS->PlayerAbilityPoints = this->PlayerAbilityPoints;
 		PS->HasReceivedStarterItems = this->HasReceivedStarterItems;
@@ -261,6 +262,12 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		PlayerStartingStrength += Stats.Strength;
 		PlayerStartingIntelligence += Stats.Intelligence;
 	}
+
+	//Level up for meta starting level
+	while (PlayerLevel != InventoryComponent->CachedEquippedStats.PlayerLevel)
+	{
+		OnStartingLevelUp();
+	}
 	HasReceivedStarterItems = true;
 }
 
@@ -352,10 +359,92 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 	}
 }
 
+void ARelicRunnersPlayerState::OnStartingLevelUp()
+{
+	PlayerLevel++;
+	PlayerXPToLevel = PlayerLevel * 100;
+
+	//Ability points
+	PlayerAbilityPoints++;
+
+	//Weapon Upgrade
+	int HealthIncrease = 0;
+	int ArmorIncrease = 0;
+	int DexterityIncrease = 0;
+	int StrengthIncrease = 0;
+	int IntelligenceIncrease = 0;
+	FString StartingWeapon = "";
+	if (SelectedClass == "Ares")
+	{
+		StartingWeapon = "Greatsword";
+		HealthIncrease = 5;
+		ArmorIncrease = 2;
+		StrengthIncrease = 1;
+	}
+	else if (SelectedClass == "Artemis")
+	{
+		StartingWeapon = "Bow";
+		DexterityIncrease = 3;
+	}
+	else if (SelectedClass == "Aphrodite")
+	{
+		StartingWeapon = "Staff";
+		IntelligenceIncrease = 3;
+	}
+	else if (SelectedClass == "Nemesis")
+	{
+		StartingWeapon = "Sword";
+		DexterityIncrease = 3;
+	}
+	else
+	{
+		StartingWeapon = "Greatsword";
+		HealthIncrease = 5;
+		ArmorIncrease = 2;
+		StrengthIncrease = 1;
+	}
+
+	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(StartingWeapon);
+	Item->ItemData.Level++;
+
+	if (Item->ItemData.Level >= 3 && Item->ItemData.Rarity == "Common")
+	{
+		Item->ItemData.Rarity = "Uncommon";
+	}
+	else if (Item->ItemData.Level >= 6 && Item->ItemData.Rarity == "Uncommon")
+	{
+		Item->ItemData.Rarity = "Rare";
+	}
+	else if (Item->ItemData.Level >= 9 && Item->ItemData.Rarity == "Rare")
+	{
+		Item->ItemData.Rarity = "Epic";
+	}
+	else if (Item->ItemData.Level >= 12 && Item->ItemData.Rarity == "Epic")
+	{
+		Item->ItemData.Rarity = "Legendary";
+	}
+	else if (Item->ItemData.Level >= 15 && Item->ItemData.Rarity == "Legendary")
+	{
+		Item->ItemData.Rarity = "Mythic";
+	}
+	else if (Item->ItemData.Level >= 18 && Item->ItemData.Rarity == "Mythic")
+	{
+		Item->ItemData.Rarity = "Relic";
+	}
+	Item->ItemData.Health += FMath::RandRange(2, 5 + HealthIncrease);
+	Item->ItemData.Armor += FMath::RandRange(0, 1 + ArmorIncrease);
+	Item->ItemData.Dexterity += FMath::RandRange(0, 1 + DexterityIncrease);
+	Item->ItemData.Strength += FMath::RandRange(0, 1 + StrengthIncrease);
+	Item->ItemData.Intelligence += FMath::RandRange(0, 1 + IntelligenceIncrease);
+
+	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
+}
+
 void ARelicRunnersPlayerState::OnLevelUp()
 {
 	PlayerXP -= PlayerXPToLevel;
 	PlayerLevel++;
+	PlayerStartingLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
 
 	//Ability points
@@ -667,7 +756,6 @@ void ARelicRunnersPlayerState::ModifyHealth(float Value)
 {
 	if (!HasAuthority()) return;
 
-	//this is where i put the invicibility logic
 	if (bIsInvincible && Value < 0.f) return;
 
 	PlayerHealth = FMath::Clamp(PlayerHealth + Value, 0.f, (float)PlayerMaxHealth);

@@ -69,6 +69,7 @@ public:
 	void PassiveHealthRegen();
 	UFUNCTION()
 	void PassiveResourceRegen();
+	void OnStartingLevelUp();
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
 
@@ -116,7 +117,7 @@ public:
 	UPROPERTY()
 	int PlayerNumInventorySlots;
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
-	int PlayerHealth;
+	float PlayerHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
 	int PlayerMaxHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_HealthPotions)

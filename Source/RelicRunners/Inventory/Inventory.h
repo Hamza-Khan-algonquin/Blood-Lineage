@@ -242,6 +242,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_PlayerLevel = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_MetaLevel = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTileView* VendorSlots;
 
 	UPROPERTY(meta = (BindWidget))
@@ -420,6 +422,8 @@ public:
 	class UTextBlock* TB_Intelligence;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Gold;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_MetaLevel;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_Helmet;
 	UPROPERTY(meta = (BindWidget))
