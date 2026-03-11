@@ -19,15 +19,6 @@ ALobbyPreview::ALobbyPreview()
     MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
     RootComponent = MeshComp;
 
-    //static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBP(
-    //    TEXT("/Game/Characters/Mannequins/Animations/ABP_Quinn.ABP_Quinn_C")
-    //);
-    //
-    //if (AnimBP.Succeeded())
-    //{
-    //    MeshComp->SetAnimInstanceClass(AnimBP.Class);
-    //}
-
     static ConstructorHelpers::FClassFinder<UAnimInstance> HealerAnimBP(TEXT("/Game/Assets/Characters/Healer/Model/ABP_healer_model"));
 
     if (HealerAnimBP.Succeeded())
@@ -47,6 +38,13 @@ ALobbyPreview::ALobbyPreview()
     if (RangedAnimBP.Succeeded())
     {
         RangedAnim = RangedAnimBP.Class;
+    }
+
+    static ConstructorHelpers::FClassFinder<UAnimInstance> TankAnimBP(TEXT("/Game/Assets/Characters/Tank/Model/ABP_tank_model"));
+
+    if (TankAnimBP.Succeeded())
+    {
+        TankAnim = TankAnimBP.Class;
     }
 
     MeshComp->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
@@ -150,29 +148,30 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
     UE_LOG(LogTemp, Log, TEXT("[LobbyPreview][%s] %s > %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"), *GetNameSafe(LinkedPlayerState), *NewClass.ToString());
 
     FString ItemType;
-    FString CharacterMeshPath;
+    USkeletalMesh* Character = nullptr;
     TSubclassOf<UAnimInstance> DesiredAnimBP = nullptr;
     if (NewClass == "Ares")
     {
         ItemType = "Greatsword";
-        CharacterMeshPath = TEXT("/Game/Assets/Characters/Tank/Model/tank_model");
+        Character = AresModel;
+        DesiredAnimBP = TankAnim;
     }
     else if (NewClass == "Nemesis")
     {
         ItemType = "Sword";
-        CharacterMeshPath = TEXT("/Game/Assets/Characters/Melee/Model/melee_model");
+        Character = NemesisModel;
         DesiredAnimBP = MeleeAnim;
     }
     else if (NewClass == "Aphrodite")
     {
         ItemType = "Staff";
-        CharacterMeshPath = TEXT("/Game/Assets/Characters/Healer/Model/healer_model");
+        Character = AphroditeModel;
         DesiredAnimBP = HealerAnim;
     }
     else if (NewClass == "Artemis")
     {
         ItemType = "Bow";
-        CharacterMeshPath = TEXT("/Game/Assets/Characters/Ranged/Model/ranged_model");
+        Character = ArtemisModel;
         DesiredAnimBP = RangedAnim;
     }
     if (ItemType.IsEmpty()) return;
@@ -191,25 +190,20 @@ void ALobbyPreview::OnPlayerClassChanged(FName NewClass)
         SetPreviewMeshByItemType(ItemType, Cast<USkeletalMesh>(LoadedMesh));
     }
 
-    if (!CharacterMeshPath.IsEmpty())
+    if (Character)
     {
-        USkeletalMesh* CharacterMesh = Cast<USkeletalMesh>(StaticLoadObject(USkeletalMesh::StaticClass(), nullptr, *CharacterMeshPath));
+        MeshComp->SetSkeletalMesh(Character);
 
-        if (CharacterMesh)
+        if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim || DesiredAnimBP == TankAnim)
         {
-            MeshComp->SetSkeletalMesh(CharacterMesh);
-
-            if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim)
-            {
-                MeshComp->SetAnimationMode(EAnimationMode::AnimationBlueprint);
-                MeshComp->SetAnimInstanceClass(DesiredAnimBP);
-            }
-            else
-            {
-                MeshComp->SetAnimInstanceClass(nullptr);
-                MeshComp->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-                MeshComp->SetAnimation(nullptr);
-            }
+            MeshComp->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+            MeshComp->SetAnimInstanceClass(DesiredAnimBP);
+        }
+        else
+        {
+            MeshComp->SetAnimInstanceClass(nullptr);
+            MeshComp->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            MeshComp->SetAnimation(nullptr);
         }
     }
 }
@@ -262,14 +256,25 @@ void ALobbyPreview::SetPreviewMeshByItemType(const FString& ItemType, UObject* M
         USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
         if (NecklaceMesh && Mesh) NecklaceMesh->SetSkeletalMesh(Mesh);
     }
-    else if (ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Staff" || ItemType == "Bow")
+    else if (ItemType == "Greatsword")
     {
+        OffhandItemMesh->SetStaticMesh(ShieldAsset);
+
         UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
         if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
     }
-    else if (ItemType == "Offhand")
+    else if (ItemType == "Sword" || ItemType == "Staff")
     {
+        OffhandItemMesh->SetStaticMesh(nullptr);
+
         UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
-        if (OffhandItemMesh && Mesh) OffhandItemMesh->SetStaticMesh(Mesh);
+        if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
+    }
+    else if (ItemType == "Bow")
+    {
+        OffhandItemMesh->SetStaticMesh(nullptr);
+
+        UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
+        if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
     }
 }

@@ -14,7 +14,9 @@ UWarBannerAbility::UWarBannerAbility()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
     Cost = 50;
-    AreaRadius = 500.f;
+    AreaRadius = 600.f;
+
+
 }
 
 
@@ -69,6 +71,11 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
     PS->UpdateRemoteHUDResource();
 
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
+
     FVector BannerLocation = GetBannerLocation();
 
     SpawnBanner();
@@ -96,14 +103,28 @@ void UWarBannerAbility::SpawnBanner()
     // Final spawn location
     const FVector BannerLocation = PawnLocation + ForwardVector * SpawnDistance + FVector(0.f, 0.f, 20.f);
 
-    // Small sphere where the banner would spawn
-    DrawDebugSphere(World,BannerLocation,25.f,12,FColor::Red,false,Duration, 0, 2.f);
+    if (AvatarActor->HasAuthority())
+    {
+        AController* Controller = nullptr;
 
-    // Circle to show buff radius
-    DrawDebugCircle(World,BannerLocation,AreaRadius,64,FColor::Green,false,Duration,0,2.f,OwnerPawn->GetActorRightVector(),OwnerPawn->GetActorForwardVector(),false);
+        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+        {
+            Controller = CurrentActorInfo->PlayerController.Get();
+        }
+
+        if (Controller)
+        {
+            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+            if (PS)
+            {
+                PS->Multicast_SpawnVFX(BannerLocation + FVector(0, 0, -100), FRotator(0, 0, 0), FVector(1.2f), AbilityVFX, false);
+            }
+        }
+    }
+
 
 }
-
 
 void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
 {
@@ -125,13 +146,14 @@ void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
     // Object types to consider
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_EngineTraceChannel1));
 
     // Actors to ignore
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(GetAvatarActorFromActorInfo());
 
     // Perform the sphere overlap
-    bool bHit = UKismetSystemLibrary::SphereOverlapActors(World,BannerLocation,AreaRadius,ObjectTypes,ACharacter::StaticClass(),ActorsToIgnore,OverlappingActors);
+    bool bHit = UKismetSystemLibrary::SphereOverlapActors(World,BannerLocation,AreaRadius,ObjectTypes,APawn::StaticClass(),ActorsToIgnore,OverlappingActors);
 
     for (AActor* Actor : OverlappingActors)
     {
@@ -169,10 +191,12 @@ void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
         ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
+        if (!RPC) return;
 
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
+            World->GetTimerManager().ClearTimer(DurationTimerHandle);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();

@@ -19,7 +19,7 @@ UBackStab::UBackStab()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    DamageAmount = 200.f;
+    Damage = 200.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 5.f;
@@ -28,18 +28,7 @@ UBackStab::UBackStab()
 	Range = 600.f;
 	BehindOffset = 120.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    //static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshObj(TEXT("/Game/ThirdPerson/Blueprints/Combat/AbilityCircleBase.AbilityCircleBase"));
-    //if (MeshObj.Succeeded())
-    //{
-    //    BackStabMeshAsset = MeshObj.Object;
-    //}
 }
 
 void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -106,9 +95,9 @@ AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
 
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,ACharacter::StaticClass(),{ AvatarActor },FoundActors);
+    UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,APawn::StaticClass(),{ AvatarActor },FoundActors);
 
     AActor* BestTarget = nullptr;
     float BestDot = -1.f;
@@ -147,12 +136,12 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(AvatarActor);
 
-    UKismetSystemLibrary::SphereOverlapActors(World, AvatarActor->GetActorLocation(), MaxDistance, ObjectTypes, ACharacter::StaticClass(),ActorsToIgnore,OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, AvatarActor->GetActorLocation(), MaxDistance, ObjectTypes, APawn::StaticClass(),ActorsToIgnore,OverlappingActors);
 
     FVector Forward = AvatarActor->GetActorForwardVector();
 
@@ -171,26 +160,26 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
         if (FVector::DotProduct(Forward, DirToActor) >= FMath::Cos(HalfConeRad))
         {
-            UGameplayStatics::ApplyDamage(Actor,DamageAmount,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+            UGameplayStatics::ApplyDamage(Actor,Damage,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
 
-            if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
-            {
-                if (EnemyChar->GetCharacterMovement())
-                {
-                    EnemyChar->GetCharacterMovement()->DisableMovement();
+            //if (APawn* EnemyChar = Cast<APawn>(Actor))
+            //{
+            //    if (EnemyChar->GetCharacterMovement())
+            //    {
+            //        EnemyChar->GetCharacterMovement()->DisableMovement();
 
-                    FTimerHandle RestoreHandle;
-                    World->GetTimerManager().SetTimer(
-                        RestoreHandle,
-                        FTimerDelegate::CreateLambda([EnemyChar]()
-                            {
-                                if (EnemyChar && EnemyChar->GetCharacterMovement())
-                                {
-                                    EnemyChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-                                }
-                            }), 0.6f, false);
-                }
-            }
+            //        FTimerHandle RestoreHandle;
+            //        World->GetTimerManager().SetTimer(
+            //            RestoreHandle,
+            //            FTimerDelegate::CreateLambda([EnemyChar]()
+            //                {
+            //                    if (EnemyChar && EnemyChar->GetCharacterMovement())
+            //                    {
+            //                        EnemyChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+            //                    }
+            //                }), 0.6f, false);
+            //    }
+            //}
         }
     }
 }
@@ -259,6 +248,11 @@ void UBackStab::ExecuteBackStabSequence()
     FVector DashLocation = TargetEnemy->GetActorLocation() - TargetEnemy->GetActorForwardVector() * DashDistance;
     AvatarActor->SetActorLocation(DashLocation, false, nullptr, ETeleportType::TeleportPhysics);
     AvatarActor->SetActorRotation(TargetEnemy->GetActorRotation());
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);
     if (!Char || !Char->GetCharacterMovement())

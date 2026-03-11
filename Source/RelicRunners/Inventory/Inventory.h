@@ -223,6 +223,7 @@ public:
 	void SortingTypeClicked();
 	UFUNCTION()
 	void OnFuseButtonPressed();
+	void CancelForgingAnimation();
 	UFUNCTION()
 	void CycleRarityVisuals();
 	void CompleteForgeSequence();

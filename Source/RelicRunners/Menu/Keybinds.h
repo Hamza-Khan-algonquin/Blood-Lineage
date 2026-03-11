@@ -49,6 +49,9 @@ public:
 
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     bool motionBlurEnabled = true;
+
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    float MasterVolume = 1.0f;
 };
 
 static FString GetReadableKeyName(const FKey& Key)

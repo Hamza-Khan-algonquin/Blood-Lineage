@@ -17,7 +17,8 @@ ADirector::ADirector()
 	PrimaryActorTick.bCanEverTick = true;
 	bAlwaysRelevant = true;
 	Tags.Add("Director");
-	SetReplicates(true);
+	//SetReplicates(true);
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -50,6 +51,11 @@ void ADirector::BeginPlay()
 
 ADirector* ADirector::GetInstance(const UObject* WorldContext)
 {
+	if (!WorldContext)
+	{
+		return nullptr;
+	}
+
 	UWorld* world = WorldContext->GetWorld();
 
 	if (!world)

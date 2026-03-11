@@ -58,6 +58,7 @@ void USaveFileListWidget::Setup(USaveFileListData* InData)
         TB_MetaLevel->SetVisibility(ESlateVisibility::Visible);
         TB_MetaLevel->SetText(FText::FromString(FString::FromInt(SaveFileData->GetMetaLevel())));
         TB_CreateNew->SetText(FText::FromString(""));
+        TB_CreateNew->SetVisibility(ESlateVisibility::Collapsed);
         B_Upgrades->SetVisibility(ESlateVisibility::Visible);
         B_Edit->SetVisibility(ESlateVisibility::Visible);
 

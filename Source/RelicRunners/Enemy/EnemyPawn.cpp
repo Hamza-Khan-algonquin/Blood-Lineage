@@ -22,6 +22,8 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
+#include "Components/SphereComponent.h"
+#include "NiagaraComponent.h"
 
 
 
@@ -50,6 +52,8 @@ AEnemyPawn::AEnemyPawn()
 	MovementComponent = CreateDefaultSubobject<UEnemyBoidMovementComponent>("Movement Component");
 	MovementComponent->UpdateNavAgent(*CapsuleComponent);
 
+	//BasicAttackCollider = CreateDefaultSubobject<USphereComponent>("Basic Attack Collider");
+
 	EnemyStatsComponent = CreateDefaultSubobject<UEnemyStats>(TEXT("Enemy Stats Component"));
 	EnemyStatsComponent->SetEnemyType(EEnemyType::LIGHT);
 	EnemyStatsComponent->SetChanceToDropItem(0.02f);
@@ -70,6 +74,13 @@ AEnemyPawn::AEnemyPawn()
 	Tags.Add("Enemy");
 }
 
+void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -88,18 +99,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		HitFlash();
 
 		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		CapsuleComponent->AddImpulse(Direction * KnockBackStrength + FVector(0,0, AdditionalUpwardsKnockBackForces), NAME_None, true);
-
-		this->MovementComponent->IsKnockedBack = true;
-
-		FTimerHandle temp;
-		GetWorldTimerManager().SetTimer(temp, [this]() {
-				if (this->MovementComponent)
-				{
-					this->MovementComponent->IsKnockedBack = false;
-					this->CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-				}
-			}, HitFlashTimeline.GetTimelineLength(), false);
+		ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
 	}
 	
 	//call the super for important stuff
@@ -111,7 +111,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//check if we meet the conditions to be dead and then die
 	if (IsDead())
 	{
-		Die(EventInstigator);
+		Die(EventInstigator, (GetActorLocation() - DamageCauser->GetActorLocation().GetSafeNormal()));
 	}
 	//if we are not dead check the damage events for stun
 	else
@@ -176,7 +176,7 @@ void AEnemyPawn::EndHitFlash()
 	}
 }
 
-void AEnemyPawn::Die(AController* EventInstigator)
+void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 {
 	//make sure we are server side
 	if (HasAuthority())
@@ -199,6 +199,8 @@ void AEnemyPawn::Die(AController* EventInstigator)
 		OnDied.Clear();
 		//OnDestroyed.Clear();
 
+		PlayDeathEffet_Implementation(hitDirection);
+
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
@@ -210,6 +212,18 @@ void AEnemyPawn::Die(AController* EventInstigator)
 			Destroy();
 		}
 	}
+}
+
+void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
+{
+	if (!DeathEffect)
+	{
+		return;
+	}
+
+	UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
+
+	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
 }
 
 inline bool AEnemyPawn::IsDead()
@@ -254,19 +268,30 @@ void AEnemyPawn::AttackTick()
 {
 	if (MovementComponent->IsAtTarget())
 	{
-		if (AttackMontage.IsValid())
+		if (!AttackMontage.IsNull())
 		{
+
+			if (!AttackMontage.IsValid())
+			{
+				AttackMontage.LoadSynchronous();
+			}
+
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
 			
 
-			FTimerHandle tempHandle;
+			
 			FTimerDelegate attackCallBack;
 			attackCallBack.BindLambda([this]()
 				{
-					MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					if (this)
+					{
+						this->IsAttacking = false;
+						if(this->MovementComponent)
+							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+					}
 				});
-			GetWorldTimerManager().SetTimer(tempHandle, attackCallBack, montage->GetPlayLength(), false);
+			GetWorldTimerManager().SetTimer(AttackHandle, attackCallBack, montage->GetPlayLength(), false);
 		}
 		else
 		{
@@ -274,7 +299,7 @@ void AEnemyPawn::AttackTick()
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 		}
 
-		IsAttacking = false;
+		
 		if (!HitFlashTimeline.IsPlaying())
 		{
 			SetActorTickEnabled(false);
@@ -311,7 +336,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = 0;
+	float chance = FMath::RandRange(0.f,1.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{
@@ -343,6 +368,77 @@ void AEnemyPawn::SpawnItem()
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
+
+		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
+
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Instigator = this;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+		if (Dropped)
+		{
+			Dropped->Initialize(Data);
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}*/
+	}
+}
+
+void AEnemyPawn::ApplyForceToEnemy(FVector forces)
+{
+	CapsuleComponent->SetSimulatePhysics(true);
+	CapsuleComponent->AddImpulse(forces, NAME_None, true);
+	CapsuleComponent->SetNotifyRigidBodyCollision(true);
+	if (!CapsuleComponent->OnComponentHit.Contains(this, FName(TEXT("GroundCheck"))))
+	{
+		CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
+	}
+	
+
+	//this->MovementComponent->IsKnockedBack = true;
+	MovementComponent->IsKnockedBack = true;
+
+	/*FTimerHandle temp;
+	GetWorldTimerManager().SetTimer(temp, [this]() {
+		if (this)
+		{
+			if (!this)
+				return;
+			if (MovementComponent)
+				MovementComponent->IsKnockedBack = false;
+			if (CapsuleComponent)
+			{
+				CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+				CapsuleComponent->SetSimulatePhysics(false);
+			}
+		}
+		}, HitFlashTimeline.GetTimelineLength(), false);*/
+}
+
+void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!MovementComponent || !CapsuleComponent || !OtherComp)
+	{
+		return;
+	}
+
+	if (!FMath::IsNearlyZero(CapsuleComponent->GetComponentVelocity().Length()) && Hit.Normal.Z < 0.1)
+	{
+		return;
+	}
+
+	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
+
+	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	{
+		MovementComponent->IsKnockedBack = false;
+		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		CapsuleComponent->SetSimulatePhysics(false);
+		CapsuleComponent->OnComponentHit.RemoveDynamic(this, &AEnemyPawn::GroundCheck);
+		CapsuleComponent->SetNotifyRigidBodyCollision(false);
 	}
 }
 

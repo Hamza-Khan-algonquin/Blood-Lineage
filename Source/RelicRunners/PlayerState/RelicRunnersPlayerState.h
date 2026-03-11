@@ -167,14 +167,27 @@ public:
 	UPROPERTY()
 	int PlayerStartingGold;
 	UPROPERTY()
-
 	float HealthGranted;
-
+	UPROPERTY()
 	int PlayerStartingLuck;
 	UPROPERTY()
 	int PlayerStartingResourceRegen;
 	UPROPERTY()
 	int PlayerStartingPotionEfficiency;
+
+	UPROPERTY()
+	int PassiveResourceTime;
+
+	UPROPERTY()
+	int UpgradedHealth;
+	UPROPERTY()
+	int UpgradedArmor;
+	UPROPERTY()
+	int UpgradedDexterity;
+	UPROPERTY()
+	int UpgradedStrength;
+	UPROPERTY()
+	int UpgradedIntelligence;
 
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
@@ -209,6 +222,10 @@ public:
 	int GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
 	UFUNCTION()
 	int GetPlayerStartingPotionEfficiency() const { return PlayerStartingPotionEfficiency; }
+
+	UFUNCTION()
+	int GetPassiveResourceTime() const { return PassiveResourceTime; }
+
 	UFUNCTION()
 	int GetPlayerGold() const { return PlayerGold; }
 	int GetPlayerLevel() { return PlayerLevel; };
@@ -237,6 +254,8 @@ public:
 	void SetPlayerStartingStrength(int StartingStrength) { PlayerStartingStrength = StartingStrength; }
 	void SetPlayerResource(int Resource) { PlayerResource = Resource; }
 	void SetPlayerMaxHealth(int value);
+	void SetPlayerMaxResource(int value);
+	void SetHealthGrantedFromPotion(int value) { HealthGranted = value; }
 	void ResetHealth() { PlayerHealth = PlayerMaxHealth; }
 
     //Delegates

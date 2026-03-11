@@ -58,7 +58,11 @@
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include "RelicRunners/Objective/ObjectiveLog.h"
 
+#include "RelicRunners/Enemy/Hades/Hades.h"
+
 #include "Components/TreeView.h"
+#include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include <RelicRunners/Objective/TitleData.h>
 #include <RelicRunners/Objective/PayloadData.h>
@@ -76,6 +80,43 @@ ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 	{
 		LoadingScreenClass = BP_LoadingScreen.Class;
 		UE_LOG(LogTemp, Warning, TEXT("Character Assigned Loading Screen"));
+	}
+}
+
+void ARelicRunnersPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	const FString MapName = World->GetMapName();
+	if (MapName.Contains(TEXT("BossLevel")))
+	{
+		if (!CachedHades)
+		{
+			CachedHades = Cast<AHades>(UGameplayStatics::GetActorOfClass(GetWorld(), AHades::StaticClass()));
+		}
+
+		if (CachedHades && PlayerHUD)
+		{
+			if (PlayerHUD->BossBar)
+			{
+				float NewPercent = CachedHades->CurrentHealth / CachedHades->MaxHealth;
+				if (!FMath::IsNearlyEqual(PlayerHUD->BossBar->GetPercent(), NewPercent, 0.001f))
+				{
+					PlayerHUD->BossBar->SetPercent(NewPercent);
+				}
+			}
+			if (PlayerHUD->TB_BossName)
+			{
+				FText NewName = FText::FromString("HADES");
+				if (!PlayerHUD->TB_BossName->GetText().EqualTo(NewName))
+				{
+					PlayerHUD->TB_BossName->SetText(NewName);
+				}
+			}
+		}
 	}
 }
 
@@ -102,6 +143,12 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 		}
 
 		UpdateCharacterVisuals();
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ViewPitchMin = -60.f;
+		PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 
@@ -258,6 +305,7 @@ void ARelicRunnersPlayerController::SyncUI()
 
 			Inventory->RefreshEquippedUI();
 			RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
+			RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
 			UpdateHUDAll();
 
 			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
@@ -282,7 +330,7 @@ void ARelicRunnersPlayerController::TryBindUI()
 		Inv->OnEquipmentChanged.AddDynamic(this, &ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems);
 
 		Inventory->RefreshEquippedUI();
-		Inv->UpdateTotalEquippedStats(GetPawn());
+		Inv->UpdateTotalEquippedStats(PossessedPawn);
 		UpdateHUDAll();
 
 		UE_LOG(LogTemp, Warning, TEXT("[UI] Post-Travel: Forced manual UI refresh."));
@@ -521,6 +569,26 @@ void ARelicRunnersPlayerController::TrySetupMinimap()
 	}
 
 	SetupMinimapRenderTarget();
+}
+
+void ARelicRunnersPlayerController::Client_UpdateZones_Implementation(int CurrentZone, int MaxZones)
+{
+	if (ObjectiveLog)
+	{
+		ObjectiveStageTitle->CurrentZones = CurrentZone;
+		ObjectiveStageTitle->TotalZones = MaxZones;
+		ObjectiveLog->RefreshLog(ObjectiveStageTitle);
+		ObjectiveLog->UpdateObjective(ObjectiveStageTitle);
+	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdateStage_Implementation(int StageNumber)
+{
+	if (MinimapWidget)
+	{
+		FText FinalText = FText::Format(FText::FromString("Stage {0}"), StageNumber);
+		MinimapWidget->SetLevelTitle(FinalText);
+	}
 }
 
 void ARelicRunnersPlayerController::RetrySetup()
@@ -844,11 +912,6 @@ void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
 	}
 }
 
-void ARelicRunnersPlayerController::UpdateFlagObjective(int FlagIndex, bool bIsActive)
-{
-
-}
-
 void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FString NewTimeText)
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
@@ -875,7 +938,7 @@ void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int NumFlags)
@@ -892,7 +955,7 @@ void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int N
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation()
@@ -922,7 +985,7 @@ void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(in
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(float Time)
@@ -937,7 +1000,7 @@ void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(fl
 
 	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
 
-	GetWorldTimerManager().SetTimer(ObjectiveClearTimerHandle, this, &ARelicRunnersPlayerController::ClearOldObjectives, 3.0f, false);
+	ClearOldObjectives();
 }
 
 void ARelicRunnersPlayerController::AnimateOldObjectives()
@@ -962,8 +1025,6 @@ void ARelicRunnersPlayerController::ClearOldObjectives()
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
-	SetupObjectives();
-
 	if (BuildVersion && !BuildVersion->IsInViewport())
 	{
 		BuildVersion->AddToViewport();
@@ -992,6 +1053,8 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			PlayerHUD->ToggleExpBar(true);
 		}
 	}
+
+	SetupObjectives();
 
 	if (!MinimapWidget && MinimapClass)
 	{

@@ -48,6 +48,8 @@ struct FEquippedStatsSummary
     UPROPERTY(BlueprintReadOnly)
     float TotalResourceRegen = 0.0f;
     UPROPERTY(BlueprintReadOnly)
+    float TotalResourceTime = 0.0f;
+    UPROPERTY(BlueprintReadOnly)
     float TotalPotionEfficiency = 0.0f;
 };
 
@@ -94,6 +96,8 @@ public:
     class UItemMeshData* ItemMeshData;
     UPROPERTY(BlueprintAssignable, Category = "Inventory")
     FOnForgeUpdated OnForgeUpdated;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    class UClassInfo* ClassInfo;
 
     //Functions
     UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -120,7 +124,7 @@ public:
     void UpdateTotalEquippedStats(APawn* PawnOwner);
     UFUNCTION()
     UItemObject* FindItemByID(FGuid ItemID) const;
-    FEquippedStatsSummary CalculateEquippedStats() const;
+    FEquippedStatsSummary CalculateEquippedStats(const class ARelicRunnersPlayerState* InPS = nullptr) const;
     FEquippedStatsSummary CachedEquippedStats;
     UFUNCTION()
     void OnRep_SortingMethod();

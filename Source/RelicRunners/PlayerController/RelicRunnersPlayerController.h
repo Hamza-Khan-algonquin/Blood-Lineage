@@ -11,7 +11,7 @@
  *   Any use, distribution, or modification outside of these projects
  *   is strictly prohibited without explicit written permission.
  *
- *   © 2025 Tristan Anglin. All rights reserved.
+ *   ï¿½ 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
 #pragma once
@@ -47,7 +47,6 @@ public:
 	void TravelCleanUI();
 	void UpdatePayloadObjective(float NewProgress);
 	void UpdateEnemiesObjective(int EnemiesLeft);
-	void UpdateFlagObjective(int FlagIndex, bool bIsActive);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
 	void AnimateOldObjectives();
@@ -119,6 +118,10 @@ public:
 	UFUNCTION()
 	void TrySetupMinimap();
 
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateStage(int StageNumber);
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateZones(int CurrentZone, int MaxZones);
 	//Getters
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	UInputMappingContext* GetInputMappingContext() const { return InputMappingContext; }
@@ -178,6 +181,7 @@ public:
 	class UInventory* Inventory;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UObjectiveLog* ObjectiveLog;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
 	USoundBase* InventoryOpenSound = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
@@ -185,6 +189,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
 	TObjectPtr<USoundBase> CountdownTickSound = nullptr;
+	class AHades* CachedHades;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
@@ -252,6 +257,7 @@ protected:
 	virtual void SetupInputComponent() override;
 	virtual void PostSeamlessTravel() override;
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
+	virtual void Tick(float DeltaTime) override;
 
 	//Properties
 	class ARelicRunnersCharacter* PossessedPawn;

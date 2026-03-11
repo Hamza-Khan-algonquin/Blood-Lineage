@@ -14,4 +14,6 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Text;
+
+
 };

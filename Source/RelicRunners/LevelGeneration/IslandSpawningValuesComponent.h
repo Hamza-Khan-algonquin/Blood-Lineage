@@ -27,6 +27,9 @@ struct FIslandValues
 	FString TargetLevel;
 
 	UPROPERTY(EditAnywhere)
+	FString BossLevel;
+
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ALevelChangeTrigger> LevelChangeTrigger;
 
 	UPROPERTY(EditAnywhere)
@@ -133,6 +136,9 @@ struct FObjectiveFlagValues
 	TSubclassOf<class ANewCapturableFlag> Flag;
 
 	UPROPERTY(EditAnywhere)
+	TArray<TSubclassOf<class APackedLevelActor>> FlagModuleActor;
+
+	UPROPERTY(EditAnywhere)
 	uint8 FlagAmountMin = 0;
 
 	UPROPERTY(EditAnywhere)
@@ -182,6 +188,9 @@ struct FObjectivePayloadValues
 	UPROPERTY(EditAnywhere)
 	TSubclassOf <class ANewPayloadObjective> Payload;
 
+	UPROPERTY(EditAnywhere)
+	TArray<TSubclassOf<class APackedLevelActor>> PayloadPathModuleActor;
+
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "1", UIMin = "1", ToolTip = "Speed at which the payload moves towards the target."))
 	float PayloadSpeed = 1.0f;
 
@@ -212,6 +221,9 @@ struct FSurvivalZoneValues
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf <class ANewSurvivalZone> SurvivalZone;
+
+	UPROPERTY(EditAnywhere)
+	TArray<TSubclassOf<class APackedLevelActor>> SurvivalZoneModuleActor;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 SurvivalWidthMin = 2;

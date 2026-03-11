@@ -23,14 +23,34 @@ void UAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
+
 void UAbilityBase::PlayAbilityCastSound(const FGameplayAbilityActorInfo* ActorInfo) const
 {
     if (!AbilityCastSound || !ActorInfo) return;
 
     AActor* Avatar = ActorInfo->AvatarActor.Get();
-
     if (!Avatar) return;
 
     UGameplayStatics::PlaySoundAtLocation(Avatar, AbilityCastSound, Avatar->GetActorLocation());
 }
+
+UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)
+{
+    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid() || !Montage)
+        return nullptr;
+
+    AActor* Avatar = ActorInfo->AvatarActor.Get();
+    if (!Avatar) return nullptr;
+
+    USkeletalMeshComponent* Mesh = Avatar->FindComponentByClass<USkeletalMeshComponent>();
+    if (!Mesh) return nullptr;
+
+    UAnimInstance* AnimInstance = Mesh->GetAnimInstance();
+    if (!AnimInstance) return nullptr;
+
+    AnimInstance->Montage_Play(Montage, 1.f);
+    return Montage;
+}
+
+
 

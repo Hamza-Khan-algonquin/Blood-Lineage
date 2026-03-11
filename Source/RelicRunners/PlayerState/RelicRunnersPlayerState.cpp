@@ -34,6 +34,8 @@
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include "RelicRunners/Menu/JoinUserWidget.h"
 #include <Kismet/GameplayStatics.h>
+#include <ClassInfo.h>
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {
@@ -67,6 +69,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerMaxResource = PlayerStartingMaxResource;
 	PlayerResource = PlayerMaxResource;
 	PlayerStartingResourceRegen = 5; //Percent
+	PassiveResourceTime = 3; //Time in seconds
 
 	//Stats
 	PlayerStartingArmor = PlayerStartingLevel - 1;
@@ -78,7 +81,11 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerDexterity = PlayerStartingLevel - 1;
 	PlayerStrength = PlayerStartingLevel - 1;
 	PlayerIntelligence = PlayerStartingLevel - 1;
-
+	UpgradedHealth = 0;
+	UpgradedArmor = 0;
+	UpgradedDexterity = 0;
+	UpgradedStrength = 0;
+	UpgradedIntelligence = 0;
 	//Gold
 	PlayerStartingGold = 0;
 	PlayerGold = 0;
@@ -88,16 +95,15 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 
 	//Potions
 	HealthPotionCount = 3;
-	HealthGranted = 0.5;
 	PlayerStartingPotionEfficiency = 30; //Percent
+	HealthGranted = PlayerStartingPotionEfficiency;
 }
 
 void ARelicRunnersPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, 3.f, true);
-
+	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, PassiveResourceTime, true);
 }
 void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 {
@@ -112,6 +118,16 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerAbilityPoints = this->PlayerAbilityPoints;
 		PS->HasReceivedStarterItems = this->HasReceivedStarterItems;
 		PS->SelectedClass = this->SelectedClass;
+		PS->UpgradedHealth = this->UpgradedHealth;
+		PS->UpgradedArmor = this->UpgradedArmor;
+		PS->UpgradedDexterity = this->UpgradedDexterity;
+		PS->UpgradedStrength = this->UpgradedStrength;
+		PS->UpgradedIntelligence = this->UpgradedIntelligence;
+		PS->PlayerStartingMaxHealth = this->PlayerStartingMaxHealth;
+		PS->PlayerStartingArmor = this->PlayerStartingArmor;
+		PS->PlayerStartingDexterity = this->PlayerStartingDexterity;
+		PS->PlayerStartingStrength = this->PlayerStartingStrength;
+		PS->PlayerStartingIntelligence = this->PlayerStartingIntelligence;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)
@@ -135,7 +151,6 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 			PS->InventoryComponent->InventoryItems.Num(),
 			PS->InventoryComponent->EquippedItems.Num());
 	}
-
 	PS->ForceNetUpdate();
 }
 
@@ -161,7 +176,6 @@ void ARelicRunnersPlayerState::Multicast_SpawnVFX_Implementation(FVector Locatio
 		if (!RootComp) return;
 
 		UNiagaraFunctionLibrary::SpawnSystemAttached(NiagaraAsset,RootComp, NAME_None,Location,Rotation,EAttachLocation::KeepRelativeOffset,true, true,ENCPoolMethod::None );
-
 	}
 }
 
@@ -200,7 +214,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 
 	UE_LOG(LogTemp, Log, TEXT("SERVER: Generating items using PlayerState MeshData."));
 
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		FString RandomType = ItemStats::GetRandomItemType();
 		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, "Common", ItemMeshData);
@@ -210,7 +224,6 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		InventoryComponent->AddItem(Item);
 	}
 
-	//Starting Weapon
 	FString StartingWeapon = "";
 	if (SelectedClass == "Ares")
 	{
@@ -231,6 +244,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	else
 	{
 		//Fallback for testing
+		SelectedClass = "Ares";
 		StartingWeapon = "Greatsword";
 	}
 
@@ -238,6 +252,16 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	InventoryComponent->AddItem(Item);
 	Server_EquipItemByID(Item->ItemData.UniqueID);
 
+	//Initialize class specific starting stats
+	if (InventoryComponent->ClassInfo)
+	{
+		FClassData Stats = InventoryComponent->ClassInfo->GetStats(SelectedClass.ToString());
+		PlayerStartingMaxHealth += (Stats.Health - 100);
+		PlayerStartingArmor += Stats.Armor;
+		PlayerStartingDexterity += Stats.Dexterity;
+		PlayerStartingStrength += Stats.Strength;
+		PlayerStartingIntelligence += Stats.Intelligence;
+	}
 	HasReceivedStarterItems = true;
 }
 
@@ -284,26 +308,41 @@ void ARelicRunnersPlayerState::SetPlayerMaxHealth(int value)
 	if (!HasAuthority()) return;
 
 	PlayerMaxHealth = value;
-
+	if (PlayerHealth > PlayerMaxHealth) PlayerHealth = PlayerMaxHealth;
 	//For server
 	UpdateRemoteHUDHealth();
+}
+
+void ARelicRunnersPlayerState::SetPlayerMaxResource(int value)
+{
+	if (!HasAuthority()) return;
+
+	PlayerMaxResource = value;
+	if (PlayerResource > PlayerMaxResource) PlayerResource = PlayerMaxResource;
+
+	//For server
+	UpdateRemoteHUDResource();
 }
 
 void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 {
 	if (!HasAuthority()) return;
 
-	// use potion if player has one and isn’t at full health
 	if (HealthPotionCount > 0 && PlayerHealth < PlayerMaxHealth)
 	{
-		// Heal player by a percentage of max health
-		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * HealthGranted);
+		int HealthToGrant = FMath::RoundToInt(PlayerMaxHealth * (HealthGranted / 100.0f));
 
 
 		PlayerHealth += HealthToGrant;
-		HealthPotionCount--;
+		
+		int Efficiency = InventoryComponent->CachedEquippedStats.TotalPotionEfficiency;
+		int ChanceToNotConsume = ItemStats::GetChanceToNotConsume(Efficiency);
+		int Roll = FMath::RandRange(1, 100);
+		if (Roll > ChanceToNotConsume)
+		{
+			HealthPotionCount--;
+		}
 
-		// if the player’s health exceeds max health, set it to max health
 		if (PlayerHealth > PlayerMaxHealth)
 		{
 			PlayerHealth = PlayerMaxHealth;
@@ -317,39 +356,16 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 	}
 }
 
-
-
 void ARelicRunnersPlayerState::OnLevelUp()
 {
 	PlayerXP -= PlayerXPToLevel;
 	PlayerLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
 
-	//Starting stats / base stats
-	PlayerStartingMaxHealth++;
-	PlayerStartingMaxResource++;
-	PlayerStartingArmor++;
-	PlayerStartingDexterity++;
-	PlayerStartingStrength++;
-	PlayerStartingIntelligence++;
-
-	//Current health / max health
-	PlayerMaxHealth++;
-	PlayerHealth = PlayerMaxHealth;
-
-	//Current resource / max resource
-	PlayerMaxResource++;
-
-	//Current stats
-	PlayerArmor++;
-	PlayerDexterity++;
-	PlayerStrength++;
-	PlayerIntelligence++;
-	PlayerNumInventorySlots++;
-
 	//Ability points
 	PlayerAbilityPoints++;
 
+	//Weapon Upgrade
 	int HealthIncrease = 0;
 	int ArmorIncrease = 0;
 	int DexterityIncrease = 0;
@@ -447,6 +463,12 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 	//For server
 	UpdateRemoteHUDAbility();
 	UpdateRemoteHUDExperience();
+
+	//Meta XP
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetWorld()->GetGameInstance()))
+	{
+		GI->SelectedSaveSlot->AddMetaExp(FMath::RandRange(1,3));
+	}
 }
 
 void ARelicRunnersPlayerState::PlayHealPotionSound_Implementation()
@@ -570,7 +592,7 @@ void ARelicRunnersPlayerState::Server_SellItem_Implementation(const FItemData& I
 
 EInventorySorting ARelicRunnersPlayerState::GetCurrentSortingMethod() const
 {
-	return InventoryComponent ? InventoryComponent->CurrentSortingMethod : EInventorySorting::SortByNewest;
+	return InventoryComponent ? InventoryComponent->CurrentSortingMethod : EInventorySorting::SortByRarity;
 }
 
 void ARelicRunnersPlayerState::Server_EquipItemByID_Implementation(FGuid ID)
@@ -584,7 +606,7 @@ void ARelicRunnersPlayerState::Server_EquipItemByID_Implementation(FGuid ID)
 		{
 			Char->UpdateItemVisuals(Item);
 			InventoryComponent->EquipItem(Item, Cast<ARelicRunnersPlayerController>(Char->GetController()));
-			InventoryComponent->UpdateTotalEquippedStats(GetPawn());
+			InventoryComponent->UpdateTotalEquippedStats(Char);
 		}
 	}
 }
@@ -612,7 +634,7 @@ void ARelicRunnersPlayerState::Server_UnequipItemByID_Implementation(FGuid ID)
 		{
 			Char->UpdateItemVisuals(nullptr, ItemType);
 			InventoryComponent->UnequipItem(EquippedItem, Cast<ARelicRunnersPlayerController>(Char->GetController()));
-			InventoryComponent->UpdateTotalEquippedStats(GetPawn());
+			InventoryComponent->UpdateTotalEquippedStats(Char);
 		}
 	}
 
@@ -660,10 +682,7 @@ void ARelicRunnersPlayerState::ModifyHealth(float Value)
 	if (!HasAuthority()) return;
 
 	//this is where i put the invicibility logic
-	if (bIsInvincible && Value < 0.f)
-	{
-		return;
-	}
+	if (bIsInvincible && Value < 0.f) return;
 
 	PlayerHealth = FMath::Clamp(PlayerHealth + Value, 0.f, (float)PlayerMaxHealth);
 
@@ -761,11 +780,6 @@ void ARelicRunnersPlayerState::OnRep_Ability()
 {
 	UpdateRemoteHUDAbility();
 }
-
-
-
-
-
 
 void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

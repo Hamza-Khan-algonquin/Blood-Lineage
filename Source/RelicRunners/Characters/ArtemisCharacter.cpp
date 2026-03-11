@@ -33,32 +33,6 @@ void AArtemisCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (AbilitySystem)
-	{
-		// Give Mark of the Hunt ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
-
-		// Give Moonbeam ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
-
-		// Give NatureBlessing ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
-
-        // Give PiercingArrow ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
-	}
-
-	if (ClassInfo)
-	{
-		//FClassData Stats = ClassInfo->GetStats("Artemis");
-		//SetPlayerStartingHealth(Stats.Health);
-		//PlayerMaxHealth = Stats.Health;
-		//PlayerHealth = Stats.Health;
-		//SetPlayerStartingArmor(Stats.Armor);
-		//SetPlayerStartingStrength(Stats.Strength);
-		//SetPlayerStartingDexterity(Stats.Dexterity);
-		//SetPlayerStartingIntelligence(Stats.Intelligence);
-	}
 }
 
 // Called when player takes control of this character
@@ -106,7 +80,7 @@ void AArtemisCharacter::ActivateDamageAbilities()
 
 	if (AbilitySystem)
 	{
-		AbilitySystem->TryActivateAbilityByClass(UPiercingArrow::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_PiercingArrowClass);
 	}
 }
 
@@ -117,7 +91,7 @@ void AArtemisCharacter::ActivateDefenceAbilities()
 	if (AbilitySystem)
 	{
 
-		AbilitySystem->TryActivateAbilityByClass(UNaturesBlessing::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_ImpunityClass);
 	}
 }
 
@@ -128,7 +102,7 @@ void AArtemisCharacter::ActivateUtilityAbilities()
 	if (AbilitySystem)
 	{
 		// Activate Mark of the Hunt
-		AbilitySystem->TryActivateAbilityByClass(UMarkOfTheHunt::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_MarkOfTheHuntClass);
 	}
 }
 
@@ -139,7 +113,7 @@ void AArtemisCharacter::ActivateUltimateAbilities()
 	if (AbilitySystem)
 	{
 		// Activate Moonbeam now (fires the beam)
-		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_MoonbeamClass);
 	}
 
 }
@@ -148,9 +122,9 @@ void AArtemisCharacter::GivePiercingArrow()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UPiercingArrow::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_PiercingArrowClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_PiercingArrowClass, 1, 0));
 	}
 }
 
@@ -158,9 +132,9 @@ void AArtemisCharacter::GiveNaturesBlessing()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UNaturesBlessing::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_ImpunityClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_ImpunityClass, 1, 0));
 	}
 }
 
@@ -168,9 +142,9 @@ void AArtemisCharacter::GiveMarkOfTheHunt()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UMarkOfTheHunt::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_MarkOfTheHuntClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MarkOfTheHuntClass, 1, 0));
 	}
 }
 
@@ -178,9 +152,9 @@ void AArtemisCharacter::GiveMoonBeam()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UMoonbeam::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_MoonbeamClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MoonbeamClass, 1, 0));
 	}
 }
 
@@ -230,192 +204,198 @@ void AArtemisCharacter::HideReticle()
 	}
 }
 
+
 void AArtemisCharacter::UpdateCamera(float DeltaTime)
 {
-	if (!CameraBoom) return;
+	const FString MapName = GetWorld()->GetMapName();
+	if (MapName.Contains(TEXT("BossLevel"))) return;
 
 	if (bIsAiming)
 	{
 		ShowReticle();
 
-		CameraBoom->bEnableCameraRotationLag = false;
-		CameraBoom->bUsePawnControlRotation = false;
+		// Disable lag while aiming
 		CameraBoom->bEnableCameraLag = false;
-		GetCharacterMovement()->MaxWalkSpeed = 300.f;
+		CameraBoom->bEnableCameraRotationLag = false;
+
+		// Smoothly interpolate arm length and offset
 		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength, DeltaTime, AimingInterpSpeed);
 
-		// Smoothly interpolate socket offset 
-		CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset,AimingOffset, DeltaTime,AimingInterpSpeed);
+		CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, AimingOffset, DeltaTime, AimingInterpSpeed);
 
-		// Rotate player using controller input
+		// Rotate player to controller yaw
 		if (Controller)
 		{
 			FRotator ControlRot = Controller->GetControlRotation();
 			FRotator ActorRot = GetActorRotation();
-
 			ActorRot.Yaw = ControlRot.Yaw;
 			SetActorRotation(ActorRot);
 		}
 
-		// Camera strictly follows player facing direction
-		FRotator FacingRot = GetActorRotation();
-		FacingRot.Pitch = 0.f;
-		FacingRot.Roll = 0.f;
-		CameraBoom->SetWorldRotation(FacingRot);
+		// Rotate camera to face player
+		FRotator CurrentRot = CameraBoom->GetComponentRotation();
+		FRotator TargetRot = GetActorRotation();
+		TargetRot.Pitch = 0.f;
+		TargetRot.Roll = 0.f;
 
+		CameraBoom->SetWorldRotation(FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, AimingInterpSpeed));
+
+		return; // early exit so normal camera logic doesn’t run
 	}
 	else
 	{
 		HideReticle();
-		CameraBoom->bEnableCameraLag = true;
-		CameraBoom->bEnableCameraRotationLag = true;
-		CameraBoom->bUsePawnControlRotation = true;
-		GetCharacterMovement()->MaxWalkSpeed = 500.f;
-		// Movement info 
-		FVector Velocity = GetVelocity();
-		Velocity.Z = 0.f;
-		float Speed = Velocity.Size();
+	}
 
-		// Detect nearby enemies 
-		bool bEnemiesNearby = false;
-		AActor* NearestEnemy = nullptr;
-		float NearestDistSq = FLT_MAX;
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
 
-		TArray<AActor*> OverlappingActors;
-		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	bool bEnemiesNearby = false;
+	AActor* NearestEnemy = nullptr;
+	float NearestDistSq = FLT_MAX;
 
-		TArray<AActor*> ActorsToIgnore;
-		ActorsToIgnore.Add(this);
+	DetectEnemies(bEnemiesNearby, NearestEnemy, NearestDistSq);
 
-		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, ACharacter::StaticClass(), ActorsToIgnore, OverlappingActors);
+	UpdateCameraPosition(DeltaTime, Velocity, Speed, bEnemiesNearby);
 
-		for (AActor* Actor : OverlappingActors)
+	UpdateCameraRotation(DeltaTime, Velocity, Speed);
+}
+
+void AArtemisCharacter::DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq)
+{
+	bEnemiesNearby = false;
+	NearestEnemy = nullptr;
+	NearestDistSq = FLT_MAX;
+
+	TArray<AActor*> OverlappingActors;
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+
+	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 500.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
+
+	for (AActor* Actor : OverlappingActors)
+	{
+		if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
+
+		bEnemiesNearby = true;
+
+		float DistSq = FVector::DistSquared(Actor->GetActorLocation(), GetActorLocation());
+
+		if (DistSq < NearestDistSq)
 		{
-			if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
-
-			bEnemiesNearby = true;
-
-			float DistSq = FVector::DistSquared(Actor->GetActorLocation(), GetActorLocation());
-			if (DistSq < NearestDistSq)
-			{
-				NearestDistSq = DistSq;
-				NearestEnemy = Actor;
-			}
+			NearestDistSq = DistSq;
+			NearestEnemy = Actor;
 		}
+	}
 
-		// Dynamic zoom 
-		float CombatArmLength = BaseArmLength + 50.f;
+}
+void AArtemisCharacter::UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby)
+{
+	// arm length adjustments
+	float CombatArmLength = BaseArmLength + 150.f;
 
-		float TargetArm;
-		if (bEnemiesNearby)
-		{
-			TargetArm = CombatArmLength;
-		}
-		else if (Speed > 600.f)
-		{
-			TargetArm = SprintArmLength;
-		}
-		else
-		{
-			TargetArm = BaseArmLength;
-		}
+	float TargetArm;
+	if (bEnemiesNearby)
+		TargetArm = CombatArmLength;
+	else if (Speed > 600.f)
+		TargetArm = SprintArmLength;
+	else
+		TargetArm = BaseArmLength;
 
-		if (bEnemiesNearby)
-		{
-			TargetArm = FMath::Max(TargetArm, BaseArmLength + 75.f);
-		}
+	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 3.5f);
 
-		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 4.f);
+	// lag
+	float TargetLag = bEnemiesNearby ? 15.f : 10.f;
+	float TargetRotLag = bEnemiesNearby ? 16.f : 10.f;
 
-		CameraBoom->TargetArmLength = FMath::Clamp(CameraBoom->TargetArmLength, BaseArmLength * 0.9f, SprintArmLength);
+	CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetLag, DeltaTime, 10.f);
 
-		// Camera lag
-		float TargetCameraLagSpeed = bEnemiesNearby ? 2.f : 8.f;
-		float TargetCameraRotationLagSpeed = bEnemiesNearby ? 2.f : 6.f;
+	CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetRotLag, DeltaTime, 10.f);
 
-		CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetCameraLagSpeed, DeltaTime, 8.f);
+	// look ahead
+	FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
 
-		CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetCameraRotationLagSpeed, DeltaTime, 8.f);
+	CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 5.f);
 
-		// Look-ahead
-		FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
-		CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 3.f);
+	float TargetHeightOffset = bEnemiesNearby ? HeightOffset + 60.f : HeightOffset;
 
-		float AdjustedHeight = HeightOffset + (bEnemiesNearby ? 20.f : 0.f);
-		CameraBoom->SocketOffset = FVector(0.f, 0.f, AdjustedHeight) + CurrentLookAhead;
+	float SmoothedHeight = FMath::FInterpTo(CameraBoom->SocketOffset.Z, TargetHeightOffset, DeltaTime, 3.5f);
 
-		if (Speed > 10.f)
-		{
-			FRotator DesiredRot = Velocity.ToOrientationRotator();
+	FVector TargetSocketOffset = FVector(0.f, 0.f, SmoothedHeight) + CurrentLookAhead;
 
-			if (NearestEnemy && NearestDistSq > FMath::Square(150.f))
-			{
-				FVector DirToEnemy = NearestEnemy->GetActorLocation() - GetActorLocation();
-				DirToEnemy.Z = 0.f;
-				DirToEnemy.Normalize();
+	CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetSocketOffset, DeltaTime, 4.f);
+}
 
-				float EnemyYaw = DirToEnemy.Rotation().Yaw;
-				float DeltaYaw = FMath::FindDeltaAngleDegrees(DesiredRot.Yaw, EnemyYaw);
-				DesiredRot.Yaw += DeltaYaw * 0.2f;
-			}
+void AArtemisCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed)
+{
+	// moving
+	if (Speed > 10.f)
+	{
+		FRotator CurrentRot = CameraBoom->GetComponentRotation();
 
-			FRotator CurrentRot = CameraBoom->GetComponentRotation();
+		FRotator DesiredRot = CurrentRot;
 
-			DesiredRot.Pitch = FMath::Clamp(CurrentRot.Pitch, MinPitch, MaxPitch);
-			DesiredRot.Roll = 0.f;
+		FRotator MovementRot = Velocity.ToOrientationRotator();
 
-			float DeltaYaw = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
+		float MoveDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, MovementRot.Yaw);
 
-			float NewYaw = CurrentRot.Yaw + DeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+		DesiredRot.Yaw = CurrentRot.Yaw + MoveDelta * 0.35f;
 
-			float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+		DesiredRot.Roll = 0.f;
 
-			float BounceOffset = FMath::Sin(GetWorld()->GetTimeSeconds() * BounceSpeed) * BounceAmplitude;
+		float FinalDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
 
-			FRotator Smoothed(NewPitch + BounceOffset * 0.1f, NewYaw, 0.f);
-			CameraBoom->SetWorldRotation(Smoothed);
-		}
-		else
-		{
-			if (!Controller) return;
-			FRotator ControlRot = Controller->GetControlRotation();
-			ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
-			ControlRot.Roll = 0.f;
+		float NewYaw = CurrentRot.Yaw + FinalDelta * DeltaTime * 30.f;
 
-			FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
+		float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
 
-			float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
+		CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
+	}
+	// idle
+	else
+	{
+		if (!Controller) return;
 
-			float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+		FRotator ControlRot = Controller->GetControlRotation();
 
-			float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+		ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
+		ControlRot.Roll = 0.f;
 
-			CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
+		FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
 
+		float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
 
-			FRotator ActorRot = GetActorRotation();
+		float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
 
-			float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
+		float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
 
-			ActorRot.Yaw += ActorDeltaYaw * DeltaTime * 2.5f;
-			SetActorRotation(ActorRot);
-		}
+		CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
+
+		FRotator ActorRot = GetActorRotation();
+
+		float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
+
+		ActorRot.Yaw += ActorDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+
+		SetActorRotation(ActorRot);
 	}
 }
 
-
 void AArtemisCharacter::BasicAttack()
 {
-	if (!bIsAiming) return;
+	//if (!bIsAiming) return;
 
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-	if (!CanBasicAttack) return;
+	//if (!CanBasicAttack) return;
 	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-	CanBasicAttack = false;
+	CanBasicAttack = true;
 
-	ProjectileDamage = 70.0f;
+	ProjectileDamage = 30.f;
 
 	// Spawn projectile
 	bProjectileActive = true;
@@ -457,7 +437,7 @@ void AArtemisCharacter::HeavyAttack()
 
 	CanHeavyAttack = false;
 
-	ProjectileDamage = 100.0f;
+	ProjectileDamage = 40.0f;
 
 	// Spawn projectile
 	bProjectileActive = true;
@@ -520,42 +500,39 @@ void AArtemisCharacter::Tick(float DeltaTime)
 	TArray<FHitResult> Hits;
 	FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-	bool bHit = GetWorld()->SweepMultiByChannel(Hits,PreviousProjectileLocation,ProjectileLocation,FQuat::Identity,ECC_Pawn,Sphere);
+	bool bHit = GetWorld()->SweepMultiByChannel(Hits,PreviousProjectileLocation,ProjectileLocation,FQuat::Identity,ECC_GameTraceChannel1,Sphere);
 
-	if (bHit)
+	for (const FHitResult& Hit : Hits)
 	{
-		for (const FHitResult& Hit : Hits)
+		if (AActor* HitActor = Hit.GetActor())
 		{
-			if (AActor* HitActor = Hit.GetActor())
+			if (AlreadyHitActors.Contains(HitActor))
+				continue;
+
+			if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 			{
-				if (AlreadyHitActors.Contains(HitActor))
-					continue;
-
-				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-				{
-					Server_HitEnemy(Enemy);
-				}
-				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-				{
-					Server_HitEnemy(TEnemy);
-				}
-				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-				{
-					Server_HitEnemy(TPEnemy);
-				}
-
-				AlreadyHitActors.Add(HitActor);
-
-				// Stop projectile on hit
-				bProjectileActive = false;
-
-				if (ActiveProjectileMesh)
-				{
-					ActiveProjectileMesh->DestroyComponent();
-					ActiveProjectileMesh = nullptr;
-				}
-				break;
+				Server_HitEnemy(Enemy);
 			}
+			else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+			{
+				Server_HitEnemy(TEnemy);
+			}
+			else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+			{
+				Server_HitEnemy(TPEnemy);
+			}
+
+			AlreadyHitActors.Add(HitActor);
+
+			// Stop projectile on hit
+			bProjectileActive = false;
+
+			if (ActiveProjectileMesh)
+			{
+				ActiveProjectileMesh->DestroyComponent();
+				ActiveProjectileMesh = nullptr;
+			}
+			break;
 		}
 	}
 

@@ -5,6 +5,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
+#include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 
 UBundleOfJoy::UBundleOfJoy()
 {
@@ -13,25 +15,13 @@ UBundleOfJoy::UBundleOfJoy()
     AttractionRadius = 600.f;
     ExplosionRadius = 400.f;
     AttractionStrength = 1500.f;
-    DamageAmount = 100.f;
+    Damage = 100.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
     Cost = 60;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Attract.NS_BundleOfJoy_Attract"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset1(TEXT("/Game/Particles/NiagaraSystems/NS_BundleOfJoy_Explosion.NS_BundleOfJoy_Explosion"));
-
-    if (VFXAsset1.Succeeded())
-    {
-        AbilityVFX1 = VFXAsset1.Object;
-    }
 }
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -93,6 +83,11 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
     StartLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50);
     Velocity = AvatarActor->GetActorForwardVector() * 700.f + FVector(0, 0, 600.f);
     bIsFlying = true;
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);
 
@@ -183,8 +178,9 @@ void UBundleOfJoy::Attract()
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Only check for pawns
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    UKismetSystemLibrary::SphereOverlapActors(World, Center, AttractionRadius, ObjectTypes, ACharacter::StaticClass(), { AvatarActor }, OverlappingActors); // Find all characters within the radius
+    UKismetSystemLibrary::SphereOverlapActors(World, Center, AttractionRadius, ObjectTypes, APawn::StaticClass(), { AvatarActor }, OverlappingActors); // Find all characters within the radius
 
     for (AActor* Actor : OverlappingActors) // Loop through overlapping actors
     {
@@ -205,6 +201,12 @@ void UBundleOfJoy::Attract()
             TargetRot.Roll = 0.f;
             Char->SetActorRotation(TargetRot); // Rotate character toward center
         }
+        else if (AEnemyPawn* enemy = Cast<AEnemyPawn>(Actor))
+        {
+            enemy->MovementComponent->IsAffectiveByBundleOfJoy = true;
+            enemy->MovementComponent->BundleOfJoyLocation = Center;
+            EffectedEnemies.Add(enemy);
+        }
     }
 }
 
@@ -221,16 +223,27 @@ void UBundleOfJoy::Explode()
     TArray<AActor*> OverlappingActors; // Array to store actors within explosion radius
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Only check for pawns
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     // Find all characters within the explosion radius
-    UKismetSystemLibrary::SphereOverlapActors(World, Center, ExplosionRadius, ObjectTypes, ACharacter::StaticClass(), { AvatarActor }, OverlappingActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, Center, ExplosionRadius, ObjectTypes, APawn::StaticClass(), { AvatarActor }, OverlappingActors);
 
     for (AActor* Actor : OverlappingActors) // Loop through overlapping actors
     {
         if (!Actor) continue; // Skip null actors
         if (!Actor->Tags.Contains("Enemy")) continue;
-        UGameplayStatics::ApplyDamage(Actor, DamageAmount, nullptr, AvatarActor, nullptr); // Apply damage to each actor
+        UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, AvatarActor, nullptr); // Apply damage to each actor
     }
+
+    for (AEnemyPawn* enemy : EffectedEnemies)
+    {
+        if (enemy && enemy->MovementComponent)
+        {
+            enemy->MovementComponent->IsAffectiveByBundleOfJoy = false;
+        }
+    }
+    
+    //DrawDebugSphere(World, Center, ExplosionRadius, 32, FColor::Red, false, 2.f); // Draw debug sphere for explosion radius
 
 
 	// Spawn explosion VFX

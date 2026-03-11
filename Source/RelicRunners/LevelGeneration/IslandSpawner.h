@@ -15,6 +15,10 @@ public:
 	// Sets default values for this actor's properties
 	AIslandSpawner();
 
+	void UpdateControllerZonesUI(int CurrentZone, int MaxZones);
+
+	void UpdateControllerStageUI(int StageNumber);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GenerationValues")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
 
@@ -40,4 +44,6 @@ protected:
 
 	UFUNCTION()
 	void ChangeIslandCamera(int islandIndex);
+	UFUNCTION()
+	void ChangeIslandVisibility(int islandIndex);
 };
