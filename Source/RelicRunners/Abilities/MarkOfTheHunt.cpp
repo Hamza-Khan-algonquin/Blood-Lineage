@@ -146,8 +146,7 @@ void UMarkOfTheHunt::ScanForEnemies(const FVector& ScanLocation)
         {
             TArray<AActor*> FoundActors;
             TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-            ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-            ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+            ObjectTypes.AddUnique(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
             // Overlap check every tick
             UKismetSystemLibrary::SphereOverlapActors(World,ScanLocation,1000.f, ObjectTypes, APawn::StaticClass(), {}, FoundActors);
@@ -182,6 +181,7 @@ void UMarkOfTheHunt::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
+            World->GetTimerManager().ClearTimer(ProjectileTickTimer);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();

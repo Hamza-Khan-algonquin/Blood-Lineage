@@ -103,7 +103,10 @@ public:
 
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastPlayAttackMontage(UAnimMontage* Montage, float Speed, float StartPosition);
-
+    UPROPERTY(ReplicatedUsing = OnRep_VortexForce)
+    float ReplicatedVortexForce;
+    UFUNCTION()
+    void OnRep_VortexForce();
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;

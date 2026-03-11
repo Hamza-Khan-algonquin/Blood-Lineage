@@ -6,6 +6,7 @@
 #include <Net/UnrealNetwork.h>
 #include "HadesFireballPrediction.h"
 #include <Kismet/GameplayStatics.h>
+#include <NiagaraFunctionLibrary.h>
 
 AHadesFireball::AHadesFireball()
 {
@@ -22,6 +23,14 @@ void AHadesFireball::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AHadesFireball, TargetLocation);
     DOREPLIFETIME(AHadesFireball, FlightDuration);
+}
+
+void AHadesFireball::Multicast_PlayExplosionEffects_Implementation(FVector Location)
+{
+    if (ExplosionEffect)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ExplosionEffect, Location, FRotator::ZeroRotator);
+    }
 }
 
 void AHadesFireball::BeginPlay()
@@ -71,7 +80,10 @@ void AHadesFireball::Tick(float DeltaTime)
 
     if (Alpha >= 1.0f && HasAuthority())
     {
-        UGameplayStatics::ApplyRadialDamage(GetWorld(), 50.0f, TargetLocation, 400.0f, nullptr, { GetOwner() }, this);
+        //DrawDebugSphere(GetWorld(), TargetLocation, 400.0f, 32, FColor::Orange, false, 2.0f);
+        UGameplayStatics::ApplyRadialDamage(GetWorld(), 80.0f, TargetLocation, 400.0f, nullptr, { GetOwner() }, this);
+
+        Multicast_PlayExplosionEffects(TargetLocation);
 
         if (InternalPrediction) InternalPrediction->Destroy();
         Destroy();

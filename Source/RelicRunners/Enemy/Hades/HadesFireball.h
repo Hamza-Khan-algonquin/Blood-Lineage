@@ -23,11 +23,17 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effects")
     class UNiagaraComponent* FireballVFX;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Effects")
+    class UNiagaraSystem* ExplosionEffect;
+
     UPROPERTY(EditAnywhere, Category = "Fireball")
     TSubclassOf<class AHadesPredictionBase> PredictionClass;
 
     UPROPERTY()
     class AHadesPredictionBase* InternalPrediction;
+
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_PlayExplosionEffects(FVector Location);
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;

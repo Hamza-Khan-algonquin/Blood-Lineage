@@ -19,7 +19,7 @@ UBackStab::UBackStab()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    DamageAmount = 200.f;
+    Damage = 200.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 5.f;
@@ -28,25 +28,7 @@ UBackStab::UBackStab()
 	Range = 600.f;
 	BehindOffset = 120.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    //static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshObj(TEXT("/Game/ThirdPerson/Blueprints/Combat/AbilityCircleBase.AbilityCircleBase"));
-    //if (MeshObj.Succeeded())
-    //{
-    //    BackStabMeshAsset = MeshObj.Object;
-    //}
-
-    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_backslash_Montage.melee_backslash_Montage"));
-
-    if (AnimAsset.Succeeded())
-    {
-        AbilityAnim = AnimAsset.Object;
-    }
 }
 
 void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -178,7 +160,7 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
         if (FVector::DotProduct(Forward, DirToActor) >= FMath::Cos(HalfConeRad))
         {
-            UGameplayStatics::ApplyDamage(Actor,DamageAmount,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+            UGameplayStatics::ApplyDamage(Actor,Damage,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
 
             //if (APawn* EnemyChar = Cast<APawn>(Actor))
             //{
@@ -270,7 +252,6 @@ void UBackStab::ExecuteBackStabSequence()
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
-
     }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);

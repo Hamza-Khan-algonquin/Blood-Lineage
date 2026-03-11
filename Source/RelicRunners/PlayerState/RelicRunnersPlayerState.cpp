@@ -34,6 +34,7 @@
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include "RelicRunners/Menu/JoinUserWidget.h"
 #include <ClassInfo.h>
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {
@@ -458,6 +459,12 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 	//For server
 	UpdateRemoteHUDAbility();
 	UpdateRemoteHUDExperience();
+
+	//Meta XP
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetWorld()->GetGameInstance()))
+	{
+		GI->SelectedSaveSlot->AddMetaExp(FMath::RandRange(1,3));
+	}
 }
 
 void ARelicRunnersPlayerState::Client_OnLevelUp_Implementation()

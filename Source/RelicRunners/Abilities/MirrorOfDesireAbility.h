@@ -19,15 +19,8 @@ public:
     virtual FName GetAbilityName() const override { return FName("MirrorOfDesire"); }
 
 protected:
-    UPROPERTY(EditDefaultsOnly, Category = "Mirror")
-    float MirrorDuration = 5.f;
+    UFUNCTION()
+    void OnOwnerTakeDamage(AActor* DamagedActor, float DamageAmount, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
 
-    UPROPERTY(EditDefaultsOnly, Category = "Mirror")
-    float ReflectPercent = 5.35f;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Mirror")
-    float MirrorRadius = 150.f;
-
-private:
-    FTimerHandle EndTimerHandle;
+    FTimerHandle AbilityTimerHandle;
 };

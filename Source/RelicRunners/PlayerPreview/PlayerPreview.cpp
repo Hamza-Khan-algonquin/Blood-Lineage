@@ -21,10 +21,39 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <Kismet/GameplayStatics.h>
 
 APlayerPreview::APlayerPreview()
 {
+	static ConstructorHelpers::FClassFinder<UAnimInstance> HealerAnimBP(TEXT("/Game/Assets/Characters/Healer/Model/ABP_healer_model"));
+
+	if (HealerAnimBP.Succeeded())
+	{
+		HealerAnim = HealerAnimBP.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> MeleeAnimBP(TEXT("/Game/Assets/Characters/Melee/Model/ABP_melee_model"));
+
+	if (MeleeAnimBP.Succeeded())
+	{
+		MeleeAnim = MeleeAnimBP.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> RangedAnimBP(TEXT("/Game/Assets/Characters/Ranged/Model/ABP_ranged_model"));
+
+	if (RangedAnimBP.Succeeded())
+	{
+		RangedAnim = RangedAnimBP.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> TankAnimBP(TEXT("/Game/Assets/Characters/Tank/Model/ABP_tank_model"));
+
+	if (TankAnimBP.Succeeded())
+	{
+		TankAnim = TankAnimBP.Class;
+	}
+
 	PrimaryActorTick.bCanEverTick = true;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	SetRootComponent(RootComponent);
@@ -72,6 +101,55 @@ APlayerPreview::APlayerPreview()
 void APlayerPreview::BeginPlay()
 {
 	Super::BeginPlay();
+
+	USkeletalMesh* Character = nullptr;
+	TSubclassOf<UAnimInstance> DesiredAnimBP = nullptr;
+	float ModelScale = 1.0f;
+
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (PC)
+	{
+		ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
+		if (PS)
+		{
+			if (PS->SelectedClass == "Ares")
+			{
+				Character = AresModel;
+				DesiredAnimBP = TankAnim;
+				ModelScale = 0.8f;
+			}
+			else if (PS->SelectedClass == "Nemesis")
+			{
+				Character = NemesisModel;
+				DesiredAnimBP = MeleeAnim;
+			}
+			else if (PS->SelectedClass == "Aphrodite")
+			{
+				Character = AphroditeModel;
+				DesiredAnimBP = HealerAnim;
+			}
+			else if (PS->SelectedClass == "Artemis")
+			{
+				Character = ArtemisModel;
+				DesiredAnimBP = RangedAnim;
+				ModelScale = 0.85f;
+			}
+
+			BodyMesh->SetSkeletalMesh(Character);
+			BodyMesh->SetRelativeScale3D(FVector(ModelScale));
+			if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim || DesiredAnimBP == TankAnim)
+			{
+				BodyMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+				BodyMesh->SetAnimInstanceClass(DesiredAnimBP);
+			}
+			else
+			{
+				BodyMesh->SetAnimInstanceClass(nullptr);
+				BodyMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+				BodyMesh->SetAnimation(nullptr);
+			}
+		}
+	}
 }
 
 void APlayerPreview::Tick(float DeltaTime)
@@ -177,7 +255,13 @@ void APlayerPreview::SetPreviewMeshByItemType(const FString& ItemType, UObject* 
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
 		if (NecklaceMesh && Mesh) NecklaceMesh->SetSkeletalMesh(Mesh);
 	}
-	else if (ItemType == "Sword" || ItemType == "Greatsword" || ItemType == "Staff" || ItemType == "Bow")
+	else if (ItemType == "Greatsword")
+	{
+		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
+		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
+		if (OffhandItemMesh) OffhandItemMesh->SetStaticMesh(ShieldAsset);
+	}
+	else if (ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow")
 	{
 		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
 		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);

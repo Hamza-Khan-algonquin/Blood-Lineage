@@ -44,7 +44,22 @@ protected:
 	virtual void BasicAttack() override;
 	virtual void HeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
+	void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
+	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
+	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
 
 	UPROPERTY()
 	float Damage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<UEarthquakeAbility> BP_EarthquakeClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<UGuardAbility> BP_GuardClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<UWarBannerAbility> BP_WarBannerClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ares")
+	TSubclassOf<URageOfTheGods> BP_RageOfTheGodsClass;
 };
