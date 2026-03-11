@@ -17,6 +17,7 @@ UGuardAbility::UGuardAbility()
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     Duration = 0.f;
+    Damage = 25.f;
 }
 
 void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)

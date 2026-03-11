@@ -31,14 +31,11 @@ void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* Targe
 {
     if (!InstigatorActor || !TargetActor) return;
 
-    // Get the controller safely
     AController* InstigatorController = InstigatorActor->GetInstigatorController();
     if (!InstigatorController) return;
 
-    // Try to cast to player controller
     APlayerController* PC = Cast<APlayerController>(InstigatorController);
 
-    // Get player state and inventory component
     UInventoryComponent* InventoryComponent = nullptr;
     if (PC)
     {
@@ -48,19 +45,38 @@ void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* Targe
         }
     }
 
-    // Compute strength-based scaling
     float PercentStrengthIncrease = 0.f;
+    float CritChance = 0.f;
+    float CritDamageMultiplier = 1.f;
+
     if (InventoryComponent)
     {
-        PercentStrengthIncrease = ItemStats::GetStrengthPerc(InventoryComponent->CachedEquippedStats.TotalStrength);
+        int Strength = InventoryComponent->CachedEquippedStats.TotalStrength;
+        int CritValue = InventoryComponent->CachedEquippedStats.TotalDexterity;
+        int CritDamageValue = InventoryComponent->CachedEquippedStats.TotalDexterity;
+
+        PercentStrengthIncrease = ItemStats::GetStrengthPerc(Strength);
+
+        CritChance = ItemStats::GetCritPerc(CritValue);
+        CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
+        CritDamageMultiplier = 1.f + (ItemStats::GetCritDmgPerc(CritDamageValue) / 100.f);
     }
 
-    // Final damage
     float FinalDamage = BaseDamage * (1.f + PercentStrengthIncrease / 100.f);
 
-    // Apply damage
+    // Roll for crit
+    float RandomRoll = FMath::FRandRange(0.f, 100.f);
+    bool bIsCrit = RandomRoll <= CritChance;
+
+    if (bIsCrit)
+    {
+        FinalDamage *= CritDamageMultiplier;
+    }
+
     UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, InstigatorActor, UDamageType::StaticClass());
 }
+
+
 
 UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)
 {

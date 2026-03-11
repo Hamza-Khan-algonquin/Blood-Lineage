@@ -465,7 +465,7 @@ void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
     {
         PercentStrengthIncrease = ItemStats::GetStrengthPerc(InventoryComponent->CachedEquippedStats.TotalStrength);
     }
-
+    
     float FinalDamage = ProjectileDamage * (1.f + PercentStrengthIncrease / 100.f);
 
     UGameplayStatics::ApplyDamage(HitActor, FinalDamage, PC, this, nullptr);

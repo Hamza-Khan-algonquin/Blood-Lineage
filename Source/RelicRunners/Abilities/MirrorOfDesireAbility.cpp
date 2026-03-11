@@ -78,7 +78,7 @@ void UMirrorOfDesireAbility::OnOwnerTakeDamage(AActor* DamagedActor, float Damag
     float DamageToReflect = DamageAmount * 50.f; 
 
     // Apply reflected damage
-    CalculateAbilityDamage(OwnerChar, EnemyPawn, Damage);
+    CalculateAbilityDamage(OwnerChar, EnemyPawn, DamageToReflect);
 
     DrawDebugLine(DamagedActor->GetWorld(), DamagedActor->GetActorLocation(), EnemyPawn->GetActorLocation(), FColor::Red, false, 1.f, 0, 2.f);
 }

@@ -27,7 +27,7 @@ UPiercingArrow::UPiercingArrow()
     ProjectileRadius = 40.f;
     DotTickRate = 0.5f;
     DotDuration = 6.f;
-    DamagePerTick = 15.f;
+    Damage = 15.f;
     DotTimeElapsed = 0.f;
 }
 
