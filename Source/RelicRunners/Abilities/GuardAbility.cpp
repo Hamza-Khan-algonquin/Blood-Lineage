@@ -85,8 +85,7 @@ void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGa
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
         return;
 
-    ARelicRunnersCharacter* OwnerChar =
-        Cast<ARelicRunnersCharacter>(ActorInfo->AvatarActor.Get());
+    ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(ActorInfo->AvatarActor.Get());
 
     if (!OwnerChar)
         return;
@@ -134,7 +133,7 @@ void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGa
             continue;
 
         // Apply damage
-        UGameplayStatics::ApplyDamage(HitPawn,ChargeDamage, OwnerChar->GetController(),OwnerChar,nullptr);
+        CalculateAbilityDamage(OwnerChar, HitPawn, Damage);
 
         // Apply knockback
         if (AEnemyPawn* HitCharacter = Cast<AEnemyPawn>(HitPawn))

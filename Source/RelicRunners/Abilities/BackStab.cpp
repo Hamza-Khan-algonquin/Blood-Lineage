@@ -13,7 +13,8 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/StaticMeshActor.h"     
 #include "Components/StaticMeshComponent.h"
-
+#include "RelicRunners/Inventory/InventoryComponent.h"
+#include "RelicRunners/Item/ItemStats.h"
 
 UBackStab::UBackStab()
 {
@@ -160,7 +161,7 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
         if (FVector::DotProduct(Forward, DirToActor) >= FMath::Cos(HalfConeRad))
         {
-            UGameplayStatics::ApplyDamage(Actor,Damage,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+			CalculateAbilityDamage(AvatarActor, Actor, Damage);
 
             //if (APawn* EnemyChar = Cast<APawn>(Actor))
             //{
@@ -204,37 +205,6 @@ void UBackStab::ExecuteBackStabSequence()
         return;
     }
 
-    //if (BackStabMeshAsset && !ActiveMeshActor)
-    //{
-    //    if (World && AvatarActor)
-    //    {
-    //        FVector SpawnLocation = OriginalLocation;
-    //        SpawnLocation.Z -= 50.f; 
-
-    //        FActorSpawnParameters SpawnParams;
-    //        SpawnParams.Owner = AvatarActor;
-    //        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-    //        // Spawn the StaticMeshActor
-    //        ActiveMeshActor = World->SpawnActor<AStaticMeshActor>(SpawnLocation, FRotator::ZeroRotator, SpawnParams);
-    //        if (ActiveMeshActor)
-    //        {
-    //            UStaticMeshComponent* MeshComp = ActiveMeshActor->GetStaticMeshComponent();
-    //            if (MeshComp)
-    //            {
-    //                MeshComp->SetStaticMesh(BackStabMeshAsset);
-    //                MeshComp->SetWorldScale3D(FVector(0.5f));
-    //                MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    //                MeshComp->SetMobility(EComponentMobility::Movable);
-    //                ActiveMeshActor->SetActorHiddenInGame(false);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            UE_LOG(LogTemp, Warning, TEXT("Failed to spawn ActiveMeshActor"));
-    //        }
-    //    }
-    
     // Find target
     AActor* TargetEnemy = FindBackstabTarget(AvatarActor);
     if (!TargetEnemy || !IsValid(TargetEnemy))

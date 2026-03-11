@@ -140,7 +140,7 @@ void UEarthquakeAbility::ApplyDamageAndStun()
         if (Dot < FMath::Cos(HalfAngleRad)) continue;
 
 
-        UGameplayStatics::ApplyDamage(Actor, DamagePerTick, AvatarActor->GetInstigatorController(), AvatarActor, nullptr);
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
 
 
         if (ACharacter* HitChar = Cast<ACharacter>(Actor))

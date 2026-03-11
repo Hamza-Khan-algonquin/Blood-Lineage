@@ -172,7 +172,7 @@ void UDivinePunishment::DivineDamageTick()
     {
         if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
 
-        UGameplayStatics::ApplyDamage(Actor,Damage,InstigatorController, AvatarActor,UDamageType::StaticClass());
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
     }
 
     if (DamageTicksElapsed >= Duration)

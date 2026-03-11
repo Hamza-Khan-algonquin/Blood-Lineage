@@ -447,11 +447,28 @@ void AAphroditeCharacter::ProjectileHeavyAttack()
 
 void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {
-    if (HitActor)
-    {
-        UGameplayStatics::ApplyDamage(HitActor, 90.f, GetController(), this, nullptr);
+    if (!HitActor) return;
 
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!PC) return;
+
+    UInventoryComponent* InventoryComponent = nullptr;
+    ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
+    if (PS)
+    {
+        InventoryComponent = PS->GetInventoryComponent(); 
     }
+
+    // Compute strength bonus safely
+    float PercentStrengthIncrease = 0.f;
+    if (InventoryComponent)
+    {
+        PercentStrengthIncrease = ItemStats::GetStrengthPerc(InventoryComponent->CachedEquippedStats.TotalStrength);
+    }
+
+    float FinalDamage = ProjectileDamage * (1.f + PercentStrengthIncrease / 100.f);
+
+    UGameplayStatics::ApplyDamage(HitActor, FinalDamage, PC, this, nullptr);
 }
 
 void AAphroditeCharacter::Tick(float DeltaTime)

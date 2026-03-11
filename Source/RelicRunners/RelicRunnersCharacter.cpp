@@ -233,7 +233,8 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 	{
 		int Defence = RelicPlayerState->GetInventoryComponent()->CachedEquippedStats.TotalArmor;
 		float Reduction = (1.0f - (ItemStats::GetDefencePerc(Defence) / 100.0f));
-		int DamageTaken = ActualDamage * Reduction;
+		float DamageTaken = ActualDamage * Reduction;
+		ActualDamage = DamageTaken;
 		RelicPlayerState->ModifyHealth(-DamageTaken);
 	}
 

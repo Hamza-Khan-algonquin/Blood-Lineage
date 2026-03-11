@@ -207,7 +207,7 @@ void UGoddessOfLove::TickDamage()
         DrawDebugLine(World, DamageOrigin, Enemy->GetActorLocation(), LineColor, false, DOTTickInterval, 0, 2.f);
         DrawDebugString(World, Enemy->GetActorLocation() + FVector(0, 0, 80.f), FString::Printf(TEXT("DPS x%.2f"), DamageMultiplier), nullptr, LineColor, DOTTickInterval);
 
-        UGameplayStatics::ApplyDamage(Enemy, ScaledDamage, CurrentActorInfo->PlayerController.Get(), OwnerActor, nullptr);
+        CalculateAbilityDamage(OwnerActor, Enemy, ScaledDamage);
     }
 
     if (ElapsedDOTTime >= DOTDuration)

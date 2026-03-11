@@ -126,7 +126,7 @@ void UMoonbeam::BeamTick()
 
         if (Pawn == OwnerChar) continue;
 
-        UGameplayStatics::ApplyDamage(Pawn,DamagePerTick,OwnerChar->GetController(),OwnerChar,nullptr);
+        CalculateAbilityDamage(OwnerChar, Pawn, Damage);
     }
 }
 

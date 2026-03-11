@@ -160,7 +160,7 @@ void UMarkOfTheHunt::ProjectileTick()
             {
                 DrawDebugSphere(World, Hit.ImpactPoint, 25.f, 12, FColor::Red, false, 1.f);
 
-                UGameplayStatics::ApplyDamage( HitActor, Damage, GetAvatarActorFromActorInfo()->GetInstigatorController(), GetAvatarActorFromActorInfo(), UDamageType::StaticClass());
+                CalculateAbilityDamage(GetAvatarActorFromActorInfo(), HitActor, Damage);
 
                 P.HitActors.Add(HitActor);
 

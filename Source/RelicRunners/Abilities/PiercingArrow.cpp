@@ -174,7 +174,7 @@ void UPiercingArrow::ApplyDotTick()
 
             if (!Pawn->Tags.Contains("Enemy")) continue;
 
-            UGameplayStatics::ApplyDamage(Pawn,DamagePerTick, AvatarActor->GetInstigatorController(), AvatarActor, nullptr);
+            CalculateAbilityDamage(AvatarActor, Pawn, Damage);
         }
     }
 

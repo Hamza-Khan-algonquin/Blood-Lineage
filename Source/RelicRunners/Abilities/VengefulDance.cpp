@@ -132,7 +132,7 @@ void UVengefulDance::ApplyRingDamage()
         if (Diff.Size() > AreaRadius) // Skip actors outside the area radius
             continue;
 
-        UGameplayStatics::ApplyDamage(Actor, Damage, AvatarActor->GetInstigatorController(), AvatarActor, nullptr); // Apply damage
+		CalculateAbilityDamage(AvatarActor, Actor, Damage); 
 
         if (AEnemyPawn* HitCharacter = Cast<AEnemyPawn>(Actor)) // Cast as EnemyCharacter
         {

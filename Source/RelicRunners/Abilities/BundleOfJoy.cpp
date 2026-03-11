@@ -21,7 +21,6 @@ UBundleOfJoy::UBundleOfJoy()
     CooldownTimer = 10.f;
     Cost = 60;
 
-
 }
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -231,7 +230,7 @@ void UBundleOfJoy::Explode()
     {
         if (!Actor) continue; // Skip null actors
         if (!Actor->Tags.Contains("Enemy")) continue;
-        UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, AvatarActor, nullptr); // Apply damage to each actor
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
     }
 
     for (AEnemyPawn* enemy : EffectedEnemies)

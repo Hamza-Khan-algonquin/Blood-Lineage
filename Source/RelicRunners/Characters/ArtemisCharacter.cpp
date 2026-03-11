@@ -566,8 +566,26 @@ void AArtemisCharacter::Tick(float DeltaTime)
 
 void AArtemisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
 {
-	if (HitActor)
+	if (!HitActor) return;
+
+	// Get the controller
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return;
+
+	UInventoryComponent* InventoryComponent = nullptr;
+	ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
+	if (PS)
 	{
-		UGameplayStatics::ApplyDamage(HitActor, ProjectileDamage, GetController(), this, nullptr);
+		InventoryComponent = PS->GetInventoryComponent();
 	}
+
+	float PercentStrengthIncrease = 0.f;
+	if (InventoryComponent)
+	{
+		PercentStrengthIncrease = ItemStats::GetStrengthPerc(InventoryComponent->CachedEquippedStats.TotalStrength);
+	}
+
+	float FinalDamage = ProjectileDamage * (1.f + PercentStrengthIncrease / 100.f);
+
+	UGameplayStatics::ApplyDamage(HitActor, FinalDamage, PC, this, nullptr);
 }

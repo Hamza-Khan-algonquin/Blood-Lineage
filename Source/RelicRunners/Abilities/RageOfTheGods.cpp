@@ -135,7 +135,7 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 
         HitActorsThisPulse.Add(Actor);
 
-        UGameplayStatics::ApplyDamage(Actor, Damage, AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
 
         if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
         {
