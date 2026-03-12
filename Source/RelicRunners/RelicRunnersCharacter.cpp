@@ -57,6 +57,7 @@
 #include <Kismet/KismetMathLibrary.h>
 #include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
+#include "RelicRunnersGameMode.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -218,6 +219,7 @@ void ARelicRunnersCharacter::PossessedBy(AController* NewController)
 
 	if (RelicPlayerState)
 	{
+		RelicPlayerState->DeathState = false;
 		const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
 		SyncEquippedVisuals(EquippedEntries);
 	}
@@ -243,8 +245,27 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	SetActorLocation(respawnPoint);
-	if (RelicPlayerState) RelicPlayerState->ResetHealth();
+	if (RelicPlayerState) RelicPlayerState->DeathState = true;
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+		if (RPC)
+		{
+			RPC->CleanUI();
+			RPC->ChangeState(NAME_Spectating);
+			RPC->SpectatingUI();
+			RPC->Client_RequestSaveStats();
+		}
+
+		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+		{
+			GM->CheckGameOver();
+		}
+	}
+
+	Destroy();
 }
 
 void ARelicRunnersCharacter::OnRep_PlayerState()

@@ -31,6 +31,8 @@ public:
 	virtual void PostSeamlessTravel() override;
 	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
+	void CheckGameOver();
+	void TriggerPostGameForAll();
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ANemesisCharacter> NemesisCharacterClass;
 

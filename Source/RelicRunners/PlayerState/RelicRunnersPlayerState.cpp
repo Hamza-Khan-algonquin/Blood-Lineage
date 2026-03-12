@@ -754,7 +754,7 @@ void ARelicRunnersPlayerState::OnRep_PlayerLevel(int OldLevel)
 
 void ARelicRunnersPlayerState::ModifyHealth(float Value)
 {
-	if (!HasAuthority()) return;
+	if (!HasAuthority() || DeathState) return;
 
 	if (bIsInvincible && Value < 0.f) return;
 
@@ -871,5 +871,7 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerGold);
 	DOREPLIFETIME(ARelicRunnersPlayerState, HasReceivedStarterItems);
 	DOREPLIFETIME(ARelicRunnersPlayerState, IsHost);
+	DOREPLIFETIME(ARelicRunnersPlayerState, DeathState);
+	DOREPLIFETIME(ARelicRunnersPlayerState, bIsInvincible);
 }
 

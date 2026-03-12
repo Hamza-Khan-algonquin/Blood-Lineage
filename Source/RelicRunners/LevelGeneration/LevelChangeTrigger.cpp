@@ -85,7 +85,7 @@ void ALevelChangeTrigger::ChangeLevel()
 	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(World->GetFirstPlayerController());
 	if (!RPC) return;
 
-	RPC->TravelCleanUI();
+	RPC->CleanUI();
 
 	FString TravelURL = TargetLevel + TEXT("?listen");
 	World->ServerTravel(TravelURL, true);

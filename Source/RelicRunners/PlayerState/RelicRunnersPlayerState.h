@@ -189,6 +189,13 @@ public:
 	bool IsInvincible() const { return bIsInvincible; }
 	void SetInvincible(bool bNewInvincible) { bIsInvincible = bNewInvincible; } 
 
+	UPROPERTY(Replicated)
+	bool DeathState = false;
+
+	int MetaLevel;
+	int MetaXP;
+	int MetaXPToNextLevel;
+
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;
     UAttributeSet* GetAttributeSet() const { return AttributeSet; }

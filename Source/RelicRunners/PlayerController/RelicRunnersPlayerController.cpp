@@ -26,6 +26,8 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include "RelicRunners/Game/PostGameWidget.h"
+#include "RelicRunners/Game/SpectatingWidget.h"
 
 #include "RelicRunners/LevelGeneration/NewObjectives/NewCapturableFlag.h"
 
@@ -224,7 +226,7 @@ void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, E
 	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
 
-void ARelicRunnersPlayerController::TravelCleanUI()
+void ARelicRunnersPlayerController::CleanUI()
 {
 	//Clean up UI
 	if (UWorld* World = GetWorld())
@@ -1007,6 +1009,67 @@ void ARelicRunnersPlayerController::ClearOldObjectives()
 	}
 }
 
+void ARelicRunnersPlayerController::SpectatingUI()
+{
+	if (!SpectatingWidget && SpectatingWidgetClass)
+	{
+		SpectatingWidget = CreateWidget<USpectatingWidget>(this, SpectatingWidgetClass);
+		if (SpectatingWidget)
+		{
+			SpectatingWidget->AddToViewport();
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::PostGameUI()
+{
+	if (!PostGameWidget && PostGameWidgetClass)
+	{
+		PostGameWidget = CreateWidget<UPostGameWidget>(this, PostGameWidgetClass);
+		if (PostGameWidget)
+		{
+			PostGameWidget->AddToViewport();
+			
+			SetInputMode(FInputModeUIOnly());
+			bShowMouseCursor = true;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Client_ShowPostGame_Implementation(const TArray<FPlayerPostGameData>& FinalStats)
+{
+	if (SpectatingWidget)
+	{
+		SpectatingWidget->RemoveFromParent();
+	}
+
+	PostGameUI();
+	if (PostGameWidget) PostGameWidget->UpdateScoreboard(FinalStats);
+}
+
+void ARelicRunnersPlayerController::Server_UpdateMetaFromSave_Implementation(int MetaLevel, int MetaXP, int MetaXPToNextLevel)
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->MetaLevel = MetaLevel;
+		PS->MetaXP = MetaXP;
+		PS->MetaXPToNextLevel = MetaXPToNextLevel;
+	}
+}
+
+void ARelicRunnersPlayerController::Client_RequestSaveStats_Implementation()
+{
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (GI && GI->SelectedSaveSlot)
+	{
+		Server_UpdateMetaFromSave(
+			GI->SelectedSaveSlot->GetMetaLevel(),
+			GI->SelectedSaveSlot->GetMetaExp(),
+			GI->SelectedSaveSlot->GetMetaExpToLevel()
+		);
+	}
+}
+
 void ARelicRunnersPlayerController::InitLocalUI()
 {
 	if (BuildVersion && !BuildVersion->IsInViewport())
@@ -1227,8 +1290,6 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		SetupMainMenuView();
 	}
-
-
 }
 
 void ARelicRunnersPlayerController::Server_SendPlayerInfo_Implementation(const FString& PlayerName, const FName& SelectedClass)

@@ -43,7 +43,7 @@ public:
 	void HideUI(UUserWidget* UIWidget);
 	void HandleLevelUpVisuals();
 	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
-	void TravelCleanUI();
+	void CleanUI();
 	void UpdatePayloadObjective(float NewProgress);
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
@@ -52,6 +52,13 @@ public:
 
 	UFUNCTION()
 	void ClearOldObjectives();
+
+	void SpectatingUI();
+
+	void PostGameUI();
+
+	UFUNCTION(Client, Reliable)
+	void Client_ShowPostGame(const TArray<FPlayerPostGameData>& FinalStats);
 
 	UFUNCTION(Client, Reliable)
 	void Client_DecrementFlagObjective();
@@ -77,9 +84,13 @@ public:
 	UFUNCTION()
 	void TryBindUI();
 	UFUNCTION(Server, Reliable)
+	void Server_UpdateMetaFromSave(int MetaLevel, int MetaXP, int MetaXPToNextLevel);
+	UFUNCTION(Server, Reliable)
 	void Server_SetDifficulty(FName NewDifficulty);
 	UFUNCTION()
 	void OnRep_LobbyPreview();
+	UFUNCTION(Client, Reliable)
+	void Client_RequestSaveStats();
 	UFUNCTION()
 	void OnRep_PlayerPreview();
 	UFUNCTION(Server, Reliable)
@@ -152,10 +163,17 @@ public:
 	TSubclassOf<class UObjectiveLog> ObjectiveLogClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<class UMinimap> MinimapClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class USpectatingWidget> SpectatingWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UPostGameWidget> PostGameWidgetClass;
 	UPROPERTY(EditDefaultsOnly, Category = "Preview")
 	TSubclassOf<class APlayerPreview> PlayerPreviewClass;
-
 	//Properties
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class USpectatingWidget* SpectatingWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UPostGameWidget* PostGameWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UUserWidget* BuildVersion;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
