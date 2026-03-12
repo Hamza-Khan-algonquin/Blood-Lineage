@@ -59,7 +59,7 @@ void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* Targe
 
         CritChance = ItemStats::GetCritPerc(CritValue);
         CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
-        CritDamageMultiplier = 1.f + (ItemStats::GetCritDmgPerc(CritDamageValue) / 100.f);
+        CritDamageMultiplier = ItemStats::GetCritDmgPerc(CritDamageValue);
     }
 
     float FinalDamage = BaseDamage * (1.f + PercentStrengthIncrease / 100.f);

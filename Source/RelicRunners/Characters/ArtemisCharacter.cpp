@@ -74,6 +74,7 @@ void AArtemisCharacter::OnRep_PlayerState()
 		AbilitySystem->InitAbilityActorInfo(PS, this);
 	}
 }
+
 void AArtemisCharacter::ActivateDamageAbilities()
 {
 	Super::ActivateDamageAbilities();
