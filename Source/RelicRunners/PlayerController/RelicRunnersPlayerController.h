@@ -210,7 +210,7 @@ public:
 	FTimerHandle SyncDataTimerHandle;
 	FTimerHandle DisableUITimer;
 	FTimerHandle ObjectiveClearTimerHandle;
-
+	FTimerHandle CinematicTimerHandle;
 
 protected:
 
@@ -253,6 +253,8 @@ protected:
 	void ProjectileHeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
+	void StartBossCinematicWalk();
+	void CheckCinematicArrival();
 
 	//Virtual Functions
 	virtual void BeginPlay() override;
