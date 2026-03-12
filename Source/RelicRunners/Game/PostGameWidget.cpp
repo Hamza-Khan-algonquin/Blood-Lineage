@@ -28,7 +28,7 @@ void UPostGameWidget::UpdateScoreboard(const TArray<FPlayerPostGameData>& Player
             if (Col.Username)       Col.Username->SetText(FText::FromString(Data.Username));
             if (Col.MetaLevel)      Col.MetaLevel->SetText(FText::AsNumber(Data.MetaLevel));
             if (Col.MetaNextLevel)  Col.MetaNextLevel->SetText(FText::AsNumber(Data.MetaLevel + 1));
-            if (Col.MetaXP)         Col.MetaXP->SetText(FText::AsNumber(Data.MetaXP));
+            if (Col.MetaXP)         Col.MetaXP->SetText(FText::AsNumber(Data.MetaXPGainInRun));
             if (Col.LevelsEarned)   Col.LevelsEarned->SetText(FText::AsNumber(Data.LevelsEarned));
             if (Col.EnemiesKilled)  Col.EnemiesKilled->SetText(FText::AsNumber(Data.EnemiesKilled));
             if (Col.PlayerDeaths)   Col.PlayerDeaths->SetText(FText::AsNumber(Data.Deaths));

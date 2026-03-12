@@ -134,6 +134,7 @@ void ARelicRunnersGameMode::TriggerPostGameForAll()
                 Stats.MetaLevel = PS->MetaLevel;
                 Stats.MetaXP = PS->MetaXP;
                 Stats.MetaXPToNextLevel = PS->MetaXPToNextLevel;
+                Stats.MetaXPGainInRun = PS->MetaXPGainInRun;
 
                 AllPlayersStats.Add(Stats);
             }

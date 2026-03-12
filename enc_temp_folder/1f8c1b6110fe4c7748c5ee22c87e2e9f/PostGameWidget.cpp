@@ -34,7 +34,8 @@ void UPostGameWidget::UpdateScoreboard(const TArray<FPlayerPostGameData>& Player
             if (Col.PlayerDeaths)   Col.PlayerDeaths->SetText(FText::AsNumber(Data.Deaths));
             if (Col.XPBar && Data.MetaXPToNextLevel > 0)
             {
-                Col.XPBar->SetPercent((float)Data.MetaXP / (float)Data.MetaXPToNextLevel);
+                float Progress = (float)Data.MetaXP / (float)Data.MetaXPToNextLevel;
+                Col.XPBar->SetPercent(Progress);
             }
         }
         else

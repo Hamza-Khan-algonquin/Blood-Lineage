@@ -80,11 +80,18 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerDexterity = 0;
 	PlayerStrength = 0;
 	PlayerIntelligence = 0;
+	//Upgraded
 	UpgradedHealth = 0;
 	UpgradedArmor = 0;
 	UpgradedDexterity = 0;
 	UpgradedStrength = 0;
 	UpgradedIntelligence = 0;
+	//Buffed
+	BuffedHealth = 0;
+	BuffedArmor = 0;
+	BuffedDexterity = 0;
+	BuffedStrength = 0;
+	BuffedIntelligence = 0;
 	//Gold
 	PlayerStartingGold = 0;
 	PlayerGold = 0;
@@ -123,6 +130,11 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->UpgradedDexterity = this->UpgradedDexterity;
 		PS->UpgradedStrength = this->UpgradedStrength;
 		PS->UpgradedIntelligence = this->UpgradedIntelligence;
+		PS->BuffedHealth = this->BuffedHealth;
+		PS->BuffedArmor = this->BuffedArmor;
+		PS->BuffedDexterity = this->BuffedDexterity;
+		PS->BuffedStrength = this->BuffedStrength;
+		PS->BuffedIntelligence = this->BuffedIntelligence;
 		PS->PlayerStartingMaxHealth = this->PlayerStartingMaxHealth;
 		PS->PlayerStartingArmor = this->PlayerStartingArmor;
 		PS->PlayerStartingDexterity = this->PlayerStartingDexterity;
@@ -289,9 +301,11 @@ void ARelicRunnersPlayerState::PassiveResourceRegen()
 {
 	if (!HasAuthority()) return;
 
+	if (!InventoryComponent) return;
+
 	if (PlayerResource < PlayerMaxResource)
 	{
-		int RegenAmount = FMath::CeilToInt(PlayerMaxResource * (PlayerStartingResourceRegen/100.0f));
+		int RegenAmount = FMath::CeilToInt(PlayerMaxResource * (InventoryComponent->CachedEquippedStats.TotalResourceRegen/100.0f));
 		PlayerResource = FMath::Min(PlayerResource + RegenAmount, PlayerMaxResource);
 
 		//For server
@@ -552,7 +566,9 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 	//Meta XP
 	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetWorld()->GetGameInstance()))
 	{
-		GI->SelectedSaveSlot->AddMetaExp(FMath::RandRange(1,3));
+		int AddedMeta = FMath::RandRange(1, 3);
+		MetaXPGainInRun += AddedMeta;
+		GI->SelectedSaveSlot->AddMetaExp(AddedMeta);
 	}
 }
 

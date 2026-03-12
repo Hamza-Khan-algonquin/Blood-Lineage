@@ -15,6 +15,8 @@ struct FPlayerPostGameData
     UPROPERTY() int MetaLevel;
     UPROPERTY() int MetaXP;
     UPROPERTY() int MetaXPToNextLevel;
+
+    UPROPERTY() int MetaXPGainInRun;
     UPROPERTY() int LevelsEarned;
     UPROPERTY() int EnemiesKilled;
     UPROPERTY() int Deaths;

@@ -183,6 +183,17 @@ public:
 	UPROPERTY()
 	int UpgradedIntelligence;
 
+	UPROPERTY()
+	int BuffedHealth;
+	UPROPERTY()
+	int BuffedArmor;
+	UPROPERTY()
+	int BuffedDexterity;
+	UPROPERTY()
+	int BuffedStrength;
+	UPROPERTY()
+	int BuffedIntelligence;
+
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
 
@@ -195,6 +206,7 @@ public:
 	int MetaLevel;
 	int MetaXP;
 	int MetaXPToNextLevel;
+	int MetaXPGainInRun;
 
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;
