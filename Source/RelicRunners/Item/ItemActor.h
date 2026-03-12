@@ -67,7 +67,7 @@ public:
     UStaticMeshComponent* ItemCoverMesh;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float AutoLootSphereRadius = 200.f;
+    float AutoLootSphereRadius = 40.f;
 
 protected:
     // IInteractInterface overrides
