@@ -45,6 +45,14 @@ Change the way the floor spawns by removing the corner and wall piece so that th
 
 Make packed level actors with props ian made
 
+Add randomized props to modules
+
+Add Collision to Pandora's Box | Done
+
+Make portal invisible until needed in-game | done
+
+Make it so objectives can spawn specific modules on their own tile | Right now only Flag Objective is set up
+
 */
 
 /* Maybe TODO
@@ -76,7 +84,11 @@ AIslandGenerationTest::AIslandGenerationTest() :
 	IslandIndex(0),
 	CurrentObjectives(0),
 	isFinalIsland(false),
-	ObjectiveAmount(0)
+	ObjectiveAmount(0),
+	CameraActor(nullptr),
+	LevelTrigger(nullptr),
+	IsActivated(false)
+
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -188,13 +200,15 @@ void AIslandGenerationTest::Generate()
 			{
 				if (GenerationValuesComponent->IslandValues.LevelChangeTrigger && isFinalIsland)
 				{
-					ALevelChangeTrigger* levelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
+					LevelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
+
+					//LevelTrigger->SetActorHiddenInGame(true);
 
 					FString TargetLevel = gameInstance->StageNumber > 1 ?
 						GenerationValuesComponent->IslandValues.BossLevel :
 						GenerationValuesComponent->IslandValues.TargetLevel;
 
-					levelTrigger->Server_SetTargetLevel(FName(TargetLevel));
+					LevelTrigger->Server_SetTargetLevel(FName(TargetLevel));
 				}
 			}
 		}
@@ -206,13 +220,6 @@ void AIslandGenerationTest::Generate()
 	{
 		NavSys->Build();
 	}
-
-	if (SpawnZoneTemplate == nullptr || IslandObjective == EIslandObjectiveType::DefeatAllEnemies)
-		return;
-	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
-	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
-
-	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset+GetActorLocation(), GetActorRotation());
 }
 
 void AIslandGenerationTest::ActivateIsland()
@@ -221,11 +228,15 @@ void AIslandGenerationTest::ActivateIsland()
 
 	SetIslandVisibility(true);
 
+	//if (isFinalIsland)
+	//{
+	//	LevelTrigger->SetActorHiddenInGame(false);
+	//}
+
 	for (AObjectiveBase* obj : ObjectiveArrays)
 	{
 		obj->Activate();
 	}
-
 
 	switch (IslandObjective)
 	{
@@ -244,6 +255,13 @@ void AIslandGenerationTest::ActivateIsland()
 	}
 
 	CreateFloor();
+
+	if (SpawnZoneTemplate == nullptr || IslandObjective == EIslandObjectiveType::DefeatAllEnemies)
+		return;
+	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
+	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
+
+	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset + GetActorLocation(), GetActorRotation());
 }
 
 void AIslandGenerationTest::SetIslandVisibility(bool visible)
@@ -251,6 +269,11 @@ void AIslandGenerationTest::SetIslandVisibility(bool visible)
 	if (Bridge)
 	{
 		Bridge->SetActorHiddenInGame(!visible);
+	}
+
+	if (LevelTrigger)
+	{
+		LevelTrigger->SetActorHiddenInGame(true);
 	}
 
 	for (APackedLevelActor* obstac : ObstacleArrays)
@@ -588,6 +611,19 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 				SplinePath->AddSplinePoint(pointPos, ESplineCoordinateSpace::World, true);
 
 				bValueHasChanged = false;
+
+				if (GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor.Num())
+				{
+					int moduleIndex = FMath::RandRange(0, GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor.Num() - 1);
+					if (GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor[moduleIndex] != nullptr)
+					{
+						int randYaw = FMath::RandRange(0, 3) * 90;
+						APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor[moduleIndex], pointPos, FRotator(0.0f, randYaw, 0.0f));
+						aModule->SetActorHiddenInGame(true);
+						ObstacleArrays.Add(aModule);
+					}
+				}
+
 			}
 		}
 		bReachEndX = currentX == targetX;
@@ -1445,6 +1481,18 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			ObjectiveArrays.Add(newFlag);
 		}
 
+		if (GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor.Num())
+		{
+			int moduleIndex = FMath::RandRange(0, GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor.Num()-1);
+			if (GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor[moduleIndex] != nullptr)
+			{
+				int randYaw = FMath::RandRange(0, 3) * 90;
+				APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
+				aModule->SetActorHiddenInGame(true);
+				ObstacleArrays.Add(aModule);
+			}
+		}
+
 		if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
 		{
 			SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
@@ -1478,6 +1526,18 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			newZone->SetActorHiddenInGame(true);
 
 			ObjectiveArrays.Add(newZone);
+		}
+
+		if (GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor.Num())
+		{
+			int moduleIndex = FMath::RandRange(0, GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor.Num() - 1);
+			if (GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor[moduleIndex] != nullptr)
+			{
+				int randYaw = FMath::RandRange(0, 3) * 90;
+				APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
+				aModule->SetActorHiddenInGame(true);
+				ObstacleArrays.Add(aModule);
+			}
 		}
 
 		if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)

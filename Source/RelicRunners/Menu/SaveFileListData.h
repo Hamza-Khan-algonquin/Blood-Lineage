@@ -69,6 +69,9 @@ public:
 	FGuid GetUniqueID() { return SaveData.UniqueID; }
 
 	UFUNCTION(BlueprintCallable)
+	void AddMetaExp(int Value);
+
+	UFUNCTION(BlueprintCallable)
 	float GetMetaExp() { return SaveData.MetaExperience; }
 
 	UFUNCTION(BlueprintCallable)

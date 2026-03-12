@@ -22,7 +22,7 @@ void UObjectiveLog::InitializeObjectives(UObjectiveItemData* RootLevel)
 
 void UObjectiveLog::AddObjective(UObjectiveItemData* Parent, UObjectiveItemData* NewChild)
 {
-    if (!Parent || !NewChild || !ObjectiveTreeView) return;
+    if (!IsValid(Parent) || !IsValid(NewChild) || !ObjectiveTreeView) return;
 
     //Add the new data to the top of the list
     Parent->SubObjectives.Insert(NewChild, 0);
