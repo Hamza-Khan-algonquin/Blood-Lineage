@@ -30,7 +30,6 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
-	virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:
 	virtual void BeginPlay() override;

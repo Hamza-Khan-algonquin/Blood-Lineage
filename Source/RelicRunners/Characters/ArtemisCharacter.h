@@ -22,7 +22,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     class UClassInfo* ClassInfo;
 
-	virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:
     virtual void BeginPlay() override;

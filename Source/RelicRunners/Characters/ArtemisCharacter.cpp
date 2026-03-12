@@ -516,17 +516,17 @@ void AArtemisCharacter::Tick(float DeltaTime)
 
 		if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 		{
-			Server_HitEnemy(Enemy);
+			Server_HitEnemy(Enemy, ProjectileDamage);
 			bEnemyHit = true;
 		}
 		else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
 		{
-			Server_HitEnemy(TEnemy);
+			Server_HitEnemy(TEnemy, ProjectileDamage);
 			bEnemyHit = true;
 		}
 		else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
 		{
-			Server_HitEnemy(TPEnemy);
+			Server_HitEnemy(TPEnemy, ProjectileDamage);
 			bEnemyHit = true;
 		}
 
@@ -565,28 +565,3 @@ void AArtemisCharacter::Tick(float DeltaTime)
 }
 
 
-void AArtemisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-	if (!HitActor) return;
-
-	// Get the controller
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC) return;
-
-	UInventoryComponent* InventoryComponent = nullptr;
-	ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
-	if (PS)
-	{
-		InventoryComponent = PS->GetInventoryComponent();
-	}
-
-	float PercentStrengthIncrease = 0.f;
-	if (InventoryComponent)
-	{
-		PercentStrengthIncrease = ItemStats::GetStrengthPerc(InventoryComponent->CachedEquippedStats.TotalStrength);
-	}
-
-	float FinalDamage = ProjectileDamage * (1.f + PercentStrengthIncrease / 100.f);
-
-	UGameplayStatics::ApplyDamage(HitActor, FinalDamage, PC, this, nullptr);
-}

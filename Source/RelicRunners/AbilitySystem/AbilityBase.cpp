@@ -77,6 +77,34 @@ void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* Targe
 }
 
 
+void UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana)
+{
+    if (!InstigatorActor) return;
+
+    AController* InstigatorController = InstigatorActor->GetInstigatorController();
+    if (!InstigatorController) return;
+
+    APlayerController* PC = Cast<APlayerController>(InstigatorController);
+
+    UInventoryComponent* InventoryComponent = nullptr;
+    if (PC)
+    {
+        if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+        {
+            InventoryComponent = PS->GetInventoryComponent();
+        }
+    }
+
+    float ManaRecutionPercent = 0;
+    
+    if (InventoryComponent)
+    {
+        float ManaReduction = InventoryComponent->CachedEquippedStats.TotalResource;
+        ManaRecutionPercent = ItemStats::GetAbilityCostPerc(ManaReduction);
+    }
+
+    float FinalCost = (1 - (ManaRecutionPercent / 100)) * BaseMana;
+}
 
 UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)
 {

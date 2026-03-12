@@ -445,31 +445,6 @@ void AAphroditeCharacter::ProjectileHeavyAttack()
 }
 
 
-void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-    if (!HitActor) return;
-
-    APlayerController* PC = Cast<APlayerController>(GetController());
-    if (!PC) return;
-
-    UInventoryComponent* InventoryComponent = nullptr;
-    ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
-    if (PS)
-    {
-        InventoryComponent = PS->GetInventoryComponent(); 
-    }
-
-    // Compute strength bonus safely
-    float PercentStrengthIncrease = 0.f;
-    if (InventoryComponent)
-    {
-        PercentStrengthIncrease = ItemStats::GetStrengthPerc(InventoryComponent->CachedEquippedStats.TotalStrength);
-    }
-    
-    float FinalDamage = ProjectileDamage * (1.f + PercentStrengthIncrease / 100.f);
-
-    UGameplayStatics::ApplyDamage(HitActor, FinalDamage, PC, this, nullptr);
-}
 
 void AAphroditeCharacter::Tick(float DeltaTime)
 {
@@ -502,19 +477,19 @@ void AAphroditeCharacter::Tick(float DeltaTime)
 
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                 {
-                    Server_HitEnemy(TEnemy);
+                    Server_HitEnemy(TEnemy, ProjectileDamage);
                     ExplodeProjectile(HitActor->GetActorLocation());
 
                 }
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
                 {
-                    Server_HitEnemy(TPEnemy);
+                    Server_HitEnemy(TPEnemy, ProjectileDamage);
                     ExplodeProjectile(HitActor->GetActorLocation());
 
                 }
                 else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
                 {
-                    Server_HitEnemy(Enemy);
+                    Server_HitEnemy(Enemy, ProjectileDamage);
                     ExplodeProjectile(HitActor->GetActorLocation());
 
                 }
@@ -554,15 +529,15 @@ void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)
         {
             if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
             {
-                Server_HitEnemy(TEnemy);
+                Server_HitEnemy(TEnemy, ProjectileDamage);
             }
             else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
             {
-                Server_HitEnemy(TPEnemy);
+                Server_HitEnemy(TPEnemy, ProjectileDamage);
             }
             else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
             {
-                Server_HitEnemy(Enemy);
+                Server_HitEnemy(Enemy, ProjectileDamage);
             }
         }
     }

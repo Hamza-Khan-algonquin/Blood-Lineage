@@ -430,9 +430,52 @@ void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 	
 }
 
-void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor, float BaseDamage)
 {
+	if (!TargetActor) return;
 
+	AController* InstigatorController = GetInstigatorController();
+	if (!InstigatorController) return;
+
+	APlayerController* PC = Cast<APlayerController>(InstigatorController);
+
+	UInventoryComponent* InventoryComponent = nullptr;
+	if (PC)
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			InventoryComponent = PS->GetInventoryComponent();
+		}
+	}
+
+	float PercentStrengthIncrease = 0.f;
+	float CritChance = 0.f;
+	float CritDamageMultiplier = 1.f;
+
+	if (InventoryComponent)
+	{
+		int Strength = InventoryComponent->CachedEquippedStats.TotalStrength;
+		int CritValue = InventoryComponent->CachedEquippedStats.TotalDexterity;
+
+		PercentStrengthIncrease = ItemStats::GetStrengthPerc(Strength);
+
+		CritChance = ItemStats::GetCritPerc(CritValue);
+		CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
+		CritDamageMultiplier = ItemStats::GetCritDmgPerc(CritValue);
+	}
+
+	float FinalDamage = BaseDamage * (1.f + PercentStrengthIncrease / 100.f);
+
+	// Roll for crit
+	float RandomRoll = FMath::FRandRange(1.f, 100.f);
+	bool bIsCrit = RandomRoll <= CritChance;
+
+	if (bIsCrit)
+	{
+		FinalDamage *= CritDamageMultiplier;
+	}
+
+	UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this, nullptr);
 }
 
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const

@@ -16,7 +16,6 @@ UWarBannerAbility::UWarBannerAbility()
     Cost = 50;
     AreaRadius = 600.f;
 
-
 }
 
 
@@ -122,7 +121,6 @@ void UWarBannerAbility::SpawnBanner()
             }
         }
     }
-
 
 }
 

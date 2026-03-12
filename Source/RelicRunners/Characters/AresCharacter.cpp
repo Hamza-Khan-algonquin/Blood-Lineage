@@ -191,15 +191,15 @@ void AAresCharacter::PerformSwingTrace()
 			{
 				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 				{
-					Server_HitEnemy(Enemy);
+					Server_HitEnemy(Enemy, Damage);
 				}
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
 				{
-					Server_HitEnemy(TEnemy);
+					Server_HitEnemy(TEnemy, Damage);
 				}
 				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
 				{
-					Server_HitEnemy(TPEnemy);
+					Server_HitEnemy(TPEnemy, Damage);
 				}
 				AlreadyHitActors.Add(HitActor);
 			}
@@ -384,29 +384,6 @@ void AAresCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Veloci
 	}
 }
 
-void AAresCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-	if (!HitActor) return;
 
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC) return;
-
-	UInventoryComponent* InventoryComponent = nullptr;
-	ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
-	if (PS)
-	{
-		InventoryComponent = PS->GetInventoryComponent(); 
-	}
-
-	float PercentStrengthIncrease = 0.f;
-	if (InventoryComponent)
-	{
-		PercentStrengthIncrease = ItemStats::GetStrengthPerc(InventoryComponent->CachedEquippedStats.TotalStrength);
-	}
-
-	float FinalDamage = Damage * (1.f + PercentStrengthIncrease / 100.f);
-
-	UGameplayStatics::ApplyDamage(HitActor, FinalDamage, PC, this, nullptr);
-}
 
 

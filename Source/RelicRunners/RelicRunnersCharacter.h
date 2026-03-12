@@ -124,7 +124,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateItemVisuals(class UItemObject* Item);
 	UFUNCTION(Server, Reliable)
-	virtual void Server_HitEnemy(AActor* HitActor);
+	void Server_HitEnemy(AActor* TargetActor, float BaseDamage);
 
 	//Getters
 	FString GetMeshPathByItemType(const FString& ItemType);
