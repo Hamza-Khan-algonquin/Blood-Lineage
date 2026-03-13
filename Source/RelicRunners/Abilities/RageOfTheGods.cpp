@@ -105,6 +105,9 @@ void URageOfTheGods::StartPulse()
         return;
     }
 
+
+
+
     TWeakObjectPtr<URageOfTheGods> WeakThis(this);
     GetWorld()->GetTimerManager().SetTimer(ExpansionTimerHandle, [WeakThis, WeakAvatar](){if (!WeakThis.IsValid() || !WeakAvatar.IsValid()) return;WeakThis->ExpandPulse(WeakAvatar.Get());}, 0.05f, true);
 }
