@@ -814,8 +814,16 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	if (LoadingScreen)
 	{
 		LoadingScreen->RemoveFromParent();
-		ForceGameModeOnly();
-		MinimapUI();
+
+		if (GetWorld()->GetMapName().Contains(TEXT("BossLevel")))
+		{
+			StartBossCinematicWalk();
+		}
+		else
+		{
+			ForceGameModeOnly();
+			MinimapUI();
+		}
 	}
 }
 
@@ -1074,6 +1082,8 @@ void ARelicRunnersPlayerController::Client_RequestSaveStats_Implementation()
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
+	if (!IsLocalController()) return; 
+
 	if (BuildVersion && !BuildVersion->IsInViewport())
 	{
 		BuildVersion->AddToViewport();
@@ -1094,7 +1104,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (MapName.Contains(TEXT("BossLevel")))
 		{
 			PlayerHUD->ToggleBossBar(true);
-			PlayerHUD->ToggleExpBar(false);
+			PlayerHUD->ToggleExpBar(true);
 		}
 		else
 		{
@@ -1129,7 +1139,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			}
 			else if (MapName.Contains(TEXT("BossLevel")))
 			{
-				MinimapWidget->SetLevelTitle(FText::FromString("Hell"));
+				MinimapWidget->SetLevelTitle(FText::FromString("Underworld"));
 			}
 		}
 	}
@@ -1292,19 +1302,12 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		SetupMainMenuView();
 	}
-	else if (MapName.Contains(TEXT("BossLevel")))
-	{
-		StartBossCinematicWalk();
-	}
 }
 
 void ARelicRunnersPlayerController::StartBossCinematicWalk()
 {
 	APawn* ControlledPawn = GetPawn();
 	if (!ControlledPawn) return;
-
-	PlayerHUD->SetVisibility(ESlateVisibility::Hidden);
-	MinimapWidget->SetVisibility(ESlateVisibility::Hidden);
 
 	FInputModeUIOnly UIOnlyMode;
 	UIOnlyMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);

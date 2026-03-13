@@ -621,7 +621,7 @@ void ARelicRunnersPlayerController::SetupMinimapRenderTarget()
 	}
 }
 
-void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview)
+void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview) 
 {
 	if (!IsLocalController() || !Preview)
 	{
@@ -1084,6 +1084,11 @@ void ARelicRunnersPlayerController::InitLocalUI()
 {
 	if (!IsLocalController()) return; 
 
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	const FString MapName = World->GetMapName();
+
 	if (BuildVersion && !BuildVersion->IsInViewport())
 	{
 		BuildVersion->AddToViewport();
@@ -1095,21 +1100,17 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (PlayerHUD)
 		{
 			PlayerHUD->AddToViewport();
-		}
-		UWorld* World = GetWorld();
-		if (!World) return;
 
-		const FString MapName = World->GetMapName();
-
-		if (MapName.Contains(TEXT("BossLevel")))
-		{
-			PlayerHUD->ToggleBossBar(true);
-			PlayerHUD->ToggleExpBar(false);
-		}
-		else
-		{
-			PlayerHUD->ToggleBossBar(false);
-			PlayerHUD->ToggleExpBar(true);
+			if (MapName.Contains(TEXT("BossLevel")))
+			{
+				PlayerHUD->ToggleBossBar(true);
+				PlayerHUD->ToggleExpBar(true);
+			}
+			else
+			{
+				PlayerHUD->ToggleBossBar(false);
+				PlayerHUD->ToggleExpBar(true);
+			}
 		}
 	}
 
@@ -1121,13 +1122,6 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (MinimapWidget)
 		{
 			MinimapWidget->AddToViewport();
-			MinimapWidget->SetVisibility(ESlateVisibility::Hidden);
-			MinimapWidget->SetIsEnabled(false);
-
-			UWorld* World = GetWorld();
-			if (!World) return;
-
-			const FString MapName = World->GetMapName();
 
 			if (MapName.Contains(TEXT("ShopDemo")))
 			{
