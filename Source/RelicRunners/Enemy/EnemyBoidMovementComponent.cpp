@@ -411,24 +411,34 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	GetOwner()->GetActorBounds(false, origin, offset, false);
 	offset.X = 0;
 	offset.Y = 0;
+	
 	//FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
 
-	DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
+	//DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
 
-	if (navSys && navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
+	if (navSys)
 	{
-		//move it down slightly to trigger the slide along the surface, as when this is not down, the y jitter up and down sometimes
-		finalMovement.Z = navLocation.Location.Z + offset.Z;
-		EdgeAvoidanceVector = FVector::Zero();
-		LastValidPosition = navLocation.Location;
+		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
+		{
+			FVector newPosition = navLocation.Location + offset;// + offset.Z;
+			//move it down slightly to trigger the slide along the surface, as when this is not down, the y jitter up and down sometimes
+			finalMovement = navLocation.Location - startLocation;
+			
+			//EdgeAvoidanceVector = FVector::Zero();
+			LastValidPosition = newPosition;
+		}
+		else if (navSys->ProjectPointToNavigation(startLocation, navLocation, FVector(100,100,200)))
+		{
+			finalMovement = (navLocation.Location + offset - startLocation).GetSafeNormal() * Velocity;
+			//finalMovement.Z = navLocation.Location.Z + offset.Z;
+		}
+		else
+		{
+			return;
+		}
 	}
-	else
-	{
-		EdgeAvoidanceVector = GetActorFeetLocation() + desiredMovement - LastValidPosition;
-		return;
-	}
-
-	finalMovement -= startLocation;
+	
+	
 
 	/*FVector offset;
 	FVector standIn;
