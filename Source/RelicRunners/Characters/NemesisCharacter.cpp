@@ -179,10 +179,7 @@ void ANemesisCharacter::PerformSwingTrace()
     Params.AddIgnoredActor(this);
 
     TArray<FHitResult> Hits;
-    GetWorld()->SweepMultiByChannel(
-        Hits, Start, End, FQuat::Identity,
-        ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params
-    );
+    GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params);
 
     AlreadyHitActors.Empty();
 
@@ -194,15 +191,15 @@ void ANemesisCharacter::PerformSwingTrace()
             {
                 if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
                 {
-                    Server_HitEnemy(Enemy);
+                    Server_HitEnemy(Enemy, Damage);
                 }
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                 {
-                    Server_HitEnemy(TEnemy);
+                    Server_HitEnemy(TEnemy, Damage);
                 }
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
                 {
-                    Server_HitEnemy(TPEnemy);
+                    Server_HitEnemy(TPEnemy, Damage);
                 }
                 AlreadyHitActors.Add(HitActor);
             }
@@ -229,19 +226,19 @@ void ANemesisCharacter::BasicAttack()
 
 void ANemesisCharacter::HeavyAttack()
 {
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-    if (!CanHeavyAttack) return;
-    CanHeavyAttack = false;
+    //if (!CanHeavyAttack) return;
+    //CanHeavyAttack = false;
 
-    Damage = 10.0f;
+    //Damage = 10.0f;
 
-    if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-    {
-        PlayRandomAttackAnimation();
-    }
+    //if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+    //{
+    //    PlayRandomAttackAnimation();
+    //}
 
-    GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void ANemesisCharacter::UpdateCamera(float DeltaTime)
@@ -387,10 +384,3 @@ void ANemesisCharacter::UpdateCameraRotation( float DeltaTime,const FVector& Vel
     }
 }
 
-void ANemesisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-    if (HitActor)
-    {
-        UGameplayStatics::ApplyDamage(HitActor, Damage, GetController(), this, nullptr);
-    }
-}

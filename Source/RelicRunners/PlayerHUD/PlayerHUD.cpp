@@ -84,7 +84,18 @@ void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 	if (BloodyOverlay) BloodyOverlay->SetColorAndOpacity(FLinearColor(1, 1, 1, 1 - (HealthPercent + 0.2)));
 
 	HealthBar->SetPercent(HealthPercent);
-	TB_Health->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth))));
+	FString HealthString;
+
+	if (CurrentHealth >= MaxHealth)
+	{
+		HealthString = FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth));
+	}
+	else
+	{
+		HealthString = FString::Printf(TEXT("%.1f / %d"), CurrentHealth, FMath::RoundToInt(MaxHealth));
+	}
+
+	TB_Health->SetText(FText::FromString(HealthString));
 }
 
 void UPlayerHUD::UpdateHUDResource(float CurrentResource, float MaxResource)
