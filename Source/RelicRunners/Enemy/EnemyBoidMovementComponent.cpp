@@ -429,7 +429,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 		}
 		else if (navSys->ProjectPointToNavigation(startLocation, navLocation, FVector(100,100,200)))
 		{
-			finalMovement = (navLocation.Location + offset - startLocation).GetSafeNormal() * Velocity;
+			finalMovement = (navLocation.Location + offset - startLocation).GetSafeNormal() * Velocity.Length();
 			//finalMovement.Z = navLocation.Location.Z + offset.Z;
 		}
 		else
