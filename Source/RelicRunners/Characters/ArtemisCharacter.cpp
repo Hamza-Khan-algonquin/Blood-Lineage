@@ -33,20 +33,6 @@ void AArtemisCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (AbilitySystem)
-	{
-		// Give Mark of the Hunt ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
-
-		// Give Moonbeam ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
-
-		// Give NatureBlessing ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UImpunityAbility::StaticClass(), 1, 0));
-
-        // Give PiercingArrow ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
-	}
 }
 
 // Called when player takes control of this character
@@ -88,13 +74,14 @@ void AArtemisCharacter::OnRep_PlayerState()
 		AbilitySystem->InitAbilityActorInfo(PS, this);
 	}
 }
+
 void AArtemisCharacter::ActivateDamageAbilities()
 {
 	Super::ActivateDamageAbilities();
 
 	if (AbilitySystem)
 	{
-		AbilitySystem->TryActivateAbilityByClass(UPiercingArrow::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_PiercingArrowClass);
 	}
 }
 
@@ -105,7 +92,7 @@ void AArtemisCharacter::ActivateDefenceAbilities()
 	if (AbilitySystem)
 	{
 
-		AbilitySystem->TryActivateAbilityByClass(UImpunityAbility::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_ImpunityClass);
 	}
 }
 
@@ -116,7 +103,7 @@ void AArtemisCharacter::ActivateUtilityAbilities()
 	if (AbilitySystem)
 	{
 		// Activate Mark of the Hunt
-		AbilitySystem->TryActivateAbilityByClass(UMarkOfTheHunt::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_MarkOfTheHuntClass);
 	}
 }
 
@@ -127,7 +114,7 @@ void AArtemisCharacter::ActivateUltimateAbilities()
 	if (AbilitySystem)
 	{
 		// Activate Moonbeam now (fires the beam)
-		AbilitySystem->TryActivateAbilityByClass(UMoonbeam::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_MoonbeamClass);
 	}
 
 }
@@ -136,9 +123,9 @@ void AArtemisCharacter::GivePiercingArrow()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UPiercingArrow::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_PiercingArrowClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UPiercingArrow::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_PiercingArrowClass, 1, 0));
 	}
 }
 
@@ -146,9 +133,9 @@ void AArtemisCharacter::GiveNaturesBlessing()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UNaturesBlessing::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_ImpunityClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UNaturesBlessing::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_ImpunityClass, 1, 0));
 	}
 }
 
@@ -156,9 +143,9 @@ void AArtemisCharacter::GiveMarkOfTheHunt()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UMarkOfTheHunt::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_MarkOfTheHuntClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMarkOfTheHunt::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MarkOfTheHuntClass, 1, 0));
 	}
 }
 
@@ -166,9 +153,9 @@ void AArtemisCharacter::GiveMoonBeam()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UMoonbeam::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_MoonbeamClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMoonbeam::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MoonbeamClass, 1, 0));
 	}
 }
 
@@ -401,7 +388,6 @@ void AArtemisCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Vel
 
 void AArtemisCharacter::BasicAttack()
 {
-	//if (!bIsAiming) return;
 
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 	//if (!CanBasicAttack) return;
@@ -419,6 +405,8 @@ void AArtemisCharacter::BasicAttack()
 
 	PlayRandomAttackAnimation();
 	AlreadyHitActors.Empty();
+
+	CurrentPierces = 0;
 
 	// Spawn static mesh
 	if (ProjectileMeshAsset)
@@ -445,42 +433,42 @@ void AArtemisCharacter::HeavyAttack()
 {
 	bIsAiming = true;
 
-	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-	if (!CanHeavyAttack) return;
-	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+	//if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+	//if (!CanHeavyAttack) return;
+	//if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-	CanHeavyAttack = false;
+	//CanHeavyAttack = false;
 
-	ProjectileDamage = 40.0f;
+	//ProjectileDamage = 50.0f;
 
-	// Spawn projectile
-	bProjectileActive = true;
-	ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
-	ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
-	ProjectileElapsed = 0.f;
+	//// Spawn projectile
+	//bProjectileActive = true;
+	//ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+	//ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
+	//ProjectileElapsed = 0.f;
 
-	PlayRandomAttackAnimation();
-	AlreadyHitActors.Empty();
+	//PlayRandomAttackAnimation();
+	//AlreadyHitActors.Empty();
 
-	// Spawn static mesh
-	if (ProjectileMeshAsset)
-	{
-		if (!ActiveProjectileMesh)
-		{
-			ActiveProjectileMesh = NewObject<UStaticMeshComponent>(this);
-			ActiveProjectileMesh->RegisterComponent();
-			ActiveProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
-			ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
-			ActiveProjectileMesh->SetWorldScale3D(FVector(1.f));
-			ActiveProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//// Spawn static mesh
+	//if (ProjectileMeshAsset)
+	//{
+	//	if (!ActiveProjectileMesh)
+	//	{
+	//		ActiveProjectileMesh = NewObject<UStaticMeshComponent>(this);
+	//		ActiveProjectileMesh->RegisterComponent();
+	//		ActiveProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
+	//		ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
+	//		ActiveProjectileMesh->SetWorldScale3D(FVector(1.f));
+	//		ActiveProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-			// Initial rotation based on velocity
-			ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
-		}
-	}
+	//		// Initial rotation based on velocity
+	//		ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
+	//	}
+	//}
 
-	// Cooldown
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+	//// Cooldown
+	//GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AArtemisCharacter::ProjectileHeavyAttack()
@@ -518,35 +506,48 @@ void AArtemisCharacter::Tick(float DeltaTime)
 
 	for (const FHitResult& Hit : Hits)
 	{
-		if (AActor* HitActor = Hit.GetActor())
+		AActor* HitActor = Hit.GetActor();
+		if (!HitActor) continue;
+
+		if (AlreadyHitActors.Contains(HitActor))
+			continue;
+
+		bool bEnemyHit = false;
+
+		if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 		{
-			if (AlreadyHitActors.Contains(HitActor))
-				continue;
+			Server_HitEnemy(Enemy, ProjectileDamage);
+			bEnemyHit = true;
+		}
+		else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+		{
+			Server_HitEnemy(TEnemy, ProjectileDamage);
+			bEnemyHit = true;
+		}
+		else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+		{
+			Server_HitEnemy(TPEnemy, ProjectileDamage);
+			bEnemyHit = true;
+		}
 
-			if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-			{
-				Server_HitEnemy(Enemy);
-			}
-			else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-			{
-				Server_HitEnemy(TEnemy);
-			}
-			else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-			{
-				Server_HitEnemy(TPEnemy);
-			}
-
+		if (bEnemyHit)
+		{
 			AlreadyHitActors.Add(HitActor);
 
-			// Stop projectile on hit
-			bProjectileActive = false;
+			CurrentPierces++;
 
-			if (ActiveProjectileMesh)
+			if (CurrentPierces >= MaxPierces)
 			{
-				ActiveProjectileMesh->DestroyComponent();
-				ActiveProjectileMesh = nullptr;
+				bProjectileActive = false;
+
+				if (ActiveProjectileMesh)
+				{
+					ActiveProjectileMesh->DestroyComponent();
+					ActiveProjectileMesh = nullptr;
+				}
+
+				break; // ONLY break when pierce limit reached
 			}
-			break;
 		}
 	}
 
@@ -554,6 +555,7 @@ void AArtemisCharacter::Tick(float DeltaTime)
 	if (ProjectileElapsed >= ProjectileLifetime)
 	{
 		bProjectileActive = false;
+
 		if (ActiveProjectileMesh)
 		{
 			ActiveProjectileMesh->DestroyComponent();
@@ -563,10 +565,3 @@ void AArtemisCharacter::Tick(float DeltaTime)
 }
 
 
-void AArtemisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-	if (HitActor)
-	{
-		UGameplayStatics::ApplyDamage(HitActor, ProjectileDamage, GetController(), this, nullptr);
-	}
-}

@@ -38,7 +38,6 @@ protected:
     float ProjectileRadius;
     float DotTickRate;
     float DotDuration;
-    float DamagePerTick;
     float DotTimeElapsed;
 
 

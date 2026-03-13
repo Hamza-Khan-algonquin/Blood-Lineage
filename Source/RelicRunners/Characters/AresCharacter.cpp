@@ -19,24 +19,13 @@
 AAresCharacter::AAresCharacter()
 {
 	Damage = 8.0f;
+
+	
 }
 
 void AAresCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (AbilitySystem)
-	{
-		// Give Earthquake ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UEarthquakeAbility::StaticClass(), 1, 0));
-		// Give Guard ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGuardAbility::StaticClass(), 1, 0));
-		// Give War Banner ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UWarBannerAbility::StaticClass(), 1, 0));
-
-		// Give Rage of the Gods ability
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(URageOfTheGods::StaticClass(), 1, 0));
-	}
 
 }
 
@@ -88,7 +77,7 @@ void AAresCharacter::ActivateDamageAbilities()
 	if (AbilitySystem)
 	{
 		// Activate Earthquake ability 
-		AbilitySystem->TryActivateAbilityByClass(UEarthquakeAbility::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_EarthquakeClass);
 
 	}
 }
@@ -99,7 +88,7 @@ void AAresCharacter::ActivateDefenceAbilities()
 
 	if (AbilitySystem)
 	{
-		AbilitySystem->TryActivateAbilityByClass(UGuardAbility::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_GuardClass);
 	}
 }
 
@@ -110,7 +99,7 @@ void AAresCharacter::ActivateUtilityAbilities()
 	if (AbilitySystem)
 	{
 		//start ability cooldown
-		AbilitySystem->TryActivateAbilityByClass(UWarBannerAbility::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_WarBannerClass);
 	}
 }
 
@@ -120,7 +109,7 @@ void AAresCharacter::ActivateUltimateAbilities()
 
 	if (AbilitySystem)
 	{
-		AbilitySystem->TryActivateAbilityByClass(URageOfTheGods::StaticClass());
+		AbilitySystem->TryActivateAbilityByClass(BP_RageOfTheGodsClass);
 	}
 }
 
@@ -128,9 +117,9 @@ void AAresCharacter::GiveEarthquake()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UEarthquakeAbility::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_EarthquakeClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UEarthquakeAbility::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_EarthquakeClass, 1, 0));
 	}
 }
 
@@ -138,9 +127,9 @@ void AAresCharacter::GiveGuard()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UGuardAbility::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_GuardClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGuardAbility::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_GuardClass, 1, 0));
 	}
 }
 
@@ -148,9 +137,9 @@ void AAresCharacter::GiveWarBanner()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(UWarBannerAbility::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_WarBannerClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(UWarBannerAbility::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_WarBannerClass, 1, 0));
 	}
 }
 
@@ -158,30 +147,26 @@ void AAresCharacter::GiveRageofTheGods()
 {
 	if (!AbilitySystem) return;
 
-	if (!AbilitySystem->FindAbilitySpecFromClass(URageOfTheGods::StaticClass()))
+	if (!AbilitySystem->FindAbilitySpecFromClass(BP_RageOfTheGodsClass))
 	{
-		AbilitySystem->GiveAbility(FGameplayAbilitySpec(URageOfTheGods::StaticClass(), 1, 0));
+		AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_RageOfTheGodsClass, 1, 0));
 	}
 }
 
-
-
 void AAresCharacter::PlayRandomAttackAnimation()
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (!AnimInstance) return;
+	if (!BasicAnim)
+		return;
 
-	TArray<UAnimSequence*> SwordAttacks;
-	if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
-	if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
-	if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
-	if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+	if (!SkeletalMeshComponent)
+		return;
 
-	if (SwordAttacks.Num() > 0)
-	{
-		int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
-		AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
-	}
+	UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
+	if (!AnimInstance)
+		return;
+
+	AnimInstance->Montage_Play(BasicAnim, 1.f);
 }
 
 void AAresCharacter::PerformSwingTrace()
@@ -206,15 +191,15 @@ void AAresCharacter::PerformSwingTrace()
 			{
 				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 				{
-					Server_HitEnemy(Enemy);
+					Server_HitEnemy(Enemy, Damage);
 				}
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
 				{
-					Server_HitEnemy(TEnemy);
+					Server_HitEnemy(TEnemy, Damage);
 				}
 				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
 				{
-					Server_HitEnemy(TPEnemy);
+					Server_HitEnemy(TPEnemy, Damage);
 				}
 				AlreadyHitActors.Add(HitActor);
 			}
@@ -241,19 +226,19 @@ void AAresCharacter::BasicAttack()
 
 void AAresCharacter::HeavyAttack()
 {
-	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+	//if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-	if (!CanHeavyAttack) return;
-	CanHeavyAttack = false;
+	//if (!CanHeavyAttack) return;
+	//CanHeavyAttack = false;
 
-	Damage = 12.0f;
+	//Damage = 12.0f;
 
-	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-	{
-		PlayRandomAttackAnimation();
-	}
+	//if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+	//{
+	//	PlayRandomAttackAnimation();
+	//}
 
-	GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+	//GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AAresCharacter::UpdateCamera(float DeltaTime)
@@ -399,12 +384,6 @@ void AAresCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Veloci
 	}
 }
 
-void AAresCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-	if (HitActor)
-	{
-		UGameplayStatics::ApplyDamage(HitActor, Damage, GetController(), this, nullptr);
-	}
-}
+
 
 

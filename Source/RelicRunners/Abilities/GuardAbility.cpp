@@ -13,10 +13,11 @@ UGuardAbility::UGuardAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 30;
+    Cost = 50;
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     Duration = 0.f;
+    Damage = 25.f;
 }
 
 void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
@@ -52,9 +53,16 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
 
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.5f;
@@ -80,8 +88,7 @@ void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGa
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
         return;
 
-    ARelicRunnersCharacter* OwnerChar =
-        Cast<ARelicRunnersCharacter>(ActorInfo->AvatarActor.Get());
+    ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(ActorInfo->AvatarActor.Get());
 
     if (!OwnerChar)
         return;
@@ -129,7 +136,7 @@ void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGa
             continue;
 
         // Apply damage
-        UGameplayStatics::ApplyDamage(HitPawn,ChargeDamage, OwnerChar->GetController(),OwnerChar,nullptr);
+        CalculateAbilityDamage(OwnerChar, HitPawn, Damage);
 
         // Apply knockback
         if (AEnemyPawn* HitCharacter = Cast<AEnemyPawn>(HitPawn))

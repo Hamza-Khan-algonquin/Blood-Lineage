@@ -9,7 +9,7 @@ UMirrorOfDesireAbility::UMirrorOfDesireAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 40;
+    Cost = 30;
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     AreaRadius = 300.f;
@@ -41,7 +41,10 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
         return;
     }
 
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     // Debug: show sphere
@@ -68,10 +71,6 @@ void UMirrorOfDesireAbility::OnOwnerTakeDamage(AActor* DamagedActor, float Damag
     ARelicRunnersPlayerState* PS = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
     if (!PS) return;
 
-    // Reduce damage so player only takes 30%
-    float HealAmount = DamageAmount * 0.7f;
-    PS->ModifyHealth(HealAmount);
-
     if (!DamageCauser || !DamageCauser->ActorHasTag("Enemy")) return;
 
     APawn* EnemyPawn = Cast<APawn>(DamageCauser);
@@ -82,7 +81,7 @@ void UMirrorOfDesireAbility::OnOwnerTakeDamage(AActor* DamagedActor, float Damag
     float DamageToReflect = DamageAmount * 50.f; 
 
     // Apply reflected damage
-    UGameplayStatics::ApplyDamage(EnemyPawn, DamageToReflect, DamagedActor->GetInstigatorController(), DamagedActor, nullptr);
+    CalculateAbilityDamage(OwnerChar, EnemyPawn, DamageToReflect);
 
     DrawDebugLine(DamagedActor->GetWorld(), DamagedActor->GetActorLocation(), EnemyPawn->GetActorLocation(), FColor::Red, false, 1.f, 0, 2.f);
 }

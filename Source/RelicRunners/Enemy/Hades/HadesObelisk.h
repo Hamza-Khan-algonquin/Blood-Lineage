@@ -53,6 +53,9 @@ protected:
 	UPROPERTY(Replicated)
 	float CurrentRotationMultiplier = 1.0f;
 
+	float InitialZ;
+	float RunningTime;
+
 	UFUNCTION()
 	void OnRep_IsRaging();
 

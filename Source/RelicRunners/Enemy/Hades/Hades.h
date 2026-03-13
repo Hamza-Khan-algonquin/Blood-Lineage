@@ -81,6 +81,8 @@ public:
     void OnRep_CurrentHealth();
     int ObelisksHit = 0;
 
+    bool InCinematic = true;
+
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "AI")
     AActor* CurrentTarget;
 
@@ -103,13 +105,18 @@ public:
 
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastPlayAttackMontage(UAnimMontage* Montage, float Speed, float StartPosition);
-
+    UPROPERTY(ReplicatedUsing = OnRep_VortexForce)
+    float ReplicatedVortexForce;
+    UFUNCTION()
+    void OnRep_VortexForce();
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
     void ExecuteAttack();
+    void CinematicSlam();
     void ScheduleNextAttack(float Delay);
+    void ScheduleCinematicSlam(float Delay);
     void ResetAllStates(); 
     void CheckPhaseTransition();
     void SelectRandomTarget();
@@ -126,6 +133,9 @@ protected:
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastSnapRotation(FRotator NewRotation);
     FVector CalculateFireballLocation(FVector Center);
+
+    UPROPERTY(EditAnywhere, Category = "Boss Mechanics")
+    AActor* BridgeToDestroy;
 
     UPROPERTY(Replicated)
     FVector AbilityLookAtTarget;

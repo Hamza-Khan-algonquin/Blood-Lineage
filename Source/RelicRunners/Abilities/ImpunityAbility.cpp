@@ -12,21 +12,9 @@ UImpunityAbility::UImpunityAbility()
     CooldownDuration = 8.0f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-	Cost = 40;
+	Cost = 50;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/ImpunityAbility/P_Trail.P_Trail"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset1(TEXT("/Game/Particles/ImpunityAbility/NS_SprintEffect.NS_SprintEffect"));
-
-    if (VFXAsset1.Succeeded())
-    {
-        AbilityVFX1 = VFXAsset1.Object;
-    }
 }
 
 void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -88,8 +76,10 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     bIsActive = true;

@@ -551,6 +551,13 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
     Summary.TotalStrength += PS->UpgradedStrength;
     Summary.TotalIntelligence += PS->UpgradedIntelligence;
 
+    //Buffed from abilities
+    Summary.TotalHealth += PS->BuffedHealth;
+    Summary.TotalArmor += PS->BuffedArmor;
+    Summary.TotalDexterity += PS->BuffedDexterity;
+    Summary.TotalStrength += PS->BuffedStrength;
+    Summary.TotalIntelligence += PS->BuffedIntelligence;
+
     //Equipped Stats
     for (const FEquippedItemEntry& Entry : EquippedItems)
     {
@@ -571,13 +578,14 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
         {
             if (GI->SelectedSaveSlot) {
                 Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
-                Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth;
-                Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence;
-                Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength;
-                Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility;
-                Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence;
+                Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth * 10;
+                Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence * 3;
+                Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength * 3;
+                Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility * 3;
+                Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence * 3;
                 Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
-                Summary.TotalPotionEfficiency += GI->SelectedSaveSlot->SaveData.MetaPotionEfficiency;
+                Summary.TotalPotionEfficiency += GI->SelectedSaveSlot->SaveData.MetaPotionEfficiency * 5;
+                Summary.TotalResourceRegen += GI->SelectedSaveSlot->SaveData.MetaResourceRegen;
             }
         }
     }
