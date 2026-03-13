@@ -438,6 +438,7 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
 
 	Client_OnLevelUp();
+	PlayLevelUpSound();
 }
 
 void ARelicRunnersPlayerState::Server_AddExperience_Implementation(int Amount)
@@ -479,6 +480,17 @@ void ARelicRunnersPlayerState::PlayHealPotionSound_Implementation()
 	if (!Pawn) return;
 
 	UGameplayStatics::PlaySoundAtLocation(Pawn,HealPotionSound,Pawn->GetActorLocation());
+}
+
+void ARelicRunnersPlayerState::PlayLevelUpSound_Implementation()
+{
+	if (!LevelUpSound) return;
+
+	APawn* Pawn = GetPawn();
+
+	if (!Pawn) return;
+
+	UGameplayStatics::PlaySoundAtLocation(Pawn, LevelUpSound, Pawn->GetActorLocation());
 }
 
 void ARelicRunnersPlayerState::Client_OnLevelUp_Implementation()

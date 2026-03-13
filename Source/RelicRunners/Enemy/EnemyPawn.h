@@ -17,6 +17,7 @@ class UEnemyBoidMovementComponent;
 class UEnemyStats;
 class USphereComponent;
 class UNiagaraSystem;
+class USoundBase;
 
 UCLASS()
 class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
@@ -74,6 +75,15 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* DeathEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* HitSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* DeathSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* AttackHitPlayerSound = nullptr;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;

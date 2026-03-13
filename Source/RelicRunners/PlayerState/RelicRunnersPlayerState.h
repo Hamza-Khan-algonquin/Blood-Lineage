@@ -76,6 +76,9 @@ public:
 	UFUNCTION(Client, Reliable)
 	void PlayHealPotionSound();
 
+	UFUNCTION(Client, Reliable)
+	void PlayLevelUpSound();
+
     //Properties
     UPROPERTY(ReplicatedUsing = OnRep_SelectedClass)
     FName SelectedClass;
@@ -95,6 +98,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
 	TObjectPtr<USoundBase> HealPotionSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> LevelUpSound = nullptr;
 
 	//Stats
 	void UpdateRemoteHUDHealth();
