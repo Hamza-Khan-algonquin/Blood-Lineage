@@ -19,7 +19,7 @@ UEnemyStats::UEnemyStats()
 	MaxHealth = 100;
 	CurrentHealth = 100;
 	RemainingStunTime = 0;
-	ChanceToDropItem = 5;
+	ChanceToDropItem = 30;
 	AttackDamage = 3;
 	SetIsReplicatedByDefault(true);
 }
