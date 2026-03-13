@@ -29,6 +29,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues")
 	TSubclassOf<class AIslandGenerationTest> IslandGenerationTestTemplate;
 
+	UFUNCTION()
+	void OnRep_IslandArrayChange();
+
+	UPROPERTY(ReplicatedUsing = OnRep_IslandArrayChange)
 	TArray<class AIslandGenerationTest*> Islands;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues")

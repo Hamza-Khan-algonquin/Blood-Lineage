@@ -19,6 +19,7 @@
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include "RelicRunners/Director System/SpawnZone.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
+#include "CullingToggleInterface.h"
 
 /*
 Set index of starting tile and ending (bridge) tile
@@ -38,20 +39,20 @@ Spawn regular obstacles at their appropriate location + Spawn their appropriate 
 
 Network visibility optimization
 
-Create a component that calls a bluprint function that makes the built in instanced static mesh component of the 
+Create a component that calls a blueprint function that makes the built in instanced static mesh component of the 
  packed level actor invisible instead of making the entire actor invisible
 
-Change the way the floor spawns by removing the corner and wall piece so that the textures kyle made look good on them
+Change the way the floor spawns by removing the corner and wall piece so that the textures kyle made look good on them | Done
 
 Make packed level actors with props ian made
 
-Add randomized props to modules
+Add randomized props to modules 
 
 Add Collision to Pandora's Box | Done
 
 Make portal invisible until needed in-game | done
 
-Make it so objectives can spawn specific modules on their own tile | Right now only Flag Objective is set up
+Make it so objectives can spawn specific modules on their own tile | Done
 
 */
 
@@ -193,7 +194,13 @@ void AIslandGenerationTest::Generate()
 			Bridge->SetFinalBridge(isFinalIsland);
 			Bridge->OnFrontTrigger.AddDynamic(this, &AIslandGenerationTest::UpdateCameraPos);
 			Bridge->OnBackTrigger.AddDynamic(this, &AIslandGenerationTest::SetNextCameraPos);
-			Bridge->SetActorHiddenInGame(true);
+
+			if (Bridge->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(Bridge, false);
+			}
+			//Bridge->SetActorHiddenInGame(true);
+
 
 			URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
 			if (gameInstance)
@@ -202,7 +209,12 @@ void AIslandGenerationTest::Generate()
 				{
 					LevelTrigger = GetWorld()->SpawnActor<ALevelChangeTrigger>(GenerationValuesComponent->IslandValues.LevelChangeTrigger, posOffset, FRotator::ZeroRotator);
 
-					LevelTrigger->SetActorHiddenInGame(true);
+					if (LevelTrigger->Implements<UCullingToggleInterface>())
+					{
+						ICullingToggleInterface::Execute_ToggleVisibility(LevelTrigger, false);
+					}
+
+					//LevelTrigger->SetActorHiddenInGame(true);
 
 					FString TargetLevel = gameInstance->StageNumber > 1 ?
 						GenerationValuesComponent->IslandValues.BossLevel :
@@ -236,10 +248,10 @@ void AIslandGenerationTest::ActivateIsland()
 	switch (IslandObjective)
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
-		AddFlagObjectiveToAll(ObjectiveAmount);
+		AddFlagObjectiveToAll(CurrentObjectives);
 		break;
 	case EIslandObjectiveType::DefeatAllEnemies:
-		AddEnemiesObjectiveToAll(ObjectiveAmount);
+		AddEnemiesObjectiveToAll(CurrentObjectives);
 		break;
 	case EIslandObjectiveType::MoveThePayload:
 		AddPayloadObjectiveToAll();
@@ -261,23 +273,40 @@ void AIslandGenerationTest::ActivateIsland()
 
 void AIslandGenerationTest::SetIslandVisibility(bool visible)
 {
+	
 	if (Bridge)
 	{
-		Bridge->SetActorHiddenInGame(!visible);
+		if (Bridge->Implements<UCullingToggleInterface>())
+		{
+			ICullingToggleInterface::Execute_ToggleVisibility(Bridge, visible);
+		}
+		//Bridge->SetActorHiddenInGame(!visible);
 	}
 
 	if (LevelTrigger)
 	{
-		LevelTrigger->SetActorHiddenInGame(!visible);
+		if (LevelTrigger->Implements<UCullingToggleInterface>())
+		{
+			ICullingToggleInterface::Execute_ToggleVisibility(LevelTrigger, visible);
+		}
+		//LevelTrigger->SetActorHiddenInGame(!visible);
 	}
 
 	for (APackedLevelActor* obstac : ObstacleArrays)
 	{
-		obstac->SetActorHiddenInGame(!visible);
+		if (obstac->Implements<UCullingToggleInterface>())
+		{
+			ICullingToggleInterface::Execute_ToggleVisibility(obstac, visible);
+		}
+		//obstac->SetActorHiddenInGame(!visible);
 	}
 
 	for (AObjectiveBase* obj : ObjectiveArrays)
 	{
+		//if (obj->Implements<UCullingToggleInterface>())
+		//{
+		//	ICullingToggleInterface::Execute_ToggleVisibility(obj, visible);
+		//}
 		obj->SetActorHiddenInGame(!visible);
 	}
 
@@ -614,7 +643,12 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 					{
 						int randYaw = FMath::RandRange(0, 3) * 90;
 						APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->PayloadObjectiveValues.PayloadPathModuleActor[moduleIndex], pointPos, FRotator(0.0f, randYaw, 0.0f));
-						aModule->SetActorHiddenInGame(true);
+
+						if (aModule->Implements<UCullingToggleInterface>())
+						{
+							ICullingToggleInterface::Execute_ToggleVisibility(aModule, false);
+						}
+
 						ObstacleArrays.Add(aModule);
 					}
 				}
@@ -783,7 +817,13 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 					payload->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 					payload->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 
+					//if (payload->Implements<UCullingToggleInterface>())
+					//{
+					//	ICullingToggleInterface::Execute_ToggleVisibility(payload, false);
+					//}
+
 					payload->SetActorHiddenInGame(true);
+
 					ObjectiveArrays.Add(payload);
 				}
 			}
@@ -981,14 +1021,33 @@ void AIslandGenerationTest::SetTopLeftFloorShape(int x, int y, int width)
 	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
 
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2), (y * 2), 0.0f) * (tileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2), (y * 2), 0.0f) * (tileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
 	float scaleOffset = tileScale * 2;
-	FTransform newTransform;
 
-	newTransform.SetLocation(posOffset);
-	newTransform.SetRotation(rotationOffset.Quaternion());
-	newTransform.SetScale3D(FVector(scaleOffset));
+	FTransform floorTransform;
+	floorTransform.SetLocation(posOffset);
+	floorTransform.SetRotation(rotationOffset.Quaternion());
+	floorTransform.SetScale3D(FVector(scaleOffset));
+
+	FVector topPosOffset = FVector((x * 2) - 0.5f, (y * 2), -0.5f) * (tileScale * 2);
+	FRotator topRotationOffset = FRotator(90.0f, 0.0f, 0.0f);
+	float topScaleOffset = tileScale * 2;
+
+	FTransform topTransform;
+	topTransform.SetLocation(topPosOffset);
+	topTransform.SetRotation(topRotationOffset.Quaternion());
+	topTransform.SetScale3D(FVector(topScaleOffset));
+
+
+	FVector leftPosOffset = FVector((x * 2), (y * 2) - 0.5f, -0.5f) * (tileScale * 2);
+	FRotator leftRotationOffset = FRotator(0.0f, 0.0f, 90.0f);
+	float leftScaleOffset = tileScale * 2;
+
+	FTransform leftTransform;
+	leftTransform.SetLocation(leftPosOffset);
+	leftTransform.SetRotation(leftRotationOffset.Quaternion());
+	leftTransform.SetScale3D(FVector(leftScaleOffset));
 
 	EIslandFloorNeighbours topLeftCornerCheck = FloorValuesArray[index].FloorNeighbours & (EIslandFloorNeighbours::TopLeft | EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::MiddleLeft);
 
@@ -998,21 +1057,23 @@ void AIslandGenerationTest::SetTopLeftFloorShape(int x, int y, int width)
 		{
 		case EIslandFloorNeighbours::TopMiddle:
 		case EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::TopLeft:
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(topTransform);
 			break;
 		case EIslandFloorNeighbours::MiddleLeft:
 		case EIslandFloorNeighbours::MiddleLeft | EIslandFloorNeighbours::TopLeft:
-			rotationOffset.Yaw = 90.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(leftTransform);
 			break;
 		case EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::MiddleLeft:
 		case EIslandFloorNeighbours::TopLeft | EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::MiddleLeft:
-			FullFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::TopLeft:
 		default:
-			ConvexCornerTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(topTransform);
+			FullFloorPieceTransforms.Add(leftTransform);
 		}
 	}
 }
@@ -1022,14 +1083,33 @@ void AIslandGenerationTest::SetTopRightFloorShape(int x, int y, int width)
 	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
 
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2) + 1.0f, (y * 2), 0.0f) * (tileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2) + 1.0f, (y * 2), 0.0f) * (tileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
 	float scaleOffset = tileScale * 2;
-	FTransform newTransform;
 
-	newTransform.SetLocation(posOffset);
-	newTransform.SetRotation(rotationOffset.Quaternion());
-	newTransform.SetScale3D(FVector(scaleOffset));
+	FTransform floorTransform;
+	floorTransform.SetLocation(posOffset);
+	floorTransform.SetRotation(rotationOffset.Quaternion());
+	floorTransform.SetScale3D(FVector(scaleOffset));
+
+	FVector topPosOffset = FVector((x * 2)+1.5f, (y * 2), -0.5f) * (tileScale * 2);
+	FRotator topRotationOffset = FRotator(90.0f, 0.0f, 0.0f);
+	float topScaleOffset = tileScale * 2;
+
+	FTransform topTransform;
+	topTransform.SetLocation(topPosOffset);
+	topTransform.SetRotation(topRotationOffset.Quaternion());
+	topTransform.SetScale3D(FVector(topScaleOffset));
+
+
+	FVector rightPosOffset = FVector((x * 2)+1, (y * 2)-0.5f, -0.5f) * (tileScale * 2);
+	FRotator rightRotationOffset = FRotator(0.0f, 0.0f, 90.0f);
+	float rightScaleOffset = tileScale * 2;
+
+	FTransform rightTransform;
+	rightTransform.SetLocation(rightPosOffset);
+	rightTransform.SetRotation(rightRotationOffset.Quaternion());
+	rightTransform.SetScale3D(FVector(rightScaleOffset));
 
 	EIslandFloorNeighbours topRightCornerCheck = FloorValuesArray[index].FloorNeighbours & (EIslandFloorNeighbours::TopRight | EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::MiddleRight);
 
@@ -1039,25 +1119,23 @@ void AIslandGenerationTest::SetTopRightFloorShape(int x, int y, int width)
 		{
 		case EIslandFloorNeighbours::TopMiddle:
 		case EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::TopRight:
-			rotationOffset.Yaw = 180.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(topTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::MiddleRight:
 		case EIslandFloorNeighbours::MiddleRight | EIslandFloorNeighbours::TopRight:
-			rotationOffset.Yaw = 90.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(rightTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::MiddleRight:
 		case EIslandFloorNeighbours::TopRight | EIslandFloorNeighbours::TopMiddle | EIslandFloorNeighbours::MiddleRight:
-			FullFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::TopRight:
 		default:
-			rotationOffset.Yaw = 90.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			ConvexCornerTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(rightTransform);
+			FullFloorPieceTransforms.Add(topTransform);
 			break;
 		}
 	}
@@ -1068,14 +1146,32 @@ void AIslandGenerationTest::SetBottomLeftFloorShape(int x, int y, int width)
 	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
 
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2), (y * 2) + 1.0f, 0.0f) * (tileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2), (y * 2) + 1.0f, 0.0f) * (tileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
 	float scaleOffset = tileScale * 2;
-	FTransform newTransform;
 
-	newTransform.SetLocation(posOffset);
-	newTransform.SetRotation(rotationOffset.Quaternion());
-	newTransform.SetScale3D(FVector(scaleOffset));
+	FTransform floorTransform;
+	floorTransform.SetLocation(posOffset);
+	floorTransform.SetRotation(rotationOffset.Quaternion());
+	floorTransform.SetScale3D(FVector(scaleOffset));
+
+	FVector bottomPosOffset = FVector((x * 2) - 0.5f, (y * 2)+1.0f, -0.5f) * (tileScale * 2);
+	FRotator bottomRotationOffset = FRotator(90.0f, 0.0f, 0.0f);
+	float bottomScaleOffset = tileScale * 2;
+
+	FTransform bottomTransform;
+	bottomTransform.SetLocation(bottomPosOffset);
+	bottomTransform.SetRotation(bottomRotationOffset.Quaternion());
+	bottomTransform.SetScale3D(FVector(bottomScaleOffset));
+
+	FVector leftPosOffset = FVector((x * 2), (y * 2)+1.5f, -0.5f) * (tileScale * 2);
+	FRotator leftRotationOffset = FRotator(0.0f, 0.0f, 90.0f);
+	float leftScaleOffset = tileScale * 2;
+
+	FTransform leftTransform;
+	leftTransform.SetLocation(leftPosOffset);
+	leftTransform.SetRotation(leftRotationOffset.Quaternion());
+	leftTransform.SetScale3D(FVector(leftScaleOffset));
 
 	EIslandFloorNeighbours bottomLeftCornerCheck = FloorValuesArray[index].FloorNeighbours & (EIslandFloorNeighbours::BottomLeft | EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::MiddleLeft);
 
@@ -1085,23 +1181,23 @@ void AIslandGenerationTest::SetBottomLeftFloorShape(int x, int y, int width)
 		{
 		case EIslandFloorNeighbours::BottomMiddle:
 		case EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::BottomLeft:
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(bottomTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::MiddleLeft:
 		case EIslandFloorNeighbours::MiddleLeft | EIslandFloorNeighbours::BottomLeft:
-			rotationOffset.Yaw = -90.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(leftTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::MiddleLeft:
 		case EIslandFloorNeighbours::BottomLeft | EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::MiddleLeft:
-			FullFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::BottomLeft:
 		default:
-			rotationOffset.Yaw = -90.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			ConvexCornerTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(leftTransform);
+			FullFloorPieceTransforms.Add(bottomTransform);
 			break;
 		}
 	}
@@ -1112,14 +1208,33 @@ void AIslandGenerationTest::SetBottomRightFloorShape(int x, int y, int width)
 	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
 
 	int index = x + (y * width);
-	FVector posOffset = FVector((x * 2) + 1.0, (y * 2) + 1.0f, 0.0f) * (tileScale * 2) + GetActorLocation();
+	FVector posOffset = FVector((x * 2) + 1.0, (y * 2) + 1.0f, 0.0f) * (tileScale * 2);
 	FRotator rotationOffset = FRotator(0.0f, 0.0f, 0.0f);
 	float scaleOffset = tileScale * 2;
-	FTransform newTransform;
 
-	newTransform.SetLocation(posOffset);
-	newTransform.SetRotation(rotationOffset.Quaternion());
-	newTransform.SetScale3D(FVector(scaleOffset));
+	FTransform floorTransform;
+	floorTransform.SetLocation(posOffset);
+	floorTransform.SetRotation(rotationOffset.Quaternion());
+	floorTransform.SetScale3D(FVector(scaleOffset));
+
+	FVector bottomPosOffset = FVector((x * 2) + 1.5f, (y * 2) + 1.0f, -0.5f) * (tileScale * 2);
+	FRotator bottomRotationOffset = FRotator(90.0f, 0.0f, 0.0f);
+	float bottomScaleOffset = tileScale * 2;
+
+	FTransform bottomTransform;
+	bottomTransform.SetLocation(bottomPosOffset);
+	bottomTransform.SetRotation(bottomRotationOffset.Quaternion());
+	bottomTransform.SetScale3D(FVector(bottomScaleOffset));
+
+
+	FVector rightPosOffset = FVector((x * 2) + 1.0f, (y * 2)+1.5f, -0.5f) * (tileScale * 2);
+	FRotator rightRotationOffset = FRotator(0.0f, 0.0f, 90.0f);
+	float rightScaleOffset = tileScale * 2;
+
+	FTransform rightTransform;
+	rightTransform.SetLocation(rightPosOffset);
+	rightTransform.SetRotation(rightRotationOffset.Quaternion());
+	rightTransform.SetScale3D(FVector(rightScaleOffset));
 
 	EIslandFloorNeighbours bottomRightCornerCheck = FloorValuesArray[index].FloorNeighbours & (EIslandFloorNeighbours::BottomRight | EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::MiddleRight);
 
@@ -1129,25 +1244,24 @@ void AIslandGenerationTest::SetBottomRightFloorShape(int x, int y, int width)
 		{
 		case EIslandFloorNeighbours::BottomMiddle:
 		case EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::BottomRight:
-			rotationOffset.Yaw = 180.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(bottomTransform);
 			break;
 		case EIslandFloorNeighbours::MiddleRight:
 		case EIslandFloorNeighbours::MiddleRight | EIslandFloorNeighbours::BottomRight:
 			rotationOffset.Yaw = -90.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			SideFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(rightTransform);
 			break;
 		case EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::MiddleRight:
 		case EIslandFloorNeighbours::BottomRight | EIslandFloorNeighbours::BottomMiddle | EIslandFloorNeighbours::MiddleRight:
-			FullFloorPieceTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
 			break;
 		case EIslandFloorNeighbours::BottomRight:
 		default:
-			rotationOffset.Yaw = 180.0f;
-			newTransform.SetRotation(rotationOffset.Quaternion());
-			ConvexCornerTransforms.Add(newTransform);
+			FullFloorPieceTransforms.Add(floorTransform);
+			FullFloorPieceTransforms.Add(rightTransform);
+			FullFloorPieceTransforms.Add(bottomTransform);
 			break;
 		}
 	}
@@ -1176,7 +1290,12 @@ void AIslandGenerationTest::SetTopLeftWall(int tileIndex, FVector posOffset, TSu
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, 0.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+			//side->SetActorHiddenInGame(true);
+
 			ObstacleArrays.Add(side);
 
 		}
@@ -1186,7 +1305,12 @@ void AIslandGenerationTest::SetTopLeftWall(int tileIndex, FVector posOffset, TSu
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, 90.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+			//side->SetActorHiddenInGame(true);
+
 			ObstacleArrays.Add(side);
 		}
 		break;
@@ -1197,7 +1321,11 @@ void AIslandGenerationTest::SetTopLeftWall(int tileIndex, FVector posOffset, TSu
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 0.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 		break;
@@ -1205,7 +1333,11 @@ void AIslandGenerationTest::SetTopLeftWall(int tileIndex, FVector posOffset, TSu
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 0.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 	}
@@ -1226,7 +1358,11 @@ void AIslandGenerationTest::SetTopRightWall(int tileIndex, FVector posOffset, TS
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, 180.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+			//side->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(side);
 		}
 		break;
@@ -1235,7 +1371,11 @@ void AIslandGenerationTest::SetTopRightWall(int tileIndex, FVector posOffset, TS
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, 90.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+			//side->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(side);
 		}
 		break;
@@ -1246,7 +1386,11 @@ void AIslandGenerationTest::SetTopRightWall(int tileIndex, FVector posOffset, TS
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 90.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 		break;
@@ -1254,7 +1398,11 @@ void AIslandGenerationTest::SetTopRightWall(int tileIndex, FVector posOffset, TS
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 90.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 		break;
@@ -1276,7 +1424,12 @@ void AIslandGenerationTest::SetBottomLeftWall(int tileIndex, FVector posOffset, 
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, 0.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+
+			//side->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(side);
 		}
 		break;
@@ -1285,7 +1438,12 @@ void AIslandGenerationTest::SetBottomLeftWall(int tileIndex, FVector posOffset, 
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, 270.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+
+			//side->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(side);
 		}
 		break;
@@ -1296,7 +1454,12 @@ void AIslandGenerationTest::SetBottomLeftWall(int tileIndex, FVector posOffset, 
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 270.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 		break;
@@ -1304,7 +1467,12 @@ void AIslandGenerationTest::SetBottomLeftWall(int tileIndex, FVector posOffset, 
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 270.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 		break;
@@ -1326,7 +1494,12 @@ void AIslandGenerationTest::SetBottomRightWall(int tileIndex, FVector posOffset,
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, 180.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+
+			//side->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(side);
 		}
 		break;
@@ -1335,7 +1508,12 @@ void AIslandGenerationTest::SetBottomRightWall(int tileIndex, FVector posOffset,
 		if (SideWall)
 		{
 			APackedLevelActor* side = GetWorld()->SpawnActor<APackedLevelActor>(SideWall, newPos, FRotator(0.0f, -90.0f, 0.0f));
-			side->SetActorHiddenInGame(true);
+			if (side->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(side, false);
+			}
+
+			//side->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(side);
 		}
 		break;
@@ -1346,7 +1524,12 @@ void AIslandGenerationTest::SetBottomRightWall(int tileIndex, FVector posOffset,
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 180.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 		break;
@@ -1354,7 +1537,12 @@ void AIslandGenerationTest::SetBottomRightWall(int tileIndex, FVector posOffset,
 		if (CornerWall)
 		{
 			APackedLevelActor* corner = GetWorld()->SpawnActor<APackedLevelActor>(CornerWall, newPos, FRotator(0.0f, 180.0f, 0.0f));
-			corner->SetActorHiddenInGame(true);
+			if (corner->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(corner, false);
+			}
+
+			//corner->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(corner);
 		}
 		break;
@@ -1389,7 +1577,12 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 		if (actorArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
 		{
 			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(actorArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, yaw, 0.0f));
-			packed->SetActorHiddenInGame(true);
+			if (packed->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(packed, false);
+			}
+
+			//packed->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(packed);
 		}
 
@@ -1399,25 +1592,41 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleLeft))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 0.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::TopMiddle))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 90.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleRight))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 180.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::BottomMiddle))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 270.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 		}
@@ -1453,7 +1662,12 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 		if (vantageArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
 		{
 			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(vantageArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, yaw, 0.0f));
-			packed->SetActorHiddenInGame(true);
+			if (packed->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(packed, false);
+			}
+
+			//packed->SetActorHiddenInGame(true);
 			ObstacleArrays.Add(packed);
 		}
 
@@ -1471,6 +1685,11 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 			newFlag->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newFlag->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
+			//if (newFlag->Implements<UCullingToggleInterface>())
+			//{
+			//	ICullingToggleInterface::Execute_ToggleVisibility(newFlag, false);
+			//}
+
 			newFlag->SetActorHiddenInGame(true);
 
 			ObjectiveArrays.Add(newFlag);
@@ -1483,7 +1702,11 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			{
 				int randYaw = FMath::RandRange(0, 3) * 90;
 				APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->FlagObjectiveValues.FlagModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
-				aModule->SetActorHiddenInGame(true);
+				if (aModule->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(aModule, false);
+				}
+				//aModule->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(aModule);
 			}
 		}
@@ -1500,7 +1723,12 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 				newEnemyZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 				newEnemyZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
-				newEnemyZone->SetActorHiddenInGame(true);
+				if (newEnemyZone->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(newEnemyZone, false);
+				}
+
+				//newEnemyZone->SetActorHiddenInGame(true);
 
 				ObjectiveArrays.Add(newEnemyZone);
 			}
@@ -1518,6 +1746,11 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			newZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 			newZone->Duration = GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
+			//if (newZone->Implements<UCullingToggleInterface>())
+			//{
+			//	ICullingToggleInterface::Execute_ToggleVisibility(newZone, false);
+			//}
+
 			newZone->SetActorHiddenInGame(true);
 
 			ObjectiveArrays.Add(newZone);
@@ -1530,7 +1763,11 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			{
 				int randYaw = FMath::RandRange(0, 3) * 90;
 				APackedLevelActor* aModule = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalZoneModuleActor[moduleIndex], posOffset, FRotator(0.0f, randYaw, 0.0f));
-				aModule->SetActorHiddenInGame(true);
+				if (aModule->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(aModule, false);
+				}
+				//aModule->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(aModule);
 			}
 		}
@@ -1542,13 +1779,6 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 		break;
 	case EIslandFloorObstacle::Start:
-		if (GenerationValuesComponent->IslandStartEnd.LevelStartPackedActor != nullptr && IslandIndex == 0)
-		{
-			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->IslandStartEnd.LevelStartPackedActor, posOffset, FRotator(0.0f, 0.0f, 0.0f));
-			packed->SetActorHiddenInGame(true);
-			ObstacleArrays.Add(packed);
-
-		}
 
 		if (startEndWallTemplate != nullptr)
 		{
@@ -1557,37 +1787,50 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleLeft) && IslandIndex == 0)
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 0.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::TopMiddle))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 90.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleRight))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 180.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::BottomMiddle))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 270.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 		}
 
 		break;
 	case EIslandFloorObstacle::End:
-		if (GenerationValuesComponent->IslandStartEnd.LevelEndPackedActor != nullptr)
-		{
-			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->IslandStartEnd.LevelEndPackedActor, posOffset, FRotator(0.0f, 0.0f, 0.0f));
-			packed->SetActorHiddenInGame(true);
-			ObstacleArrays.Add(packed);
-		}
 
 		if (startEndWallTemplate != nullptr)
 		{
@@ -1595,23 +1838,34 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleLeft))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 0.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::TopMiddle))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 90.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
-			}
-			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleRight))
-			{
-				//APackedLevelActor* wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 180.0f, 0.0f));
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::BottomMiddle))
 			{
 				wall = GetWorld()->SpawnActor<APackedLevelActor>(startEndWallTemplate, posOffset, FRotator(0.0f, 270.0f, 0.0f));
-				wall->SetActorHiddenInGame(true);
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+
+				//wall->SetActorHiddenInGame(true);
 				ObstacleArrays.Add(wall);
 			}
 		}
@@ -1633,35 +1887,26 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 void AIslandGenerationTest::CreateFloor()
 {
-	TArray<TArray<FTransform>> arrayOfTransformArrays;
-	arrayOfTransformArrays.Add(FullFloorPieceTransforms);
-	arrayOfTransformArrays.Add(SideFloorPieceTransforms);
-	arrayOfTransformArrays.Add(ConvexCornerTransforms);
+	if (FullFloorPieceTransforms.IsEmpty())
+		return;
 
-	TArray<UStaticMesh*> staticMeshArray;
-	staticMeshArray.Add(GenerationValuesComponent->FloorMeshes.FullFloorMesh);
-	staticMeshArray.Add(GenerationValuesComponent->FloorMeshes.SideFloorMesh);
-	staticMeshArray.Add(GenerationValuesComponent->FloorMeshes.CornerFloorMesh);
+	UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this);
+	ISMComp->SetupAttachment(RootComponent);
 
-	for (int i = 0; i < staticMeshArray.Num(); i++)
+	if (GenerationValuesComponent->FloorMeshes.FullFloorMesh)
 	{
-		UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this);
-
-		if (staticMeshArray[i] != nullptr)
-		{
-			ISMComp->SetStaticMesh(staticMeshArray[i]);
-		}
-		if (GenerationValuesComponent->FloorMeshes.FloorMaterial != nullptr)
-		{
-			ISMComp->SetMaterial(0, GenerationValuesComponent->FloorMeshes.FloorMaterial);
-		}
-
-		ISMComp->AddInstances(arrayOfTransformArrays[i], false, true, true);
-
-		ISMComp->RegisterComponent();
-
-		InstanceMeshComponentArray.Add(ISMComp);
+		ISMComp->SetStaticMesh(GenerationValuesComponent->FloorMeshes.FullFloorMesh);
 	}
+	if (GenerationValuesComponent->FloorMeshes.FloorMaterial)
+	{
+		ISMComp->SetMaterial(0, GenerationValuesComponent->FloorMeshes.FloorMaterial);
+	}
+
+	ISMComp->AddInstances(FullFloorPieceTransforms, false, false, true);
+
+	ISMComp->RegisterComponent();
+
+	InstanceMeshComponentArray.Add(ISMComp);
 }
 
 void AIslandGenerationTest::IncrementObjective()
@@ -1686,6 +1931,8 @@ void AIslandGenerationTest::IncrementObjective()
 		break;
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("Island: %i, Island Objective: %s, Objective Amount: %i"), IslandIndex, *FString(UEnum::GetValueAsString(IslandObjective)), ObjectiveAmount);
+	UE_LOG(LogTemp, Warning, TEXT("Island: %i, Actual Objective Amount: %i"), IslandIndex, CurrentObjectives);
 	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Island: %i | Remaining objectives: % i | "), IslandIndex, CurrentObjectives) + objectiveName);
 }
 
@@ -1764,6 +2011,15 @@ void AIslandGenerationTest::OnRep_FloorValuesArrayChange()
 	CreateFloor();
 }
 
+void AIslandGenerationTest::OnRep_BridgeSpawned()
+{
+	if (Bridge)
+	{
+		Bridge->OnFrontTrigger.AddDynamic(this, &AIslandGenerationTest::UpdateCameraPos);
+		Bridge->OnBackTrigger.AddDynamic(this, &AIslandGenerationTest::SetNextCameraPos);
+	}
+}
+
 void AIslandGenerationTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -1772,4 +2028,5 @@ void AIslandGenerationTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(AIslandGenerationTest, IslandWidth);
 	DOREPLIFETIME(AIslandGenerationTest, IslandDepth);
 	DOREPLIFETIME(AIslandGenerationTest, GenerationValuesComponent);
+	DOREPLIFETIME(AIslandGenerationTest, Bridge);
 }

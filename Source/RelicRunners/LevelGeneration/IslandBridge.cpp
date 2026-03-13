@@ -3,6 +3,8 @@
 
 #include "IslandBridge.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include <Net/UnrealNetwork.h>
 
 // Sets default values
@@ -100,23 +102,39 @@ void AIslandBridge::OnRep_OnFinalBridgeChange()
 
 void AIslandBridge::OnFrontTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (!OtherActor->ActorHasTag("Player"))
+		return;
+
+	APawn* player = Cast<APawn>(OtherActor);
+
+	if (player == nullptr)
+		return;
+
+	if (player->GetController() == nullptr)
+		return; 
+
+	if (player->GetController()->IsLocalPlayerController())
 	{
-		if (HasAuthority())
-		{
-			OnFrontTrigger.Broadcast();
-		}
+		OnFrontTrigger.Broadcast();
 	}
 }
 
 void AIslandBridge::OnBackTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (!OtherActor->ActorHasTag("Player"))
+		return;
+
+	APawn* player = Cast<APawn>(OtherActor);
+
+	if (player == nullptr)
+		return;
+
+	if (player->GetController() == nullptr)
+		return;
+
+	if (player->GetController()->IsLocalPlayerController())
 	{
-		if (HasAuthority())
-		{
-			OnBackTrigger.Broadcast();
-		}
+		OnBackTrigger.Broadcast();
 	}
 }
 
