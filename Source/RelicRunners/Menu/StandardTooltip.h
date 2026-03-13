@@ -33,19 +33,19 @@ protected:
 	class UTextBlock* TB_Value;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description1;
+	class URichTextBlock* TB_Desc1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description2;
+	class URichTextBlock* TB_Desc2;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description3;
+	class URichTextBlock* TB_Desc3;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description4;
+	class URichTextBlock* TB_Desc4;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description5;
+	class URichTextBlock* TB_Desc5;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Description1;

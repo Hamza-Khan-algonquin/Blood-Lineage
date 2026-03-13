@@ -16,7 +16,7 @@ URageOfTheGods::URageOfTheGods()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 60;
+    Cost = 70;
     AreaRadius = 500.f;
 
 }
@@ -31,6 +31,13 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!AvatarActor)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+
+    }
     UWorld* World = GetWorld();
     if (!World) return;
 
@@ -60,8 +67,10 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)
@@ -135,7 +144,7 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 
         HitActorsThisPulse.Add(Actor);
 
-        UGameplayStatics::ApplyDamage(Actor, Damage, AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
 
         if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
         {

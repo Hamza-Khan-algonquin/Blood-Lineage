@@ -21,6 +21,18 @@ public:
 	void InitializeUpgradeData(class USaveFileListData* InSaveData);
 
 protected:
+
+	int MaxValue = 5;
+	void ShowTooltipForBorder(class UButton* HoveredButton, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+	class UButton* CurrentHoveredButton;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
+	TSubclassOf<class UStandardTooltip> StandardTooltipClass;
+
+	UPROPERTY()
+	class UStandardTooltip* StandardTooltip;
+
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* BackButton = nullptr;
 
@@ -58,7 +70,8 @@ protected:
 	class UImage* IconRegen = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UImage* IconLevel = nullptr;
-
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* IconPurity = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* B_HP = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -115,6 +128,60 @@ protected:
 	class UTextBlock* TB_StartingLevel = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_PotionEfficiency = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetHP;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetDEF;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetLUCK;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetSTR;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetAGI;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetINT;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetRegen;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetLevel;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_ResetEfficiency;
+
+	UFUNCTION()
+	void OnResetHPClicked();
+
+	UFUNCTION()
+	void OnResetDEFClicked();
+
+	UFUNCTION()
+	void OnResetLUCKClicked();
+
+	UFUNCTION()
+	void OnResetSTRClicked();
+
+	UFUNCTION()
+	void OnResetAGIClicked();
+
+	UFUNCTION()
+	void OnResetINTClicked();
+
+	UFUNCTION()
+	void OnResetRegenClicked();
+
+	UFUNCTION()
+	void OnResetLevelClicked();
+
+	UFUNCTION()
+	void OnResetEfficiencyClicked();
 
 	UFUNCTION()
 	void BackButtonClicked();

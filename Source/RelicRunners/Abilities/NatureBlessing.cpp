@@ -12,7 +12,7 @@ UNaturesBlessing::UNaturesBlessing()
 
 	InvincibleDuration = 3.0f;
 	CooldownTimer = 14.f;
-	Cost = 25;
+	Cost = 30;
 	LastUseTime = -100.f;
 
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NatureBlessing/NewNiagaraSystem.NewNiagaraSystem"));
@@ -27,6 +27,7 @@ void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+	AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
 	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
@@ -47,8 +48,10 @@ void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		return;
 	}
 
-    // Mana deduction for the player
-	PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+	float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+	// Spend resource
+	PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
 	PS->UpdateRemoteHUDResource();
 
     // it turns on the invincibility for the character 

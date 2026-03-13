@@ -21,7 +21,7 @@ UVengefulDance::UVengefulDance()
     AreaRadius = 300.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
+    Cost = 40;
 
 
 }
@@ -80,8 +80,10 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)
@@ -89,6 +91,7 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
 
     }
+
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
 
     if (ActorInfo->AvatarActor->HasAuthority())
@@ -131,7 +134,7 @@ void UVengefulDance::ApplyRingDamage()
         if (Diff.Size() > AreaRadius) // Skip actors outside the area radius
             continue;
 
-        UGameplayStatics::ApplyDamage(Actor, Damage, AvatarActor->GetInstigatorController(), AvatarActor, nullptr); // Apply damage
+		CalculateAbilityDamage(AvatarActor, Actor, Damage); 
 
         if (AEnemyPawn* HitCharacter = Cast<AEnemyPawn>(Actor)) // Cast as EnemyCharacter
         {

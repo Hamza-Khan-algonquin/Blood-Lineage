@@ -22,7 +22,5 @@ protected:
 
     float BeamLength = 3000.f;
     float TickInterval = 0.2f;
-    float DamagePerTick = 15.f;
-
     void BeamTick();
 };
