@@ -19,7 +19,7 @@ UPiercingArrow::UPiercingArrow()
 
     Duration = 10.f;    
     CooldownTimer = 10.f;
-    Cost = 25;
+    Cost = 30;
     LastUseTime = -100.f;
     AreaRadius = 600.f;
 
@@ -27,7 +27,7 @@ UPiercingArrow::UPiercingArrow()
     ProjectileRadius = 40.f;
     DotTickRate = 0.5f;
     DotDuration = 6.f;
-    DamagePerTick = 15.f;
+    Damage = 15.f;
     DotTimeElapsed = 0.f;
 }
 
@@ -74,7 +74,10 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
 
@@ -174,7 +177,7 @@ void UPiercingArrow::ApplyDotTick()
 
             if (!Pawn->Tags.Contains("Enemy")) continue;
 
-            UGameplayStatics::ApplyDamage(Pawn,DamagePerTick, AvatarActor->GetInstigatorController(), AvatarActor, nullptr);
+            CalculateAbilityDamage(AvatarActor, Pawn, Damage);
         }
     }
 

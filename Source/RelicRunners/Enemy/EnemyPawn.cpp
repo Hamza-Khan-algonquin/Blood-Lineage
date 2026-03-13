@@ -25,6 +25,7 @@
 #include "Components/SphereComponent.h"
 #include "NiagaraComponent.h"
 
+#include "RelicRunners/Inventory/InventoryComponent.h"
 
 
 // Sets default values
@@ -186,9 +187,6 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 	//make sure we are server side
 	if (HasAuthority())
 	{
-		//spawn item
-		SpawnItem();
-
 		//check to make sure it a play and if do add experience
 		if (EventInstigator)
 		{
@@ -197,6 +195,9 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 			if (PS)
 			{
 				PS->AddExperience(CalculateXP());
+				
+				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
+				SpawnItem();
 			}
 		}
 
@@ -351,7 +352,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = FMath::RandRange(0.f,1.f);
+	float chance = FMath::FRandRange(0.f, 100.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{

@@ -70,6 +70,7 @@ public:
 	void PassiveHealthRegen();
 	UFUNCTION()
 	void PassiveResourceRegen();
+	void OnStartingLevelUp();
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
 
@@ -129,7 +130,7 @@ public:
 	UPROPERTY()
 	int PlayerNumInventorySlots;
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
-	int PlayerHealth;
+	float PlayerHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
 	int PlayerMaxHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_HealthPotions)
@@ -195,11 +196,30 @@ public:
 	UPROPERTY()
 	int UpgradedIntelligence;
 
+	UPROPERTY()
+	int BuffedHealth;
+	UPROPERTY()
+	int BuffedArmor;
+	UPROPERTY()
+	int BuffedDexterity;
+	UPROPERTY()
+	int BuffedStrength;
+	UPROPERTY()
+	int BuffedIntelligence;
+
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
 
 	bool IsInvincible() const { return bIsInvincible; }
 	void SetInvincible(bool bNewInvincible) { bIsInvincible = bNewInvincible; } 
+
+	UPROPERTY(Replicated)
+	bool DeathState = false;
+
+	int MetaLevel;
+	int MetaXP;
+	int MetaXPToNextLevel;
+	int MetaXPGainInRun;
 
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;

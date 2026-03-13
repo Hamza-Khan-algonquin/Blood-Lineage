@@ -191,15 +191,15 @@ void AAresCharacter::PerformSwingTrace()
 			{
 				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 				{
-					Server_HitEnemy(Enemy);
+					Server_HitEnemy(Enemy, Damage);
 				}
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
 				{
-					Server_HitEnemy(TEnemy);
+					Server_HitEnemy(TEnemy, Damage);
 				}
 				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
 				{
-					Server_HitEnemy(TPEnemy);
+					Server_HitEnemy(TPEnemy, Damage);
 				}
 				AlreadyHitActors.Add(HitActor);
 			}
@@ -226,19 +226,19 @@ void AAresCharacter::BasicAttack()
 
 void AAresCharacter::HeavyAttack()
 {
-	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+	//if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-	if (!CanHeavyAttack) return;
-	CanHeavyAttack = false;
+	//if (!CanHeavyAttack) return;
+	//CanHeavyAttack = false;
 
-	Damage = 12.0f;
+	//Damage = 12.0f;
 
-	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-	{
-		PlayRandomAttackAnimation();
-	}
+	//if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+	//{
+	//	PlayRandomAttackAnimation();
+	//}
 
-	GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+	//GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AAresCharacter::UpdateCamera(float DeltaTime)
@@ -384,12 +384,6 @@ void AAresCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Veloci
 	}
 }
 
-void AAresCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-	if (HitActor)
-	{
-		UGameplayStatics::ApplyDamage(HitActor, Damage, GetController(), this, nullptr);
-	}
-}
+
 
 

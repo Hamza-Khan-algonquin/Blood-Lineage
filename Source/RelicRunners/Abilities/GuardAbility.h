@@ -29,7 +29,6 @@ protected:
 
     float ChargeDuration = 10.f;
     float ChargeSpeed = 1500.f;
-    float ChargeDamage = 25.f;
     float KnockbackStrength = 1000.f;
     float CheckRadius = 100.f;
     float CheckDistance = 150.f;

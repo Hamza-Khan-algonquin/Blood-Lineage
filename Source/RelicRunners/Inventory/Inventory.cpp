@@ -51,6 +51,7 @@
 #include <Blueprint/SlateBlueprintLibrary.h>
 #include "Components/AudioComponent.h"
 #include "Animation/WidgetAnimation.h"
+#include "RelicRunners/Menu/SaveFileListData.h"
 
 
 void UInventory::NativeConstruct()
@@ -517,7 +518,8 @@ FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
         B_Luck,           
         B_Mana,           
         B_PlayerLevel,    
-        B_Purity          
+        B_Purity,
+        B_MetaLevel
     };
 
     UBorder* HoveredBorder = nullptr;
@@ -573,6 +575,8 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     FString StatKey = "";
     int RawValue = 0;
 
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
     if      (HoveredBorder == B_Health)         { StatKey = "Health";       RawValue = Stats.TotalHealth; }
     else if (HoveredBorder == B_Defence)        { StatKey = "Defence";      RawValue = Stats.TotalArmor; }
     else if (HoveredBorder == B_Strength)       { StatKey = "Strength";     RawValue = Stats.TotalStrength; }
@@ -582,11 +586,19 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_Mana)           { StatKey = "Mana";         RawValue = Stats.TotalResource; }
     else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = Stats.PlayerLevel; }
     else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = Stats.TotalPotionEfficiency; }
+    else if (HoveredBorder == B_MetaLevel && GI->SelectedSaveSlot)      { StatKey = "MetaLevel";    RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
 
     FTooltipData TD;
     if (HoveredBorder == B_Mana)
     {
         TD = ItemStats::GetStatTooltipData(StatKey, RawValue, Stats.TotalResourceRegen, Stats.TotalResourceTime, "", "");
+    }
+    else if (HoveredBorder == B_PlayerLevel)
+    {
+        if (GI->SelectedSaveSlot)
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, RawValue, GI->SelectedSaveSlot->SaveData.MetaStartingLevel, 0, "", "");
+        }
     }
     else
     {
@@ -1181,6 +1193,9 @@ void UInventory::OnEquippedStatsUpdated(const FEquippedStatsSummary& Stats)
     if (TB_Luck)            TB_Luck->SetText(FText::AsNumber(Stats.TotalLuck));
     if (TB_Purity)          TB_Purity->SetText(FText::AsNumber(Stats.TotalPotionEfficiency));
     if (TB_Mana)            TB_Mana->SetText(FText::AsNumber(Stats.TotalResource));
+
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+    if (TB_MetaLevel && GI->SelectedSaveSlot)       TB_MetaLevel->SetText(FText::AsNumber(GI->SelectedSaveSlot->GetMetaLevel()));
 
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {

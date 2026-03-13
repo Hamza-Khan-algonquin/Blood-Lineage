@@ -21,7 +21,7 @@ public:
 	UPROPERTY()
 	class USceneComponent* PayloadOrigin;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* PayloadBody;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

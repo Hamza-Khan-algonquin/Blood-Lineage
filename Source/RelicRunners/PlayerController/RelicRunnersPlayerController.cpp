@@ -26,6 +26,8 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include "RelicRunners/Game/PostGameWidget.h"
+#include "RelicRunners/Game/SpectatingWidget.h"
 
 #include "RelicRunners/LevelGeneration/NewObjectives/NewCapturableFlag.h"
 
@@ -71,6 +73,8 @@
 #include <RelicRunners/Objective/FlagData.h>
 #include <RelicRunners/Objective/ObjectiveItemEntry.h>
 #include <RelicRunners/Objective/PandorasObjective.h>
+#include <NavigationSystem.h>
+#include <Blueprint/AIBlueprintHelperLibrary.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -224,7 +228,7 @@ void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, E
 	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
 
-void ARelicRunnersPlayerController::TravelCleanUI()
+void ARelicRunnersPlayerController::CleanUI()
 {
 	//Clean up UI
 	if (UWorld* World = GetWorld())
@@ -617,7 +621,7 @@ void ARelicRunnersPlayerController::SetupMinimapRenderTarget()
 	}
 }
 
-void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview)
+void ARelicRunnersPlayerController::SetupPreviewRenderTarget(APlayerPreview* Preview) 
 {
 	if (!IsLocalController() || !Preview)
 	{
@@ -826,8 +830,16 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	if (LoadingScreen)
 	{
 		LoadingScreen->RemoveFromParent();
-		ForceGameModeOnly();
-		MinimapUI();
+
+		if (GetWorld()->GetMapName().Contains(TEXT("BossLevel")))
+		{
+			StartBossCinematicWalk();
+		}
+		else
+		{
+			ForceGameModeOnly();
+			MinimapUI();
+		}
 	}
 }
 
@@ -1023,8 +1035,76 @@ void ARelicRunnersPlayerController::ClearOldObjectives()
 	}
 }
 
+void ARelicRunnersPlayerController::SpectatingUI()
+{
+	if (!SpectatingWidget && SpectatingWidgetClass)
+	{
+		SpectatingWidget = CreateWidget<USpectatingWidget>(this, SpectatingWidgetClass);
+		if (SpectatingWidget)
+		{
+			SpectatingWidget->AddToViewport();
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::PostGameUI()
+{
+	if (!PostGameWidget && PostGameWidgetClass)
+	{
+		PostGameWidget = CreateWidget<UPostGameWidget>(this, PostGameWidgetClass);
+		if (PostGameWidget)
+		{
+			PostGameWidget->AddToViewport();
+			
+			SetInputMode(FInputModeUIOnly());
+			bShowMouseCursor = true;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Client_ShowPostGame_Implementation(const TArray<FPlayerPostGameData>& FinalStats)
+{
+	if (SpectatingWidget)
+	{
+		SpectatingWidget->RemoveFromParent();
+	}
+
+	PostGameUI();
+	if (PostGameWidget) PostGameWidget->UpdateScoreboard(FinalStats);
+}
+
+void ARelicRunnersPlayerController::Server_UpdateMetaFromSave_Implementation(int MetaLevel, int MetaXP, int MetaXPToNextLevel)
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->MetaLevel = MetaLevel;
+		PS->MetaXP = MetaXP;
+		PS->MetaXPToNextLevel = MetaXPToNextLevel;
+	}
+}
+
+void ARelicRunnersPlayerController::Client_RequestSaveStats_Implementation()
+{
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (GI && GI->SelectedSaveSlot)
+	{
+		Server_UpdateMetaFromSave(
+			GI->SelectedSaveSlot->GetMetaLevel(),
+			GI->SelectedSaveSlot->GetMetaExp(),
+			GI->SelectedSaveSlot->GetMetaExpToLevel()
+		);
+	}
+}
+
 void ARelicRunnersPlayerController::InitLocalUI()
 {
+	if (!IsLocalController()) return; 
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	const FString MapName = World->GetMapName();
+
 	if (BuildVersion && !BuildVersion->IsInViewport())
 	{
 		BuildVersion->AddToViewport();
@@ -1036,21 +1116,17 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (PlayerHUD)
 		{
 			PlayerHUD->AddToViewport();
-		}
-		UWorld* World = GetWorld();
-		if (!World) return;
 
-		const FString MapName = World->GetMapName();
-
-		if (MapName.Contains(TEXT("BossLevel")))
-		{
-			PlayerHUD->ToggleBossBar(true);
-			PlayerHUD->ToggleExpBar(false);
-		}
-		else
-		{
-			PlayerHUD->ToggleBossBar(false);
-			PlayerHUD->ToggleExpBar(true);
+			if (MapName.Contains(TEXT("BossLevel")))
+			{
+				PlayerHUD->ToggleBossBar(true);
+				PlayerHUD->ToggleExpBar(true);
+			}
+			else
+			{
+				PlayerHUD->ToggleBossBar(false);
+				PlayerHUD->ToggleExpBar(true);
+			}
 		}
 	}
 
@@ -1062,13 +1138,6 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (MinimapWidget)
 		{
 			MinimapWidget->AddToViewport();
-			MinimapWidget->SetVisibility(ESlateVisibility::Hidden);
-			MinimapWidget->SetIsEnabled(false);
-
-			UWorld* World = GetWorld();
-			if (!World) return;
-
-			const FString MapName = World->GetMapName();
 
 			if (MapName.Contains(TEXT("ShopDemo")))
 			{
@@ -1080,7 +1149,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			}
 			else if (MapName.Contains(TEXT("BossLevel")))
 			{
-				MinimapWidget->SetLevelTitle(FText::FromString("Hell"));
+				MinimapWidget->SetLevelTitle(FText::FromString("Underworld"));
 			}
 		}
 	}
@@ -1243,8 +1312,47 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		SetupMainMenuView();
 	}
+}
 
+void ARelicRunnersPlayerController::StartBossCinematicWalk()
+{
+	APawn* ControlledPawn = GetPawn();
+	if (!ControlledPawn) return;
 
+	FInputModeUIOnly UIOnlyMode;
+	UIOnlyMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	SetInputMode(UIOnlyMode);
+	SetIgnoreMoveInput(true);
+
+	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (NavSys)
+	{
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, TargetLocation);
+	}
+
+	GetWorldTimerManager().SetTimer(CinematicTimerHandle, this, &ARelicRunnersPlayerController::CheckCinematicArrival, 0.1f, true);
+}
+
+void ARelicRunnersPlayerController::CheckCinematicArrival()
+{
+	APawn* ControlledPawn = GetPawn();
+	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+
+	PlayerHUD->SetVisibility(ESlateVisibility::Visible);
+	MinimapWidget->SetVisibility(ESlateVisibility::Visible);
+
+	if (ControlledPawn && FVector::Dist(ControlledPawn->GetActorLocation(), TargetLocation) < 100.0f)
+	{
+		FInputModeGameAndUI GameAndUIMode;
+		SetInputMode(GameAndUIMode);
+
+		SetIgnoreMoveInput(false);
+		GetWorldTimerManager().ClearTimer(CinematicTimerHandle);
+
+		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Control Restored."));
+	}
 }
 
 void ARelicRunnersPlayerController::Server_SendPlayerInfo_Implementation(const FString& PlayerName, const FName& SelectedClass)

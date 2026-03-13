@@ -551,6 +551,13 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
     Summary.TotalStrength += PS->UpgradedStrength;
     Summary.TotalIntelligence += PS->UpgradedIntelligence;
 
+    //Buffed from abilities
+    Summary.TotalHealth += PS->BuffedHealth;
+    Summary.TotalArmor += PS->BuffedArmor;
+    Summary.TotalDexterity += PS->BuffedDexterity;
+    Summary.TotalStrength += PS->BuffedStrength;
+    Summary.TotalIntelligence += PS->BuffedIntelligence;
+
     //Equipped Stats
     for (const FEquippedItemEntry& Entry : EquippedItems)
     {
@@ -578,6 +585,7 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
                 Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence * 3;
                 Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
                 Summary.TotalPotionEfficiency += GI->SelectedSaveSlot->SaveData.MetaPotionEfficiency * 5;
+                Summary.TotalResourceRegen += GI->SelectedSaveSlot->SaveData.MetaResourceRegen;
             }
         }
     }

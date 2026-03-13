@@ -15,7 +15,7 @@ UDivinePunishment::UDivinePunishment()
 	Duration = 5.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
-	Cost = 20;
+	Cost = 65;
 	Damage = 100.f;
     AreaRadius = 500.f;
 
@@ -31,6 +31,13 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
+    if (!AvatarActor) // If no valid actor
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // End the ability
+        return;
+
+    }
     UWorld* World = GetWorld();
     if (!World) return;
 
@@ -60,8 +67,10 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
@@ -172,7 +181,7 @@ void UDivinePunishment::DivineDamageTick()
     {
         if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
 
-        UGameplayStatics::ApplyDamage(Actor,Damage,InstigatorController, AvatarActor,UDamageType::StaticClass());
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
     }
 
     if (DamageTicksElapsed >= Duration)

@@ -30,11 +30,11 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
-	virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:
 	virtual void BeginPlay() override;
 	void Tick(float DeltaTime);
+	void ExplodeProjectile(const FVector& ImpactPoint);
 	virtual void ActivateDamageAbilities() override;
 	virtual void ActivateDefenceAbilities() override;
 	virtual void ActivateUtilityAbilities() override;
@@ -70,6 +70,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	float ProjectileDamage = 90.f;
+
+	UPROPERTY(EditAnywhere, Category = "Projectile")
+	float ExplosionRadius = 100.f;
 
 	FTimerHandle TimerHandle_AttackCooldown;
 
