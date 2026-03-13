@@ -1,12 +1,13 @@
 #include "DivinePunishment.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h" 
 #include "Kismet/GameplayStatics.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "TimerManager.h"
-#include "GameFramework/CharacterMovementComponent.h" 
+
 
 UDivinePunishment::UDivinePunishment()
 {
@@ -14,23 +15,10 @@ UDivinePunishment::UDivinePunishment()
 	Duration = 5.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
-	Cost = 20;
-	DamageAmount = 100.f;
+	Cost = 65;
+	Damage = 100.f;
     AreaRadius = 500.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_DivinePunishment.NS_DivinePunishment"));
-
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_divinepunishment_down_Montage.melee_divinepunishment_down_Montage"));
-
-    if (AnimAsset.Succeeded())
-    {
-        AbilityAnim = AnimAsset.Object;
-    }
 }
 
 void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -43,6 +31,13 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
+    if (!AvatarActor) // If no valid actor
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // End the ability
+        return;
+
+    }
     UWorld* World = GetWorld();
     if (!World) return;
 
@@ -72,8 +67,10 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
@@ -184,7 +181,7 @@ void UDivinePunishment::DivineDamageTick()
     {
         if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
 
-        UGameplayStatics::ApplyDamage(Actor,DamageAmount,InstigatorController, AvatarActor,UDamageType::StaticClass());
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
     }
 
     if (DamageTicksElapsed >= Duration)

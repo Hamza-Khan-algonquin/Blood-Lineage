@@ -35,7 +35,7 @@ void AHades::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
     DOREPLIFETIME(AHades, bIsLookingAtAbilityTarget);
     DOREPLIFETIME(AHades, AbilityLookAtTarget);
     DOREPLIFETIME(AHades, CurrentTarget);
-
+    DOREPLIFETIME(AHades, ReplicatedVortexForce);
 }
 
 void AHades::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage, float Speed, float StartPosition)
@@ -57,6 +57,7 @@ void AHades::BeginPlay()
     if (GhostCycloneSystem)
     {
         ActiveCycloneComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), GhostCycloneSystem, FVector(0.f, 0.f, -300.f));
+        ActiveCycloneComp->SetIsReplicated(true);
     }
     if (HasAuthority())
     {
@@ -79,6 +80,14 @@ void AHades::Tick(float DeltaTime)
     if (!bIsBusy)
     {
         UpdateIdleAnimation();
+    }
+}
+
+void AHades::OnRep_VortexForce()
+{
+    if (ActiveCycloneComp)
+    {
+        ActiveCycloneComp->SetFloatParameter(FName("VortexForce"), ReplicatedVortexForce);
     }
 }
 
@@ -195,9 +204,13 @@ void AHades::PlaySlam()
         if (WeakSelf.IsValid())
         {
             WeakSelf->ExecuteDamage(SlamLoc, 1800.0f);
-            WeakSelf->bIsBusy = false;
-            WeakSelf->bIsLookingAtAbilityTarget = false;
-            WeakSelf->ScheduleNextAttack(2.0f);
+            //Incase boss dies
+            if (WeakSelf.IsValid())
+            {
+                WeakSelf->bIsBusy = false;
+                WeakSelf->bIsLookingAtAbilityTarget = false;
+                WeakSelf->ScheduleNextAttack(2.0f);
+            }
         }
         }, Delay, false);
 }
@@ -322,6 +335,14 @@ void AHades::UpdateSweep(float DeltaTime)
     if (!HasAuthority()) return;
 
     SweepElapsedTime += DeltaTime;
+    if (ActiveCycloneComp)
+    {
+        float Force = ((SweepElapsedTime + 3) * 100.0f);
+        ActiveCycloneComp->SetFloatParameter(FName("VortexForce"), Force);
+        ReplicatedVortexForce = Force;
+
+        OnRep_VortexForce();
+    }
     float TotalTime = SweepDuration + ((SweepDuration / 1.5f) * (SweepRotationCount - 1));
     float Alpha = FMath::Clamp(SweepElapsedTime / TotalTime, 0.0f, 1.0f);
 
@@ -357,6 +378,15 @@ void AHades::UpdateSweep(float DeltaTime)
         {
             ActiveSweepBeam->Destroy();
             ActiveSweepBeam = nullptr;
+        }
+
+        if (ActiveCycloneComp)
+        {
+            float Force = (200.f);
+            ActiveCycloneComp->SetFloatParameter(FName("VortexForce"), Force);
+            ReplicatedVortexForce = Force;
+
+            OnRep_VortexForce();
         }
 
         bIsBusy = false;

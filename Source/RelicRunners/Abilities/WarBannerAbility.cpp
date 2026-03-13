@@ -13,15 +13,9 @@ UWarBannerAbility::UWarBannerAbility()
     Duration = 15.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
+    Cost = 40;
     AreaRadius = 600.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/WarBanner/NS_MagicCircle.NS_MagicCircle"));
-
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
 }
 
 
@@ -72,9 +66,16 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     FVector BannerLocation = GetBannerLocation();
 
@@ -122,7 +123,6 @@ void UWarBannerAbility::SpawnBanner()
             }
         }
     }
-
 
 }
 

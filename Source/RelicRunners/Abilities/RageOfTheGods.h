@@ -35,7 +35,7 @@ protected:
 
 	float PulseInterval = 2.f;
 	float PulseDuration = 4.f;
-	float TotalDuration = 10.f;
+	float TotalDuration = 5.f;
 
 	float StartRadius = 200.f;
 	float MaxRadius = 1000.f;

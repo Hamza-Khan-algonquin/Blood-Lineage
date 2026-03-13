@@ -30,11 +30,11 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
-	virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:
 	virtual void BeginPlay() override;
 	void Tick(float DeltaTime);
+	void ExplodeProjectile(const FVector& ImpactPoint);
 	virtual void ActivateDamageAbilities() override;
 	virtual void ActivateDefenceAbilities() override;
 	virtual void ActivateUtilityAbilities() override;
@@ -46,6 +46,11 @@ protected:
 	void GiveGoddessOfLove();
 	void ShowReticle();
 	void HideReticle();
+
+	void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
+	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
+	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
+
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
@@ -53,7 +58,6 @@ protected:
 	virtual void ProjectileHeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
 
-	float GetMinAllowedPitch() const;
 
 	UPROPERTY()
 	bool bCanFire = true;
@@ -66,6 +70,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	float ProjectileDamage = 90.f;
+
+	UPROPERTY(EditAnywhere, Category = "Projectile")
+	float ExplosionRadius = 100.f;
 
 	FTimerHandle TimerHandle_AttackCooldown;
 
@@ -89,4 +96,16 @@ protected:
 
 	UPROPERTY()
 	UUserWidget* ReticleWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Aphrodite")
+	TSubclassOf<UBundleOfJoy> BP_BundleOfJoyClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Aphrodite")
+	TSubclassOf<UMirrorOfDesireAbility> BP_MirrorOfDesireClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Aphrodite")
+	TSubclassOf<UKissOfLife> BP_KissOfLifeClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Aphrodite")
+	TSubclassOf<UGoddessOfLove> BP_GoddessOfLoveClass;
 };

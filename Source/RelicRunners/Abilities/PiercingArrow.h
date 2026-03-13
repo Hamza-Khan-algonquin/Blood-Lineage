@@ -21,29 +21,24 @@ public:
     virtual FName GetAbilityName() const override { return FName("Piercing Arrow"); }
 
 protected:
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PiercingArrow")
-    float ArrowSpeed = 2200.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PiercingArrow")
-    float MaxRange = 3000.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PiercingArrow")
-    float ArrowRadius = 30.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PiercingArrow")
-    float GrowthRate = 15.f; // this is what is supposed to make the arrow grow bigger...
-
-private:
-    FVector ArrowLocation;
-    FVector ArrowDirection;
-    float TraveledDistance = 0.f;
-
-    bool bIsFlying = false;
-
-    FTimerHandle ArrowTickTimer;
-
-    TSet<AActor*> HitActors;
-
     void TickArrow();
+
+    void Explode(FVector ImpactPoint);
+
+    void ApplyDotTick();
+
+    FTimerHandle ProjectileTimer;
+    FTimerHandle DurationTimer;
+    FTimerHandle DotTimer;
+
+    FVector ProjectileLocation;
+    FVector ProjectileVelocity;
+    FVector DotCenter;
+    float Gravity;
+    float ProjectileRadius;
+    float DotTickRate;
+    float DotDuration;
+    float DotTimeElapsed;
+
+
 };

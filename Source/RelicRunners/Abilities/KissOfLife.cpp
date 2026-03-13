@@ -16,15 +16,9 @@ UKissOfLife::UKissOfLife()
     Duration = 10.f;
     CooldownTimer = 12.f;
     LastUseTime = -100.f;
-    Cost = 30;
+    Cost = 50;
     AreaRadius = 600.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/KissOfLife/NS_Healing_Aura.NS_Healing_Aura"));
-
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
 }
 
 void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -59,10 +53,16 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         return;
     }
 
-    // Mana deduction for the player
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     APawn* OwnerPawn = Cast<APawn>(AvatarActor);
     if (!OwnerPawn) return;
