@@ -66,6 +66,9 @@ public:
 	void SetTimePlayed(float Time) { SaveData.TimePlayed = Time; }
 
 	UFUNCTION(BlueprintCallable)
+	FSaveData GetAllStats() const { return SaveData; }
+
+	UFUNCTION(BlueprintCallable)
 	FGuid GetUniqueID() { return SaveData.UniqueID; }
 
 	UFUNCTION(BlueprintCallable)
@@ -114,6 +117,16 @@ public:
     static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,
 		float MetaExperienceToLevel, int MetaPoints, int MetaHealth, int MetaDefence, int MetaLuck, int MetaStrength, int MetaAgility,
 		int MetaIntelligence, int MetaStartingLevel, int MetaPotionEfficiency, int MetaResourceRegen);
+
+	UFUNCTION(BlueprintCallable)
+	void SetLiveSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,
+		float MetaExperienceToLevel, int MetaPoints, int MetaHealth, int MetaDefence, int MetaLuck, int MetaStrength, int MetaAgility,
+		int MetaIntelligence, int MetaStartingLevel, int MetaPotionEfficiency, int MetaResourceRegen)
+	{
+		SaveData = MakeSaveData(Name, TimePlayed, MetaLevel, UniqueID, MetaExperience, MetaExperienceToLevel, MetaPoints, MetaHealth, MetaDefence,
+			MetaLuck, MetaStrength, MetaAgility, MetaIntelligence, MetaStartingLevel, MetaPotionEfficiency, MetaResourceRegen);
+	}
+
 
 	UFUNCTION(BlueprintCallable)
 	void SetParentWidget(UModeSelectionWidget* TheParentWidget) { ParentWidget = TheParentWidget; }

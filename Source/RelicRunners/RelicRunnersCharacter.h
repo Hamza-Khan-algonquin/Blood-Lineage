@@ -39,6 +39,7 @@
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
 #include "TimerManager.h"
+#include "Components/SphereComponent.h"
 #include "RelicRunnersCharacter.generated.h"
 
 class USpringArmComponent;
@@ -124,7 +125,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateItemVisuals(class UItemObject* Item);
 	UFUNCTION(Server, Reliable)
-	virtual void Server_HitEnemy(AActor* HitActor);
+	void Server_HitEnemy(AActor* TargetActor, float BaseDamage);
+
+
 
 	//Getters
 	FString GetMeshPathByItemType(const FString& ItemType);
@@ -267,6 +270,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")
 	float BounceSpeed = 6.f;
+
 
 	FVector CurrentLookAhead;
 

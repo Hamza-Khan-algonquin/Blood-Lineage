@@ -164,6 +164,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	OffhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	OffhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 
+	
 	//UI
 	PlayerHUDWorld = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidgetComponent"));
 	PlayerHUDWorld->SetupAttachment(GetMesh());
@@ -173,6 +174,8 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	PlayerHUDWorld->SetDrawAtDesiredSize(true);
 	PlayerHUDWorld->SetVisibility(true);
 	PlayerHUDWorld->CastShadow = false;
+
+
 
 	bAlwaysRelevant = true;
 	SetReplicates(true);
@@ -202,6 +205,8 @@ void ARelicRunnersCharacter::BeginPlay()
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
 	}
+
+	
 }
 
 void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -451,9 +456,52 @@ void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 	
 }
 
-void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor, float BaseDamage)
 {
+	if (!TargetActor) return;
 
+	AController* InstigatorController = GetInstigatorController();
+	if (!InstigatorController) return;
+
+	APlayerController* PC = Cast<APlayerController>(InstigatorController);
+
+	UInventoryComponent* InventoryComponent = nullptr;
+	if (PC)
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			InventoryComponent = PS->GetInventoryComponent();
+		}
+	}
+
+	float PercentStrengthIncrease = 0.f;
+	float CritChance = 0.f;
+	float CritDamageMultiplier = 1.f;
+
+	if (InventoryComponent)
+	{
+		int Strength = InventoryComponent->CachedEquippedStats.TotalStrength;
+		int CritValue = InventoryComponent->CachedEquippedStats.TotalDexterity;
+
+		PercentStrengthIncrease = ItemStats::GetStrengthPerc(Strength);
+
+		CritChance = ItemStats::GetCritPerc(CritValue);
+		CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
+		CritDamageMultiplier = ItemStats::GetCritDmgPerc(CritValue);
+	}
+
+	float FinalDamage = BaseDamage * (1.f + PercentStrengthIncrease / 100.f);
+
+	// Roll for crit
+	float RandomRoll = FMath::FRandRange(1.f, 100.f);
+	bool bIsCrit = RandomRoll <= CritChance;
+
+	if (bIsCrit)
+	{
+		FinalDamage *= CritDamageMultiplier;
+	}
+
+	UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this, nullptr);
 }
 
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const
@@ -759,6 +807,8 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 	OnRep_VisualsChanged();
 }
 
+
+
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 {
 	return FString::Printf(TEXT("/Game/ThirdPerson/Meshes/Items/%s/%s.%s"),
@@ -829,8 +879,6 @@ void ARelicRunnersCharacter::UltimateAbility()
 	ActivateUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
-
-
 
 
 

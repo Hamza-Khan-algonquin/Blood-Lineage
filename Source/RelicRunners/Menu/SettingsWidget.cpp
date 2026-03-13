@@ -25,7 +25,7 @@
 void USettingsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
+	
 
 	if (BackButton)
 	{
@@ -185,6 +185,8 @@ void USettingsWidget::NativeConstruct()
 	{
 		OutputDeviceDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleOutputDeviceChanged);
 		FOnAudioOutputDevicesObtained DevicesDelegate;
+		DevicesDelegate.BindUFunction(this, FName("OnAudioDevicesFound"));
+
 		UAudioMixerBlueprintLibrary::GetAvailableAudioOutputDevices(this, DevicesDelegate);
 	}
 
@@ -209,6 +211,49 @@ void USettingsWidget::NativeConstruct()
 		MasterVolumeSlider->SetValue(Normalized);
 		ApplyMasterVolume(CurrentVolume);
 		UpdateMasterVolumeText(CurrentVolume);
+	}
+
+	if (AntiAliasingDropDown)
+	{
+		AntiAliasingDropDown->ClearOptions();
+
+		AntiAliasingDropDown->AddOption(TEXT("Low"));
+		AntiAliasingDropDown->AddOption(TEXT("Medium"));
+		AntiAliasingDropDown->AddOption(TEXT("High"));
+		AntiAliasingDropDown->AddOption(TEXT("Epic"));
+		AntiAliasingDropDown->AddOption(TEXT("Cinematic"));
+
+		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+		{
+			const int32 AAQuality = GS->GetAntiAliasingQuality();
+
+			switch (AAQuality)
+			{
+			case 0: AntiAliasingDropDown->SetSelectedOption(TEXT("Low")); break;
+			case 1: AntiAliasingDropDown->SetSelectedOption(TEXT("Medium")); break;
+			case 2: AntiAliasingDropDown->SetSelectedOption(TEXT("High")); break;
+			case 3: AntiAliasingDropDown->SetSelectedOption(TEXT("Epic")); break;
+			case 4: AntiAliasingDropDown->SetSelectedOption(TEXT("Cinematic")); break;
+			default: AntiAliasingDropDown->SetSelectedOption(TEXT("High")); break;
+			}
+		}
+		AntiAliasingDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleAntiAliasingChanged);
+
+	}
+
+	if (AutoLoot)
+	{
+		
+		AutoLoot->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::OnAutoLootChanged);
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			if (GI->Keys)
+			{
+				AutoLoot->SetIsChecked(GI->Keys->bAutoLoot);
+			}
+		}
+
 	}
 	InitializeDefaultKeybindings();
 }
@@ -601,6 +646,10 @@ void USettingsWidget::HandleOutputDeviceChanged(FString Item, ESelectInfo::Type 
 	const FString* DeviceId = OutputDeviceMap.Find(Item);
 	if (!DeviceId) return;
 
+	FOnCompletedDeviceSwap SwapDelegate;
+	SwapDelegate.BindUFunction(this, FName("OnOutputChanged"));
+
+	UAudioMixerBlueprintLibrary::SwapAudioOutputDevice(this, *DeviceId, SwapDelegate);
 
 }
 
@@ -617,10 +666,20 @@ void USettingsWidget::OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& 
 		OutputDeviceMap.Add(D.Name, D.DeviceId);
 	}
 
-	if (Devices.Num() > 0)
+	for (const FAudioOutputDeviceInfo& Device : Devices)
 	{
-		OutputDeviceDropDown->SetSelectedOption(Devices[0].Name);
+		if (Device.bIsCurrentDevice)
+		{
+			OutputDeviceDropDown->SetSelectedOption(Device.Name);
+			break;
+		}
 	}
+}
+
+void USettingsWidget::OnOutputDevicesSwapped(const FSwapAudioOutputResult& Result)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Swap finished"));
+
 }
 
 void USettingsWidget::OnMasterVolumeChanged(float Value)
@@ -654,6 +713,37 @@ void USettingsWidget::UpdateMasterVolumeText(float Volume)
 
 	const int32 Percent = FMath::RoundToInt(Volume * 100.f);
 	TB_MasterVolumeValue->SetText(FText::FromString(FString::Printf(TEXT("%d%%"), Percent)));
+}
+
+void USettingsWidget::HandleAntiAliasingChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType == ESelectInfo::Direct) return;
+
+	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
+	{
+		int32 Quality = 2; // default High
+
+		if (Item == TEXT("Low")) Quality = 0;
+		else if (Item == TEXT("Medium")) Quality = 1;
+		else if (Item == TEXT("High")) Quality = 2;
+		else if (Item == TEXT("Epic")) Quality = 3;
+		else if (Item == TEXT("Cinematic")) Quality = 4;
+
+		GS->SetAntiAliasingQuality(Quality);
+		GS->ApplyNonResolutionSettings();
+		GS->SaveSettings();
+	}
+}
+void USettingsWidget::OnAutoLootChanged(bool bIsChecked)
+{
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			GI->Keys->bAutoLoot = bIsChecked;
+
+		}
+	}
 }
 void USettingsWidget::BackButtonClicked()
 {

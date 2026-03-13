@@ -15,11 +15,12 @@ UMoonbeam::UMoonbeam()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 25;              
+    Cost = 60;              
     CooldownDuration = 10.f;   
     LastUseTime = -100.f;   
     Duration = 5.f;
     AreaRadius = 100.f;
+	Damage = 20.f;
 }
 
 void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
@@ -50,8 +51,10 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
 
-    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - Cost);
+    // Spend resource
+    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - FinalManaCost);
     PlayerState->UpdateRemoteHUDResource();
     
     if (AbilityAnim)
@@ -126,7 +129,7 @@ void UMoonbeam::BeamTick()
 
         if (Pawn == OwnerChar) continue;
 
-        UGameplayStatics::ApplyDamage(Pawn,DamagePerTick,OwnerChar->GetController(),OwnerChar,nullptr);
+        CalculateAbilityDamage(OwnerChar, Pawn, Damage);
     }
 }
 

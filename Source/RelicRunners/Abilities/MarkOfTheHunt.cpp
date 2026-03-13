@@ -12,16 +12,15 @@ UMarkOfTheHunt::UMarkOfTheHunt()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Duration = 10.f;
+    Duration = 2.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
-    AreaRadius = 1000.f;
-    TravelTime = 2.f;
-    Gravity = -980.f;
+    Cost = 40;
+	ConeAngle = 40.f;
+    Damage = 100.f;
 }
 
-void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
+void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
@@ -46,43 +45,78 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle,con
         return;
     }
 
-    // Get PlayerState safely
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
-    {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
-
-    // Must have PlayerState and enough resource
-    if (!PS || PS->GetPlayerResource() < Cost)
+    AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
+    ACharacter* OwnerChar = Cast<ACharacter>(AvatarActor);
+    if (!OwnerChar)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
+
+    if (OwnerChar->GetWorld()->GetTimeSeconds() - LastUseTime < CooldownDuration)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    ARelicRunnersPlayerState* PlayerState = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
+
+    if (!PlayerState || PlayerState->GetPlayerResource() < Cost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
-    PS->UpdateRemoteHUDResource();
+    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - FinalManaCost);
+    PlayerState->UpdateRemoteHUDResource();
 
-    StartLocation = ActorInfo->AvatarActor->GetActorLocation() + FVector(0, 0, 50.f);
+    AActor* Avatar = ActorInfo->AvatarActor.Get();
 
-    // Get forward vector
-    FVector Forward = ActorInfo->AvatarActor->GetActorForwardVector();
+    FVector BaseLocation = Avatar->GetActorLocation() + Avatar->GetActorForwardVector() * 100.f + FVector(0, 0, 50);
+    FVector Forward = Avatar->GetActorForwardVector();
 
-    // Angle it upward
-    float LaunchAngle = 2.f; // degrees
-    FRotator ForwardRot = Forward.Rotation();
-    ForwardRot.Pitch += LaunchAngle; // rotate up
-    FVector AdjustedForward = ForwardRot.Vector();
+    ActiveProjectiles.Empty();
 
-    // Set initial velocity
-    float LaunchSpeed = 3800.f;
-    InitialVelocity = AdjustedForward * LaunchSpeed;
+    for (int i = 0; i < NumProjectiles; i++)
+    {
+        float Alpha = (float)i / (NumProjectiles - 1);
+        float YawOffset = FMath::Lerp(-ConeAngle * 0.5f, ConeAngle * 0.5f, Alpha);
 
-    ProjectileAlpha = 0.f;
+        FRotator Rot = Forward.Rotation();
+        Rot.Yaw += YawOffset;
 
-    // Tick projectile every frame
-    World->GetTimerManager().SetTimer(ProjectileTickTimer,this,&UMarkOfTheHunt::ProjectileTick,0.02f,true);
+        FMarkProjectile P;
+
+        P.Location = BaseLocation;
+        P.PreviousLocation = BaseLocation;
+        P.Velocity = Rot.Vector() * ProjectileSpeed;
+
+        // Spawn mesh
+        if (ProjectileMeshAsset)
+        {
+            P.Mesh = NewObject<UStaticMeshComponent>(Avatar);
+            P.Mesh->RegisterComponent();
+            P.Mesh->SetStaticMesh(ProjectileMeshAsset);
+            P.Mesh->SetWorldLocation(P.Location);
+            P.Mesh->SetWorldRotation(P.Velocity.Rotation());
+            P.Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        }
+
+        ActiveProjectiles.Add(P);
+    }
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
+
+    World->GetTimerManager().SetTimer(ProjectileTickTimer,this, &UMarkOfTheHunt::ProjectileTick,0.02f,true);
+
+    World->GetTimerManager().SetTimer(DurationTimer, [this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, false, false);},Duration,false);
 
     LastUseTime = World->GetTimeSeconds();
 }
@@ -92,83 +126,74 @@ void UMarkOfTheHunt::ProjectileTick()
     UWorld* World = GetWorld();
     if (!World) return;
 
-    ProjectileAlpha += 0.02f;
-
-    FVector PreviousLocation = StartLocation;
-    FVector CurrentLocation = StartLocation + InitialVelocity * ProjectileAlpha;
-    CurrentLocation.Z += 0.5f * Gravity * ProjectileAlpha * ProjectileAlpha;
-
-    // Draw projectile
-    DrawDebugSphere(World, CurrentLocation, 12.f, 8, FColor::Cyan, false, 0.05f);
-
-    // Trace from previous position to current to check for ground collision
-    FHitResult Hit;
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(GetAvatarActorFromActorInfo());
-
-    bool bHit = World->LineTraceSingleByChannel(Hit,PreviousLocation,CurrentLocation,ECC_WorldStatic,Params);
-
-    if (bHit)
+    for (int i = ActiveProjectiles.Num() - 1; i >= 0; i--)
     {
-        // Stop projectile at impact
+        FMarkProjectile& P = ActiveProjectiles[i];
+
+        P.Elapsed += 0.02f;
+
+        // Gravity
+        P.Velocity.Z -= ProjectileGravity * 0.02f;
+
+        P.PreviousLocation = P.Location;
+        P.Location += P.Velocity * 0.02f;
+
+        if (P.Mesh)
+        {
+            P.Mesh->SetWorldLocation(P.Location);
+            P.Mesh->SetWorldRotation(P.Velocity.Rotation());
+        }
+
+        // Collision
+        TArray<FHitResult> Hits;
+        FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
+
+        bool bHit = World->SweepMultiByChannel(Hits,P.PreviousLocation, P.Location, FQuat::Identity, ECC_GameTraceChannel1, Sphere);
+
+        for (const FHitResult& Hit : Hits)
+        {
+            AActor* HitActor = Hit.GetActor();
+            if (!HitActor) continue;
+
+            if (P.HitActors.Contains(HitActor))
+                continue;
+
+            if (HitActor->ActorHasTag("Enemy"))
+            {
+                DrawDebugSphere(World, Hit.ImpactPoint, 25.f, 12, FColor::Red, false, 1.f);
+
+                CalculateAbilityDamage(GetAvatarActorFromActorInfo(), HitActor, Damage);
+
+                P.HitActors.Add(HitActor);
+
+                if (P.HitActors.Num() >= MaxPierces)
+                {
+                    if (P.Mesh)
+                        P.Mesh->DestroyComponent();
+
+                    ActiveProjectiles.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        // Lifetime
+        if (P.Elapsed >= ProjectileLifetime)
+        {
+            if (P.Mesh)
+            {
+                P.Mesh->DestroyComponent();
+            }
+
+            ActiveProjectiles.RemoveAt(i);
+        }
+    }
+
+    if (ActiveProjectiles.Num() == 0)
+    {
         World->GetTimerManager().ClearTimer(ProjectileTickTimer);
-        EndLocation = Hit.ImpactPoint;
-        OnProjectileLanded();
     }
 }
-
-
-void UMarkOfTheHunt::OnProjectileLanded()
-{
-    UWorld* World = GetWorld();
-    if (!World) return;
-
-    // Impact visuals
-    DrawDebugSphere(World, EndLocation, 25.f, 12, FColor::Red, false, 3.f);
-
-    ScanForEnemies(EndLocation);
-    
-}
-
-void UMarkOfTheHunt::ScanForEnemies(const FVector& ScanLocation)
-{
-    UWorld* World = GetWorld();
-    if (!World) return;
-
-    // Draw a green sphere to show the scan radius
-    DrawDebugSphere(World, ScanLocation, AreaRadius, 32, FColor::Green, false, 3.f, 0, 2.f);
-
-    // Timer handle for ticking spheres
-    FTimerHandle EnemySphereTimerHandle;
-
-    // Start ticking spheres 
-    World->GetTimerManager().SetTimer(EnemySphereTimerHandle,[World, ScanLocation]()
-        {
-            TArray<AActor*> FoundActors;
-            TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-            ObjectTypes.AddUnique(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
-
-            // Overlap check every tick
-            UKismetSystemLibrary::SphereOverlapActors(World,ScanLocation,1000.f, ObjectTypes, APawn::StaticClass(), {}, FoundActors);
-
-            for (AActor* Actor : FoundActors)
-            {
-                if (Actor && Actor->ActorHasTag("Enemy"))
-                {
-                    // Draw red debug sphere at enemy's current location
-                    DrawDebugSphere(World, Actor->GetActorLocation(), 30.f, 12, FColor::Red, false, 0.02f); }
-            }}, 0.02f, true);
-
-    // Timer to stop ticking after ability duration
-    FTimerHandle StopTimerHandle;
-
-    World->GetTimerManager().SetTimer( StopTimerHandle,[World, EnemySphereTimerHandle]() mutable {World->GetTimerManager().ClearTimer(EnemySphereTimerHandle);},Duration,false);
-
-    // End the ability immediately after scan starts
-    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-}
-
-
 
 void UMarkOfTheHunt::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
@@ -182,6 +207,7 @@ void UMarkOfTheHunt::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         if (World)
         {
             World->GetTimerManager().ClearTimer(ProjectileTickTimer);
+            World->GetTimerManager().ClearTimer(DurationTimer);
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();
