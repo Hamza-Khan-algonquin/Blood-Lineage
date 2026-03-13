@@ -80,7 +80,7 @@ void AAphroditeCharacter::ActivateDamageAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UBundleOfJoy::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_BundleOfJoyClass);
     }
 
 }
@@ -92,7 +92,7 @@ void AAphroditeCharacter::ActivateDefenceAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UMirrorOfDesireAbility::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_MirrorOfDesireClass);
     }
 }
 
@@ -103,7 +103,7 @@ void AAphroditeCharacter::ActivateUtilityAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UKissOfLife::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_KissOfLifeClass);
     }
 }
 
@@ -114,7 +114,7 @@ void AAphroditeCharacter::ActivateUltimateAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UGoddessOfLove::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_GoddessOfLoveClass);
     }
 }
 
@@ -122,9 +122,9 @@ void AAphroditeCharacter::GiveBundleOfJoy()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UBundleOfJoy::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_BundleOfJoyClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_BundleOfJoyClass, 1, 0));
     }
 }
 
@@ -132,9 +132,9 @@ void AAphroditeCharacter::GiveMirrorOfDesire()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UMirrorOfDesireAbility::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_MirrorOfDesireClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMirrorOfDesireAbility::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MirrorOfDesireClass, 1, 0));
     }
 }
 
@@ -142,9 +142,9 @@ void AAphroditeCharacter::GiveKissOfLife()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UKissOfLife::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_KissOfLifeClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_KissOfLifeClass, 1, 0));
     }
 }
 
@@ -152,9 +152,9 @@ void AAphroditeCharacter::GiveGoddessOfLove()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UGoddessOfLove::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_GoddessOfLoveClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGoddessOfLove::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_GoddessOfLoveClass, 1, 0));
     }
 }
 
@@ -188,9 +188,7 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
 {
     const FString MapName = GetWorld()->GetMapName();
     if (MapName.Contains(TEXT("BossLevel"))) return;
-    if (!CameraBoom) return;
 
-    // Aiming mode
     if (bIsAiming)
     {
         ShowReticle();
@@ -199,11 +197,10 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
         CameraBoom->bEnableCameraLag = false;
         CameraBoom->bEnableCameraRotationLag = false;
 
-        // Interpolate arm length
-        CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength, DeltaTime, AimingInterpSpeed);
+        // Smoothly interpolate arm length and offset
+        CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength,DeltaTime,AimingInterpSpeed);
 
-        // Interpolate socket offset
-        CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, AimingOffset, DeltaTime, AimingInterpSpeed);
+        CameraBoom->SocketOffset = FMath::VInterpTo( CameraBoom->SocketOffset,AimingOffset,DeltaTime, AimingInterpSpeed);
 
         // Rotate player to controller yaw
         if (Controller)
@@ -214,157 +211,159 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
             SetActorRotation(ActorRot);
         }
 
-        // Smoothly rotate camera to face player
+        // Rotate camera to face player
         FRotator CurrentRot = CameraBoom->GetComponentRotation();
         FRotator TargetRot = GetActorRotation();
         TargetRot.Pitch = 0.f;
         TargetRot.Roll = 0.f;
 
-        CameraBoom->SetWorldRotation(FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, AimingInterpSpeed));
+        CameraBoom->SetWorldRotation(FMath::RInterpTo(CurrentRot,TargetRot, DeltaTime,AimingInterpSpeed));
+
+        return; // early exit so normal camera logic doesn’t run
     }
-    // non-aiming mode
     else
     {
-        // Camera logic
         HideReticle();
+    }
 
-        CameraBoom->bUsePawnControlRotation = true;
+    FVector Velocity = GetVelocity();
+    Velocity.Z = 0.f;
+    float Speed = Velocity.Size();
 
-        // Re-enable lag smoothly
-        CameraBoom->bEnableCameraLag = true;
-        CameraBoom->bEnableCameraRotationLag = true;
+    bool bEnemiesNearby = false;
+    AActor* NearestEnemy = nullptr;
+    float NearestDistSq = FLT_MAX;
 
-        // Movement info
-        FVector Velocity = GetVelocity();
-        Velocity.Z = 0.f;
-        float Speed = Velocity.Size();
+    DetectEnemies(bEnemiesNearby, NearestEnemy, NearestDistSq);
 
-        // Detect nearby enemies
-        bool bEnemiesNearby = false;
-        AActor* NearestEnemy = nullptr;
-        float NearestDistSq = FLT_MAX;
+    UpdateCameraPosition(DeltaTime, Velocity, Speed, bEnemiesNearby);
 
-        TArray<AActor*> OverlappingActors;
-        TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
-        TArray<AActor*> ActorsToIgnore;
-        ActorsToIgnore.Add(this);
+    UpdateCameraRotation(DeltaTime, Velocity, Speed);
+}
 
-        UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
+void AAphroditeCharacter::DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq)
+{
+    bEnemiesNearby = false;
+    NearestEnemy = nullptr;
+    NearestDistSq = FLT_MAX;
 
-        for (AActor* Actor : OverlappingActors)
+    TArray<AActor*> OverlappingActors;
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(this);
+
+    UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 500.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
+
+    for (AActor* Actor : OverlappingActors)
+    {
+        if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
+
+        bEnemiesNearby = true;
+
+        float DistSq = FVector::DistSquared(Actor->GetActorLocation(), GetActorLocation());
+
+        if (DistSq < NearestDistSq)
         {
-            if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
-
-            bEnemiesNearby = true;
-            float DistSq = FVector::DistSquared(Actor->GetActorLocation(), GetActorLocation());
-            if (DistSq < NearestDistSq)
-            {
-                NearestDistSq = DistSq;
-                NearestEnemy = Actor;
-            }
-        }
-        // Smoothly interpolate camera distance
-        float CombatArmLength = BaseArmLength + 50.f;
-        float TargetArm = BaseArmLength;
-
-        if (bEnemiesNearby)
-            TargetArm = FMath::Max(CombatArmLength, BaseArmLength + 75.f);
-        else if (Speed > 600.f)
-            TargetArm = SprintArmLength;
-
-        CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 4.f);
-
-        // Camera lag speeds
-        float TargetCameraLagSpeed = bEnemiesNearby ? 2.f : 8.f;
-        float TargetCameraRotationLagSpeed = bEnemiesNearby ? 2.f : 6.f;
-
-        CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetCameraLagSpeed, DeltaTime, 8.f);
-        CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetCameraRotationLagSpeed, DeltaTime, 8.f);
-
-        // Look-ahead
-        FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
-        CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 3.f);
-
-        float AdjustedHeight = HeightOffset + (bEnemiesNearby ? 20.f : 0.f);
-        FVector TargetOffset = FVector(0.f, 0.f, AdjustedHeight) + CurrentLookAhead;
-
-        // Smoothly interpolate socket offset
-        CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetOffset, DeltaTime, 6.f);
-
-        // Rotation logic
-        if (Speed > 10.f)
-        {
-            FRotator DesiredRot = Velocity.ToOrientationRotator();
-
-            if (NearestEnemy && NearestDistSq > FMath::Square(150.f))
-            {
-                FVector DirToEnemy = NearestEnemy->GetActorLocation() - GetActorLocation();
-                DirToEnemy.Z = 0.f;
-                DirToEnemy.Normalize();
-
-                float EnemyYaw = DirToEnemy.Rotation().Yaw;
-                float DeltaYaw = FMath::FindDeltaAngleDegrees(DesiredRot.Yaw, EnemyYaw);
-                DesiredRot.Yaw += DeltaYaw * 0.2f;
-            }
-
-            FRotator CurrentRot = CameraBoom->GetComponentRotation();
-            DesiredRot.Roll = 0.f;
-
-            float DeltaYaw = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
-            float NewYaw = CurrentRot.Yaw + DeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-            float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
-
-            float BounceOffset = FMath::Sin(GetWorld()->GetTimeSeconds() * BounceSpeed) * BounceAmplitude;
-            CameraBoom->SetWorldRotation(FRotator(NewPitch + BounceOffset * 0.1f, NewYaw, 0.f));
-        }
-        else if (Controller)
-        {
-            FRotator ControlRot = Controller->GetControlRotation();
-            ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, 0.f, MaxPitch);
-            ControlRot.Roll = 0.f;
-
-            FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
-            float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
-            float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-            float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
-
-            CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
-
-            FRotator ActorRot = GetActorRotation();
-            float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
-            ActorRot.Yaw += ActorDeltaYaw * DeltaTime * 2.5f;
-            SetActorRotation(ActorRot);
+            NearestDistSq = DistSq;
+            NearestEnemy = Actor;
         }
     }
 
-
 }
-
-float AAphroditeCharacter::GetMinAllowedPitch() const
+void AAphroditeCharacter::UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby)
 {
-    if (!CameraBoom) return MinPitch;
+    // arm length adjustments
+    float CombatArmLength = BaseArmLength + 150.f;
 
-    float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-    float FootZ = GetActorLocation().Z - CapsuleHalfHeight;
+    float TargetArm;
+    if (bEnemiesNearby)
+        TargetArm = CombatArmLength;
+    else if (Speed > 600.f)
+        TargetArm = SprintArmLength;
+    else
+        TargetArm = BaseArmLength;
 
-    float ArmLength = CameraBoom->TargetArmLength;
+    CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 3.5f);
 
-    FVector PivotLocation = CameraBoom->GetComponentLocation();
+    // lag
+    float TargetLag = bEnemiesNearby ? 15.f : 10.f;
+    float TargetRotLag = bEnemiesNearby ? 16.f : 10.f;
 
-    float HeightDifference = PivotLocation.Z - FootZ;
+    CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetLag, DeltaTime, 10.f);
 
-    if (HeightDifference <= 0.f)
-        return 0.f;
+    CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetRotLag, DeltaTime, 10.f);
 
-    // Calculate angle where camera would exactly hit foot level
-    float AngleRadians = FMath::Asin(HeightDifference / ArmLength);
+    // look ahead
+    FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
 
-    float AngleDegrees = FMath::RadiansToDegrees(AngleRadians);
+    CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 5.f);
 
-    // Convert to UE pitch convention (negative = looking up)
-    return -AngleDegrees;
+    float TargetHeightOffset = bEnemiesNearby ? HeightOffset + 60.f : HeightOffset;
+
+    float SmoothedHeight = FMath::FInterpTo(CameraBoom->SocketOffset.Z, TargetHeightOffset, DeltaTime, 3.5f);
+
+    FVector TargetSocketOffset = FVector(0.f, 0.f, SmoothedHeight) + CurrentLookAhead;
+
+    CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetSocketOffset, DeltaTime, 4.f);
 }
+
+void AAphroditeCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed)
+{
+    // moving
+    if (Speed > 10.f)
+    {
+        FRotator CurrentRot = CameraBoom->GetComponentRotation();
+
+        FRotator DesiredRot = CurrentRot;
+
+        FRotator MovementRot = Velocity.ToOrientationRotator();
+
+        float MoveDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, MovementRot.Yaw);
+
+        DesiredRot.Yaw = CurrentRot.Yaw + MoveDelta * 0.35f;
+
+        DesiredRot.Roll = 0.f;
+
+        float FinalDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
+
+        float NewYaw = CurrentRot.Yaw + FinalDelta * DeltaTime * 30.f;
+
+        float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+
+        CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
+    }
+    // idle
+    else
+    {
+        if (!Controller) return;
+
+        FRotator ControlRot = Controller->GetControlRotation();
+
+        ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
+        ControlRot.Roll = 0.f;
+
+        FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
+
+        float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
+
+        float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+
+        float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+
+        CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
+
+        FRotator ActorRot = GetActorRotation();
+
+        float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
+
+        ActorRot.Yaw += ActorDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+
+        SetActorRotation(ActorRot);
+    }
+}
+
 
 void AAphroditeCharacter::PlayRandomAttackAnimation()
 {
@@ -414,29 +413,29 @@ void AAphroditeCharacter::HeavyAttack()
 {
     bIsAiming = true;
 
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    if (!CanHeavyAttack) return;
+    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+    //if (!CanHeavyAttack) return;
 
-    CanHeavyAttack = false;
+    //CanHeavyAttack = false;
 
-    ProjectileDamage = 40.0f;
+    //ProjectileDamage = 40.0f;
 
-    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+    //if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-    FBasicProjectile NewProjectile;
-    NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    //FBasicProjectile NewProjectile;
+    //NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
 
-    NewProjectile.Velocity =
-        GetActorForwardVector() * ProjectileSpeed;
+    //NewProjectile.Velocity =
+    //    GetActorForwardVector() * ProjectileSpeed;
 
-    NewProjectile.ElapsedTime = 0.f;
+    //NewProjectile.ElapsedTime = 0.f;
 
-    ActiveProjectiles.Add(NewProjectile);
+    //ActiveProjectiles.Add(NewProjectile);
 
-    PlayRandomAttackAnimation();
+    //PlayRandomAttackAnimation();
 
-    // Cooldown
-    GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
+    //// Cooldown
+    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
 }
 
 
@@ -446,14 +445,6 @@ void AAphroditeCharacter::ProjectileHeavyAttack()
 }
 
 
-void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-    if (HitActor)
-    {
-        UGameplayStatics::ApplyDamage(HitActor, 90.f, GetController(), this, nullptr);
-
-    }
-}
 
 void AAphroditeCharacter::Tick(float DeltaTime)
 {
@@ -483,21 +474,27 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             {
                 if (Projectile.AlreadyHitActors.Contains(HitActor))
                     continue;
-                //Server_HitEnemy(Enemy);
 
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                 {
-                    Server_HitEnemy(TEnemy);
+                    Server_HitEnemy(TEnemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+
                 }
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
                 {
-                    Server_HitEnemy(TPEnemy);
+                    Server_HitEnemy(TPEnemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+
                 }
                 else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
                 {
-                    Server_HitEnemy(Enemy);
+                    Server_HitEnemy(Enemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
 
                 }
+
+                ExplodeProjectile(Hit.ImpactPoint);
 
                 Projectile.AlreadyHitActors.Add(HitActor);
                 // Remove projectile after hit
@@ -505,7 +502,6 @@ void AAphroditeCharacter::Tick(float DeltaTime)
                 break;
             }
         }
-        continue;
 
         if (Projectile.ElapsedTime >= ProjectileLifetime)
         {
@@ -514,6 +510,40 @@ void AAphroditeCharacter::Tick(float DeltaTime)
     }
 }
 
+void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)
+{
+    TArray<FHitResult> Hits;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(ExplosionRadius);
+
+    bool bHit = GetWorld()->SweepMultiByChannel(Hits,ImpactPoint,ImpactPoint, FQuat::Identity,ECC_GameTraceChannel1,Sphere,Params);
+
+    if (!bHit) return;
+
+    for (const FHitResult& Hit : Hits)
+    {
+        if (AActor* HitActor = Hit.GetActor())
+        {
+            if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+            {
+                Server_HitEnemy(TEnemy, ProjectileDamage);
+            }
+            else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+            {
+                Server_HitEnemy(TPEnemy, ProjectileDamage);
+            }
+            else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+            {
+                Server_HitEnemy(Enemy, ProjectileDamage);
+            }
+        }
+    }
+
+    DrawDebugSphere(GetWorld(), ImpactPoint, ExplosionRadius, 20, FColor::Orange, false, 1.f);
+}
 
 
 

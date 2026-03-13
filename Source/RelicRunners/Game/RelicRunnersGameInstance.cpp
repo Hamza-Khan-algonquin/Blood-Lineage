@@ -464,7 +464,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(World->GetFirstPlayerController());
     if (!RPC) return;
 
-    RPC->TravelCleanUI();
+    RPC->CleanUI();
 
     World->ServerTravel(TravelURL, true);
 }

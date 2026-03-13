@@ -57,6 +57,7 @@
 #include <Kismet/KismetMathLibrary.h>
 #include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
+#include "RelicRunnersGameMode.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -85,10 +86,10 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	CameraBoom->bUsePawnControlRotation = true;
 
 	CameraBoom->bEnableCameraLag = true;
-	CameraBoom->CameraLagSpeed = 8.f;
+	CameraBoom->CameraLagSpeed = 10.f;
 
 	CameraBoom->bEnableCameraRotationLag = true;
-	CameraBoom->CameraRotationLagSpeed = 6.f;
+	CameraBoom->CameraRotationLagSpeed = 10.f;
 
 	CameraBoom->bDoCollisionTest = false;
 
@@ -163,6 +164,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	OffhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	OffhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 
+	
 	//UI
 	PlayerHUDWorld = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidgetComponent"));
 	PlayerHUDWorld->SetupAttachment(GetMesh());
@@ -172,6 +174,8 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	PlayerHUDWorld->SetDrawAtDesiredSize(true);
 	PlayerHUDWorld->SetVisibility(true);
 	PlayerHUDWorld->CastShadow = false;
+
+
 
 	bAlwaysRelevant = true;
 	SetReplicates(true);
@@ -201,6 +205,8 @@ void ARelicRunnersCharacter::BeginPlay()
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
 	}
+
+	
 }
 
 void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -218,6 +224,7 @@ void ARelicRunnersCharacter::PossessedBy(AController* NewController)
 
 	if (RelicPlayerState)
 	{
+		RelicPlayerState->DeathState = false;
 		const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
 		SyncEquippedVisuals(EquippedEntries);
 	}
@@ -229,50 +236,12 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	//if (RelicPlayerState) RelicPlayerState->ModifyHealth(-ActualDamage);
-	
-	if (bMirrorActive && ActualDamage > 0.f)
-	{
-		AActor* Attacker = DamageCauser;
-	
-		if (!Attacker && EventInstigator)
-		{
-			Attacker = EventInstigator->GetPawn();
-		}
-
-		if (Attacker && Attacker != this && Attacker->ActorHasTag("Enemy"))
-		{
-			const float Reflected = ActualDamage * MirrorReflectPercent;
-
-			UGameplayStatics::ApplyDamage(Attacker,Reflected,GetController(),this,nullptr);
-		}
-	}
-
-	if (bGuardActive && ActualDamage > 0.f)
-	{
-		AActor* Attacker = DamageCauser;
-
-		if (!Attacker && EventInstigator)
-		{
-			Attacker = EventInstigator->GetPawn();
-		}
-
-		if (Attacker && Attacker != this && Attacker->ActorHasTag("Enemy"))
-		{
-			if (IsDamageFromFront(Attacker))
-			{
-				DrawDebugLine(GetWorld(),GetActorLocation() + FVector(0, 0, 60.f),Attacker->GetActorLocation(),FColor::Green,false, 0.15f, 0, 2.f);
-
-				ActualDamage = 0.f;
-			}
-		}
-	}
-	
 	if (RelicPlayerState)
 	{
 		int Defence = RelicPlayerState->GetInventoryComponent()->CachedEquippedStats.TotalArmor;
 		float Reduction = (1.0f - (ItemStats::GetDefencePerc(Defence) / 100.0f));
-		int DamageTaken = ActualDamage * Reduction;
+		float DamageTaken = ActualDamage * Reduction;
+		ActualDamage = DamageTaken;
 		RelicPlayerState->ModifyHealth(-DamageTaken);
 	}
 
@@ -281,8 +250,27 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	SetActorLocation(respawnPoint);
-	if (RelicPlayerState) RelicPlayerState->ResetHealth();
+	if (RelicPlayerState) RelicPlayerState->DeathState = true;
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+		if (RPC)
+		{
+			RPC->CleanUI();
+			RPC->ChangeState(NAME_Spectating);
+			RPC->SpectatingUI();
+			RPC->Client_RequestSaveStats();
+		}
+
+		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+		{
+			GM->CheckGameOver();
+		}
+	}
+
+	Destroy();
 }
 
 void ARelicRunnersCharacter::OnRep_PlayerState()
@@ -468,9 +456,52 @@ void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 	
 }
 
-void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor, float BaseDamage)
 {
+	if (!TargetActor) return;
 
+	AController* InstigatorController = GetInstigatorController();
+	if (!InstigatorController) return;
+
+	APlayerController* PC = Cast<APlayerController>(InstigatorController);
+
+	UInventoryComponent* InventoryComponent = nullptr;
+	if (PC)
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			InventoryComponent = PS->GetInventoryComponent();
+		}
+	}
+
+	float PercentStrengthIncrease = 0.f;
+	float CritChance = 0.f;
+	float CritDamageMultiplier = 1.f;
+
+	if (InventoryComponent)
+	{
+		int Strength = InventoryComponent->CachedEquippedStats.TotalStrength;
+		int CritValue = InventoryComponent->CachedEquippedStats.TotalDexterity;
+
+		PercentStrengthIncrease = ItemStats::GetStrengthPerc(Strength);
+
+		CritChance = ItemStats::GetCritPerc(CritValue);
+		CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
+		CritDamageMultiplier = ItemStats::GetCritDmgPerc(CritValue);
+	}
+
+	float FinalDamage = BaseDamage * (1.f + PercentStrengthIncrease / 100.f);
+
+	// Roll for crit
+	float RandomRoll = FMath::FRandRange(1.f, 100.f);
+	bool bIsCrit = RandomRoll <= CritChance;
+
+	if (bIsCrit)
+	{
+		FinalDamage *= CritDamageMultiplier;
+	}
+
+	UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this, nullptr);
 }
 
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const
@@ -776,6 +807,8 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 	OnRep_VisualsChanged();
 }
 
+
+
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 {
 	return FString::Printf(TEXT("/Game/ThirdPerson/Meshes/Items/%s/%s.%s"),
@@ -847,91 +880,5 @@ void ARelicRunnersCharacter::UltimateAbility()
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
 
-void ARelicRunnersCharacter::SetMirrorActive(bool bActive)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
 
-	bMirrorActive = bActive;
-
-	if (!bMirrorActive)
-	{
-		GetWorldTimerManager().ClearTimer(MirrorDebugDrawHandle);
-	}
-	else
-	{
-		GetWorldTimerManager().SetTimer(MirrorDebugDrawHandle,this,&ARelicRunnersCharacter::DrawMirrorDebug,0.1f,true);
-	}
-}
-
-void ARelicRunnersCharacter::DrawMirrorDebug()
-{
-	if (!bMirrorActive)
-	{
-		return;
-	}
-
-	DrawDebugSphere(GetWorld(),GetActorLocation(),MirrorRadius,16,FColor::Purple,false,0.11f);
-}
-
-void ARelicRunnersCharacter::SetGuardActive(bool bActive)
-{
-    if (!HasAuthority()) return;
-
-    bGuardActive = bActive;
-
-    if (!bGuardActive)
-    {
-        GetWorldTimerManager().ClearTimer(GuardDebugDrawHandle);
-    }
-    else
-    {        
-        GetWorldTimerManager().SetTimer(GuardDebugDrawHandle,this,&ARelicRunnersCharacter::DrawGuardDebug,0.1f,true);
-    }
-}
-
-bool ARelicRunnersCharacter::IsDamageFromFront(AActor* DamageCauser) const
-{
-	if (!DamageCauser)
-	{
-		return false;
-	}
-
-    const FVector Forward = GetActorForwardVector().GetSafeNormal();
-    const FVector ToCauser = (DamageCauser->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-
-    const float Dot = FVector::DotProduct(Forward, ToCauser);
-
-    const float HalfAngleRad = FMath::DegreesToRadians(GuardAngleDegrees * 0.5f);
-    const float Threshold = FMath::Cos(HalfAngleRad);
-
-    return Dot >= Threshold;
-}
-
-void ARelicRunnersCharacter::DrawGuardDebug()
-{
-	if (!bGuardActive)
-	{
-		return;
-	}
-
-    const FVector Start = GetActorLocation() + FVector(0,0,60.f);
-    const FVector End = Start + GetActorForwardVector() * 200.f;
-
-    DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.11f, 0, 4.f);
-}
-
-//void ARelicRunnersCharacter::OnPause()
-//{
-//	UWorld* World = GetWorld();
-//	FTimerHandle PauseHandle;
-//	World->GetTimerManager().SetTimer(PauseHandle,this,&ARelicRunnersCharacter::ContinueMontage,5.f,false);
-//}
-//
-//void ARelicRunnersCharacter::ContinueMontage()
-//{
-//	
-//}
 

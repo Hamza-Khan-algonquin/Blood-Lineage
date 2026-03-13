@@ -133,18 +133,14 @@ void ACommanderController::Tick(float DeltaTime)
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 {
-	if (!enemy)
-	{
-		return;
-	}
-
+	if (!enemy) return;
 
 	ControlledEnemies.Add(enemy);
 	enemy->MovementComponent->Commander = this;
-	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	enemy->LODComponent->SetIsUpdatingLOD(false);
+	if (enemy) enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	if (enemy) enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	if (enemy) enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	if (enemy) enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
 void ACommanderController::RemovePawnEnemy(AActor* enemy)

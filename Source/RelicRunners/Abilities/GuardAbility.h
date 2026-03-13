@@ -19,15 +19,18 @@ public:
     virtual FName GetAbilityName() const override { return FName("Guard"); }
 
 protected:
-    UPROPERTY(EditDefaultsOnly, Category = "Guard")
-    float GuardDuration = 4.f;
-   
-    UPROPERTY(EditDefaultsOnly, Category = "Guard")
-    float GuardAngleDegrees = 100.f;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Guard")
-    float DebugLineLength = 200.f;
+    void ResetSpeed();
 
-private:
+    void HandleChargeTick(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayAbilityActivationInfo ActivationInfo);
+
     FTimerHandle EndTimerHandle;
+    FTimerHandle ChargeTickHandle;
+
+    float ChargeDuration = 10.f;
+    float ChargeSpeed = 1500.f;
+    float KnockbackStrength = 1000.f;
+    float CheckRadius = 100.f;
+    float CheckDistance = 150.f;
+    float OriginalSpeed;
 };

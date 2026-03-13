@@ -6,6 +6,17 @@
 #include "RelicRunners/AbilitySystem/AbilityBase.h"
 #include "MarkOfTheHunt.generated.h"
 
+struct FMarkProjectile
+{
+	FVector Location;
+	FVector Velocity;
+	FVector PreviousLocation;
+
+	float Elapsed = 0.f;
+
+	UStaticMeshComponent* Mesh = nullptr;
+	TArray<AActor*> HitActors;
+};
 
 UCLASS()
 class RELICRUNNERS_API UMarkOfTheHunt : public UAbilityBase
@@ -21,19 +32,20 @@ public:
 
 private:
 
-	void OnProjectileLanded();
-	void ScanForEnemies(const FVector& ScanLocation);
 	void ProjectileTick();
 
-	FVector StartLocation;
-	FVector EndLocation;
-	float ProjectileAlpha;
-	FTimerHandle TravelTimer;
-	FTimerHandle ProjectileTickTimer;
-	FVector InitialVelocity;
-	UPROPERTY(EditDefaultsOnly, Category = "Ability")
-	float TravelTime;
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UStaticMesh* ProjectileMeshAsset = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Ability|Projectile")
-	float Gravity;
+	UStaticMeshComponent* ActiveProjectileMesh = nullptr;
+
+	TArray<FMarkProjectile> ActiveProjectiles;
+	int MaxPierces = 10;
+	int NumProjectiles = 10;
+	float ProjectileSpeed = 3800.f;
+	float ProjectileGravity = 980.f;
+	float ProjectileLifetime = 3.f;
+
+	FTimerHandle ProjectileTickTimer;
+	FTimerHandle DurationTimer;
 };

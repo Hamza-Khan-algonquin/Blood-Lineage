@@ -6,6 +6,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 
 UVengefulDance::UVengefulDance()
 {
@@ -14,27 +15,15 @@ UVengefulDance::UVengefulDance()
     AbilityName = FName("VengefulDance");
 
     DamageInterval = 0.5f;
-    KnockbackStrength = 1800.f;
+    KnockbackStrength = 3000.f;
     Duration = 1.f;
-    DamageAmount = 25.f;
+    Damage = 25.f;
     AreaRadius = 300.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
+    Cost = 40;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    static ConstructorHelpers::FObjectFinder<UAnimMontage> AnimAsset(TEXT("/Game/Assets/Characters/Melee/Animations/melee_vengefuldance_Montage.melee_vengefuldance_Montage"));
-
-    if (AnimAsset.Succeeded())
-    {
-        AbilityAnim = AnimAsset.Object;
-    }
 }
 
 void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -91,8 +80,10 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)
@@ -100,6 +91,7 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
 
     }
+
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);
 
     if (ActorInfo->AvatarActor->HasAuthority())
@@ -142,13 +134,12 @@ void UVengefulDance::ApplyRingDamage()
         if (Diff.Size() > AreaRadius) // Skip actors outside the area radius
             continue;
 
-        UGameplayStatics::ApplyDamage(Actor, DamageAmount, AvatarActor->GetInstigatorController(), AvatarActor, nullptr); // Apply damage
+		CalculateAbilityDamage(AvatarActor, Actor, Damage); 
 
-        if (APawn* HitCharacter = Cast<APawn>(Actor)) // If the actor is a character
+        if (AEnemyPawn* HitCharacter = Cast<AEnemyPawn>(Actor)) // Cast as EnemyCharacter
         {
-            FVector Knockback = Diff.GetSafeNormal() * KnockbackStrength; // Directional knockback
-            Knockback.Z = 400.f; // Add upward force
-            //HitCharacter->LaunchCharacter(Knockback, true, false); // Apply knockback
+            FVector Direction = Diff.GetSafeNormal();
+            HitCharacter->ApplyForceToEnemy(Direction * KnockbackStrength + FVector(0, 0, 400));
         }
     }
 
