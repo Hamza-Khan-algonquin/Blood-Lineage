@@ -19,7 +19,7 @@ UPiercingArrow::UPiercingArrow()
 
     Duration = 10.f;    
     CooldownTimer = 10.f;
-    Cost = 25;
+    Cost = 30;
     LastUseTime = -100.f;
     AreaRadius = 600.f;
 
@@ -74,7 +74,10 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
 

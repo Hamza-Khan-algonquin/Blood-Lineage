@@ -13,7 +13,7 @@ UGuardAbility::UGuardAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 30;
+    Cost = 50;
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     Duration = 0.f;
@@ -53,8 +53,10 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
 
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)

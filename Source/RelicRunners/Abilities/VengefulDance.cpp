@@ -21,7 +21,7 @@ UVengefulDance::UVengefulDance()
     AreaRadius = 300.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
+    Cost = 40;
 
 
 }
@@ -80,8 +80,10 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)

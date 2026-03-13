@@ -43,7 +43,7 @@ public:
 
     void CalculateAbilityDamage(AActor* InstigatorActor, AActor* TargetActor, float BaseDamage);
 
-    void CalculateAbilityMana(AActor* InstigatorActor, float BaseMana);
+    float CalculateAbilityMana(AActor* InstigatorActor, float BaseMana);
 
     UAnimMontage* PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage);
 

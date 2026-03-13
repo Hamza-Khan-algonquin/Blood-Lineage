@@ -18,7 +18,7 @@ UGoddessOfLove::UGoddessOfLove()
 	AreaRadius = 1000.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
-	Cost = 50;
+	Cost = 60;
     ElapsedDOTTime = 0.f;
     DOTTickInterval = 1.f;
     DOTDuration = 0.7f;
@@ -30,6 +30,13 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
+    if (!AvatarActor)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
@@ -64,8 +71,10 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)

@@ -16,7 +16,7 @@ UKissOfLife::UKissOfLife()
     Duration = 10.f;
     CooldownTimer = 12.f;
     LastUseTime = -100.f;
-    Cost = 30;
+    Cost = 50;
     AreaRadius = 600.f;
 
 }
@@ -53,8 +53,10 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         return;
     }
 
-    // Mana deduction for the player
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)

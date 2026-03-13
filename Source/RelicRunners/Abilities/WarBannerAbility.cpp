@@ -13,7 +13,7 @@ UWarBannerAbility::UWarBannerAbility()
     Duration = 15.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
+    Cost = 40;
     AreaRadius = 600.f;
 
 }
@@ -66,8 +66,10 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)

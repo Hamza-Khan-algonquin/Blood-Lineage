@@ -24,7 +24,7 @@ UBackStab::UBackStab()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 5.f;
-    Cost = 20;
+    Cost = 30;
 	ConeAngle = 80.f;
 	Range = 600.f;
 	BehindOffset = 120.f;
@@ -40,6 +40,13 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
+    if (!AvatarActor) // If no valid actor
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // End the ability
         return;
     }
 
@@ -72,13 +79,14 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     LastUseTime = World->GetTimeSeconds();
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
     OriginalLocation = AvatarActor->GetActorLocation();
     OriginalRotation = AvatarActor->GetActorRotation();
 

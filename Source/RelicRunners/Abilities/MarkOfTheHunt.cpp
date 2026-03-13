@@ -15,7 +15,7 @@ UMarkOfTheHunt::UMarkOfTheHunt()
     Duration = 2.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
+    Cost = 40;
 	ConeAngle = 40.f;
     Damage = 100.f;
 }
@@ -68,8 +68,10 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
 
-    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - Cost);
+    // Spend resource
+    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - FinalManaCost);
     PlayerState->UpdateRemoteHUDResource();
 
     AActor* Avatar = ActorInfo->AvatarActor.Get();

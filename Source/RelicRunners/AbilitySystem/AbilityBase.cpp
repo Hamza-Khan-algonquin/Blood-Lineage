@@ -77,12 +77,12 @@ void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* Targe
 }
 
 
-void UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana)
+float UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana)
 {
-    if (!InstigatorActor) return;
+    if (!InstigatorActor) return BaseMana;
 
     AController* InstigatorController = InstigatorActor->GetInstigatorController();
-    if (!InstigatorController) return;
+    if (!InstigatorController) return BaseMana;
 
     APlayerController* PC = Cast<APlayerController>(InstigatorController);
 
@@ -95,15 +95,20 @@ void UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana)
         }
     }
 
-    float ManaRecutionPercent = 0;
-    
+    float ManaReductionPercent = 0.f;
+
     if (InventoryComponent)
     {
-        float ManaReduction = InventoryComponent->CachedEquippedStats.TotalResource;
-        ManaRecutionPercent = ItemStats::GetAbilityCostPerc(ManaReduction);
+        float ManaReductionValue = InventoryComponent->CachedEquippedStats.TotalIntelligence;
+        ManaReductionPercent = ItemStats::GetAbilityCostPerc(ManaReductionValue);
     }
 
-    float FinalCost = (1 - (ManaRecutionPercent / 100)) * BaseMana;
+    // Apply reduction
+    float FinalManaCost = BaseMana * (1.f - ManaReductionPercent / 100.f);
+
+    FinalManaCost = FMath::Max(FinalManaCost, 0.f);
+
+    return FinalManaCost;
 }
 
 UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)
