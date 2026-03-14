@@ -282,6 +282,23 @@ public:
         return "Common";
     }
 
+    static FString GetRandomRarityWithLuck(float OddsIncrease)
+    {
+        float Roll = FMath::FRandRange(OddsIncrease, 100.f);
+        float Cumulative = 0.f;
+
+        for (const auto& Pair : GetRarityDataMap())
+        {
+            Cumulative += Pair.Value.Chance;
+            if (Roll <= Cumulative)
+            {
+                return Pair.Key;
+            }
+        }
+
+        return "Common";
+    }
+
     static FString GetRandomItemType()
     {
         static const TArray<FString> ItemTypes = {
