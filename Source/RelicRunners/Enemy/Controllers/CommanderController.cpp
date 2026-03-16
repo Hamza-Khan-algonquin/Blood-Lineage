@@ -15,379 +15,481 @@
 
 ACommanderController::ACommanderController()
 {
-	MaxNumberOfEnemies = 5;
-	MaxLifeTimeNumberOfEnemies = 20;
-	CurrentLifeTimeNumberOfEnemies = 0;
-	SpawnRadius = 1000.f;
-	ActiveDistanceFromPlayer = 10000.f;
-	DistanceToTargetPlayer = 5000.f;
-	DistanceForBoidsToFocusePlayer = 1000;
-	EnemiesSetToLowestLOD = false;
-	TimeToAttack = 1;
-	bReplicates = true;
-	SetReplicateMovement(true);
+    MaxNumberOfEnemies = 5;
+    MaxLifeTimeNumberOfEnemies = 20;
+    CurrentLifeTimeNumberOfEnemies = 0;
+    SpawnRadius = 1000.f;
+    ActiveDistanceFromPlayer = 10000.f;
+    DistanceToTargetPlayer = 5000.f;
+    DistanceForBoidsToFocusePlayer = 1000;
+    EnemiesSetToLowestLOD = false;
+    TimeToAttack = 1;
+    bReplicates = true;
+    SetReplicateMovement(true);
 }
 
 ACommanderController::~ACommanderController()
 {
-	
+
 }
 
 void ACommanderController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	
-	ADirector* director = ADirector::GetInstance(this);
-	if (director)
-	{
-		director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
-		director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
-	}
-	Super::EndPlay(EndPlayReason);
+
+    ADirector* director = ADirector::GetInstance(this);
+    if (director)
+    {
+        director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
+        director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
+    }
+    Super::EndPlay(EndPlayReason);
 }
 
 void ACommanderController::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+    Super::Tick(DeltaTime);
 
-	if (!HasAuthority())
-	{
-		return;
-	}
+    if (!HasAuthority())
+    {
+        return;
+    }
 
-	APawn* pawn = GetPawn();
-	TArray<APawn*> players;
-	UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(BrainComponent);
+    APawn* pawn = GetPawn();
+    TArray<APawn*> players;
+    UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(BrainComponent);
 
-	if (ADirector* dir = ADirector::GetInstance(this))
-	{
-		players = dir->GetPlayers();
-	}
+    if (ADirector* dir = ADirector::GetInstance(this))
+    {
+        players = dir->GetPlayers();
+    }
 
-	if (players.Num() <= 0 || !pawn)
-	{
-		return;
-	}
+    if (players.Num() <= 0 || !pawn)
+    {
+        return;
+    }
 
-	if (players[0])
-	{
-		
-		float distance; 
+    //float distance[4];
 
-		if (!TargetPlayer)
-		{
-			APawn* closestPlayer = players[0];
-			distance = FVector::DistSquared(pawn->GetActorLocation(), players[0]->GetActorLocation());
+    //if (!TargetPlayer)
+    //{
+    //	APawn* closestPlayer = players[0];
 
-			for (int i = 1; i < players.Num(); i++)
-			{
-				float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
-				if (newDistance > distance)
-				{
-					closestPlayer = players[i];
-					distance = newDistance;
-				}
-			}
+    //	float closest = 0;
+    //	int index = 0;
+    //	for (int i = 0; i < players.Num(); i++)
+    //	{
+    //		distance[i] = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
+    //		if (index == 0) closest = distance[i];
+    //		else if (distance[i] < closest) closest = distance[i]; index = i;
+    //	}
 
-			UpdateTarget(closestPlayer);
-			TargetChange.Broadcast(TargetPlayer);
-			distance = FMath::Sqrt(distance);
-			BoidShouldFocusePlayer = false;
-		}
-		else
-		{
-			distance = FVector::Distance(pawn->GetActorLocation(), TargetPlayer->GetActorLocation());
-			BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
-		}
+    //	TargetDistance = closest;
+    //	UpdateTarget(closestPlayer);
+    //	TargetChange.Broadcast(TargetPlayer);
+    //	BoidShouldFocusePlayer = false;
+    //}
+    //else
+    //{
+    //	TargetDistance = FVector::Distance(pawn->GetActorLocation(), TargetPlayer->GetActorLocation());
+    //	BoidShouldFocusePlayer = TargetDistance <= DistanceForBoidsToFocusePlayer;
+    //}
 
-		IsTargeting = distance <= DistanceToTargetPlayer;
+    //IsTargeting = TargetDistance <= DistanceToTargetPlayer;
 
-		if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
-		{
-			MoveToActor(TargetPlayer, 25);
-		}
-		else if (!IsTargeting)
-		{
-			BoidShouldFocusePlayer = false;
-			UpdateTarget(nullptr);
-			if (!BTComp || !BTComp->IsRunning())
-			{
-				StopMovement();
-			}
-		}
-	}
-	else
-	{
-		UpdateTarget(nullptr);
-	}
+    //if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+    //{
+    //	MoveToActor(TargetPlayer, 25);
+    //}
+    //else if (!IsTargeting)
+    //{
+    //	BoidShouldFocusePlayer = false;
+    //	UpdateTarget(nullptr);
+    //	if (!BTComp || !BTComp->IsRunning())
+    //	{
+    //		StopMovement();
+    //	}
+    //}
 
-	UpdateLODs(players, pawn->GetActorLocation());
-	AttackCheck(players, DeltaTime);
-	SpawmLoop();
 
-	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0 && !Cast<AEnemyCharacter>(GetPawn()))
-	{
-		Destroy();
-		//GetPawn()->Destroy();
-	}
+    if (players[0])
+    {
+    	float distance; 
+
+    	if (!TargetPlayer)
+    	{
+    		APawn* closestPlayer = players[0];
+    		distance = FVector::DistSquared(pawn->GetActorLocation(), players[0]->GetActorLocation());
+
+    		for (int i = 1; i < players.Num(); i++)
+    		{
+    			float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
+    			if (newDistance < distance)
+    			{
+    				closestPlayer = players[i];
+    				distance = newDistance;
+    			}
+    		}
+
+    		UpdateTarget(closestPlayer);
+    		TargetChange.Broadcast(TargetPlayer);
+    		distance = FMath::Sqrt(distance);
+    		BoidShouldFocusePlayer = false;
+    	}
+    	else
+    	{
+    		distance = FVector::Distance(pawn->GetActorLocation(), TargetPlayer->GetActorLocation());
+    		BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
+    	}
+
+    	IsTargeting = distance <= DistanceToTargetPlayer;
+
+    	if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+    	{
+    		MoveToActor(TargetPlayer, 25);
+    	}
+    	else if (!IsTargeting)
+    	{
+    		BoidShouldFocusePlayer = false;
+    		UpdateTarget(nullptr);
+    		if (!BTComp || !BTComp->IsRunning())
+    		{
+                StopMovement();
+            }
+        }
+    }
+    else
+    {
+        UpdateTarget(nullptr);
+    }
+
+    //if (players[0])
+    //{
+
+    //    float distance;
+
+    //    if (!TargetPlayer)
+    //    {
+    //        APawn* closestPlayer = players[0];
+    //        distance = FVector::DistSquared(pawn->GetActorLocation(), players[0]->GetActorLocation());
+
+    //        for (int i = 1; i < players.Num(); i++)
+    //        {
+    //            float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
+    //            if (newDistance > distance)
+    //            {
+    //                closestPlayer = players[i];
+    //                distance = newDistance;
+    //            }
+    //        }
+
+    //        UpdateTarget(closestPlayer);
+    //        TargetChange.Broadcast(TargetPlayer);
+    //        distance = FMath::Sqrt(distance);
+    //        BoidShouldFocusePlayer = false;
+    //    }
+    //    else
+    //    {
+    //        distance = FVector::Distance(pawn->GetActorLocation(), TargetPlayer->GetActorLocation());
+    //        BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
+    //    }
+
+    //    IsTargeting = distance <= DistanceToTargetPlayer;
+
+    //    if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+    //    {
+    //        MoveToActor(TargetPlayer, 25);
+    //    }
+    //    else if (!IsTargeting)
+    //    {
+    //        BoidShouldFocusePlayer = false;
+    //        UpdateTarget(nullptr);
+    //        if (!BTComp || !BTComp->IsRunning())
+    //        {
+    //            StopMovement();
+    //        }
+    //    }
+    //}
+    //else
+    //{
+    //    UpdateTarget(nullptr);
+    //}
+
+    UpdateLODs(players, pawn->GetActorLocation());
+    AttackCheck(players, DeltaTime);
+    SpawmLoop();
+
+    if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0 && !Cast<AEnemyCharacter>(GetPawn()))
+    {
+        Destroy();
+        //GetPawn()->Destroy();
+    }
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 {
-	if (!enemy) return;
+    if (!enemy) return;
 
-	ControlledEnemies.Add(enemy);
-	enemy->MovementComponent->Commander = this;
-	if (enemy) enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->LODComponent->SetIsUpdatingLOD(false);
+    ControlledEnemies.Add(enemy);
+    enemy->MovementComponent->Commander = this;
+    if (enemy) enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+    if (enemy) enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+    if (enemy) enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+    if (enemy) enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
 void ACommanderController::RemovePawnEnemy(AActor* enemy)
 {
-	AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
-	if (!enemyPawn)
-	{
-		return;
-	}
-	ControlledEnemies.Remove(enemyPawn);
+    AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
+    if (!enemyPawn)
+    {
+        return;
+    }
+    ControlledEnemies.Remove(enemyPawn);
 }
 
 TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
 {
-	return ControlledEnemies;
+    return ControlledEnemies;
 }
 
 void ACommanderController::SpawnPawnEnemy()
 {
-	APawn* pawn = GetPawn();
+    APawn* pawn = GetPawn();
 
-	if (!pawn)
-	{
-		return;
-	}
+    if (!pawn)
+    {
+        return;
+    }
 
-	FVector spawnPosition = pawn->GetActorLocation();
+    FVector spawnPosition = pawn->GetActorLocation();
 
-	FNavLocation randomPoint;
-	UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
+    FNavLocation randomPoint;
+    UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
 
-	if (NavSys->GetRandomPointInNavigableRadius(spawnPosition, SpawnRadius, randomPoint))
-	{
-		spawnPosition = randomPoint.Location;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("could not find random spawn point on navmesh"));
-	}
+    if (NavSys->GetRandomPointInNavigableRadius(spawnPosition, SpawnRadius, randomPoint))
+    {
+        spawnPosition = randomPoint.Location;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("could not find random spawn point on navmesh"));
+    }
 
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
-	//AEnemyPawn* newEnemy = Cast<AEnemyPawn>(PawnEnemyToSpawn);
-	
+    AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
+    //AEnemyPawn* newEnemy = Cast<AEnemyPawn>(PawnEnemyToSpawn);
 
-	//giving time for the enemy to set
-	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
-		{
-			//newEnemy->SetActorLocation(spawnPosition);
-			AddPawnEnemy(newEnemy);
-		});
+
+    //giving time for the enemy to set
+    GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
+        {
+            //newEnemy->SetActorLocation(spawnPosition);
+            AddPawnEnemy(newEnemy);
+        });
 }
 
 void ACommanderController::SpawmLoop()
 {
-	for (int i = 0; i < MaxNumberOfEnemies; i++)
-	{
-		if (CurrentLifeTimeNumberOfEnemies < MaxLifeTimeNumberOfEnemies)
-		{
-			SpawnPawnEnemy();
-			CurrentLifeTimeNumberOfEnemies++;
-		}
-		else
-		{
-			break;
-		}
-	}
+    for (int i = 0; i < MaxNumberOfEnemies; i++)
+    {
+        if (CurrentLifeTimeNumberOfEnemies < MaxLifeTimeNumberOfEnemies)
+        {
+            SpawnPawnEnemy();
+            CurrentLifeTimeNumberOfEnemies++;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 inline void ACommanderController::AddPlayerToTimeToAttack(APawn* player)
 {
-	RemainingTimeToAttack.Add(player, TimeToAttack);
+    RemainingTimeToAttack.Add(player, TimeToAttack);
 }
 
 inline void ACommanderController::RemovePlayerFromTimeToAttack(APawn* player)
 {
-	RemainingTimeToAttack.Remove(player);
+    RemainingTimeToAttack.Remove(player);
 }
 
 APawn* ACommanderController::GetCurrentTarget()
 {
-	if (BoidShouldFocusePlayer && TargetPlayer)
-	{
-		return TargetPlayer;
-	}
+    if (BoidShouldFocusePlayer && TargetPlayer)
+    {
+        return TargetPlayer;
+    }
 
-	return GetPawn();
+    return GetPawn();
 }
 
 void ACommanderController::UpdateTarget_Implementation(APawn* newTarget)
 {
-	TargetPlayer = newTarget;
+    TargetPlayer = newTarget;
 }
 
 void ACommanderController::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	GetWorldTimerManager().SetTimerForNextTick([this]()
-		{
-			ADirector* director = ADirector::GetInstance(this);
-			if (director)
-			{
-				TArray<APawn*> players = director->GetPlayers();
-				for (int i = 0; i < players.Num(); i++)
-				{
-					if (players[i])
-					{
-						AddPlayerToTimeToAttack(players[i]);
-						break;
-					}
-				}
+    GetWorldTimerManager().SetTimerForNextTick([this]()
+        {
+            ADirector* director = ADirector::GetInstance(this);
+            if (IsValid(director))
+            {
+                TArray<APawn*> players = director->GetPlayers();
+                for (int i = 0; i < players.Num(); i++)
+                {
+                    if (players[i])
+                    {
+                        AddPlayerToTimeToAttack(players[i]);
+                        break;
+                    }
+                }
+                GetWorldTimerManager().SetTimerForNextTick(this, &ACommanderController::InitializeDirectorBinding);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Commander Controller: Missing Director in World!"));
+            }
+        });
+}
 
-				director->OnPlayerAdd.AddDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
-				director->OnPlayerRemoved.AddDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("Commander Controller: Missing Director in World!"));
-			}
-		});
+void ACommanderController::InitializeDirectorBinding()
+{
+    ADirector* director = ADirector::GetInstance(this);
+    if (IsValid(director))
+    {
+        director->OnPlayerAdd.AddDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
+        director->OnPlayerRemoved.AddDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
+    }
 }
 
 void ACommanderController::OnPossess(APawn* InPawn)
 {
-	Super::OnPossess(InPawn);
+    Super::OnPossess(InPawn);
 
-	if (StartingBehaviorTree)
-	{
-		RunBehaviorTree(StartingBehaviorTree);
-	}
+    if (StartingBehaviorTree)
+    {
+        RunBehaviorTree(StartingBehaviorTree);
+    }
 }
 
 void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLocation)
 {
-	float closestDistance = FVector::Dist(players[0]->GetActorLocation(), refernceLocation);
+    float closestDistance = FVector::Dist(players[0]->GetActorLocation(), refernceLocation);
 
-	for (int i = 1; i < players.Num(); i++)
-	{
-		float newDistance = FVector::Dist(players[i]->GetActorLocation(), refernceLocation);
+    for (int i = 1; i < players.Num(); i++)
+    {
+        float newDistance = FVector::Dist(players[i]->GetActorLocation(), refernceLocation);
 
-		if (closestDistance > newDistance)
-		{
-			closestDistance = newDistance;
-		}
-	}
+        if (closestDistance > newDistance)
+        {
+            closestDistance = newDistance;
+        }
+    }
 
-	if (closestDistance > ActiveDistanceFromPlayer && !EnemiesSetToLowestLOD)
-	{
-		for (AEnemyPawn* enemy : ControlledEnemies)
-		{
-			if (enemy && enemy->LODComponent)
-			{
-				enemy->LODComponent->SetLOD(4);
-			}
-		}
+    if (closestDistance > ActiveDistanceFromPlayer && !EnemiesSetToLowestLOD)
+    {
+        for (AEnemyPawn* enemy : ControlledEnemies)
+        {
+            if (enemy && enemy->LODComponent)
+            {
+                enemy->LODComponent->SetLOD(4);
+            }
+        }
 
-		PrimaryActorTick.TickInterval = 5.0f;
+        PrimaryActorTick.TickInterval = 5.0f;
 
-		EnemiesSetToLowestLOD = true;
+        EnemiesSetToLowestLOD = true;
 
-	}
-	else if(closestDistance <= ActiveDistanceFromPlayer)
-	{
-		if (EnemiesSetToLowestLOD)
-		{
-			PrimaryActorTick.TickInterval = 0.2f;
-			EnemiesSetToLowestLOD = false;
-		}
+    }
+    else if (closestDistance <= ActiveDistanceFromPlayer)
+    {
+        if (EnemiesSetToLowestLOD)
+        {
+            PrimaryActorTick.TickInterval = 0.2f;
+            EnemiesSetToLowestLOD = false;
+        }
 
-		for (AEnemyPawn* enemy : ControlledEnemies)
-		{
-			if (enemy && enemy->LODComponent)
-			{
-				enemy->LODComponent->UpdateLOD();
-			}
-		}
-	}
+        for (AEnemyPawn* enemy : ControlledEnemies)
+        {
+            if (enemy && enemy->LODComponent)
+            {
+                enemy->LODComponent->UpdateLOD();
+            }
+        }
+    }
 }
 
 void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 {
-	if (ControlledEnemies.Num() <= 0 || players.Num() <= 0 || !ControlledEnemies[0])
-	{
-		return;
-	}
+    if (ControlledEnemies.Num() <= 0 || players.Num() <= 0 || !ControlledEnemies[0])
+    {
+        return;
+    }
 
-	for (int i = 0; i < players.Num(); i++)
-	{
-		APawn* CurrentPlayer = players[i];
-		if (!IsValid(CurrentPlayer)) continue;
+    for (int i = 0; i < players.Num(); i++)
+    {
+        APawn* CurrentPlayer = players[i];
+        if (!IsValid(CurrentPlayer)) continue;
 
-		AEnemyPawn* closestEnemy = nullptr;
-		float closestDistance = TNumericLimits<float>::Max();
+        AEnemyPawn* closestEnemy = nullptr;
+        float closestDistance = TNumericLimits<float>::Max();
 
-		for (int j = 0; j < ControlledEnemies.Num(); j++)
-		{
-			AEnemyPawn* CurrentEnemy = ControlledEnemies[j];
+        for (int j = 0; j < ControlledEnemies.Num(); j++)
+        {
+            AEnemyPawn* CurrentEnemy = ControlledEnemies[j];
 
-			if (!IsValid(CurrentEnemy) || !IsValid(CurrentEnemy->MovementComponent)) continue;
+            if (!IsValid(CurrentEnemy) || !IsValid(CurrentEnemy->MovementComponent)) continue;
 
-			float newDistance = FVector::DistSquared(CurrentPlayer->GetActorLocation(), CurrentEnemy->GetActorLocation());
-			if (newDistance < closestDistance && !CurrentEnemy->IsAttacking)
-			{
-				closestDistance = newDistance;
-				closestEnemy = CurrentEnemy;
-			}
-		}
-		if (closestEnemy)
-		{
-			float trueDistance = FMath::Sqrt(closestDistance);
+            float newDistance = FVector::DistSquared(CurrentPlayer->GetActorLocation(), CurrentEnemy->GetActorLocation());
+            if (newDistance < closestDistance && !CurrentEnemy->IsAttacking)
+            {
+                closestDistance = newDistance;
+                closestEnemy = CurrentEnemy;
+            }
+        }
+        if (closestEnemy)
+        {
+            float trueDistance = FMath::Sqrt(closestDistance);
 
-			if (trueDistance <= closestEnemy->MovementComponent->GetTotalTargetRadius())
-			{
-				if (RemainingTimeToAttack.Contains(CurrentPlayer) && RemainingTimeToAttack[CurrentPlayer] > 0)
-				{
-					RemainingTimeToAttack[CurrentPlayer] -= delta;
-				}
-				else
-				{
-					UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
-					closestEnemy->StartAttack();
-					RemainingTimeToAttack.FindOrAdd(CurrentPlayer) = TimeToAttack;
-				}
-			}
-		}
-	}
+            if (trueDistance <= closestEnemy->MovementComponent->GetTotalTargetRadius())
+            {
+                if (RemainingTimeToAttack.Contains(CurrentPlayer) && RemainingTimeToAttack[CurrentPlayer] > 0)
+                {
+                    RemainingTimeToAttack[CurrentPlayer] -= delta;
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
+                    closestEnemy->StartAttack();
+                    RemainingTimeToAttack.FindOrAdd(CurrentPlayer) = TimeToAttack;
+                }
+            }
+        }
+    }
 }
 
 void ACommanderController::UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer)
 {
-	if (ActiveDistanceFromPlayer >= closestDistance)
-	{
-		//loop through enemies and find the closest ones to the player do a recast to see if they can see the player and if so do the rest
-		
-		//loop through enemies and set focus to the player
+    if (ActiveDistanceFromPlayer >= closestDistance)
+    {
+        //loop through enemies and find the closest ones to the player do a recast to see if they can see the player and if so do the rest
 
-		if (GetMoveStatus() == EPathFollowingStatus::Idle)
-		{
-			//MoveToActor(ClosetPlayer, 100);
-		}
-	}
-	else
-	{
-		StopMovement();
-	}
+        //loop through enemies and set focus to the player
+
+        if (GetMoveStatus() == EPathFollowingStatus::Idle)
+        {
+            //MoveToActor(ClosetPlayer, 100);
+        }
+    }
+    else
+    {
+        StopMovement();
+    }
 }

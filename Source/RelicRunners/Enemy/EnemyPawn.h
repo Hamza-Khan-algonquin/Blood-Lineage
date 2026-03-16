@@ -7,6 +7,7 @@
 #include "RelicRunners/ObjectPool/PoolActorInterface.h"
 #include "RelicRunners/Enemy/EnemyData.h"
 #include "Components/TimelineComponent.h"
+#include "RootPawn.h"
 #include "EnemyPawn.generated.h"
 
 class UCapsuleComponent;
@@ -20,7 +21,7 @@ class UNiagaraSystem;
 class USoundBase;
 
 UCLASS()
-class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
+class RELICRUNNERS_API AEnemyPawn : public ARootPawn, public IPoolActorInterface
 {
 	GENERATED_BODY()
 public:

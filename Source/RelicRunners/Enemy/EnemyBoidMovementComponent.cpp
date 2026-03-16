@@ -449,46 +449,51 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	if (hit.IsValidBlockingHit())
 	{
-		if (FMath::Abs(hit.Normal.Z) < MaxStepNormal)
-		{
-			FHitResult stepHit;
-			
-			FVector stepDown = UpdatedComponent->GetComponentLocation();
-
-			SafeMoveUpdatedComponent(FVector(0,0,StepHeight), GetOwner()->GetActorRotation(), true, stepHit);
-
-			if (!stepHit.IsValidBlockingHit())
-			{
-				
-
-				FHitResult secondHit;
-				SafeMoveUpdatedComponent(finalMovement * (1.f - hit.Time), GetOwner()->GetActorRotation(), true, secondHit);
-
-				if (secondHit.IsValidBlockingHit())
-				{
-					SlideAlongSurface(finalMovement, 1.f - secondHit.Time, secondHit.Normal, secondHit);
-					Velocity = FVector::VectorPlaneProject(Velocity, secondHit.Normal);
-				}
-
-				stepDown = stepDown - UpdatedComponent->GetComponentLocation();
-
-				FHitResult FinalHit;
-				//moving back down so that it only move up the amount need
-				SafeMoveUpdatedComponent(FVector(0, 0, -stepDown.Z), GetOwner()->GetActorRotation(), true, FinalHit);
-
-			/*	if (FinalHit.IsValidBlockingHit())
-				{
-					GetOwner()->SetActorLocation(FinalHit.Location + offset);
-				}*/
-
-			}
-		}
-		else
-		{
-			SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
-			Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
-		}
+		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
 	}
+
+	//if (hit.IsValidBlockingHit())
+	//{
+	//	if (FMath::Abs(hit.Normal.Z) < MaxStepNormal)
+	//	{
+	//		FHitResult stepHit;
+	//		
+	//		FVector stepDown = UpdatedComponent->GetComponentLocation();
+
+	//		SafeMoveUpdatedComponent(FVector(0,0,StepHeight), GetOwner()->GetActorRotation(), true, stepHit);
+
+	//		if (!stepHit.IsValidBlockingHit())
+	//		{
+	//			
+
+	//			FHitResult secondHit;
+	//			SafeMoveUpdatedComponent(finalMovement * (1.f - hit.Time), GetOwner()->GetActorRotation(), true, secondHit);
+
+	//			if (secondHit.IsValidBlockingHit())
+	//			{
+	//				SlideAlongSurface(finalMovement, 1.f - secondHit.Time, secondHit.Normal, secondHit);
+	//				Velocity = FVector::VectorPlaneProject(Velocity, secondHit.Normal);
+	//			}
+
+	//			stepDown = stepDown - UpdatedComponent->GetComponentLocation();
+
+	//			FHitResult FinalHit;
+	//			//moving back down so that it only move up the amount need
+	//			SafeMoveUpdatedComponent(FVector(0, 0, -stepDown.Z), GetOwner()->GetActorRotation(), true, FinalHit);
+
+	//		/*	if (FinalHit.IsValidBlockingHit())
+	//			{
+	//				GetOwner()->SetActorLocation(FinalHit.Location + offset);
+	//			}*/
+
+	//		}
+	//	}
+	//	else
+	//	{
+	//		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
+	//		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
+	//	}
+	//}
 }
 
 void UEnemyBoidMovementComponent::UpdateRotation()
