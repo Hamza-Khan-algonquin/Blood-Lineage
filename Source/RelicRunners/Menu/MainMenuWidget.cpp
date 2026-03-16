@@ -6,6 +6,7 @@
 #include "UpgradesWidget.h"
 #include "SettingsWidget.h"
 #include "CreditsWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 void UMainMenuWidget::NativeConstruct()
@@ -42,6 +43,8 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::ShowModeSelectionWidget()
 {
+    PlayButtonClickSound();
+
     if (WidgetSwitcher && ModeSelectionWidget)
     {
         WidgetSwitcher->SetActiveWidget(ModeSelectionWidget);
@@ -50,6 +53,8 @@ void UMainMenuWidget::ShowModeSelectionWidget()
 
 void UMainMenuWidget::ShowSessionsWidget()
 {
+    PlayButtonClickSound();
+
     if (WidgetSwitcher && JoinGameWidget)
     {
         WidgetSwitcher->SetActiveWidget(JoinGameWidget);
@@ -58,6 +63,8 @@ void UMainMenuWidget::ShowSessionsWidget()
 
 void UMainMenuWidget::ShowUpgradesWidget()
 {
+    PlayButtonClickSound();
+
     if (WidgetSwitcher && UpgradesWidget)
     {
         WidgetSwitcher->SetActiveWidget(UpgradesWidget);
@@ -69,6 +76,8 @@ void UMainMenuWidget::ShowUpgradesWidget()
 
 void UMainMenuWidget::ShowSettingsWidget()
 {
+    PlayButtonClickSound();
+
     if (WidgetSwitcher && SettingsWidget)
     {
         WidgetSwitcher->SetActiveWidget(SettingsWidget);
@@ -77,6 +86,8 @@ void UMainMenuWidget::ShowSettingsWidget()
 
 void UMainMenuWidget::ShowTutorialWidget()
 {
+    PlayButtonClickSound();
+
     if (WidgetSwitcher && TutorialWidget)
     {
         WidgetSwitcher->SetActiveWidget(TutorialWidget);
@@ -85,8 +96,21 @@ void UMainMenuWidget::ShowTutorialWidget()
 
 void UMainMenuWidget::ShowCreditsWidget()
 {
+    PlayButtonClickSound();
+
     if (WidgetSwitcher && CreditsWidget)
     {
         WidgetSwitcher->SetActiveWidget(CreditsWidget);
     }
+}
+
+void UMainMenuWidget::PlayButtonClickSound()
+{   
+        if (!ButtonClickSound) return;
+
+        if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+        {
+            UGameplayStatics::PlaySound2D(PC, ButtonClickSound);
+        }
+   
 }

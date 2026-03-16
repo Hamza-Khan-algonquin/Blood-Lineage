@@ -21,6 +21,7 @@
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
+#include "Sound/SoundBase.h"
 #include "RelicRunnersPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHostStatusChanged, bool, NewIsHost);
@@ -73,6 +74,12 @@ public:
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
 
+	UFUNCTION(Client, Reliable)
+	void PlayHealPotionSound();
+
+	UFUNCTION(Client, Reliable)
+	void PlayLevelUpSound();
+
     //Properties
     UPROPERTY(ReplicatedUsing = OnRep_SelectedClass)
     FName SelectedClass;
@@ -89,6 +96,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	TSubclassOf<UCameraShakeBase> HitCameraShakeClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> HealPotionSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> LevelUpSound = nullptr;
 
 	//Stats
 	void UpdateRemoteHUDHealth();

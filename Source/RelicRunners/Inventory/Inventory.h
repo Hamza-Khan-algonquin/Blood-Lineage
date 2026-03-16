@@ -18,7 +18,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Sound/SoundBase.h"
 #include "Inventory.generated.h"
+
 
 USTRUCT(BlueprintType)
 struct FItemOptionsUIConfig
@@ -152,6 +154,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PreviewActor")
 	TObjectPtr<UMaterialInstanceDynamic> PreviewActorMaterial;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ArmorEquipSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ArmorUnequipSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* BuySound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* SellSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ForgePlaceSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ForgePressSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ForgeSuccessSound = nullptr;
+
 	//Functions
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
 	void ForgeItem(UItemObject* Item);
@@ -172,6 +195,7 @@ public:
 	void ToggleShopUI(bool value);
 	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+	void PlayUISound(USoundBase* Sound);
 
 	UFUNCTION()
 	void UpdateForgeUI();

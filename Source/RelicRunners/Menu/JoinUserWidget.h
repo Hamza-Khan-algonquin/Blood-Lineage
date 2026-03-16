@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "JoinUserWidget.generated.h"
 
+class USoundBase;
+
 USTRUCT()
 struct FStandardTooltipData
 {
@@ -81,6 +83,8 @@ public:
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	class UWidgetAnimation* LeftPanelOpen;
 	void UpdateCountdownUI(int RemainingTime);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	USoundBase* ButtonClickSound = nullptr;
 
 	UPROPERTY()
 	TMap<FName, FDifficultyWidgets> DifficultyMap;
@@ -115,6 +119,8 @@ public:
 	void SetSelectedDifficulty(FName DifficultyKey);
 
 	void UpdateClientDifficultyUI();
+
+	void PlayButtonClickSound();
 
 	UFUNCTION()
 	void OnAresClicked();

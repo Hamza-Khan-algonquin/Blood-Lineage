@@ -677,6 +677,11 @@ void ARelicRunnersPlayerController::TrySetupPreviewRenderTarget()
 
 void ARelicRunnersPlayerController::Client_UpdateCountdown_Implementation(int NewTime)
 {
+	if (CountdownTickSound && NewTime > 0)
+	{
+		UGameplayStatics::PlaySound2D(this, CountdownTickSound);
+	}
+
 	if (LobbyWidget)
 	{
 		LobbyWidget->UpdateCountdownUI(NewTime);
@@ -718,6 +723,11 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 		else if (UIWidget == Inventory)
 		{
 			Inventory->PlayAnimation(Inventory->InventoryOpen);
+
+			if (InventoryOpenSound)
+			{
+				UGameplayStatics::PlaySound2D(this, InventoryOpenSound);
+			}
 		}
 		UIWidget->SetVisibility(ESlateVisibility::Visible);
 		UIWidget->SetIsEnabled(true);
@@ -741,6 +751,12 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 		UInventorySortingOptions::CloseAnyOpenPopup();
 
 		Inventory->PlayAnimation(Inventory->InventoryClose);
+
+		if (InventoryCloseSound)
+		{
+			UGameplayStatics::PlaySound2D(this, InventoryCloseSound);
+		}
+
 		Inventory->ToggleShopUI(false);
 		Inventory->ToggleForgeUI(false);
 

@@ -26,6 +26,17 @@ void UAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
+
+
+void UAbilityBase::PlayAbilityCastSound(const FGameplayAbilityActorInfo* ActorInfo) const
+{
+    if (!AbilityCastSound || !ActorInfo) return;
+
+    AActor* Avatar = ActorInfo->AvatarActor.Get();
+    if (!Avatar) return;
+
+    UGameplayStatics::PlaySoundAtLocation(Avatar, AbilityCastSound, Avatar->GetActorLocation());
+}
 // In your Character class or a Utility header
 void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* TargetActor, float BaseDamage)
 {
@@ -109,6 +120,7 @@ float UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana
     FinalManaCost = FMath::Max(FinalManaCost, 0.f);
 
     return FinalManaCost;
+
 }
 
 UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)
@@ -128,10 +140,6 @@ UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo
     AnimInstance->Montage_Play(Montage, 1.f);
     return Montage;
 }
-
-
-
-
 
 
 

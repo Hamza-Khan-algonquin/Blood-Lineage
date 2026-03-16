@@ -33,6 +33,7 @@
 #include "TimerManager.h"
 #include <Blueprint/WidgetBlueprintLibrary.h>
 #include "RelicRunners/Menu/JoinUserWidget.h"
+#include <Kismet/GameplayStatics.h>
 #include <ClassInfo.h>
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
@@ -368,6 +369,9 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 			PlayerHealth = PlayerMaxHealth;
 		}
 
+		PlayHealPotionSound();
+
+		// Notify owning client to update HUD
 		UpdateRemoteHUDHealth();
 		UpdateRemoteHUDHealthPotions();
 	}
@@ -537,6 +541,7 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
 
 	Client_OnLevelUp();
+	PlayLevelUpSound();
 }
 
 void ARelicRunnersPlayerState::Server_AddExperience_Implementation(int Amount)
@@ -570,6 +575,27 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 		MetaXPGainInRun += AddedMeta;
 		GI->SelectedSaveSlot->AddMetaExp(AddedMeta);
 	}
+}
+
+void ARelicRunnersPlayerState::PlayHealPotionSound_Implementation()
+{
+	if (!HealPotionSound) return;
+
+	APawn* Pawn = GetPawn();
+	if (!Pawn) return;
+
+	UGameplayStatics::PlaySoundAtLocation(Pawn,HealPotionSound,Pawn->GetActorLocation());
+}
+
+void ARelicRunnersPlayerState::PlayLevelUpSound_Implementation()
+{
+	if (!LevelUpSound) return;
+
+	APawn* Pawn = GetPawn();
+
+	if (!Pawn) return;
+
+	UGameplayStatics::PlaySoundAtLocation(Pawn, LevelUpSound, Pawn->GetActorLocation());
 }
 
 void ARelicRunnersPlayerState::Client_OnLevelUp_Implementation()

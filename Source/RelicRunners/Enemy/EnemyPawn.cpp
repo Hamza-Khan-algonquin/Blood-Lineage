@@ -132,6 +132,11 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 void AEnemyPawn::HitFlash_Implementation()
 {
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+	}
+
 	HitFlashTimeline.PlayFromStart();
 	SetActorTickEnabled(true);
 	//HitFlashTimeline.SetPlaybackPosition(0.0f, false);
@@ -194,6 +199,11 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
 				SpawnItem();
 			}
+		}
+
+		if (DeathSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
 		}
 
 		OnDied.Broadcast(this);
@@ -324,6 +334,11 @@ void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* O
 		else
 		{
 			UGameplayStatics::ApplyDamage(OtherActor, EnemyStatsComponent->GetAttackDamage(), nullptr, this, nullptr);
+		}
+
+		if (AttackHitPlayerSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, AttackHitPlayerSound, GetActorLocation());
 		}
 	}
 }
