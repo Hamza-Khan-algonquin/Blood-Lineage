@@ -17,7 +17,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
 #include "Engine/CollisionProfile.h"
-
+#include "Components/CapsuleComponent.h"
 
 AAphroditeCharacter::AAphroditeCharacter()
 {
@@ -80,7 +80,7 @@ void AAphroditeCharacter::ActivateDamageAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UBundleOfJoy::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_BundleOfJoyClass);
     }
 
 }
@@ -92,7 +92,7 @@ void AAphroditeCharacter::ActivateDefenceAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UMirrorOfDesireAbility::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_MirrorOfDesireClass);
     }
 }
 
@@ -103,7 +103,7 @@ void AAphroditeCharacter::ActivateUtilityAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UKissOfLife::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_KissOfLifeClass);
     }
 }
 
@@ -114,7 +114,7 @@ void AAphroditeCharacter::ActivateUltimateAbilities()
     if (AbilitySystem)
     {
         // Activate Back Stab ability
-        AbilitySystem->TryActivateAbilityByClass(UGoddessOfLove::StaticClass());
+        AbilitySystem->TryActivateAbilityByClass(BP_GoddessOfLoveClass);
     }
 }
 
@@ -122,9 +122,9 @@ void AAphroditeCharacter::GiveBundleOfJoy()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UBundleOfJoy::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_BundleOfJoyClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UBundleOfJoy::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_BundleOfJoyClass, 1, 0));
     }
 }
 
@@ -132,9 +132,9 @@ void AAphroditeCharacter::GiveMirrorOfDesire()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UMirrorOfDesireAbility::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_MirrorOfDesireClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UMirrorOfDesireAbility::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MirrorOfDesireClass, 1, 0));
     }
 }
 
@@ -142,9 +142,9 @@ void AAphroditeCharacter::GiveKissOfLife()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UKissOfLife::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_KissOfLifeClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UKissOfLife::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_KissOfLifeClass, 1, 0));
     }
 }
 
@@ -152,9 +152,9 @@ void AAphroditeCharacter::GiveGoddessOfLove()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UGoddessOfLove::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_GoddessOfLoveClass))
     {
-        AbilitySystem->GiveAbility(FGameplayAbilitySpec(UGoddessOfLove::StaticClass(), 1, 0));
+        AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_GoddessOfLoveClass, 1, 0));
     }
 }
 
@@ -162,177 +162,208 @@ void AAphroditeCharacter::PerformSwingTrace()
 {
 }
 
+void AAphroditeCharacter::ShowReticle()
+{
+    if (!ReticleWidget && ReticleWidgetClass)
+    {
+        ReticleWidget = CreateWidget<UUserWidget>(GetWorld(), ReticleWidgetClass);
+        if (ReticleWidget)
+        {
+            ReticleWidget->AddToViewport();
+            ReticleWidget->SetRenderTranslation(FVector2D(-80.f, 0.f));
+        }
+    }
+}
+
+void AAphroditeCharacter::HideReticle()
+{
+    if (ReticleWidget)
+    {
+        ReticleWidget->RemoveFromParent();
+        ReticleWidget = nullptr;
+    }
+}
+
 void AAphroditeCharacter::UpdateCamera(float DeltaTime)
 {
     const FString MapName = GetWorld()->GetMapName();
     if (MapName.Contains(TEXT("BossLevel"))) return;
 
-    if (!CameraBoom) return;
-
     if (bIsAiming)
     {
-        CameraBoom->bEnableCameraRotationLag = false;
-        CameraBoom->bUsePawnControlRotation = false;
+        ShowReticle();
+
+        // Disable lag while aiming
         CameraBoom->bEnableCameraLag = false;
-        CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength, DeltaTime, AimingInterpSpeed);
+        CameraBoom->bEnableCameraRotationLag = false;
 
-        // Smoothly interpolate socket offset 
-        CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, AimingOffset, DeltaTime, AimingInterpSpeed);
+        // Smoothly interpolate arm length and offset
+        CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, AimingArmLength,DeltaTime,AimingInterpSpeed);
 
-        // Rotate player using controller input
+        CameraBoom->SocketOffset = FMath::VInterpTo( CameraBoom->SocketOffset,AimingOffset,DeltaTime, AimingInterpSpeed);
+
+        // Rotate player to controller yaw
         if (Controller)
         {
             FRotator ControlRot = Controller->GetControlRotation();
             FRotator ActorRot = GetActorRotation();
-
             ActorRot.Yaw = ControlRot.Yaw;
             SetActorRotation(ActorRot);
         }
 
-        // Camera strictly follows player facing direction
-        FRotator FacingRot = GetActorRotation();
-        FacingRot.Pitch = 0.f;
-        FacingRot.Roll = 0.f;
-        CameraBoom->SetWorldRotation(FacingRot);
+        // Rotate camera to face player
+        FRotator CurrentRot = CameraBoom->GetComponentRotation();
+        FRotator TargetRot = GetActorRotation();
+        TargetRot.Pitch = 0.f;
+        TargetRot.Roll = 0.f;
 
+        CameraBoom->SetWorldRotation(FMath::RInterpTo(CurrentRot,TargetRot, DeltaTime,AimingInterpSpeed));
+
+        return; // early exit so normal camera logic doesn’t run
     }
     else
     {
-        CameraBoom->bEnableCameraLag = true;
-        CameraBoom->bEnableCameraRotationLag = true;
-        CameraBoom->bUsePawnControlRotation = true;
-        // Movement info 
-        FVector Velocity = GetVelocity();
-        Velocity.Z = 0.f;
-        float Speed = Velocity.Size();
+        HideReticle();
+    }
 
-        // Detect nearby enemies 
-        bool bEnemiesNearby = false;
-        AActor* NearestEnemy = nullptr;
-        float NearestDistSq = FLT_MAX;
+    FVector Velocity = GetVelocity();
+    Velocity.Z = 0.f;
+    float Speed = Velocity.Size();
 
-        TArray<AActor*> OverlappingActors;
-        TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    bool bEnemiesNearby = false;
+    AActor* NearestEnemy = nullptr;
+    float NearestDistSq = FLT_MAX;
 
-        TArray<AActor*> ActorsToIgnore;
-        ActorsToIgnore.Add(this);
+    DetectEnemies(bEnemiesNearby, NearestEnemy, NearestDistSq);
 
-        UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 300.f, ObjectTypes, ACharacter::StaticClass(), ActorsToIgnore, OverlappingActors);
+    UpdateCameraPosition(DeltaTime, Velocity, Speed, bEnemiesNearby);
 
-        for (AActor* Actor : OverlappingActors)
+    UpdateCameraRotation(DeltaTime, Velocity, Speed);
+}
+
+void AAphroditeCharacter::DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq)
+{
+    bEnemiesNearby = false;
+    NearestEnemy = nullptr;
+    NearestDistSq = FLT_MAX;
+
+    TArray<AActor*> OverlappingActors;
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(this);
+
+    UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 500.f, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
+
+    for (AActor* Actor : OverlappingActors)
+    {
+        if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
+
+        bEnemiesNearby = true;
+
+        float DistSq = FVector::DistSquared(Actor->GetActorLocation(), GetActorLocation());
+
+        if (DistSq < NearestDistSq)
         {
-            if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
-
-            bEnemiesNearby = true;
-
-            float DistSq = FVector::DistSquared(Actor->GetActorLocation(), GetActorLocation());
-            if (DistSq < NearestDistSq)
-            {
-                NearestDistSq = DistSq;
-                NearestEnemy = Actor;
-            }
-        }
-
-        // Dynamic zoom 
-        float CombatArmLength = BaseArmLength + 50.f;
-
-        float TargetArm;
-        if (bEnemiesNearby)
-        {
-            TargetArm = CombatArmLength;
-        }
-        else if (Speed > 600.f)
-        {
-            TargetArm = SprintArmLength;
-        }
-        else
-        {
-            TargetArm = BaseArmLength;
-        }
-
-        if (bEnemiesNearby)
-        {
-            TargetArm = FMath::Max(TargetArm, BaseArmLength + 75.f);
-        }
-
-        CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 4.f);
-
-        CameraBoom->TargetArmLength = FMath::Clamp(CameraBoom->TargetArmLength, BaseArmLength * 0.9f, SprintArmLength);
-
-        // Camera lag
-        float TargetCameraLagSpeed = bEnemiesNearby ? 2.f : 8.f;
-        float TargetCameraRotationLagSpeed = bEnemiesNearby ? 2.f : 6.f;
-
-        CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetCameraLagSpeed, DeltaTime, 8.f);
-
-        CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetCameraRotationLagSpeed, DeltaTime, 8.f);
-
-        // Look-ahead
-        FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
-        CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 3.f);
-
-        float AdjustedHeight = HeightOffset + (bEnemiesNearby ? 20.f : 0.f);
-        CameraBoom->SocketOffset = FVector(0.f, 0.f, AdjustedHeight) + CurrentLookAhead;
-
-        if (Speed > 10.f)
-        {
-            FRotator DesiredRot = Velocity.ToOrientationRotator();
-
-            if (NearestEnemy && NearestDistSq > FMath::Square(150.f))
-            {
-                FVector DirToEnemy = NearestEnemy->GetActorLocation() - GetActorLocation();
-                DirToEnemy.Z = 0.f;
-                DirToEnemy.Normalize();
-
-                float EnemyYaw = DirToEnemy.Rotation().Yaw;
-                float DeltaYaw = FMath::FindDeltaAngleDegrees(DesiredRot.Yaw, EnemyYaw);
-                DesiredRot.Yaw += DeltaYaw * 0.2f;
-            }
-
-            FRotator CurrentRot = CameraBoom->GetComponentRotation();
-
-            DesiredRot.Pitch = FMath::Clamp(CurrentRot.Pitch, MinPitch, MaxPitch);
-            DesiredRot.Roll = 0.f;
-
-            float DeltaYaw = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
-
-            float NewYaw = CurrentRot.Yaw + DeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-            float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
-
-            float BounceOffset = FMath::Sin(GetWorld()->GetTimeSeconds() * BounceSpeed) * BounceAmplitude;
-
-            FRotator Smoothed(NewPitch + BounceOffset * 0.1f, NewYaw, 0.f);
-            CameraBoom->SetWorldRotation(Smoothed);
-        }
-        else
-        {
-            if (!Controller) return;
-            FRotator ControlRot = Controller->GetControlRotation();
-            ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
-            ControlRot.Roll = 0.f;
-
-            FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
-
-            float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
-
-            float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-            float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
-
-            CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
-
-
-            FRotator ActorRot = GetActorRotation();
-
-            float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
-
-            ActorRot.Yaw += ActorDeltaYaw * DeltaTime * 2.5f;
-            SetActorRotation(ActorRot);
+            NearestDistSq = DistSq;
+            NearestEnemy = Actor;
         }
     }
+
 }
+void AAphroditeCharacter::UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby)
+{
+    // arm length adjustments
+    float CombatArmLength = BaseArmLength + 150.f;
+
+    float TargetArm;
+    if (bEnemiesNearby)
+        TargetArm = CombatArmLength;
+    else if (Speed > 600.f)
+        TargetArm = SprintArmLength;
+    else
+        TargetArm = BaseArmLength;
+
+    CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 3.5f);
+
+    // lag
+    float TargetLag = bEnemiesNearby ? 15.f : 10.f;
+    float TargetRotLag = bEnemiesNearby ? 16.f : 10.f;
+
+    CameraBoom->CameraLagSpeed = FMath::FInterpTo(CameraBoom->CameraLagSpeed, TargetLag, DeltaTime, 10.f);
+
+    CameraBoom->CameraRotationLagSpeed = FMath::FInterpTo(CameraBoom->CameraRotationLagSpeed, TargetRotLag, DeltaTime, 10.f);
+
+    // look ahead
+    FVector DesiredLookAhead = Velocity.GetSafeNormal() * LookAheadDistance;
+
+    CurrentLookAhead = FMath::VInterpTo(CurrentLookAhead, DesiredLookAhead, DeltaTime, 5.f);
+
+    float TargetHeightOffset = bEnemiesNearby ? HeightOffset + 60.f : HeightOffset;
+
+    float SmoothedHeight = FMath::FInterpTo(CameraBoom->SocketOffset.Z, TargetHeightOffset, DeltaTime, 3.5f);
+
+    FVector TargetSocketOffset = FVector(0.f, 0.f, SmoothedHeight) + CurrentLookAhead;
+
+    CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetSocketOffset, DeltaTime, 4.f);
+}
+
+void AAphroditeCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed)
+{
+    // moving
+    if (Speed > 10.f)
+    {
+        FRotator CurrentRot = CameraBoom->GetComponentRotation();
+
+        FRotator DesiredRot = CurrentRot;
+
+        FRotator MovementRot = Velocity.ToOrientationRotator();
+
+        float MoveDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, MovementRot.Yaw);
+
+        DesiredRot.Yaw = CurrentRot.Yaw + MoveDelta * 0.35f;
+
+        DesiredRot.Roll = 0.f;
+
+        float FinalDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
+
+        float NewYaw = CurrentRot.Yaw + FinalDelta * DeltaTime * 30.f;
+
+        float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+
+        CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
+    }
+    // idle
+    else
+    {
+        if (!Controller) return;
+
+        FRotator ControlRot = Controller->GetControlRotation();
+
+        ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
+        ControlRot.Roll = 0.f;
+
+        FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
+
+        float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
+
+        float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+
+        float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+
+        CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
+
+        FRotator ActorRot = GetActorRotation();
+
+        float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
+
+        ActorRot.Yaw += ActorDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
+
+        SetActorRotation(ActorRot);
+    }
+}
+
 
 void AAphroditeCharacter::PlayRandomAttackAnimation()
 {
@@ -361,7 +392,7 @@ void AAphroditeCharacter::BasicAttack()
 
     CanBasicAttack = true;
 
-    ProjectileDamage = 90.0f;
+    ProjectileDamage = 40.0f;
 
     if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
@@ -382,32 +413,29 @@ void AAphroditeCharacter::HeavyAttack()
 {
     bIsAiming = true;
 
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    if (!CanHeavyAttack) return;
+    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+    //if (!CanHeavyAttack) return;
 
-    CanHeavyAttack = false;
+    //CanHeavyAttack = false;
 
-    ProjectileDamage = 120.0f;
+    //ProjectileDamage = 40.0f;
 
-    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+    //if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-    FBasicProjectile NewProjectile;
-    NewProjectile.Location =
-        GetActorLocation()
-        + GetActorForwardVector() * 100.f
-        + FVector(0, 0, 50.f);
+    //FBasicProjectile NewProjectile;
+    //NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
 
-    NewProjectile.Velocity =
-        GetActorForwardVector() * ProjectileSpeed;
+    //NewProjectile.Velocity =
+    //    GetActorForwardVector() * ProjectileSpeed;
 
-    NewProjectile.ElapsedTime = 0.f;
+    //NewProjectile.ElapsedTime = 0.f;
 
-    ActiveProjectiles.Add(NewProjectile);
+    //ActiveProjectiles.Add(NewProjectile);
 
-    PlayRandomAttackAnimation();
+    //PlayRandomAttackAnimation();
 
-    // Cooldown
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
+    //// Cooldown
+    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
 }
 
 
@@ -417,14 +445,6 @@ void AAphroditeCharacter::ProjectileHeavyAttack()
 }
 
 
-void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-    if (HitActor)
-    {
-        UGameplayStatics::ApplyDamage(HitActor, 90.f, GetController(), this, nullptr);
-
-    }
-}
 
 void AAphroditeCharacter::Tick(float DeltaTime)
 {
@@ -446,55 +466,84 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Params.AddIgnoredActor(this);
         FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-        bool bHit = GetWorld()->SweepMultiByChannel(
-            Hits,
-            Projectile.PreviousLocation,
-            Projectile.Location,
-            FQuat::Identity,
-            ECC_GameTraceChannel1,
-            Sphere,
-            Params
-        );
-            //if (bHit)
-            //{
-                for (const FHitResult& Hit : Hits)
-                {
-                    if (AActor* HitActor = Hit.GetActor())
-                    {
-                        if (Projectile.AlreadyHitActors.Contains(HitActor))
-                            continue;
-                        //Server_HitEnemy(Enemy);
+        bool bHit = GetWorld()->SweepMultiByChannel(Hits, Projectile.PreviousLocation, Projectile.Location, FQuat::Identity, ECC_GameTraceChannel1, Sphere, Params);
 
-                        else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                        {
-                            Server_HitEnemy(TEnemy);
-                        }
-                        else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                        {
-                            Server_HitEnemy(TPEnemy);
-                        }
-                        else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                        {
-                            Server_HitEnemy(Enemy);
-
-                        }
-
-                        Projectile.AlreadyHitActors.Add(HitActor);
-                        // Remove projectile after hit
-                        ActiveProjectiles.RemoveAt(i);
-                        break;
-                    }
-                }
-                continue;
-            //}
-
-            if (Projectile.ElapsedTime >= ProjectileLifetime)
+        for (const FHitResult& Hit : Hits)
+        {
+            if (AActor* HitActor = Hit.GetActor())
             {
+                if (Projectile.AlreadyHitActors.Contains(HitActor))
+                    continue;
+
+                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                {
+                    Server_HitEnemy(TEnemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+
+                }
+                else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+                {
+                    Server_HitEnemy(TPEnemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+
+                }
+                else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+                {
+                    Server_HitEnemy(Enemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+
+                }
+
+                ExplodeProjectile(Hit.ImpactPoint);
+
+                Projectile.AlreadyHitActors.Add(HitActor);
+                // Remove projectile after hit
                 ActiveProjectiles.RemoveAt(i);
+                break;
+            }
+        }
+
+        if (Projectile.ElapsedTime >= ProjectileLifetime)
+        {
+            ActiveProjectiles.RemoveAt(i);
+        }
+    }
+}
+
+void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)
+{
+    TArray<FHitResult> Hits;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(ExplosionRadius);
+
+    bool bHit = GetWorld()->SweepMultiByChannel(Hits,ImpactPoint,ImpactPoint, FQuat::Identity,ECC_GameTraceChannel1,Sphere,Params);
+
+    if (!bHit) return;
+
+    for (const FHitResult& Hit : Hits)
+    {
+        if (AActor* HitActor = Hit.GetActor())
+        {
+            if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+            {
+                Server_HitEnemy(TEnemy, ProjectileDamage);
+            }
+            else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+            {
+                Server_HitEnemy(TPEnemy, ProjectileDamage);
+            }
+            else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+            {
+                Server_HitEnemy(Enemy, ProjectileDamage);
             }
         }
     }
 
+    DrawDebugSphere(GetWorld(), ImpactPoint, ExplosionRadius, 20, FColor::Orange, false, 1.f);
+}
 
 
 

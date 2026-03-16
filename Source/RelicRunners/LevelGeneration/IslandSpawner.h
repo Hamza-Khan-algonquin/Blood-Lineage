@@ -15,6 +15,10 @@ public:
 	// Sets default values for this actor's properties
 	AIslandSpawner();
 
+	void UpdateControllerZonesUI(int CurrentZone, int MaxZones);
+
+	void UpdateControllerStageUI(int StageNumber);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GenerationValues")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
 
@@ -25,6 +29,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues")
 	TSubclassOf<class AIslandGenerationTest> IslandGenerationTestTemplate;
 
+	UFUNCTION()
+	void OnRep_IslandArrayChange();
+
+	UPROPERTY(ReplicatedUsing = OnRep_IslandArrayChange)
 	TArray<class AIslandGenerationTest*> Islands;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues")
@@ -40,4 +48,6 @@ protected:
 
 	UFUNCTION()
 	void ChangeIslandCamera(int islandIndex);
+	UFUNCTION()
+	void ChangeIslandVisibility(int islandIndex);
 };

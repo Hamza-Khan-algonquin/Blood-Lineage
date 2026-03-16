@@ -16,6 +16,7 @@
 
 #include "PlayerHUD.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 #include "Components/VerticalBox.h"
 #include "Components/ProgressBar.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -30,7 +31,7 @@ void UPlayerHUD::NativeConstruct()
 	{
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
-
+	if (BloodyOverlay) BloodyOverlay->SetColorAndOpacity(FLinearColor(1, 1, 1, 0));
 	UpdateBindText();
 }
 
@@ -79,9 +80,22 @@ void UPlayerHUD::UpdateHUDHealthPotions(int HealthPotions)
 void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 {
 	float HealthPercent = MaxHealth > 0 ? CurrentHealth / MaxHealth : 0.f;
+	
+	if (BloodyOverlay) BloodyOverlay->SetColorAndOpacity(FLinearColor(1, 1, 1, 1 - (HealthPercent + 0.2)));
 
 	HealthBar->SetPercent(HealthPercent);
-	TB_Health->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth))));
+	FString HealthString;
+
+	if (CurrentHealth >= MaxHealth)
+	{
+		HealthString = FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth));
+	}
+	else
+	{
+		HealthString = FString::Printf(TEXT("%.1f / %d"), CurrentHealth, FMath::RoundToInt(MaxHealth));
+	}
+
+	TB_Health->SetText(FText::FromString(HealthString));
 }
 
 void UPlayerHUD::UpdateHUDResource(float CurrentResource, float MaxResource)

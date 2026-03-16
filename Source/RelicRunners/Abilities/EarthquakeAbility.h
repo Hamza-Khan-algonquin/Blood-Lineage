@@ -26,9 +26,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Earthquake")
     float Radius = 800.0f;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Earthquake")
-    float DamagePerTick = 200.0f;
-
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Earthquake|Knockback")
     float KnockbackStrength = 600.f;
 

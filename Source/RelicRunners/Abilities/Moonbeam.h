@@ -17,22 +17,10 @@ public:
     virtual FName GetAbilityName() const override { return FName("Moonbeam"); }
 
 protected:
-    UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
-    float BeamRange = 1200.f;
+    FTimerHandle BeamTickHandle;
+    FTimerHandle DurationHandle;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
-
-    float BeamRadius = 50.f;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
-    float BeamDuration = 3.f;
-    
-    UPROPERTY(EditDefaultsOnly, Category = "Moonbeam")
-    float BeamDamage = 20.f;
-
-private:
-    FTimerHandle CooldownTimerHandle;
-    bool bIsOnCooldown = false;
-
-    void SpawnBeamEffect(const FVector& Start, const FVector& End);
+    float BeamLength = 3000.f;
+    float TickInterval = 0.2f;
+    void BeamTick();
 };

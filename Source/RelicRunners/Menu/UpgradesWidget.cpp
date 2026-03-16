@@ -8,6 +8,8 @@
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFileListWidget.h"
+#include "RelicRunners/Menu/StandardTooltip.h"
+#include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 
 void UUpgradesWidget::NativeConstruct()
 {
@@ -22,8 +24,9 @@ void UUpgradesWidget::NativeConstruct()
 	if (IconSTR)	IconSTR->SetColorAndOpacity(ItemStats::GetIconColor("Strength"));
 	if (IconAGI)	IconAGI->SetColorAndOpacity(ItemStats::GetIconColor("Agility"));
 	if (IconINT)	IconINT->SetColorAndOpacity(ItemStats::GetIconColor("Intelligence"));
-	if (IconRegen)	IconRegen->SetColorAndOpacity(ItemStats::GetIconColor("Resource"));
+	if (IconRegen)	IconRegen->SetColorAndOpacity(ItemStats::GetIconColor("Mana"));
 	if (IconLevel)	IconLevel->SetColorAndOpacity(ItemStats::GetIconColor("Level"));
+	if (IconPurity)	IconPurity->SetColorAndOpacity(ItemStats::GetIconColor("Purity"));
 
 	if (B_HP)			B_HP->OnClicked.AddDynamic(this, &UUpgradesWidget::OnHPClicked);
 	if (B_DEF)			B_DEF->OnClicked.AddDynamic(this, &UUpgradesWidget::OnDEFClicked);
@@ -34,6 +37,16 @@ void UUpgradesWidget::NativeConstruct()
 	if (B_Regen)		B_Regen->OnClicked.AddDynamic(this, &UUpgradesWidget::OnRegenClicked);
 	if (B_Level)		B_Level->OnClicked.AddDynamic(this, &UUpgradesWidget::OnLevelClicked);
 	if (B_Efficiency)	B_Efficiency->OnClicked.AddDynamic(this, &UUpgradesWidget::OnEfficiencyClicked);
+
+	if (B_ResetHP)         B_ResetHP->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetHPClicked);
+	if (B_ResetDEF)        B_ResetDEF->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetDEFClicked);
+	if (B_ResetLUCK)       B_ResetLUCK->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetLUCKClicked);
+	if (B_ResetSTR)        B_ResetSTR->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetSTRClicked);
+	if (B_ResetAGI)        B_ResetAGI->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetAGIClicked);
+	if (B_ResetINT)        B_ResetINT->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetINTClicked);
+	if (B_ResetRegen)      B_ResetRegen->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetRegenClicked);
+	if (B_ResetLevel)      B_ResetLevel->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetLevelClicked);
+	if (B_ResetEfficiency) B_ResetEfficiency->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetEfficiencyClicked);
 }
 
 void UUpgradesWidget::InitializeUpgradeData(USaveFileListData* InSaveData)
@@ -42,10 +55,117 @@ void UUpgradesWidget::InitializeUpgradeData(USaveFileListData* InSaveData)
 	RefreshUI();
 }
 
+void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
+{
+	if (!StandardTooltipClass || !HoveredButton) return;
+
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	if (!StandardTooltip)
+	{
+		StandardTooltip = CreateWidget<UStandardTooltip>(PC, StandardTooltipClass);
+		StandardTooltip->AddToViewport();
+	}
+
+	FString StatKey = "";
+	int RawValue = 0;
+	FString AbilityName = "";
+	FString AbilityDesc = "";
+
+	if (HoveredButton == B_HP) { StatKey = "MetaHealth";						RawValue = SD.MetaHealth * 10; }
+	else if (HoveredButton == B_DEF) { StatKey = "MetaDefence";					RawValue = SD.MetaDefence * 3; }
+	else if (HoveredButton == B_STR) { StatKey = "MetaStrength";				RawValue = SD.MetaStrength * 3; }
+	else if (HoveredButton == B_AGI) { StatKey = "MetaAgility";					RawValue = SD.MetaAgility * 3; }
+	else if (HoveredButton == B_INT) { StatKey = "MetaIntelligence";			RawValue = SD.MetaIntelligence * 3; }
+	else if (HoveredButton == B_Efficiency) { StatKey = "MetaPurity";			RawValue = SD.MetaPotionEfficiency * 5; }
+	else if (HoveredButton == B_LUCK) { StatKey = "MetaLuck";					RawValue = SD.MetaLuck * 1; }
+	else if (HoveredButton == B_Regen) { StatKey = "MetaMana";					RawValue = SD.MetaResourceRegen * 1; }
+	else if (HoveredButton == B_Level) { StatKey = "MetaStartingLevel";			RawValue = SD.MetaStartingLevel + 1; }
+
+	FTooltipData TD;
+	if (HoveredButton == B_Regen)
+	{
+		if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
+		{
+			TD = ItemStats::GetStatTooltipData(StatKey, RawValue, SD.MetaResourceRegen * 1, PS->PassiveResourceTime, "", "");
+		}
+	}
+	else
+	{
+		TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, "", "");
+	}
+
+	StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+	StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
+
+	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
+	const FVector2D Offset(5.0f, 5.0f);
+	const FVector2D Anchor(0.f, 1.f);
+
+	StandardTooltip->SetAnchor(Anchor);
+	StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
+}
+
+void UUpgradesWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+
+	if (StandardTooltip)
+	{
+		StandardTooltip->RemoveFromParent();
+		StandardTooltip = nullptr;
+	}
+
+	CurrentHoveredButton = nullptr;
+}
+
+FReply UUpgradesWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+
+	FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
+
+	TArray<UButton*> Buttons = { B_HP, B_DEF, B_STR, B_AGI, B_INT, B_Efficiency, B_Level, B_LUCK, B_Regen};
+
+	UButton* HoveredButton = nullptr;
+	for (UButton* Button : Buttons)
+	{
+		if (!Button) continue;
+
+		FGeometry BorderGeom = Button->GetCachedGeometry();
+		if (BorderGeom.IsUnderLocation(CursorPos))
+		{
+			HoveredButton = Button;
+			break;
+		}
+	}
+
+	if (HoveredButton != CurrentHoveredButton)
+	{
+
+		if (StandardTooltip && CurrentHoveredButton)
+		{
+			StandardTooltip->RemoveFromParent();
+			StandardTooltip = nullptr;
+		}
+
+		CurrentHoveredButton = HoveredButton;
+	}
+
+	if (CurrentHoveredButton)
+	{
+		ShowTooltipForBorder(CurrentHoveredButton, CursorPos, InGeometry);
+	}
+
+	return FReply::Handled();
+}
+
 void UUpgradesWidget::UpdateStatVisuals(UTextBlock* TB, URadialSlider* Slider, int Value)
 {
-	float MaxVal = 5.0f;
-
 	if (TB)
 	{
 		TB->SetText(FText::AsNumber(Value));
@@ -53,7 +173,7 @@ void UUpgradesWidget::UpdateStatVisuals(UTextBlock* TB, URadialSlider* Slider, i
 
 	if (Slider)
 	{
-		Slider->SetValue((float)(Value) / MaxVal);
+		Slider->SetValue((float)(Value) / MaxValue);
 	}
 }
 
@@ -87,23 +207,123 @@ void UUpgradesWidget::RefreshUI()
 	UpdateStatVisuals(TB_PotionEfficiency, PotionEfficiency_Slider, SD.MetaPotionEfficiency);
 }
 
+void UUpgradesWidget::OnResetHPClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaHealth;
+	SD.MetaHealth = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetDEFClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaDefence;
+	SD.MetaDefence = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetLUCKClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaLuck;
+	SD.MetaLuck = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetSTRClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaStrength;
+	SD.MetaStrength = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetAGIClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaAgility;
+	SD.MetaAgility = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetINTClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaIntelligence;
+	SD.MetaIntelligence = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetRegenClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaResourceRegen;
+	SD.MetaResourceRegen = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetLevelClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaStartingLevel;
+	SD.MetaStartingLevel = 0;
+
+	RefreshUI();
+}
+
+void UUpgradesWidget::OnResetEfficiencyClicked()
+{
+	if (!CurrentSaveData) return;
+	FSaveData& SD = CurrentSaveData->SaveData;
+
+	SD.MetaPoints += SD.MetaPotionEfficiency;
+	SD.MetaPotionEfficiency = 0;
+
+	RefreshUI();
+}
+
 void UUpgradesWidget::OnUpgradeClicked(FString StatType)
 {
 	if (!CurrentSaveData || CurrentSaveData->SaveData.MetaPoints <= 0) return;
 
-	CurrentSaveData->SaveData.MetaPoints--;
-
 	FSaveData& SD = CurrentSaveData->SaveData;
 
-	if (StatType == "HP") { SD.MetaHealth++; }
-	else if (StatType == "DEF") { SD.MetaDefence++; }
-	else if (StatType == "LUCK") { SD.MetaLuck++; }
-	else if (StatType == "STR") { SD.MetaStrength++; }
-	else if (StatType == "AGI") { SD.MetaAgility++; }
-	else if (StatType == "INT") { SD.MetaIntelligence++; }
-	else if (StatType == "REGEN") { SD.MetaResourceRegen++; }
-	else if (StatType == "LEVEL") { SD.MetaStartingLevel++; }
-	else if (StatType == "EFFICIENCY") { SD.MetaPotionEfficiency++; }
+	if (StatType == "HP" && SD.MetaHealth < MaxValue) { SD.MetaHealth++; }
+	else if (StatType == "DEF" && SD.MetaDefence < MaxValue) { SD.MetaDefence++; }
+	else if (StatType == "LUCK" && SD.MetaLuck < MaxValue) { SD.MetaLuck++; }
+	else if (StatType == "STR" && SD.MetaStrength < MaxValue) { SD.MetaStrength++; }
+	else if (StatType == "AGI" && SD.MetaAgility < MaxValue) { SD.MetaAgility++; }
+	else if (StatType == "INT" && SD.MetaIntelligence < MaxValue) { SD.MetaIntelligence++; }
+	else if (StatType == "REGEN" && SD.MetaResourceRegen < MaxValue) { SD.MetaResourceRegen++; }
+	else if (StatType == "LEVEL" && SD.MetaStartingLevel < MaxValue) { SD.MetaStartingLevel++; }
+	else if (StatType == "EFFICIENCY" && SD.MetaPotionEfficiency < MaxValue) { SD.MetaPotionEfficiency++; }
+	else return;
+
+	CurrentSaveData->SaveData.MetaPoints--;
 
 	//Update the visuals
 	RefreshUI();

@@ -55,8 +55,9 @@
 #include "RelicRunners/Menu/Keybinds.h"
 #include "LevelGeneration/NewObjectives/NewCapturableFlag.h"
 #include <Kismet/KismetMathLibrary.h>
-
-
+#include "Components/SkeletalMeshComponent.h"
+#include "TimerManager.h"
+#include "RelicRunnersGameMode.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -80,28 +81,22 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 
-	// Slightly closer than before
-	CameraBoom->TargetArmLength = 500.0f; 
+	CameraBoom->TargetArmLength = 500.0f;
 
-	// Slightly higher
-	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 10.f)); 
-
-	// Slight downward angle to see enemies
-	CameraBoom->SetRelativeRotation(FRotator(-10.f, 0.f, 0.f));
-
-	// Smooth follow
 	CameraBoom->bUsePawnControlRotation = true;
-	CameraBoom->bEnableCameraLag = true;
-	CameraBoom->CameraLagSpeed = 8.f;
-	CameraBoom->bEnableCameraRotationLag = true;
-	CameraBoom->CameraRotationLagSpeed = 6.f;
-	CameraBoom->bDoCollisionTest = false;
-	//CameraBoom->SocketOffset = FVector(0.f, 40.f, 0.f); // shoulder offset
 
-	// Follow camera
+	CameraBoom->bEnableCameraLag = true;
+	CameraBoom->CameraLagSpeed = 10.f;
+
+	CameraBoom->bEnableCameraRotationLag = true;
+	CameraBoom->CameraRotationLagSpeed = 10.f;
+
+	CameraBoom->bDoCollisionTest = false;
+
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+
 
 	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
 	MinimapSpringArm->SetupAttachment(RootComponent);
@@ -169,6 +164,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	OffhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	OffhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 
+	
 	//UI
 	PlayerHUDWorld = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidgetComponent"));
 	PlayerHUDWorld->SetupAttachment(GetMesh());
@@ -178,6 +174,8 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	PlayerHUDWorld->SetDrawAtDesiredSize(true);
 	PlayerHUDWorld->SetVisibility(true);
 	PlayerHUDWorld->CastShadow = false;
+
+
 
 	bAlwaysRelevant = true;
 	SetReplicates(true);
@@ -207,8 +205,9 @@ void ARelicRunnersCharacter::BeginPlay()
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
 	}
-}
 
+	
+}
 
 void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -225,6 +224,7 @@ void ARelicRunnersCharacter::PossessedBy(AController* NewController)
 
 	if (RelicPlayerState)
 	{
+		RelicPlayerState->DeathState = false;
 		const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
 		SyncEquippedVisuals(EquippedEntries);
 	}
@@ -236,50 +236,12 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	//if (RelicPlayerState) RelicPlayerState->ModifyHealth(-ActualDamage);
-	
-	if (bMirrorActive && ActualDamage > 0.f)
-	{
-		AActor* Attacker = DamageCauser;
-	
-		if (!Attacker && EventInstigator)
-		{
-			Attacker = EventInstigator->GetPawn();
-		}
-
-		if (Attacker && Attacker != this && Attacker->ActorHasTag("Enemy"))
-		{
-			const float Reflected = ActualDamage * MirrorReflectPercent;
-
-			UGameplayStatics::ApplyDamage(Attacker,Reflected,GetController(),this,nullptr);
-		}
-	}
-
-	if (bGuardActive && ActualDamage > 0.f)
-	{
-		AActor* Attacker = DamageCauser;
-
-		if (!Attacker && EventInstigator)
-		{
-			Attacker = EventInstigator->GetPawn();
-		}
-
-		if (Attacker && Attacker != this && Attacker->ActorHasTag("Enemy"))
-		{
-			if (IsDamageFromFront(Attacker))
-			{
-				DrawDebugLine(GetWorld(),GetActorLocation() + FVector(0, 0, 60.f),Attacker->GetActorLocation(),FColor::Green,false, 0.15f, 0, 2.f);
-
-				ActualDamage = 0.f;
-			}
-		}
-	}
-	
 	if (RelicPlayerState)
 	{
 		int Defence = RelicPlayerState->GetInventoryComponent()->CachedEquippedStats.TotalArmor;
 		float Reduction = (1.0f - (ItemStats::GetDefencePerc(Defence) / 100.0f));
-		int DamageTaken = ActualDamage * Reduction;
+		float DamageTaken = ActualDamage * Reduction;
+		ActualDamage = DamageTaken;
 		RelicPlayerState->ModifyHealth(-DamageTaken);
 	}
 
@@ -288,8 +250,27 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	SetActorLocation(respawnPoint);
-	if (RelicPlayerState) RelicPlayerState->ResetHealth();
+	if (RelicPlayerState) RelicPlayerState->DeathState = true;
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+		if (RPC)
+		{
+			RPC->CleanUI();
+			RPC->ChangeState(NAME_Spectating);
+			RPC->SpectatingUI();
+			RPC->Client_RequestSaveStats();
+		}
+
+		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+		{
+			GM->CheckGameOver();
+		}
+	}
+
+	Destroy();
 }
 
 void ARelicRunnersCharacter::OnRep_PlayerState()
@@ -362,11 +343,12 @@ void ARelicRunnersCharacter::Tick(float DeltaTime)
 		Die();
 	}
 
-	if (GetWorld()->GetMapName().Contains("BossLevel"))
+	if (IsLocallyControlled() && Controller && GetWorld()->GetMapName().Contains("BossLevel"))
 	{
 		FVector CurrentLocation = GetActorLocation();
 		FVector Target(0.f, 0.f, -1000.f);
 		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(CurrentLocation, Target);
+
 		Controller->SetControlRotation(LookAtRot);
 	}
 }
@@ -474,9 +456,52 @@ void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 	
 }
 
-void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor, float BaseDamage)
 {
+	if (!TargetActor) return;
 
+	AController* InstigatorController = GetInstigatorController();
+	if (!InstigatorController) return;
+
+	APlayerController* PC = Cast<APlayerController>(InstigatorController);
+
+	UInventoryComponent* InventoryComponent = nullptr;
+	if (PC)
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			InventoryComponent = PS->GetInventoryComponent();
+		}
+	}
+
+	float PercentStrengthIncrease = 0.f;
+	float CritChance = 0.f;
+	float CritDamageMultiplier = 1.f;
+
+	if (InventoryComponent)
+	{
+		int Strength = InventoryComponent->CachedEquippedStats.TotalStrength;
+		int CritValue = InventoryComponent->CachedEquippedStats.TotalDexterity;
+
+		PercentStrengthIncrease = ItemStats::GetStrengthPerc(Strength);
+
+		CritChance = ItemStats::GetCritPerc(CritValue);
+		CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
+		CritDamageMultiplier = ItemStats::GetCritDmgPerc(CritValue);
+	}
+
+	float FinalDamage = BaseDamage * (1.f + PercentStrengthIncrease / 100.f);
+
+	// Roll for crit
+	float RandomRoll = FMath::FRandRange(1.f, 100.f);
+	bool bIsCrit = RandomRoll <= CritChance;
+
+	if (bIsCrit)
+	{
+		FinalDamage *= CritDamageMultiplier;
+	}
+
+	UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this, nullptr);
 }
 
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const
@@ -635,7 +660,6 @@ void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const F
 		return;
 	}
 
-
 	FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
 	FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
 
@@ -644,7 +668,7 @@ void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const F
 	Params.Instigator = this;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
+	AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
 	if (Dropped)
 	{
 		Dropped->Initialize(Data);
@@ -672,57 +696,42 @@ void ARelicRunnersCharacter::HealthPotions()
 
 FVector ARelicRunnersCharacter::CalculateValidDropLocation(FVector DesiredLoc) const
 {
-	const float MinDistance = 50.f;
-	TArray<AActor*> FoundItems;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundItems);
+	const float ItemRadius = 50.f; 
+	FCollisionShape CheckSphere = FCollisionShape::MakeSphere(ItemRadius);
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
 
-	//If no items exist, the desired location is perfectly fine
-	if (FoundItems.Num() == 0) return DesiredLoc;
-
-	FVector CurrentBestLoc = DesiredLoc;
-	bool NeedsRepositioning = false;
-
-	//Check if our desired spot is blocked
-	for (AActor* Item : FoundItems)
+	if (!GetWorld()->OverlapAnyTestByChannel(DesiredLoc, FQuat::Identity, ECC_Visibility, CheckSphere, QueryParams))
 	{
-		if (IsValid(Item) && FVector::Dist(Item->GetActorLocation(), DesiredLoc) < MinDistance)
-		{
-			NeedsRepositioning = true;
-			break;
-		}
+		return DesiredLoc;
 	}
 
-	if (!NeedsRepositioning) return DesiredLoc;
-
-	//Spiral search
-	for (int Radius = 60; Radius <= 300; Radius += 60)
+	for (int Radius = 80; Radius <= 400; Radius += 80)
 	{
 		for (int Angle = 0; Angle < 360; Angle += 45)
 		{
-			const float Radians = FMath::DegreesToRadians(Angle);
+			const float Radians = FMath::DegreesToRadians(static_cast<float>(Angle));
 			FVector Offset(FMath::Cos(Radians) * Radius, FMath::Sin(Radians) * Radius, 0.f);
 			FVector CandidateLoc = DesiredLoc + Offset;
 
-			//Check candidate against all world items
-			bool CollisionFound = false;
-			for (AActor* Item : FoundItems)
-			{
-				if (FVector::Dist(CandidateLoc, Item->GetActorLocation()) < MinDistance)
-				{
-					CollisionFound = true;
-					break;
-				}
-			}
+			bool bIsBlocked = GetWorld()->OverlapAnyTestByChannel(CandidateLoc, FQuat::Identity, ECC_Visibility, CheckSphere, QueryParams);
 
-			if (!CollisionFound)
+			if (!bIsBlocked)
 			{
+				FHitResult FloorHit;
+				FVector TraceStart = CandidateLoc + FVector(0, 0, 100);
+				FVector TraceEnd = CandidateLoc - FVector(0, 0, 200);
+
+				if (GetWorld()->LineTraceSingleByChannel(FloorHit, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
+				{
+					return FloorHit.ImpactPoint + FVector(0, 0, 100);
+				}
+
 				return CandidateLoc;
 			}
 		}
 	}
-
-	//Fallback: If everywhere is crowded
-	return DesiredLoc;
+	return DesiredLoc + (GetActorForwardVector() * 200.f);
 }
 
 void ARelicRunnersCharacter::SyncEquippedVisuals(const TArray<FEquippedItemEntry>& EquippedEntries)
@@ -772,8 +781,15 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 {
 	if (!HasAuthority()) return;
 
-	if (ItemType == "Greatsword" || ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff") 
+	if (ItemType == "Sword" || ItemType == "Bow" || ItemType == "Staff") 
 		ReplicatedVisuals.Mainhand = Cast<UStaticMesh>(MeshAsset);
+	else if (ItemType == "Greatsword")
+	{
+		ReplicatedVisuals.Mainhand = Cast<UStaticMesh>(MeshAsset);
+		const FString MeshPath = GetMeshPathByItemType("Shield");
+		UStaticMesh* NewMesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *MeshPath));
+		ReplicatedVisuals.Offhand = Cast<UStaticMesh>(NewMesh);
+	}
 	else if (ItemType == "Offhand") 
 		ReplicatedVisuals.Offhand = Cast<UStaticMesh>(MeshAsset);
 	else if (ItemType == "Upper")    
@@ -790,6 +806,8 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 	//Server
 	OnRep_VisualsChanged();
 }
+
+
 
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 {
@@ -862,78 +880,5 @@ void ARelicRunnersCharacter::UltimateAbility()
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
 
-void ARelicRunnersCharacter::SetMirrorActive(bool bActive)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
 
-	bMirrorActive = bActive;
 
-	if (!bMirrorActive)
-	{
-		GetWorldTimerManager().ClearTimer(MirrorDebugDrawHandle);
-	}
-	else
-	{
-		GetWorldTimerManager().SetTimer(MirrorDebugDrawHandle,this,&ARelicRunnersCharacter::DrawMirrorDebug,0.1f,true);
-	}
-}
-
-void ARelicRunnersCharacter::DrawMirrorDebug()
-{
-	if (!bMirrorActive)
-	{
-		return;
-	}
-
-	DrawDebugSphere(GetWorld(),GetActorLocation(),MirrorRadius,16,FColor::Purple,false,0.11f);
-}
-
-void ARelicRunnersCharacter::SetGuardActive(bool bActive)
-{
-    if (!HasAuthority()) return;
-
-    bGuardActive = bActive;
-
-    if (!bGuardActive)
-    {
-        GetWorldTimerManager().ClearTimer(GuardDebugDrawHandle);
-    }
-    else
-    {        
-        GetWorldTimerManager().SetTimer(GuardDebugDrawHandle,this,&ARelicRunnersCharacter::DrawGuardDebug,0.1f,true);
-    }
-}
-
-bool ARelicRunnersCharacter::IsDamageFromFront(AActor* DamageCauser) const
-{
-	if (!DamageCauser)
-	{
-		return false;
-	}
-
-    const FVector Forward = GetActorForwardVector().GetSafeNormal();
-    const FVector ToCauser = (DamageCauser->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-
-    const float Dot = FVector::DotProduct(Forward, ToCauser);
-
-    const float HalfAngleRad = FMath::DegreesToRadians(GuardAngleDegrees * 0.5f);
-    const float Threshold = FMath::Cos(HalfAngleRad);
-
-    return Dot >= Threshold;
-}
-
-void ARelicRunnersCharacter::DrawGuardDebug()
-{
-	if (!bGuardActive)
-	{
-		return;
-	}
-
-    const FVector Start = GetActorLocation() + FVector(0,0,60.f);
-    const FVector End = Start + GetActorForwardVector() * 200.f;
-
-    DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.11f, 0, 4.f);
-}

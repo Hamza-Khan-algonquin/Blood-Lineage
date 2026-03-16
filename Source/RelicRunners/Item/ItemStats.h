@@ -66,7 +66,7 @@ class RELICRUNNERS_API ItemStats
 {
 public:
 
-    static FTooltipData GetStatTooltipData(FString BorderType, int StatValue, const FString& AbilityName, const FString& AbilityDesc)
+    static FTooltipData GetStatTooltipData(FString BorderType, int StatValue, int StatValue2, int StatValue3, const FString& AbilityName, const FString& AbilityDesc)
     {
         FTooltipData Data;
 
@@ -80,68 +80,155 @@ public:
             Data.Name = FText::FromString("Health");
             Data.Icon = LoadIcon("HealthIcon");
             Data.IconColor = GetIconColor("Health");
-            Data.Descriptions.Add(FText::FromString("Health pool."));
+            Data.Descriptions.Add(FText::FromString("<Default>Health pool.</>"));
+        }
+        if (BorderType == "MetaHealth")
+        {
+            Data.Name = FText::FromString("Health");
+            Data.Icon = LoadIcon("HealthIcon");
+            Data.IconColor = GetIconColor("Health");
+            Data.Descriptions.Add(FText::FromString("<Default>Health pool.</>"));
+            Data.Descriptions.Add(FText::FromString("<Blue>+10</> <Default>Health per meta point.</>"));
         }
         else if (BorderType == "Defence")
         {
             Data.Name = FText::FromString("Defence");
             Data.Icon = LoadIcon("DefenceIcon");
             Data.IconColor = GetIconColor("Defence");
-            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Damage reduction."), FText::AsNumber(GetDefencePerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Damage reduction.</>"), FText::AsNumber(GetDefencePerc(StatValue))));
+        }
+        else if (BorderType == "MetaDefence")
+        {
+            Data.Name = FText::FromString("Defence");
+            Data.Icon = LoadIcon("DefenceIcon");
+            Data.IconColor = GetIconColor("Defence");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Damage reduction.</>"), FText::AsNumber(GetDefencePerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Defence per meta point.</>"));
         }
         else if (BorderType == "Strength")
         {
             Data.Name = FText::FromString("Strength");
             Data.Icon = LoadIcon("StrengthIcon");
             Data.IconColor = GetIconColor("Strength");
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Attack & ability damage."), FText::AsNumber(GetStrengthPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Attack & ability damage.</>"), FText::AsNumber(GetStrengthPerc(StatValue))));
+        }
+        else if (BorderType == "MetaStrength")
+        {
+            Data.Name = FText::FromString("Strength");
+            Data.Icon = LoadIcon("StrengthIcon");
+            Data.IconColor = GetIconColor("Strength");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Attack & ability damage.</>"), FText::AsNumber(GetStrengthPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Strength per meta point.</>"));
         }
         else if (BorderType == "Agility")
         {
             Data.Name = FText::FromString("Agility");
             Data.Icon = LoadIcon("AgilityIcon");
             Data.IconColor = GetIconColor("Agility");
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Crit chance."), FText::AsNumber(GetCritPerc(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("{0}x Damage on crit."), FText::AsNumber(GetCritDmgPerc(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Movement speed."), FText::AsNumber(GetSpeedPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default> Crit chance.</>"), FText::AsNumber(GetCritPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}x</> <Default> Damage on crit.</>"), FText::AsNumber(GetCritDmgPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Movement speed.</>"), FText::AsNumber(GetSpeedPerc(StatValue))));
+        }
+        else if (BorderType == "MetaAgility")
+        {
+            Data.Name = FText::FromString("Agility");
+            Data.Icon = LoadIcon("AgilityIcon");
+            Data.IconColor = GetIconColor("Agility");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Crit chance.</>"), FText::AsNumber(GetCritPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>{0}x</> <Default>Damage on crit.</>"), FText::AsNumber(GetCritDmgPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Movement speed.</>"), FText::AsNumber(GetSpeedPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Agility per meta point.</>"));
         }
         else if (BorderType == "Intelligence")
         {
             Data.Name = FText::FromString("Intelligence");
             Data.Icon = LoadIcon("IntelligenceIcon");
             Data.IconColor = GetIconColor("Intelligence");
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0} Mana pool."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Ability cost reduction."), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>Mana pool.</>"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Ability cost reduction.</>"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+        }
+        else if (BorderType == "MetaIntelligence")
+        {
+            Data.Name = FText::FromString("Intelligence");
+            Data.Icon = LoadIcon("IntelligenceIcon");
+            Data.IconColor = GetIconColor("Intelligence");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}</> <Default>Mana pool.</>"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Ability cost reduction.</>"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Intelligence per meta point.</>"));
         }
         else if (BorderType == "Luck")
         {
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot chance."), FText::AsNumber(GetLootChance(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Loot quality."), FText::AsNumber(GetLootQuality(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
+        }
+        else if (BorderType == "MetaLuck")
+        {
+            Data.Name = FText::FromString("Luck");
+            Data.Icon = LoadIcon("LuckIcon");
+            Data.IconColor = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Luck per meta point.</>"));
         }
         else if (BorderType == "Purity")
         {
             Data.Name = FText::FromString("Purity");
-            Data.Icon = LoadIcon("PurityIcon");
+            Data.Icon = LoadIcon("PotionIcon");
             Data.IconColor = GetIconColor("Purity");
-            Data.Descriptions.Add(FText::Format(FText::FromString("{0}% Heal."), FText::AsNumber(GetHealPercent(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("+{0}% Chance to not consume."), FText::AsNumber(GetChanceToNotConsume(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Health potion heal.</>"), FText::AsNumber(GetHealPercent(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Chance to not consume.</>"), FText::AsNumber(GetChanceToNotConsume(StatValue))));
+        }
+        else if (BorderType == "MetaPurity")
+        {
+            Data.Name = FText::FromString("Purity");
+            Data.Icon = LoadIcon("PotionIcon");
+            Data.IconColor = GetIconColor("Purity");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Health potion heal.</>"), FText::AsNumber(GetHealPercent(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Chance to not consume.</>"), FText::AsNumber(GetChanceToNotConsume(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Blue>+5</> <Default>Purity per meta point.</>"));
         }
         else if (BorderType == "Level")
         {
             Data.Name = FText::FromString("Level");
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("Level");
-            Data.Descriptions.Add(FText::Format(FText::FromString("Current Level"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Default>Current Level.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}</> <Default>From Meta-Upgrade.</>"), FText::AsNumber(StatValue2)));
+        }
+        else if (BorderType == "MetaLevel")
+        {
+            Data.Name = FText::FromString("Meta Level");
+            Data.Icon = LoadIcon("StartingLevelIcon");
+            Data.IconColor = GetIconColor("MetaLevel");
+            Data.Descriptions.Add(FText::FromString("<Default>Current Meta Level.</>"));
+            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Meta point per meta level.</>"));
+            Data.Descriptions.Add(FText::FromString("<Default>Meta points are spent in the upgrades menu.</>"));
+            }
+        else if (BorderType == "MetaStartingLevel")
+        {
+            Data.Name = FText::FromString("Starting Level");
+            Data.Icon = LoadIcon("StartingLevelIcon");
+            Data.IconColor = GetIconColor("Level");
+            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Starting level per meta point.</>"));
         }
         else if (BorderType == "Mana")
         {
             Data.Name = FText::FromString("Mana");
             Data.Icon = LoadIcon("ResourceIcon");
             Data.IconColor = GetIconColor("Mana");
-            Data.Descriptions.Add(FText::Format(FText::FromString("Mana pool."), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::FromString("Mana pool."));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "MetaMana")
+        {
+            Data.Name = FText::FromString("Mana Regen");
+            Data.Icon = LoadIcon("ResourceIcon");
+            Data.IconColor = GetIconColor("Mana");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
+            Data.Descriptions.Add(FText::FromString("<Blue>+1%</> <Default>Mana regen per meta point.</>"));
         }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {
@@ -321,7 +408,9 @@ public:
         //Meta Stats
         if (StatName == "Luck") Color = FLinearColor(0, 0.35f, 0.237f, 1);
         if (StatName == "Level") Color = FLinearColor(1, 1, 1, 1);
+        if (StatName == "MetaLevel") Color = FLinearColor(0, 0.171, 0.413, 1);
         if (StatName == "Mana") Color = FLinearColor(0, 0.723f, 1, 1);
+        if (StatName == "Purity") Color = FLinearColor(1, 0, 0.02f, 1);
 
         //Enemy Stats
         if (StatName == "EnemyHealth") Color = FLinearColor(0.776f, 0.061f, 0, 1);

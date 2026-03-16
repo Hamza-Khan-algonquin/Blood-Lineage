@@ -13,8 +13,9 @@ UWarBannerAbility::UWarBannerAbility()
     Duration = 15.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
-    AreaRadius = 500.f;
+    Cost = 40;
+    AreaRadius = 600.f;
+
 }
 
 
@@ -65,9 +66,16 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     FVector BannerLocation = GetBannerLocation();
 
@@ -96,11 +104,25 @@ void UWarBannerAbility::SpawnBanner()
     // Final spawn location
     const FVector BannerLocation = PawnLocation + ForwardVector * SpawnDistance + FVector(0.f, 0.f, 20.f);
 
-    // Small sphere where the banner would spawn
-    DrawDebugSphere(World,BannerLocation,25.f,12,FColor::Red,false,Duration, 0, 2.f);
+    if (AvatarActor->HasAuthority())
+    {
+        AController* Controller = nullptr;
 
-    // Circle to show buff radius
-    DrawDebugCircle(World,BannerLocation,AreaRadius,64,FColor::Green,false,Duration,0,2.f,OwnerPawn->GetActorRightVector(),OwnerPawn->GetActorForwardVector(),false);
+        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+        {
+            Controller = CurrentActorInfo->PlayerController.Get();
+        }
+
+        if (Controller)
+        {
+            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+            if (PS)
+            {
+                PS->Multicast_SpawnVFX(BannerLocation + FVector(0, 0, -100), FRotator(0, 0, 0), FVector(1.2f), AbilityVFX, false);
+            }
+        }
+    }
 
 }
 

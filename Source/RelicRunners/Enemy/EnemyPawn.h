@@ -16,6 +16,8 @@ class UEnemyLODComponent;
 class UEnemyBoidMovementComponent;
 class UEnemyStats;
 class USphereComponent;
+class UNiagaraSystem;
+class USoundBase;
 
 UCLASS()
 class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
@@ -72,6 +74,18 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float AdditionalUpwardsKnockBackForces;
 	bool IsAttacking = false;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* DeathEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* HitSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* DeathSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* AttackHitPlayerSound = nullptr;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
@@ -106,7 +120,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle dieing and what happens when the enemy dies.", ShortToolTip = "A method to handle dieing."))
 	//A method to handle dieing and what happens when the enemy dies
-	virtual void Die(AController* EventInstigator);
+	virtual void Die(AController* EventInstigator, FVector hitDirection = FVector(0,0,0));
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayDeathEffet(FVector impactDirection);
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Check if the enemy is dead.", ShortToolTip = "Check if the enemy is dead."))
 	//Check if the enemy is dead

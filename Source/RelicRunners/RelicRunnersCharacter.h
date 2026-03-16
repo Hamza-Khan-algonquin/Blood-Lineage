@@ -18,7 +18,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-
+#include "Abilities/PiercingArrow.h"
 #include "AbilitySystem/AbilityBase.h"  
 #include "Abilities/Moonbeam.h"       
 #include "Abilities/GoddessOfLove.h"       
@@ -39,8 +39,7 @@
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
 #include "TimerManager.h"
-
-
+#include "Components/SphereComponent.h"
 #include "RelicRunnersCharacter.generated.h"
 
 class USpringArmComponent;
@@ -86,6 +85,10 @@ class ARelicRunnersCharacter : public ACharacter
 
 public:
 
+	//void OnPause();
+
+	//void ContinueMontage();
+
 	//Functions
 	ARelicRunnersCharacter();
 	void Die();
@@ -122,7 +125,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateItemVisuals(class UItemObject* Item);
 	UFUNCTION(Server, Reliable)
-	virtual void Server_HitEnemy(AActor* HitActor);
+	void Server_HitEnemy(AActor* TargetActor, float BaseDamage);
+
+
 
 	//Getters
 	FString GetMeshPathByItemType(const FString& ItemType);
@@ -184,45 +189,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
 	
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Mirror")
-	bool bMirrorActive = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mirror")
-	float MirrorReflectPercent = 0.35f; 
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mirror")
-	float MirrorRadius = 150.f;
-
-	FTimerHandle MirrorDurationHandle;
-	FTimerHandle MirrorDebugDrawHandle;
-
-	UFUNCTION()
-	void SetMirrorActive(bool bActive);
-
-	UFUNCTION()
-	void DrawMirrorDebug();
-
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Guard")
-	bool bGuardActive = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Guard")
-	float GuardAngleDegrees = 100.f;
-
-	FTimerHandle GuardDebugDrawHandle;
-
-	UFUNCTION()
-	void SetGuardActive(bool bActive);
-
-	UFUNCTION()
-	bool IsDamageFromFront(AActor* DamageCauser) const;
-
-	UFUNCTION()
-	void DrawGuardDebug(); 
 
 protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	UAbilitySystemComponent* AbilitySystem;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* BasicAnim;
 
 	//Functions
 	void Tick(float DeltaTime);
@@ -260,10 +234,10 @@ protected:
 
 	// Camera smoothing
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
-	float CameraYawSmoothSpeed = 6.f;
+	float CameraYawSmoothSpeed = 10.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
-	float CameraPitchSmoothSpeed = 4.f;
+	float CameraPitchSmoothSpeed = 10.f;
 
 	// Camera look-ahead offset
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Smooth")
@@ -271,7 +245,7 @@ protected:
 
 	// Height & offset tweaks
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
-	float HeightOffset = 80.f;
+	float HeightOffset = 100.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Position")
 	float ShoulderOffset = 40.f;
@@ -285,10 +259,10 @@ protected:
 
 	// Pitch limits
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MinPitch = -45.f;
+	float MinPitch = 60.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Limits")
-	float MaxPitch = -5.f;
+	float MaxPitch = 25.f;
 
 	// Optional bounce
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")
@@ -296,6 +270,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")
 	float BounceSpeed = 6.f;
+
 
 	FVector CurrentLookAhead;
 

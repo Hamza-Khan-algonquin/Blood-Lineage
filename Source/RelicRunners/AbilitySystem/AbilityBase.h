@@ -6,6 +6,7 @@
 #include "RelicRunners/PlayerHUD/PlayerHUD.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Sound/SoundBase.h"
 #include "AbilityBase.generated.h"
 
 UENUM(BlueprintType)
@@ -41,6 +42,15 @@ public:
 
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
+
+    void PlayAbilityCastSound(const FGameplayAbilityActorInfo* ActorInfo) const;
+
+    void CalculateAbilityDamage(AActor* InstigatorActor, AActor* TargetActor, float BaseDamage);
+
+    float CalculateAbilityMana(AActor* InstigatorActor, float BaseMana);
+
+    UAnimMontage* PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage);
+
     virtual FName GetAbilityName() const { return FName(TEXT("AbilityBase")); }
 
 public:
@@ -49,7 +59,7 @@ public:
     float Duration = 0.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Combat")
-    float DamageAmount = 0.f;
+    float Damage = 0.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability|Combat")
     float AreaRadius = 0.f;
@@ -86,6 +96,15 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
     TObjectPtr<UNiagaraSystem> AbilityVFX1 = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> AbilityCastSound = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* AbilityAnim;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* AbilityAnim1;
 
 };
 

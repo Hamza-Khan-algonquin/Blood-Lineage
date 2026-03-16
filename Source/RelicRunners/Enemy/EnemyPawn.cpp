@@ -23,7 +23,9 @@
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
 #include "Components/SphereComponent.h"
+#include "NiagaraComponent.h"
 
+#include "RelicRunners/Inventory/InventoryComponent.h"
 
 
 // Sets default values
@@ -110,7 +112,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//check if we meet the conditions to be dead and then die
 	if (IsDead())
 	{
-		Die(EventInstigator);
+		Die(EventInstigator, (GetActorLocation() - DamageCauser->GetActorLocation().GetSafeNormal()));
 	}
 	//if we are not dead check the damage events for stun
 	else
@@ -130,6 +132,11 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 void AEnemyPawn::HitFlash_Implementation()
 {
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+	}
+
 	HitFlashTimeline.PlayFromStart();
 	SetActorTickEnabled(true);
 	//HitFlashTimeline.SetPlaybackPosition(0.0f, false);
@@ -175,14 +182,11 @@ void AEnemyPawn::EndHitFlash()
 	}
 }
 
-void AEnemyPawn::Die(AController* EventInstigator)
+void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 {
 	//make sure we are server side
 	if (HasAuthority())
 	{
-		//spawn item
-		SpawnItem();
-
 		//check to make sure it a play and if do add experience
 		if (EventInstigator)
 		{
@@ -191,12 +195,22 @@ void AEnemyPawn::Die(AController* EventInstigator)
 			if (PS)
 			{
 				PS->AddExperience(CalculateXP());
+				
+				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
+				SpawnItem();
 			}
+		}
+
+		if (DeathSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
 		}
 
 		OnDied.Broadcast(this);
 		OnDied.Clear();
 		//OnDestroyed.Clear();
+
+		PlayDeathEffet_Implementation(hitDirection);
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
@@ -209,6 +223,18 @@ void AEnemyPawn::Die(AController* EventInstigator)
 			Destroy();
 		}
 	}
+}
+
+void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
+{
+	if (!DeathEffect)
+	{
+		return;
+	}
+
+	UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
+
+	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
 }
 
 inline bool AEnemyPawn::IsDead()
@@ -309,6 +335,11 @@ void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* O
 		{
 			UGameplayStatics::ApplyDamage(OtherActor, EnemyStatsComponent->GetAttackDamage(), nullptr, this, nullptr);
 		}
+
+		if (AttackHitPlayerSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, AttackHitPlayerSound, GetActorLocation());
+		}
 	}
 }
 
@@ -321,7 +352,7 @@ void AEnemyPawn::SpawnItem()
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = FMath::RandRange(0.f,1.f);
+	float chance = FMath::FRandRange(0.f, 100.f);
 
 	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 	{
@@ -406,6 +437,11 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!MovementComponent || !CapsuleComponent || !OtherComp)
+	{
+		return;
+	}
+
+	if (!FMath::IsNearlyZero(CapsuleComponent->GetComponentVelocity().Length()) && Hit.Normal.Z < 0.1)
 	{
 		return;
 	}

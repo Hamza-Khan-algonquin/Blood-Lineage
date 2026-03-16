@@ -12,7 +12,9 @@ UImpunityAbility::UImpunityAbility()
     CooldownDuration = 8.0f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-	Cost = 40;
+	Cost = 50;
+
+
 }
 
 void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -74,11 +76,21 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     bIsActive = true;
+
+    if (ActorInfo->AvatarActor->HasAuthority())
+    {
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, true);
+    }
+    
+
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.75f;
     AvatarChar->GetWorldTimerManager().SetTimer(SpeedResetTimer, FTimerDelegate::CreateUObject(this, &UImpunityAbility::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
@@ -88,6 +100,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 void UImpunityAbility::ResetSpeed()
 {
+
     ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
     if (AvatarChar)
     {
@@ -117,6 +130,7 @@ void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
                 }
             }
         }
+
         ResetSpeed();
     }
 

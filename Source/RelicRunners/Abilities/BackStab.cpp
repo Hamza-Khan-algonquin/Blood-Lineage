@@ -13,33 +13,23 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/StaticMeshActor.h"     
 #include "Components/StaticMeshComponent.h"
-
+#include "RelicRunners/Inventory/InventoryComponent.h"
+#include "RelicRunners/Item/ItemStats.h"
 
 UBackStab::UBackStab()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    DamageAmount = 200.f;
+    Damage = 200.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 5.f;
-    Cost = 20;
+    Cost = 30;
 	ConeAngle = 80.f;
 	Range = 600.f;
 	BehindOffset = 120.f;
 
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NiagaraSystems/NS_SwordSlash.NS_SwordSlash"));
 
-    if (VFXAsset.Succeeded())
-    {
-        AbilityVFX = VFXAsset.Object;
-    }
-
-    //static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshObj(TEXT("/Game/ThirdPerson/Blueprints/Combat/AbilityCircleBase.AbilityCircleBase"));
-    //if (MeshObj.Succeeded())
-    //{
-    //    BackStabMeshAsset = MeshObj.Object;
-    //}
 }
 
 void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -50,6 +40,13 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
+    if (!AvatarActor) // If no valid actor
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // End the ability
         return;
     }
 
@@ -82,13 +79,14 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     LastUseTime = World->GetTimeSeconds();
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
     OriginalLocation = AvatarActor->GetActorLocation();
     OriginalRotation = AvatarActor->GetActorRotation();
 
@@ -106,7 +104,6 @@ AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
 
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     UKismetSystemLibrary::SphereOverlapActors(World,Origin, Range,ObjectTypes,APawn::StaticClass(),{ AvatarActor },FoundActors);
@@ -148,7 +145,6 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
     TArray<AActor*> ActorsToIgnore;
@@ -173,26 +169,26 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor)
 
         if (FVector::DotProduct(Forward, DirToActor) >= FMath::Cos(HalfConeRad))
         {
-            UGameplayStatics::ApplyDamage(Actor,DamageAmount,AvatarActor->GetInstigatorController(), AvatarActor, UDamageType::StaticClass());
+			CalculateAbilityDamage(AvatarActor, Actor, Damage);
 
-            if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
-            {
-                if (EnemyChar->GetCharacterMovement())
-                {
-                    EnemyChar->GetCharacterMovement()->DisableMovement();
+            //if (APawn* EnemyChar = Cast<APawn>(Actor))
+            //{
+            //    if (EnemyChar->GetCharacterMovement())
+            //    {
+            //        EnemyChar->GetCharacterMovement()->DisableMovement();
 
-                    FTimerHandle RestoreHandle;
-                    World->GetTimerManager().SetTimer(
-                        RestoreHandle,
-                        FTimerDelegate::CreateLambda([EnemyChar]()
-                            {
-                                if (EnemyChar && EnemyChar->GetCharacterMovement())
-                                {
-                                    EnemyChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-                                }
-                            }), 0.6f, false);
-                }
-            }
+            //        FTimerHandle RestoreHandle;
+            //        World->GetTimerManager().SetTimer(
+            //            RestoreHandle,
+            //            FTimerDelegate::CreateLambda([EnemyChar]()
+            //                {
+            //                    if (EnemyChar && EnemyChar->GetCharacterMovement())
+            //                    {
+            //                        EnemyChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+            //                    }
+            //                }), 0.6f, false);
+            //    }
+            //}
         }
     }
 }
@@ -217,37 +213,6 @@ void UBackStab::ExecuteBackStabSequence()
         return;
     }
 
-    //if (BackStabMeshAsset && !ActiveMeshActor)
-    //{
-    //    if (World && AvatarActor)
-    //    {
-    //        FVector SpawnLocation = OriginalLocation;
-    //        SpawnLocation.Z -= 50.f; 
-
-    //        FActorSpawnParameters SpawnParams;
-    //        SpawnParams.Owner = AvatarActor;
-    //        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-    //        // Spawn the StaticMeshActor
-    //        ActiveMeshActor = World->SpawnActor<AStaticMeshActor>(SpawnLocation, FRotator::ZeroRotator, SpawnParams);
-    //        if (ActiveMeshActor)
-    //        {
-    //            UStaticMeshComponent* MeshComp = ActiveMeshActor->GetStaticMeshComponent();
-    //            if (MeshComp)
-    //            {
-    //                MeshComp->SetStaticMesh(BackStabMeshAsset);
-    //                MeshComp->SetWorldScale3D(FVector(0.5f));
-    //                MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    //                MeshComp->SetMobility(EComponentMobility::Movable);
-    //                ActiveMeshActor->SetActorHiddenInGame(false);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            UE_LOG(LogTemp, Warning, TEXT("Failed to spawn ActiveMeshActor"));
-    //        }
-    //    }
-    
     // Find target
     AActor* TargetEnemy = FindBackstabTarget(AvatarActor);
     if (!TargetEnemy || !IsValid(TargetEnemy))
@@ -261,6 +226,11 @@ void UBackStab::ExecuteBackStabSequence()
     FVector DashLocation = TargetEnemy->GetActorLocation() - TargetEnemy->GetActorForwardVector() * DashDistance;
     AvatarActor->SetActorLocation(DashLocation, false, nullptr, ETeleportType::TeleportPhysics);
     AvatarActor->SetActorRotation(TargetEnemy->GetActorRotation());
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+    }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);
     if (!Char || !Char->GetCharacterMovement())

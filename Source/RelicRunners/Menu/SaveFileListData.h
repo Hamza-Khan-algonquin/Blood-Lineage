@@ -25,7 +25,7 @@ struct FSaveData
 	UPROPERTY(BlueprintReadWrite)
 	float MetaExperienceToLevel = 50;
 	UPROPERTY(BlueprintReadWrite)
-	int MetaPoints = 1;
+	int MetaPoints = 10;
 
 	//Meta Stats
 	UPROPERTY(BlueprintReadWrite)
@@ -66,7 +66,13 @@ public:
 	void SetTimePlayed(float Time) { SaveData.TimePlayed = Time; }
 
 	UFUNCTION(BlueprintCallable)
+	FSaveData GetAllStats() const { return SaveData; }
+
+	UFUNCTION(BlueprintCallable)
 	FGuid GetUniqueID() { return SaveData.UniqueID; }
+
+	UFUNCTION(BlueprintCallable)
+	void AddMetaExp(int Value);
 
 	UFUNCTION(BlueprintCallable)
 	float GetMetaExp() { return SaveData.MetaExperience; }
@@ -111,6 +117,16 @@ public:
     static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,
 		float MetaExperienceToLevel, int MetaPoints, int MetaHealth, int MetaDefence, int MetaLuck, int MetaStrength, int MetaAgility,
 		int MetaIntelligence, int MetaStartingLevel, int MetaPotionEfficiency, int MetaResourceRegen);
+
+	UFUNCTION(BlueprintCallable)
+	void SetLiveSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,
+		float MetaExperienceToLevel, int MetaPoints, int MetaHealth, int MetaDefence, int MetaLuck, int MetaStrength, int MetaAgility,
+		int MetaIntelligence, int MetaStartingLevel, int MetaPotionEfficiency, int MetaResourceRegen)
+	{
+		SaveData = MakeSaveData(Name, TimePlayed, MetaLevel, UniqueID, MetaExperience, MetaExperienceToLevel, MetaPoints, MetaHealth, MetaDefence,
+			MetaLuck, MetaStrength, MetaAgility, MetaIntelligence, MetaStartingLevel, MetaPotionEfficiency, MetaResourceRegen);
+	}
+
 
 	UFUNCTION(BlueprintCallable)
 	void SetParentWidget(UModeSelectionWidget* TheParentWidget) { ParentWidget = TheParentWidget; }

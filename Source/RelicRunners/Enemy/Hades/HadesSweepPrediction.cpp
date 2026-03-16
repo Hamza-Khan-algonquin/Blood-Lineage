@@ -1,0 +1,68 @@
+#include "HadesSweepPrediction.h"
+#include "Net/UnrealNetwork.h"
+#include <Kismet/GameplayStatics.h>
+#include "Engine/OverlapResult.h"
+
+AHadesSweepPrediction::AHadesSweepPrediction()
+{
+    PrimaryActorTick.bCanEverTick = true;
+    bReplicates = true;
+}
+
+void AHadesSweepPrediction::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AHadesSweepPrediction, bIsRotating);
+    DOREPLIFETIME(AHadesSweepPrediction, RotationCount);
+    DOREPLIFETIME(AHadesSweepPrediction, StartYaw);
+}
+
+void AHadesSweepPrediction::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    if (bIsRotating && Duration > 0.0f)
+    {
+        ElapsedTime += DeltaTime;
+        float Alpha = FMath::Clamp(ElapsedTime / Duration, 0.0f, 1.0f);
+
+        float TotalDegrees = 360.0f * RotationCount;
+        float CurrentAngle = FMath::Pow(Alpha, 4.0f) * TotalDegrees;
+
+        FRotator NewRotation = FRotator(0, StartYaw - CurrentAngle, 0);
+        SetActorRotation(NewRotation);
+
+        if (AActor* Boss = GetOwner())
+        {
+            FVector BossLoc = FVector(0,0,0);
+            FVector Offset = NewRotation.Vector() * 3450.0f;
+            FVector FinalPos = BossLoc + Offset;
+            FinalPos.Z = BossLoc.Z + 20.0f;
+            SetActorLocation(FinalPos);
+
+            if (HasAuthority())
+            {
+                FVector BoxHalfSize = FVector(950.0f, 250.0f, 200.0f);
+                FCollisionShape Box = FCollisionShape::MakeBox(BoxHalfSize);
+
+                TArray<FOverlapResult> Overlaps;
+                FCollisionQueryParams Params;
+                Params.AddIgnoredActor(Boss);
+                Params.AddIgnoredActor(this);
+
+                if (GetWorld()->OverlapMultiByChannel(Overlaps, GetActorLocation(), GetActorRotation().Quaternion(), ECC_Pawn, Box, Params))
+                {
+                    for (auto& Overlap : Overlaps)
+                    {
+                        if (AActor* HitActor = Overlap.GetActor())
+                        {
+                            UGameplayStatics::ApplyDamage(HitActor, 80.0f, nullptr, Boss, UDamageType::StaticClass());
+                        }
+                    }
+                }
+            }
+        }
+
+        if (Alpha >= 1.0f) bIsRotating = false;
+    }
+}

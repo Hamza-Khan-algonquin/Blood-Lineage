@@ -21,6 +21,7 @@
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
+#include "Sound/SoundBase.h"
 #include "RelicRunnersPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHostStatusChanged, bool, NewIsHost);
@@ -69,8 +70,15 @@ public:
 	void PassiveHealthRegen();
 	UFUNCTION()
 	void PassiveResourceRegen();
+	void OnStartingLevelUp();
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
+
+	UFUNCTION(Client, Reliable)
+	void PlayHealPotionSound();
+
+	UFUNCTION(Client, Reliable)
+	void PlayLevelUpSound();
 
     //Properties
     UPROPERTY(ReplicatedUsing = OnRep_SelectedClass)
@@ -88,6 +96,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	TSubclassOf<UCameraShakeBase> HitCameraShakeClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> HealPotionSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> LevelUpSound = nullptr;
 
 	//Stats
 	void UpdateRemoteHUDHealth();
@@ -116,7 +130,7 @@ public:
 	UPROPERTY()
 	int PlayerNumInventorySlots;
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
-	int PlayerHealth;
+	float PlayerHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
 	int PlayerMaxHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_HealthPotions)
@@ -160,20 +174,52 @@ public:
 	UPROPERTY()
 	int PlayerStartingGold;
 	UPROPERTY()
-
 	float HealthGranted;
-
+	UPROPERTY()
 	int PlayerStartingLuck;
 	UPROPERTY()
 	int PlayerStartingResourceRegen;
 	UPROPERTY()
 	int PlayerStartingPotionEfficiency;
 
+	UPROPERTY()
+	int PassiveResourceTime;
+
+	UPROPERTY()
+	int UpgradedHealth;
+	UPROPERTY()
+	int UpgradedArmor;
+	UPROPERTY()
+	int UpgradedDexterity;
+	UPROPERTY()
+	int UpgradedStrength;
+	UPROPERTY()
+	int UpgradedIntelligence;
+
+	UPROPERTY()
+	int BuffedHealth;
+	UPROPERTY()
+	int BuffedArmor;
+	UPROPERTY()
+	int BuffedDexterity;
+	UPROPERTY()
+	int BuffedStrength;
+	UPROPERTY()
+	int BuffedIntelligence;
+
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
 
 	bool IsInvincible() const { return bIsInvincible; }
 	void SetInvincible(bool bNewInvincible) { bIsInvincible = bNewInvincible; } 
+
+	UPROPERTY(Replicated)
+	bool DeathState = false;
+
+	int MetaLevel;
+	int MetaXP;
+	int MetaXPToNextLevel;
+	int MetaXPGainInRun;
 
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;
@@ -202,6 +248,10 @@ public:
 	int GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
 	UFUNCTION()
 	int GetPlayerStartingPotionEfficiency() const { return PlayerStartingPotionEfficiency; }
+
+	UFUNCTION()
+	int GetPassiveResourceTime() const { return PassiveResourceTime; }
+
 	UFUNCTION()
 	int GetPlayerGold() const { return PlayerGold; }
 	int GetPlayerLevel() { return PlayerLevel; };
@@ -231,6 +281,7 @@ public:
 	void SetPlayerResource(int Resource) { PlayerResource = Resource; }
 	void SetPlayerMaxHealth(int value);
 	void SetPlayerMaxResource(int value);
+	void SetHealthGrantedFromPotion(int value) { HealthGranted = value; }
 	void ResetHealth() { PlayerHealth = PlayerMaxHealth; }
 
     //Delegates

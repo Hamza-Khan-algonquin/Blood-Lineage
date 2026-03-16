@@ -22,7 +22,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     class UClassInfo* ClassInfo;
 
-	virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:
     virtual void BeginPlay() override;
@@ -37,6 +36,10 @@ protected:
 	void GiveMarkOfTheHunt();
 	void GiveMoonBeam(); 
    
+	void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
+	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
+	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
+
     virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	void ShowReticle();
@@ -85,7 +88,7 @@ protected:
 
 	// Camera offset when aiming
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
-	FVector AimingOffset = FVector(0.f, 80.f, 100.f); 
+	FVector AimingOffset = FVector(-20.f, 80.f, 100.f); 
 
 	// Camera distance/speed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
@@ -99,5 +102,20 @@ protected:
 	UPROPERTY()
 	UUserWidget* ReticleWidget;
 
+	bool bExitingAim = false;
 
+	int32 MaxPierces = 10;
+	int32 CurrentPierces = 0;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UPiercingArrow> BP_PiercingArrowClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UImpunityAbility> BP_ImpunityClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UMarkOfTheHunt> BP_MarkOfTheHuntClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Artemis")
+	TSubclassOf<UMoonbeam> BP_MoonbeamClass;
 };

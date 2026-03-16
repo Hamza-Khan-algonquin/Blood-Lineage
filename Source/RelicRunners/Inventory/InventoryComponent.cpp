@@ -370,6 +370,7 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
         {
             PS->SetPlayerMaxHealth(CachedEquippedStats.TotalHealth);
             PS->SetPlayerMaxResource(CachedEquippedStats.TotalResource);
+            PS->SetHealthGrantedFromPotion(ItemStats::GetHealPercent(CachedEquippedStats.TotalPotionEfficiency));
             PS->Client_UpdateEquippedStats(CachedEquippedStats);
         }
     }
@@ -379,16 +380,6 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
         float BaseMovementSpeed = 700.0f;
         float NewMovementSpeed = BaseMovementSpeed * (1 + (PercentMovementSpeedIncrease / 100.0f));
         Character->SetMovementSpeed(NewMovementSpeed);
-    }
-    
-    //Enemies
-    else if (AEnemyCharacterAI* Enemy = Cast<AEnemyCharacterAI>(PawnOwner))
-    {
-        if (Enemy->HasAuthority())
-        {
-            Enemy->SetMaxHealth(CachedEquippedStats.TotalHealth);
-            Enemy->Client_UpdateEquippedStats(CachedEquippedStats);
-        }
     }
 
     OnStatsChanged.Broadcast(CachedEquippedStats);
@@ -533,11 +524,11 @@ void UInventoryComponent::RemoveItemByID(FGuid ItemID)
     }
 }
 
-FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
+FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRunnersPlayerState* InPS) const
 {
     FEquippedStatsSummary Summary;
 
-    const ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner());
+    const ARelicRunnersPlayerState* PS = InPS ? InPS : Cast<ARelicRunnersPlayerState>(GetOwner());
     if (!PS) return Summary;
 
     //Starting stats
@@ -550,18 +541,22 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
     Summary.TotalLuck = PS->GetPlayerStartingLuck();
     Summary.TotalResource = PS->GetPlayerStartingMaxResource();
     Summary.TotalResourceRegen = PS->GetPlayerStartingResourceRegen();
+    Summary.TotalResourceTime = PS->GetPassiveResourceTime();
     Summary.TotalPotionEfficiency = PS->GetPlayerStartingPotionEfficiency();
 
-    //Class stat bonuses
-    if (ClassInfo)
-    {
-        FClassData Stats = ClassInfo->GetStats(PS->SelectedClass.ToString());
-        Summary.TotalHealth += (Stats.Health - 100);
-        Summary.TotalArmor += Stats.Armor;
-        Summary.TotalDexterity += Stats.Dexterity;
-        Summary.TotalStrength += Stats.Strength;
-        Summary.TotalIntelligence += Stats.Intelligence;
-    }
+    //Upgraded from ability selection
+    Summary.TotalHealth += PS->UpgradedHealth;
+    Summary.TotalArmor += PS->UpgradedArmor;
+    Summary.TotalDexterity += PS->UpgradedDexterity;
+    Summary.TotalStrength += PS->UpgradedStrength;
+    Summary.TotalIntelligence += PS->UpgradedIntelligence;
+
+    //Buffed from abilities
+    Summary.TotalHealth += PS->BuffedHealth;
+    Summary.TotalArmor += PS->BuffedArmor;
+    Summary.TotalDexterity += PS->BuffedDexterity;
+    Summary.TotalStrength += PS->BuffedStrength;
+    Summary.TotalIntelligence += PS->BuffedIntelligence;
 
     //Equipped Stats
     for (const FEquippedItemEntry& Entry : EquippedItems)
@@ -583,12 +578,14 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats() const
         {
             if (GI->SelectedSaveSlot) {
                 Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
-                Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth;
-                Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence;
-                Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength;
-                Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility;
-                Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence;
+                Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth * 10;
+                Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence * 3;
+                Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength * 3;
+                Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility * 3;
+                Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence * 3;
                 Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
+                Summary.TotalPotionEfficiency += GI->SelectedSaveSlot->SaveData.MetaPotionEfficiency * 5;
+                Summary.TotalResourceRegen += GI->SelectedSaveSlot->SaveData.MetaResourceRegen;
             }
         }
     }
