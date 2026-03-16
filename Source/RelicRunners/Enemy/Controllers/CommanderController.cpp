@@ -12,6 +12,7 @@
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
 ACommanderController::ACommanderController()
 {
@@ -227,14 +228,17 @@ void ACommanderController::Tick(float DeltaTime)
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 {
-    if (!enemy) return;
+	if (!enemy)
+	{
+		return;
+	}
 
-    ControlledEnemies.Add(enemy);
-    enemy->MovementComponent->Commander = this;
-    if (enemy) enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-    if (enemy) enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-    if (enemy) enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-    if (enemy) enemy->LODComponent->SetIsUpdatingLOD(false);
+	ControlledEnemies.Add(enemy);
+	enemy->MovementComponent->Commander = this;
+	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
 void ACommanderController::RemovePawnEnemy(AActor* enemy)
@@ -254,12 +258,13 @@ TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
 
 void ACommanderController::SpawnPawnEnemy()
 {
-    APawn* pawn = GetPawn();
+	APawn* pawn = GetPawn();
+	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-    if (!pawn)
-    {
-        return;
-    }
+	if (!pawn || !pool)
+	{
+		return;
+	}
 
     FVector spawnPosition = pawn->GetActorLocation();
 
@@ -275,13 +280,16 @@ void ACommanderController::SpawnPawnEnemy()
         UE_LOG(LogTemp, Error, TEXT("could not find random spawn point on navmesh"));
     }
 
+	/*FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;*/
 
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(pool->GetActor(PawnEnemyToSpawn));//Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
+	FVector origin;
+	FVector bounds;
 
-    AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
-    //AEnemyPawn* newEnemy = Cast<AEnemyPawn>(PawnEnemyToSpawn);
+	newEnemy->GetActorBounds(true, origin, bounds);
 
+	newEnemy->SetActorLocation(spawnPosition + FVector(0, 0, bounds.Z));
 
     //giving time for the enemy to set
     GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()

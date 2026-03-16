@@ -414,7 +414,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 		}
 		else if (navSys->ProjectPointToNavigation(startLocation, navLocation, FVector(100,100,200)))
 		{
-			finalMovement = (navLocation.Location + offset - startLocation).GetSafeNormal() * Velocity.Length();
+			finalMovement = (navLocation.Location - startLocation).GetSafeNormal() * Velocity.Length();
 			//finalMovement.Z = navLocation.Location.Z + offset.Z;
 		}
 		else
@@ -447,9 +447,10 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	//fix if we have time
 	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
-	if (hit.IsValidBlockingHit())
+	if (hit.IsValidBlockingHit() && hit.Normal.Z > 0.9)
 	{
 		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
+		//		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
 	}
 
 	//if (hit.IsValidBlockingHit())
@@ -461,31 +462,24 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	//		FVector stepDown = UpdatedComponent->GetComponentLocation();
 
 	//		SafeMoveUpdatedComponent(FVector(0,0,StepHeight), GetOwner()->GetActorRotation(), true, stepHit);
-
 	//		if (!stepHit.IsValidBlockingHit())
 	//		{
 	//			
-
 	//			FHitResult secondHit;
 	//			SafeMoveUpdatedComponent(finalMovement * (1.f - hit.Time), GetOwner()->GetActorRotation(), true, secondHit);
-
 	//			if (secondHit.IsValidBlockingHit())
 	//			{
 	//				SlideAlongSurface(finalMovement, 1.f - secondHit.Time, secondHit.Normal, secondHit);
 	//				Velocity = FVector::VectorPlaneProject(Velocity, secondHit.Normal);
 	//			}
-
 	//			stepDown = stepDown - UpdatedComponent->GetComponentLocation();
-
 	//			FHitResult FinalHit;
 	//			//moving back down so that it only move up the amount need
 	//			SafeMoveUpdatedComponent(FVector(0, 0, -stepDown.Z), GetOwner()->GetActorRotation(), true, FinalHit);
-
 	//		/*	if (FinalHit.IsValidBlockingHit())
 	//			{
 	//				GetOwner()->SetActorLocation(FinalHit.Location + offset);
 	//			}*/
-
 	//		}
 	//	}
 	//	else
