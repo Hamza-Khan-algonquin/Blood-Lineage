@@ -125,13 +125,9 @@ public:
 	void CalculateBoidDirection(float delta);
 	//calculate the direction the actor should move in to get to the target and update the velocity
 	void CalculateMoveToDirection(float delta);
-	//clamp the direction to move onto the navmesh
-	bool ClampToNavMesh(const FVector& DesiredMovement, FVector& out);
 	//UFUNCTION(NetMulticast, Reliable)
 	//move in a given direction
 	void MoveInDirection(float DeltaTime);
-	//move the enemy onto the ground
-	void GroundSnap();
 	void UpdateRotation();
 	//check to see if another boid is in range and feild of view
 	bool CanSeeOtherBoid(APawn* otherBoid, FVector& directionToBoid, float& distanceToBoid);

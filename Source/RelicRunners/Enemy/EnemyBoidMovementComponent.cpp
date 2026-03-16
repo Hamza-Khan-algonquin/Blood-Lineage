@@ -380,26 +380,6 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 	UpdateComponentVelocity();
 }
 
-bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement, FVector& out)
-{
-	FNavLocation navLocation;
-	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	FVector offset;
-	FVector standIn;
-	GetOwner()->GetActorBounds(false, standIn, offset, false);
-	offset.X = 0;
-	offset.Y = 0;
-	FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
-
-	if (navSys && navSys->ProjectPointToNavigation(DesiredMovement, navLocation, NavMeshClampExtent))
-	{
-		out = navLocation.Location + FVector(0,0, offset.Z - 5.5);
-		return true;
-	}
-
-	return false;
-}
-
 void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
 	FVector startLocation = GetActorLocation();
@@ -508,24 +488,6 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 			SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
 			Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
 		}
-	}
-}
-
-void UEnemyBoidMovementComponent::GroundSnap()
-{
-	FVector start = GetOwner()->GetActorLocation();
-	FVector end = start - FVector(0, 0, 1000.f);
-	FHitResult hit;
-	FCollisionQueryParams params;
-	params.AddIgnoredActor(GetOwner());
-	bool bHit = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECC_WorldStatic, params);
-	if (bHit)
-	{
-		FVector newLocation = hit.Location;
-		FVector offset;
-		FVector standIn;
-		GetOwner()->GetActorBounds(false, standIn, offset, false);
-		GetOwner()->SetActorLocation(newLocation + FVector(0,0, offset.Z));
 	}
 }
 
