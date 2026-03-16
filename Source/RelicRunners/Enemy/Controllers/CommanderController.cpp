@@ -84,7 +84,7 @@ void ACommanderController::Tick(float DeltaTime)
 			for (int i = 1; i < players.Num(); i++)
 			{
 				float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
-				if (newDistance > distance)
+				if (newDistance < distance)
 				{
 					closestPlayer = players[i];
 					distance = newDistance;

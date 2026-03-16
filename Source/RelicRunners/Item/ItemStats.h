@@ -161,15 +161,15 @@ public:
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
         }
         else if (BorderType == "MetaLuck")
         {
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(30 + GetLootChance(StatValue))));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
             Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Luck per meta point.</>"));
         }
@@ -374,7 +374,7 @@ public:
         if (ArmorTypes.Contains(ItemData.ItemType))
         {
             ItemData.Health = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max)) * SizeMult));
-            ItemData.Armor = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max)) * SizeMult));
+            ItemData.Armor = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max))));
 
             AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
 
@@ -471,7 +471,7 @@ public:
 
     static float GetDefencePerc(int Value)
     {
-        float Percent = Value / 2.5;
+        float Percent = Value / 5;
 
         return RoundToDecimal(Percent, 1);
     }

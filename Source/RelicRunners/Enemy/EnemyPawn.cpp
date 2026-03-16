@@ -197,7 +197,7 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 				PS->AddExperience(CalculateXP());
 				
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
-				SpawnItem();
+				SpawnItem(PlayerLuck);
 			}
 		}
 
@@ -348,13 +348,13 @@ float AEnemyPawn::CalculateXP() const
 	return FMath::RandRange(10, 25);
 }
 
-void AEnemyPawn::SpawnItem()
+void AEnemyPawn::SpawnItem(int Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
 	float chance = FMath::FRandRange(0.f, 100.f);
 
-	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
+	if (chance <= EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(Luck))
 	{
 		if (ItemMeshDataClass)
 		{
@@ -362,7 +362,7 @@ void AEnemyPawn::SpawnItem()
 		}
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemMeshData),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData),
 			this
 		);
 
