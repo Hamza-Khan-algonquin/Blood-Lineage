@@ -7,6 +7,7 @@
 #include "RelicRunners/ObjectPool/PoolActorInterface.h"
 #include "RelicRunners/Enemy/EnemyData.h"
 #include "Components/TimelineComponent.h"
+#include "RootPawn.h"
 #include "EnemyPawn.generated.h"
 
 class UCapsuleComponent;
@@ -20,7 +21,7 @@ class UNiagaraSystem;
 class USoundBase;
 
 UCLASS()
-class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
+class RELICRUNNERS_API AEnemyPawn : public ARootPawn, public IPoolActorInterface
 {
 	GENERATED_BODY()
 public:
@@ -62,6 +63,8 @@ public:
 
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
+
+	
 
 	FTimeline HitFlashTimeline;
 
@@ -141,6 +144,8 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
 	virtual void SpawnItem();
+
+	void SpawnItem(int KillersLuck);
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyForceToEnemy(FVector forces);

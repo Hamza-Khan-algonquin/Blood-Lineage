@@ -149,3 +149,15 @@ void ARelicRunnersGameMode::TriggerPostGameForAll()
         }
     }
 }
+
+void ARelicRunnersGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
+    if (GI && GI->bIsMatchLocked)
+    {
+        ErrorMessage = TEXT("Match_Already_In_Progress");
+    }
+}
