@@ -14,8 +14,13 @@ AIslandBridge::AIslandBridge():
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	USceneComponent* SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+
+	RootComponent = SceneRoot;
+
 	Bridge = CreateDefaultSubobject<UStaticMeshComponent>("Bridge Mesh");
 	Bridge->SetupAttachment(RootComponent);
+	Bridge->SetIsReplicated(true);
 
 	Barrier = CreateDefaultSubobject<UStaticMeshComponent>("Barrier Mesh");
 	Barrier->SetupAttachment(Bridge);

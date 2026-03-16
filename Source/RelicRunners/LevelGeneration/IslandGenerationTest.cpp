@@ -91,6 +91,9 @@ AIslandGenerationTest::AIslandGenerationTest() :
 	IsActivated(false)
 
 {
+	USceneComponent* RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
+	RootComponent = RootScene;
+
 	PrimaryActorTick.bCanEverTick = false;
 
 	GenerationValuesComponent = CreateDefaultSubobject<UIslandSpawningValuesComponent>("GenerationValues");
@@ -1890,8 +1893,12 @@ void AIslandGenerationTest::CreateFloor()
 	if (FullFloorPieceTransforms.IsEmpty())
 		return;
 
-	UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this);
+	UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this, TEXT("IslandFloorComponent"));
+	ISMComp->SetIsReplicated(true);
 	ISMComp->SetupAttachment(RootComponent);
+
+	ISMComp->SetNetAddressable(); 
+	AddInstanceComponent(ISMComp); 
 
 	if (GenerationValuesComponent->FloorMeshes.FullFloorMesh)
 	{
