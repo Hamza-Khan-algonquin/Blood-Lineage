@@ -1896,6 +1896,7 @@ void AIslandGenerationTest::CreateFloor()
 	UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this, TEXT("IslandFloorComponent"));
 	ISMComp->SetIsReplicated(true);
 	ISMComp->SetupAttachment(RootComponent);
+	ISMComp->SetCollisionObjectType(ECC_GameTraceChannel3);
 
 	ISMComp->SetNetAddressable(); 
 	AddInstanceComponent(ISMComp); 
