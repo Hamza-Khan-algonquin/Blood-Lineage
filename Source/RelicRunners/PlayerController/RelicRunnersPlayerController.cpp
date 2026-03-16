@@ -809,7 +809,28 @@ void ARelicRunnersPlayerController::MinimapUI()
 {
 	if (!MinimapWidget) return;
 
-	ToggleUI(MinimapWidget);
+	if (MinimapWidget->IsVisible())
+	{
+		MinimapWidget->RemoveFromParent();
+	}
+	else
+	{
+		MinimapWidget->AddToViewport();
+	}
+}
+
+void ARelicRunnersPlayerController::PlayerHUDUI()
+{
+	if (!PlayerHUD) return;
+
+	if (PlayerHUD->IsVisible())
+	{
+		PlayerHUD->RemoveFromParent();
+	}
+	else
+	{
+		PlayerHUD->AddToViewport();
+	}
 }
 
 void ARelicRunnersPlayerController::PauseUI()
@@ -838,7 +859,6 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 		else
 		{
 			ForceGameModeOnly();
-			MinimapUI();
 		}
 	}
 }
@@ -1324,6 +1344,9 @@ void ARelicRunnersPlayerController::StartBossCinematicWalk()
 	SetInputMode(UIOnlyMode);
 	SetIgnoreMoveInput(true);
 
+	MinimapUI();
+	PlayerHUDUI();
+
 	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
 
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
@@ -1340,9 +1363,6 @@ void ARelicRunnersPlayerController::CheckCinematicArrival()
 	APawn* ControlledPawn = GetPawn();
 	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
 
-	PlayerHUD->SetVisibility(ESlateVisibility::Visible);
-	MinimapWidget->SetVisibility(ESlateVisibility::Visible);
-
 	if (ControlledPawn && FVector::Dist(ControlledPawn->GetActorLocation(), TargetLocation) < 100.0f)
 	{
 		FInputModeGameAndUI GameAndUIMode;
@@ -1350,6 +1370,9 @@ void ARelicRunnersPlayerController::CheckCinematicArrival()
 
 		SetIgnoreMoveInput(false);
 		GetWorldTimerManager().ClearTimer(CinematicTimerHandle);
+
+		PlayerHUDUI();
+		MinimapUI();
 
 		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Control Restored."));
 	}
