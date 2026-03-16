@@ -23,6 +23,8 @@ protected:
 	float MaxHealth;
 	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintGetter = GetCurrentHealth, BlueprintSetter = SetCurrentHealth, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
 	float CurrentHealth;
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated)
+	float HealthMultiplier;
 	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintGetter = GetRemainingStunTime, BlueprintSetter = SetRemainingStunTime, meta = (Delta = 0.1))
 	float RemainingStunTime;
 	UPROPERTY(Category = "Stats", EditAnywhere, Replicated, BlueprintReadWrite, BlueprintGetter = GetChanceToDropItem, BlueprintSetter = SetChanceToDropItem, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
@@ -30,12 +32,17 @@ protected:
 	float ChanceToDropItem;
 	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintGetter = GetAttackDamage, BlueprintSetter = SetAttackDamage, meta = (Delta = 0.1))
 	float AttackDamage;
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated)
+	float AttackDamageMultiplier;
 
 public:	
 	// Sets default values for this component's properties
 	UEnemyStats();
 
 	void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void ResetStats();
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 	UFUNCTION(BlueprintGetter)

@@ -74,6 +74,10 @@ protected:
 	float EdgeAvoidanceWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float WallAvoidanceWeight;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float SlowDownDistance;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float MinSlowDownPercentage;
 
 	//UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	//float OrbitWeight;

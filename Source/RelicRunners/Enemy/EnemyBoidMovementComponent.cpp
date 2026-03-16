@@ -331,14 +331,19 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 	FVector newVelocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
 
-	if (newVelocity.Size2D() >= MinVelocityChange)
+	if (Commander->TargetPlayer && Commander->GetCurrentTarget() == Commander->TargetPlayer && !IsAffectiveByBundleOfJoy)
+	{
+		float slowDownPercentage = FMath::Clamp(FVector::Distance(Commander->GetCurrentTarget()->GetActorLocation() / SlowDownDistance, GetOwner()->GetActorLocation()), MinSlowDownPercentage, 1);
+		newVelocity *= slowDownPercentage;
+	}
+
+	/*if (newVelocity.Size2D() >= MinVelocityChange)
 	{
 		Velocity = newVelocity;
-	}
-	if (Velocity.Size2D() < MinMoveVelocity)
-	{
-		//Velocity = FVector::ZeroVector;
-	}
+	}*/
+
+	Velocity = newVelocity;
+
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
 	UpdateComponentVelocity();
 
