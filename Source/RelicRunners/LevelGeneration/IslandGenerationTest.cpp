@@ -1892,6 +1892,7 @@ void AIslandGenerationTest::CreateFloor()
 
 	UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this);
 	ISMComp->SetupAttachment(RootComponent);
+	ISMComp->SetCollisionObjectType(ECC_GameTraceChannel3);
 
 	if (GenerationValuesComponent->FloorMeshes.FullFloorMesh)
 	{
