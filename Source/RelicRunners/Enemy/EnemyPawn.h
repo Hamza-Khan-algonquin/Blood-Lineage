@@ -21,7 +21,7 @@ class UNiagaraSystem;
 class USoundBase;
 
 UCLASS()
-class RELICRUNNERS_API AEnemyPawn : public ARootPawn, public IPoolActorInterface
+class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
 {
 	GENERATED_BODY()
 public:

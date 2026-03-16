@@ -27,6 +27,7 @@
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
 
+#include "RootPawn.h"
 
 // Sets default values
 AEnemyPawn::AEnemyPawn()
@@ -615,12 +616,12 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		ResetEnemy();
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	//AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
-	{
-		pool->SetActorActive(GetController(), newIsActive);
-	}
+	//if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	//{
+	//	pool->SetActorActive(GetController(), newIsActive);
+	//}
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
