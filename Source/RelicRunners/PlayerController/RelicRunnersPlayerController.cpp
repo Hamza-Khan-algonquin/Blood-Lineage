@@ -297,6 +297,10 @@ void ARelicRunnersPlayerController::SyncUI()
 
 			if (PlayerPreviewInstance)
 			{
+				PlayerPreviewInstance->LinkedPlayerState = RelicPlayerState;
+				//Manual trigger since BeginPlay might have already fired
+				PlayerPreviewInstance->RefreshPreview();
+
 				UE_LOG(LogTemp, Warning, TEXT("Local Client: Spawned Preview Actor at %s"), *SpawnLoc.ToString());
 				TrySetupPreviewRenderTarget();
 			}
