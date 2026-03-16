@@ -29,6 +29,14 @@ public:
 	int MaxLifeTimeNumberOfEnemies;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int EnemyToSpawnPerLoop;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TimeBetweenSpawnChecks;
+
+	FTimerHandle SpawnTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SpawnRadius;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

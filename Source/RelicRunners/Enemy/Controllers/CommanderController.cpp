@@ -43,6 +43,8 @@ void ACommanderController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
 		director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
 	}
+
+	GetWorldTimerManager().ClearTimer(SpawnTimer);
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -123,18 +125,20 @@ void ACommanderController::Tick(float DeltaTime)
 
 	UpdateLODs(players, pawn->GetActorLocation());
 	AttackCheck(players, DeltaTime);
-	SpawmLoop();
+	//SpawmLoop();
 
-	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0 && !Cast<AEnemyCharacter>(GetPawn()))
+	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0)
 	{
-		Destroy();
-		//GetPawn()->Destroy();
+		if (!IsValid(BTComp) || !BTComp->IsRunning())
+		{
+			Destroy();
+		}	
 	}
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 {
-	if (!enemy)
+	if (!IsValid(enemy) || !IsValid(this))
 	{
 		return;
 	}
@@ -208,7 +212,12 @@ void ACommanderController::SpawnPawnEnemy()
 
 void ACommanderController::SpawmLoop()
 {
-	for (int i = 0; i < MaxNumberOfEnemies; i++)
+	if (!GetWorld() || GetWorld()->TimeSeconds < 5)
+	{
+		return;
+	}
+
+	for (int i = 0; i < EnemyToSpawnPerLoop && ControlledEnemies.Num() < MaxNumberOfEnemies; i++)
 	{
 		if (CurrentLifeTimeNumberOfEnemies < MaxLifeTimeNumberOfEnemies)
 		{
@@ -283,6 +292,11 @@ void ACommanderController::OnPossess(APawn* InPawn)
 	if (StartingBehaviorTree)
 	{
 		RunBehaviorTree(StartingBehaviorTree);
+	}
+
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(SpawnTimer, this, &ACommanderController::SpawmLoop, TimeBetweenSpawnChecks, true);
 	}
 }
 

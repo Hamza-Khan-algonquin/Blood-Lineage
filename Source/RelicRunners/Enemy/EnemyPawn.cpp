@@ -608,12 +608,12 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		ResetEnemy();
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	if (IsValid(pool) && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
