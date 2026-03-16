@@ -448,7 +448,7 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
 
-	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
 		MovementComponent->IsKnockedBack = false;
 		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);

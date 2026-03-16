@@ -158,7 +158,14 @@ void ACommanderController::RemovePawnEnemy(AActor* enemy)
 	{
 		return;
 	}
+
 	ControlledEnemies.Remove(enemyPawn);
+
+	if (IsValid(enemyPawn))
+	{
+		enemyPawn->OnDestroyed.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
+		enemyPawn->OnDeactivated.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
+	}
 }
 
 TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
