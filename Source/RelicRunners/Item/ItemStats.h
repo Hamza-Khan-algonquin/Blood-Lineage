@@ -169,7 +169,7 @@ public:
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(30 + GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
             Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Luck per meta point.</>"));
         }
@@ -450,7 +450,7 @@ public:
     }
     static float GetLootChance(int Value)
     {
-        float Percent = Value * 1.75f;
+        float Percent = Value * 1.75;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -471,7 +471,7 @@ public:
 
     static float GetDefencePerc(int Value)
     {
-        float Percent = Value / 5;
+        float Percent = Value / 4.0;
 
         return RoundToDecimal(Percent, 1);
     }
