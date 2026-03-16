@@ -40,6 +40,7 @@ public:
 	void UpdateHUDAll();
 	void InventoryUI();
 	void MinimapUI();
+	void PlayerHUDUI();
 	void PauseUI();
 	void HideUI(UUserWidget* UIWidget);
 	void HandleLevelUpVisuals();
