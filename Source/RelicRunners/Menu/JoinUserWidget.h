@@ -76,6 +76,14 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Countdown;
 
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_StartButton;
+
+	bool IsCountingDown = false;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* TimerImage;
+
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	class UWidgetAnimation* Timer;
 	UPROPERTY(Transient, meta = (BindWidgetAnim))

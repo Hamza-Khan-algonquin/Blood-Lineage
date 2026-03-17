@@ -30,6 +30,7 @@
 #include "Components/WidgetComponent.h"
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "Sound/SoundBase.h"
+#include "Animation/WidgetAnimation.h"
 
 void UJoinUserWidget::NativeConstruct()
 {
@@ -568,9 +569,24 @@ void UJoinUserWidget::StartGameButtonClicked()
 	APlayerController* PC = GetOwningPlayer();
 	if (!PC) return;
 
-	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>()) 
+	ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
+	if (!GM) return;
+
+	if (!IsCountingDown)
 	{
 		GM->StartCountdown();
+		IsCountingDown = true;
+
+		if (TB_StartButton) TB_StartButton->SetText(FText::FromString("CANCEL"));
+		StartButton->SetBackgroundColor(FLinearColor(1,0.3,0));
+	}
+	else
+	{
+		GM->CancelCountdown();
+		IsCountingDown = false;
+
+		if (TB_StartButton) TB_StartButton->SetText(FText::FromString("START"));
+		StartButton->SetBackgroundColor(FLinearColor(0, 1, 0.714));
 	}
 }
 
@@ -580,6 +596,12 @@ void UJoinUserWidget::UpdateCountdownUI(int RemainingTime) {
 	if (RemainingTime > 0) {
 		TB_Countdown->SetText(FText::AsNumber(RemainingTime));
 		PlayAnimation(Timer);
+		TimerImage->SetOpacity(1);
+	}
+	else
+	{
+		StopAnimation(Timer);
+		TimerImage->SetOpacity(0);
 	}
 }
 

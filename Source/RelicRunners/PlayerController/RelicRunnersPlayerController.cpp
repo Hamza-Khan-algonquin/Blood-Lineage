@@ -162,6 +162,8 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 
 	if (IsLocalController())
 	{
+		PlayerPreviewInstance = nullptr;
+
 		PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 		RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
@@ -217,6 +219,8 @@ void ARelicRunnersPlayerController::OnRep_PlayerState()
 void ARelicRunnersPlayerController::PostSeamlessTravel()
 {
 	Super::PostSeamlessTravel();
+
+	PlayerPreviewInstance = nullptr;
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
@@ -288,6 +292,10 @@ void ARelicRunnersPlayerController::SyncUI()
 		if (!PlayerPreviewInstance && PlayerPreviewClass)
 		{
 			int UniqueID = RelicPlayerState->GetPlayerId();
+
+			//Playerstate isnt ready yet retry
+			if (UniqueID <= 0) return;
+
 			FVector SpawnLoc = FVector(-50000.0f - (UniqueID * 10000.0f), -50000.0f, -2000.0f);
 
 			FActorSpawnParameters Params;
@@ -1079,9 +1087,18 @@ void ARelicRunnersPlayerController::PostGameUI()
 		if (PostGameWidget)
 		{
 			PostGameWidget->AddToViewport();
-			
+
 			SetInputMode(FInputModeUIOnly());
 			bShowMouseCursor = true;
+
+			FTimerHandle UnusedHandle;
+			GetWorldTimerManager().SetTimer(UnusedHandle, [this]()
+				{
+					if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+					{
+						GI->BackToMainMenu();
+					}
+				}, 5.0f, false);
 		}
 	}
 }

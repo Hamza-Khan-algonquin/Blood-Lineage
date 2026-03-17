@@ -109,6 +109,14 @@ void APlayerPreview::RefreshPreview()
 {
 	if (!LinkedPlayerState) return;
 
+	FName ClassToLoad = LinkedPlayerState->SelectedClass;
+
+	if (ClassToLoad.IsNone())
+	{
+		ClassToLoad = FName("Ares");
+		UE_LOG(LogTemp, Warning, TEXT("RefreshPreview: SelectedClass was empty! Defaulting to Ares for Debug."));
+	}
+
 	USkeletalMesh* Character = nullptr;
 	TSubclassOf<UAnimInstance> DesiredAnimBP = nullptr;
 	float ModelScale = 1.0f;
