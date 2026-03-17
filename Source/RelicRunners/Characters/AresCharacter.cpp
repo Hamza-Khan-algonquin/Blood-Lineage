@@ -20,7 +20,6 @@ AAresCharacter::AAresCharacter()
 {
 	Damage = 8.0f;
 
-	
 }
 
 void AAresCharacter::BeginPlay()

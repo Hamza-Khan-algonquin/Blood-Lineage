@@ -4,9 +4,21 @@
 #include "RelicRunners/RelicRunnersCharacter.h" 
 #include "ArtemisCharacter.generated.h"
 
-/**
- *
- */
+USTRUCT()
+struct FProjectileData
+{
+	GENERATED_BODY()
+
+	FVector Location;
+	FVector Velocity;
+	float Elapsed = 0.f;
+
+	int32 CurrentPierces = 0;
+	TArray<AActor*> HitActors;
+
+	UStaticMeshComponent* Mesh = nullptr;
+};
+
 
 UCLASS()
 class RELICRUNNERS_API AArtemisCharacter : public ARelicRunnersCharacter
@@ -77,12 +89,12 @@ protected:
 
 	FTimerHandle TimerHandle_AttackCooldown;
 
+	TArray<FProjectileData> ActiveProjectiles;
+
 	float ProjectileGravity = 400.f;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UStaticMesh* ProjectileMeshAsset = nullptr; 
-
-	UStaticMeshComponent* ActiveProjectileMesh = nullptr;
 
 	bool bIsAiming = false;
 

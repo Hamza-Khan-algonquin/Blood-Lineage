@@ -163,21 +163,18 @@ void AArtemisCharacter::GiveMoonBeam()
 
 void AArtemisCharacter::PlayRandomAttackAnimation()
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (!AnimInstance) return;
+	if (!BasicAnim)
+		return;
 
-	TArray<UAnimSequence*> SwordAttacks;
-	if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
-	if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
-	if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
-	if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+	if (!SkeletalMeshComponent)
+		return;
 
-	if (SwordAttacks.Num() > 0)
-	{
-		int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
-		AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
-	}
+	UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
+	if (!AnimInstance)
+		return;
 
+	AnimInstance->Montage_Play(BasicAnim, 1.f);
 }
 
 void AArtemisCharacter::PerformSwingTrace()
@@ -388,87 +385,35 @@ void AArtemisCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Vel
 
 void AArtemisCharacter::BasicAttack()
 {
+	FProjectileData NewProj;
 
-	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-	//if (!CanBasicAttack) return;
-	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
+	NewProj.Location = GetActorLocation() + GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
+	NewProj.Velocity = GetActorForwardVector() * ProjectileSpeed;
+	NewProj.Elapsed = 0.f;
+	NewProj.CurrentPierces = 0;
 
-	CanBasicAttack = true;
-
-	ProjectileDamage = 30.f;
-
-	// Spawn projectile
-	bProjectileActive = true;
-	ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
-	ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
-	ProjectileElapsed = 0.f;
-
-	PlayRandomAttackAnimation();
-	AlreadyHitActors.Empty();
-
-	CurrentPierces = 0;
-
-	// Spawn static mesh
+	// Spawn mesh
 	if (ProjectileMeshAsset)
 	{
-		if (!ActiveProjectileMesh)
-		{
-			ActiveProjectileMesh = NewObject<UStaticMeshComponent>(this);
-			ActiveProjectileMesh->RegisterComponent();
-			ActiveProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
-			ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
-			ActiveProjectileMesh->SetWorldScale3D(FVector(1.f));
-			ActiveProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(this);
+		ProjectileMesh->RegisterComponent();
+		ProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
+		ProjectileMesh->SetWorldLocation(NewProj.Location);
+		ProjectileMesh->SetWorldScale3D(FVector(1.f));
+		ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ProjectileMesh->SetWorldRotation(NewProj.Velocity.Rotation());
 
-			// Initial rotation based on velocity
-			ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
-		}
+		NewProj.Mesh = ProjectileMesh;
 	}
 
-	// Cooldown
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+	ActiveProjectiles.Add(NewProj);
+	PlayRandomAttackAnimation();
 }
 
 void AArtemisCharacter::HeavyAttack()
 {
 	bIsAiming = true;
 
-	//if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-	//if (!CanHeavyAttack) return;
-	//if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
-
-	//CanHeavyAttack = false;
-
-	//ProjectileDamage = 50.0f;
-
-	//// Spawn projectile
-	//bProjectileActive = true;
-	//ProjectileLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
-	//ProjectileVelocity = GetActorForwardVector() * ProjectileSpeed;
-	//ProjectileElapsed = 0.f;
-
-	//PlayRandomAttackAnimation();
-	//AlreadyHitActors.Empty();
-
-	//// Spawn static mesh
-	//if (ProjectileMeshAsset)
-	//{
-	//	if (!ActiveProjectileMesh)
-	//	{
-	//		ActiveProjectileMesh = NewObject<UStaticMeshComponent>(this);
-	//		ActiveProjectileMesh->RegisterComponent();
-	//		ActiveProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
-	//		ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
-	//		ActiveProjectileMesh->SetWorldScale3D(FVector(1.f));
-	//		ActiveProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	//		// Initial rotation based on velocity
-	//		ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
-	//	}
-	//}
-
-	//// Cooldown
-	//GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AArtemisCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AArtemisCharacter::ProjectileHeavyAttack()
@@ -481,85 +426,82 @@ void AArtemisCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!bProjectileActive) return;
-
-	ProjectileElapsed += DeltaTime;
-
-	// Apply gravity
-	ProjectileVelocity.Z -= ProjectileGravity * DeltaTime;
-
-	PreviousProjectileLocation = ProjectileLocation;
-	ProjectileLocation += ProjectileVelocity * DeltaTime;
-
-	// Move and rotate the mesh to match velocity
-	if (ActiveProjectileMesh)
+	for (int32 i = ActiveProjectiles.Num() - 1; i >= 0; i--)
 	{
-		ActiveProjectileMesh->SetWorldLocation(ProjectileLocation);
-		ActiveProjectileMesh->SetWorldRotation(ProjectileVelocity.Rotation());
-	}
+		FProjectileData& P = ActiveProjectiles[i];
 
-	// Collision
-	TArray<FHitResult> Hits;
-	FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
+		P.Elapsed += DeltaTime;
 
-	bool bHit = GetWorld()->SweepMultiByChannel(Hits,PreviousProjectileLocation,ProjectileLocation,FQuat::Identity,ECC_GameTraceChannel1,Sphere);
+		// Apply gravi
+		P.Velocity.Z -= ProjectileGravity * DeltaTime;
 
-	for (const FHitResult& Hit : Hits)
-	{
-		AActor* HitActor = Hit.GetActor();
-		if (!HitActor) continue;
+		FVector PreviousLocation = P.Location;
+		P.Location += P.Velocity * DeltaTime;
 
-		if (AlreadyHitActors.Contains(HitActor))
-			continue;
-
-		bool bEnemyHit = false;
-
-		if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+		// Move mesh
+		if (P.Mesh)
 		{
-			Server_HitEnemy(Enemy, ProjectileDamage);
-			bEnemyHit = true;
-		}
-		else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-		{
-			Server_HitEnemy(TEnemy, ProjectileDamage);
-			bEnemyHit = true;
-		}
-		else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-		{
-			Server_HitEnemy(TPEnemy, ProjectileDamage);
-			bEnemyHit = true;
+			P.Mesh->SetWorldLocation(P.Location);
+			P.Mesh->SetWorldRotation(P.Velocity.Rotation());
 		}
 
-		if (bEnemyHit)
+		// Collision
+		TArray<FHitResult> Hits;
+		FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
+
+		bool bHit = GetWorld()->SweepMultiByChannel(Hits,PreviousLocation,P.Location,FQuat::Identity,ECC_GameTraceChannel1,Sphere);
+
+		for (const FHitResult& Hit : Hits)
 		{
-			AlreadyHitActors.Add(HitActor);
+			AActor* HitActor = Hit.GetActor();
+			if (!HitActor || P.HitActors.Contains(HitActor))
+				continue;
 
-			CurrentPierces++;
+			bool bEnemyHit = false;
 
-			if (CurrentPierces >= MaxPierces)
+			if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
 			{
-				bProjectileActive = false;
+				Server_HitEnemy(Enemy, ProjectileDamage);
+				bEnemyHit = true;
+			}
+			else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+			{
+				Server_HitEnemy(TEnemy, ProjectileDamage);
+				bEnemyHit = true;
+			}
+			else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+			{
+				Server_HitEnemy(TPEnemy, ProjectileDamage);
+				bEnemyHit = true;
+			}
 
-				if (ActiveProjectileMesh)
+			if (bEnemyHit)
+			{
+				P.HitActors.Add(HitActor);
+				P.CurrentPierces++;
+
+				if (P.CurrentPierces >= MaxPierces)
 				{
-					ActiveProjectileMesh->DestroyComponent();
-					ActiveProjectileMesh = nullptr;
-				}
+					if (P.Mesh)
+					{
+						P.Mesh->DestroyComponent();
+					}
 
-				break; // ONLY break when pierce limit reached
+					ActiveProjectiles.RemoveAt(i);
+					break;
+				}
 			}
 		}
-	}
 
-	// Stop projectile after lifetime
-	if (ProjectileElapsed >= ProjectileLifetime)
-	{
-		bProjectileActive = false;
-
-		if (ActiveProjectileMesh)
+		// Lifetime check
+		if (i < ActiveProjectiles.Num() && P.Elapsed >= ProjectileLifetime)
 		{
-			ActiveProjectileMesh->DestroyComponent();
-			ActiveProjectileMesh = nullptr;
+			if (P.Mesh)
+			{
+				P.Mesh->DestroyComponent();
+			}
+
+			ActiveProjectiles.RemoveAt(i);
 		}
 	}
 }

@@ -367,45 +367,46 @@ void AAphroditeCharacter::UpdateCameraRotation(float DeltaTime, const FVector& V
 
 void AAphroditeCharacter::PlayRandomAttackAnimation()
 {
+    if (!BasicAnim)
+        return;
 
-    UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-    if (!AnimInstance) return;
+    USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+    if (!SkeletalMeshComponent)
+        return;
 
-    TArray<UAnimSequence*> SwordAttacks;
-    if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
-    if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
-    if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
-    if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+    UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
+    if (!AnimInstance)
+        return;
 
-    if (SwordAttacks.Num() > 0)
-    {
-        int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
-        AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
-    }
+    AnimInstance->Montage_Play(BasicAnim, 1.f);
 }
 
 void AAphroditeCharacter::BasicAttack()
 {
-    //if (!bIsAiming) return;
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    //if (!CanBasicAttack) return;
-
-    CanBasicAttack = true;
-
-    ProjectileDamage = 40.0f;
-
-    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
-
     FBasicProjectile NewProjectile;
+
     NewProjectile.Location = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    NewProjectile.PreviousLocation = NewProjectile.Location;
     NewProjectile.Velocity = GetActorForwardVector() * ProjectileSpeed;
     NewProjectile.ElapsedTime = 0.f;
+
+    // Spawn mesh
+    if (ProjectileMeshAsset)
+    {
+        UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(this);
+        ProjectileMesh->RegisterComponent();
+        ProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
+        ProjectileMesh->SetWorldLocation(NewProjectile.Location);
+        ProjectileMesh->SetWorldRotation(NewProjectile.Velocity.Rotation());
+        ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        ProjectileMesh->SetWorldScale3D(FVector(1.f));
+
+        NewProjectile.Mesh = ProjectileMesh;
+    }
 
     ActiveProjectiles.Add(NewProjectile);
 
     PlayRandomAttackAnimation();
-
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetBasicAttack,BasicAttackCooldown,false );
 }
 
 
@@ -413,29 +414,6 @@ void AAphroditeCharacter::HeavyAttack()
 {
     bIsAiming = true;
 
-    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    //if (!CanHeavyAttack) return;
-
-    //CanHeavyAttack = false;
-
-    //ProjectileDamage = 40.0f;
-
-    //if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
-
-    //FBasicProjectile NewProjectile;
-    //NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
-
-    //NewProjectile.Velocity =
-    //    GetActorForwardVector() * ProjectileSpeed;
-
-    //NewProjectile.ElapsedTime = 0.f;
-
-    //ActiveProjectiles.Add(NewProjectile);
-
-    //PlayRandomAttackAnimation();
-
-    //// Cooldown
-    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
 }
 
 
@@ -459,7 +437,11 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Projectile.PreviousLocation = Projectile.Location;
         Projectile.Location += Projectile.Velocity * DeltaTime;
 
-        DrawDebugSphere(GetWorld(), Projectile.Location, 15.f, 12, FColor::Red, false, 0.f);
+        if (Projectile.Mesh)
+        {
+            Projectile.Mesh->SetWorldLocation(Projectile.Location);
+            Projectile.Mesh->SetWorldRotation(Projectile.Velocity.Rotation());
+        }
 
         TArray<FHitResult> Hits;
         FCollisionQueryParams Params;
@@ -475,28 +457,39 @@ void AAphroditeCharacter::Tick(float DeltaTime)
                 if (Projectile.AlreadyHitActors.Contains(HitActor))
                     continue;
 
-                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                bool bEnemyHit = false;
+
+                if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                 {
                     Server_HitEnemy(TEnemy, ProjectileDamage);
                     ExplodeProjectile(HitActor->GetActorLocation());
+                    bEnemyHit = true;
 
                 }
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
                 {
                     Server_HitEnemy(TPEnemy, ProjectileDamage);
                     ExplodeProjectile(HitActor->GetActorLocation());
+                    bEnemyHit = true;
 
                 }
                 else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
                 {
                     Server_HitEnemy(Enemy, ProjectileDamage);
                     ExplodeProjectile(HitActor->GetActorLocation());
+                    bEnemyHit = true;
 
                 }
 
                 ExplodeProjectile(Hit.ImpactPoint);
 
                 Projectile.AlreadyHitActors.Add(HitActor);
+
+                if (Projectile.Mesh)
+                {
+                    Projectile.Mesh->DestroyComponent();
+                }
+
                 // Remove projectile after hit
                 ActiveProjectiles.RemoveAt(i);
                 break;
@@ -505,6 +498,13 @@ void AAphroditeCharacter::Tick(float DeltaTime)
 
         if (Projectile.ElapsedTime >= ProjectileLifetime)
         {
+
+            if (Projectile.Mesh)
+            {
+                Projectile.Mesh->DestroyComponent();
+            }
+
+
             ActiveProjectiles.RemoveAt(i);
         }
     }

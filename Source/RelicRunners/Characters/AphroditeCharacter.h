@@ -17,6 +17,7 @@ struct FBasicProjectile
 	float ElapsedTime = 0.f;
 
 	TSet<AActor*> AlreadyHitActors;
+	UStaticMeshComponent* Mesh = nullptr;
 };
 
 UCLASS()
@@ -80,6 +81,9 @@ protected:
 	TArray<FBasicProjectile> ActiveProjectiles;
 
 	bool bIsAiming = false;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UStaticMesh* ProjectileMeshAsset = nullptr;
 
 	// Camera offset when aiming
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
