@@ -15,7 +15,7 @@ AIslandBridge::AIslandBridge():
 	PrimaryActorTick.bCanEverTick = false;
 
 	Bridge = CreateDefaultSubobject<UStaticMeshComponent>("Bridge Mesh");
-	Bridge->SetupAttachment(RootComponent);
+	RootComponent = Bridge;
 
 	Barrier = CreateDefaultSubobject<UStaticMeshComponent>("Barrier Mesh");
 	Barrier->SetupAttachment(Bridge);
@@ -48,8 +48,16 @@ void AIslandBridge::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Barrier->SetVisibility(true);
+	Barrier->SetVisibility(false);
 	Barrier->SetCollisionProfileName("BlockAll");
+}
+
+void AIslandBridge::Create()
+{
+	if (HasAuthority())
+	{
+		Barrier->SetVisibility(true);
+	}
 }
 
 void AIslandBridge::Activate()

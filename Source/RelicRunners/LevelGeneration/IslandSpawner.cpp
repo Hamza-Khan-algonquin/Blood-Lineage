@@ -74,9 +74,9 @@ void AIslandSpawner::BeginPlay()
 				newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
 				newIsland->GenerationValuesComponent->SetVantagePointValues(GenerationValuesComponent->VantageValues);
 				newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
-				newIsland->GenerationValuesComponent->SetEnemyZoneObjectiveValues(GenerationValuesComponent->EnemyZoneObjectiveValues);
 				newIsland->GenerationValuesComponent->SetPayloadObjectiveValues(GenerationValuesComponent->PayloadObjectiveValues);
 				newIsland->GenerationValuesComponent->SetSurvivalZoneObjectiveValues(GenerationValuesComponent->SurvivalZoneObjectiveValues);
+				newIsland->SetNumStages(NumStages);
 
 				if (CameraActor)
 					newIsland->CameraActor = CameraActor;
@@ -146,6 +146,7 @@ void AIslandSpawner::BeginPlay()
 			}
 		}
 	}
+	
 	UpdateControllerStageUI(gameInstance->StageNumber);
 	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }

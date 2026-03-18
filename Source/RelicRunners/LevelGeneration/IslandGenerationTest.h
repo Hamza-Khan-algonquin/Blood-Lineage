@@ -32,7 +32,6 @@ enum class EIslandFloorObstacle : uint8
 {
 	None,
 	Basic,
-	Hole,
 	Vantage,
 	CapturableFlag,
 	EnemyZone,
@@ -81,6 +80,9 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USplineComponent* SplinePath;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UInstancedStaticMeshComponent* FloorISMComp;
 
 	void InitializeValues(EIslandObjectiveType islandObjective);
 
@@ -185,6 +187,8 @@ public:
 	UFUNCTION()
 	void SetNextCameraPos();
 
+	void SetNumStages(uint8 newNumStages) {NumStages = newNumStages;}
+
 public:
 	//Client only. Used to replicate the array of floor values.
 	UFUNCTION()
@@ -230,10 +234,11 @@ public:
 	TArray<class AObjectiveBase*> ObjectiveArrays;
 
 	TArray<class APackedLevelActor*> ObstacleArrays;
-	TArray<class UInstancedStaticMeshComponent*> InstanceMeshComponentArray;
 
 	class ALevelChangeTrigger* LevelTrigger;
 
 	bool IsActivated;
+
+	uint8 NumStages;
 
 };

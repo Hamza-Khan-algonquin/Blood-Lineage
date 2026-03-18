@@ -20,9 +20,6 @@ struct FIslandValues
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float FullPercentage = 50.0f;
 
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile spawned is a hole. 100% = All holes, 0% = No holes. Note: All hole tiles will spawn a modular obstacle."))
-	float HolePercentage = 0;
-
 	UPROPERTY(EditAnywhere)
 	FString TargetLevel;
 
@@ -88,25 +85,10 @@ struct FNormalObstacleValues
 	TArray<TSubclassOf<class APackedLevelActor>> ObstacleActor;
 
 	UPROPERTY(EditAnywhere)
-	TArray<TSubclassOf<class APackedLevelActor>> ObstacleWall;
+	TSubclassOf<class APackedLevelActor> ObstacleWall;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
 	float ObstaclePercentage;
-};
-
-USTRUCT()
-struct FHoleObstacleValues
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	TArray<TSubclassOf<class APackedLevelActor>> HoleTileActor;
-
-	UPROPERTY(EditAnywhere)
-	TArray<TSubclassOf<class APackedLevelActor>> HoleWallMesh;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", UIMin = "0", ClampMax = "100", UIMax = "100", ToolTip = "Percentage in which the tile is spawned walkable. 100% = All floor, 0% = No floor."))
-	float HolePercentage = 0.0f;
 };
 
 USTRUCT()
@@ -155,28 +137,6 @@ struct FObjectiveFlagValues
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
 	uint8 FlagDepthMax = 2;
-
-};
-
-USTRUCT()
-struct FObjectiveEnemyZoneValues
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ANewEnemyZone> EnemyZone;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 EnemyZoneWidthMin = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 EnemyZoneWidthMax = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 EnemyZoneDepthMin = 2;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2", UIMin = "2"))
-	uint8 EnemyZoneDepthMax = 2;
 
 };
 
@@ -247,7 +207,6 @@ enum class EIslandObjectiveType : uint8
 {
 	None = 0 UMETA(Hidden),
 	CaptureTheFlag = 1 << 0,
-	DefeatAllEnemies = 1 << 1,
 	MoveThePayload = 1 << 2,
 	Survival = 1 << 3,
 };
@@ -285,11 +244,6 @@ public:
 	void SetObstacleValues(FNormalObstacleValues newObstacles) { ObstacleValues = newObstacles; }
 
 	UPROPERTY(Replicated, EditAnywhere)
-	FHoleObstacleValues HoleValues;
-
-	void SetHoleValues(FHoleObstacleValues newHoleValues) { HoleValues = newHoleValues; }
-
-	UPROPERTY(Replicated, EditAnywhere)
 	FVantagePointValues VantageValues;
 
 	void SetVantagePointValues(FVantagePointValues newVantageValues) { VantageValues = newVantageValues; }
@@ -298,11 +252,6 @@ public:
 	FObjectiveFlagValues FlagObjectiveValues;
 
 	void SetFlagObjectiveValues(FObjectiveFlagValues newFlagObjectiveValues) { FlagObjectiveValues = newFlagObjectiveValues; }
-
-	UPROPERTY(Replicated, EditAnywhere)
-	FObjectiveEnemyZoneValues EnemyZoneObjectiveValues;
-
-	void SetEnemyZoneObjectiveValues(FObjectiveEnemyZoneValues newEnemyZoneObjectiveValues) { EnemyZoneObjectiveValues = newEnemyZoneObjectiveValues; }
 
 	UPROPERTY(Replicated, EditAnywhere)
 	FObjectivePayloadValues PayloadObjectiveValues;

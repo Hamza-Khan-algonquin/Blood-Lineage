@@ -38,6 +38,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
+	void Create();
+
 	void Activate();
 
 	void SetFinalBridge(bool isFinal);
