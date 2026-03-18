@@ -475,7 +475,7 @@ public:
 
     static float GetChanceToNotConsume(int Value)
     {
-        float Percent = Value / 3;
+        float Percent = Value / 2.9;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -489,28 +489,28 @@ public:
 
     static float GetStrengthPerc(int Value)
     {
-        float Percent = Value / 1.75;
+        float Percent = Value * 1.17;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetSpeedPerc(int Value)
     {
-        float Percent = Value / 4.8;
+        float Percent = Value / 3.8;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritPerc(int Value)
     {
-        float Percent = Value / 2.3;
+        float Percent = Value / 2.1;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritDmgPerc(int Value)
     {
-        float Percent = 1.5 + (Value / 100);
+        float Percent = 1.5 + (Value / 100.0f);
 
         return RoundToDecimal(Percent, 1);
     }

@@ -254,7 +254,7 @@ void AHades::CinematicSlam()
     FVector SlamLoc = FVector(3400, -3400, 20.0f);
     LockRotationTo(SlamLoc, true);
 
-    float Delay = 7.75;
+    float Delay = 8;
 
     AHadesSlamPrediction* Pred = GetWorld()->SpawnActor<AHadesSlamPrediction>(SlamPredictionClass, SlamLoc, FRotator::ZeroRotator);
     if (Pred)
