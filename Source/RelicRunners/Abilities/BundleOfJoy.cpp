@@ -19,8 +19,7 @@ UBundleOfJoy::UBundleOfJoy()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 60;
-
+    Cost = 50;
 
 }
 
@@ -36,7 +35,6 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
         return;
     }
     
-
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
     {
@@ -71,10 +69,13 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
+    PlayAbilityCastSound(ActorInfo);
 
     AttractionCenter = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 300.f; // Set spawn point 300 units in front of the actor
 
@@ -231,7 +232,7 @@ void UBundleOfJoy::Explode()
     {
         if (!Actor) continue; // Skip null actors
         if (!Actor->Tags.Contains("Enemy")) continue;
-        UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, AvatarActor, nullptr); // Apply damage to each actor
+        CalculateAbilityDamage(AvatarActor, Actor, Damage);
     }
 
     for (AEnemyPawn* enemy : EffectedEnemies)

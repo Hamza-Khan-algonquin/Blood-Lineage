@@ -37,6 +37,8 @@ AEnemyCharacter::AEnemyCharacter() : ACharacter()
 	EnemyHUDWorld->SetVisibility(true);
 	EnemyHUDWorld->CastShadow = false;
 
+	ShouldDieIfCommanderIsDone = false;
+
 	//tick moment :O
 	PrimaryActorTick.bCanEverTick = false;
 	//Setting up networking for the actor

@@ -28,8 +28,9 @@ public class RelicRunners : ModuleRules
 			"GameplayTasks",        
 			"GameplayTags",
             "Niagara",
+            "Navmesh",
             "AudioMixer"
-			
+
         });
     }
 }

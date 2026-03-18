@@ -16,6 +16,7 @@
 #include "EnemiesObjective.h"
 #include "PandorasObjective.h"
 #include "TitleObjective.h"
+#include "Kismet/GameplayStatics.h"
 #include "RelicRunners/Item/ItemStats.h"
 
 void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -49,6 +50,11 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
         {
             Widget->ProgressionBar->SetPercent(PayloadData->ProgressFraction);
             Widget->TB_Progression->SetText(FText::AsPercent(PayloadData->ProgressFraction));
+
+            if (PayloadData->ProgressFraction >= 1.0f)
+            {
+                UGameplayStatics::PlaySound2D(this, PayloadCompleteSound);
+            }
         }
     }
     else if (UFlagData* FlagData = Cast<UFlagData>(ListItemObject)) 
@@ -57,6 +63,12 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
 
         UFlagsObjective* FlagWidget = Cast<UFlagsObjective>(WidgetSwitcher->GetWidgetAtIndex(2));
         RefreshFlagVisuals(FlagData, FlagWidget);
+
+        if (FlagData->Flag1Active && FlagData->Flag2Active && FlagData->Flag3Active)
+        {
+            UGameplayStatics::PlaySound2D(this, FlagCompleteSound);
+        }
+
     }
     else if (UEnemiesData* EnemiesData = Cast<UEnemiesData>(ListItemObject)) 
     {
@@ -73,10 +85,15 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
         WidgetSwitcher->SetActiveWidgetIndex(4);
 
         //Update visuals with data
-        if (UPandorasObjective* Widget = Cast<UPandorasObjective>(WidgetSwitcher->GetActiveWidget())) 
+        if (UPandorasObjective* Widget = Cast<UPandorasObjective>(WidgetSwitcher->GetActiveWidget()))
         {
             Widget->ProgressionBar->SetPercent(PandoraData->Percent);
             Widget->TB_Progression->SetText(FText::FromString(PandoraData->TimeRemainingText));
+
+            if (PandoraData->Percent >= 1.0f)
+            {
+                UGameplayStatics::PlaySound2D(this, PandoraCompleteSound);
+            }
         }
     }
 }

@@ -212,6 +212,10 @@ public:
 
 	EIslandObjectiveType IslandObjective;
 
+	UFUNCTION()
+	void OnRep_BridgeSpawned();
+
+	UPROPERTY(ReplicatedUsing = OnRep_BridgeSpawned)
 	class AIslandBridge* Bridge;
 
 	bool isFinalIsland;

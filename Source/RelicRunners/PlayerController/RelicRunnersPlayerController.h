@@ -11,13 +11,14 @@
  *   Any use, distribution, or modification outside of these projects
  *   is strictly prohibited without explicit written permission.
  *
- *   © 2025 Tristan Anglin. All rights reserved.
+ *   ï¿½ 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Sound/SoundBase.h"
 #include "RelicRunnersPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -39,11 +40,12 @@ public:
 	void UpdateHUDAll();
 	void InventoryUI();
 	void MinimapUI();
+	void PlayerHUDUI();
 	void PauseUI();
 	void HideUI(UUserWidget* UIWidget);
 	void HandleLevelUpVisuals();
 	void UpdatePreviewItemVisual(UObject* MeshAsset, const FString& ItemType);
-	void TravelCleanUI();
+	void CleanUI();
 	void UpdatePayloadObjective(float NewProgress);
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
@@ -52,6 +54,13 @@ public:
 
 	UFUNCTION()
 	void ClearOldObjectives();
+
+	void SpectatingUI();
+
+	void PostGameUI();
+
+	UFUNCTION(Client, Reliable)
+	void Client_ShowPostGame(const TArray<FPlayerPostGameData>& FinalStats);
 
 	UFUNCTION(Client, Reliable)
 	void Client_DecrementFlagObjective();
@@ -77,9 +86,13 @@ public:
 	UFUNCTION()
 	void TryBindUI();
 	UFUNCTION(Server, Reliable)
+	void Server_UpdateMetaFromSave(int MetaLevel, int MetaXP, int MetaXPToNextLevel);
+	UFUNCTION(Server, Reliable)
 	void Server_SetDifficulty(FName NewDifficulty);
 	UFUNCTION()
 	void OnRep_LobbyPreview();
+	UFUNCTION(Client, Reliable)
+	void Client_RequestSaveStats();
 	UFUNCTION()
 	void OnRep_PlayerPreview();
 	UFUNCTION(Server, Reliable)
@@ -152,10 +165,17 @@ public:
 	TSubclassOf<class UObjectiveLog> ObjectiveLogClass;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<class UMinimap> MinimapClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class USpectatingWidget> SpectatingWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UPostGameWidget> PostGameWidgetClass;
 	UPROPERTY(EditDefaultsOnly, Category = "Preview")
 	TSubclassOf<class APlayerPreview> PlayerPreviewClass;
-
 	//Properties
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class USpectatingWidget* SpectatingWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	class UPostGameWidget* PostGameWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UUserWidget* BuildVersion;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
@@ -180,6 +200,14 @@ public:
 	class UInventory* Inventory;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UObjectiveLog* ObjectiveLog;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	USoundBase* InventoryOpenSound = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	USoundBase* InventoryCloseSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> CountdownTickSound = nullptr;
 	class AHades* CachedHades;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
@@ -192,7 +220,7 @@ public:
 	FTimerHandle SyncDataTimerHandle;
 	FTimerHandle DisableUITimer;
 	FTimerHandle ObjectiveClearTimerHandle;
-
+	FTimerHandle CinematicTimerHandle;
 
 protected:
 
@@ -235,6 +263,8 @@ protected:
 	void ProjectileHeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
+	void StartBossCinematicWalk();
+	void CheckCinematicArrival();
 
 	//Virtual Functions
 	virtual void BeginPlay() override;

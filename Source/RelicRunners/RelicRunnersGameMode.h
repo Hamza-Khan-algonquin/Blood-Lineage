@@ -31,6 +31,8 @@ public:
 	virtual void PostSeamlessTravel() override;
 	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
+	void CheckGameOver();
+	void TriggerPostGameForAll();
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ANemesisCharacter> NemesisCharacterClass;
 
@@ -42,6 +44,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AAphroditeCharacter> AphroditeCharacterClass;
+
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 };
 
 

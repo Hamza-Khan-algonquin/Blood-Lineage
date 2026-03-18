@@ -61,7 +61,8 @@ void AHades::BeginPlay()
     }
     if (HasAuthority())
     {
-        ScheduleNextAttack(2.0f);
+        SelectRandomTarget();
+        ScheduleCinematicSlam(5.0f); 
     }
 }
 
@@ -95,6 +96,12 @@ void AHades::ScheduleNextAttack(float Delay)
 {
     if (!HasAuthority()) return;
     GetWorldTimerManager().SetTimer(AttackLoopTimer, this, &AHades::ExecuteAttack, Delay, false);
+}
+
+void AHades::ScheduleCinematicSlam(float Delay)
+{
+    if (!HasAuthority()) return;
+    GetWorldTimerManager().SetTimer(AttackLoopTimer, this, &AHades::CinematicSlam, Delay, false);
 }
 
 void AHades::ResetAllStates()
@@ -172,6 +179,52 @@ void AHades::ExecuteAttack()
         PlaySweep();
         LastAttack = "Sweep";
     }
+}
+
+void AHades::CinematicSlam()
+{
+    if (!HasAuthority()) return;
+
+    if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
+
+    MulticastPlayAttackMontage(SlamMontage, 0.25f, 0);
+
+    LastAttack = "Slam";
+    bIsBusy = true;
+
+    FVector Origin = FVector::ZeroVector;
+    FVector Dir = (CurrentTarget->GetActorLocation() - Origin).GetSafeNormal2D();
+    FVector SlamLoc = FVector(3400, -3400, 20.0f);
+    LockRotationTo(SlamLoc, true);
+
+    float Delay = 7.5f - (0.2f * (int)CurrentPhase);
+
+    AHadesSlamPrediction* Pred = GetWorld()->SpawnActor<AHadesSlamPrediction>(SlamPredictionClass, SlamLoc, FRotator::ZeroRotator);
+    if (Pred)
+    {
+        Pred->Duration = Delay;
+        Pred->TargetScale = FVector(18.0f, 18.0f, 1.0f);
+        Pred->bShouldScale = true;
+        Pred->SetLifeSpan(Delay + 0.2f);
+    }
+
+    TWeakObjectPtr<AHades> WeakSelf(this);
+    GetWorldTimerManager().SetTimer(AbilityLogicTimer, [WeakSelf, SlamLoc]() {
+        if (WeakSelf.IsValid())
+        {
+            WeakSelf->ExecuteDamage(SlamLoc, 1800.0f);
+
+            WeakSelf->bIsBusy = false;
+            WeakSelf->bIsLookingAtAbilityTarget = false;
+            WeakSelf->ScheduleNextAttack(2.0f);
+
+            if (WeakSelf->BridgeToDestroy)
+            {
+                WeakSelf->BridgeToDestroy->Destroy();
+                WeakSelf->BridgeToDestroy = nullptr;
+            }
+        }
+        }, Delay, false);
 }
 
 void AHades::PlaySlam()
