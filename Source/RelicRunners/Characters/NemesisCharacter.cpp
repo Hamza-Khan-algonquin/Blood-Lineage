@@ -207,7 +207,7 @@ void ANemesisCharacter::BasicAttack()
     if (!CanBasicAttack) return;
 
     CanBasicAttack = false;
-    Damage = 50.0f;
+    Damage = 120.0f;
 
     AlreadyHitActors.Empty();
 

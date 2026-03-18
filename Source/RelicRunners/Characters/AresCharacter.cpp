@@ -205,7 +205,7 @@ void AAresCharacter::BasicAttack()
 	if (!CanBasicAttack) return;
 
 	CanBasicAttack = false;
-	Damage = 70.0f;
+	Damage = 100.0f;
 
 	AlreadyHitActors.Empty(); 
 
