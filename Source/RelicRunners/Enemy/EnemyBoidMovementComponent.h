@@ -22,6 +22,18 @@ enum class EBoidFocuseMode : uint8
 	Disabled
 };
 
+USTRUCT()
+struct FMoveData
+{
+	GENERATED_BODY()
+	UPROPERTY()
+	FVector Location;
+	UPROPERTY()
+	FRotator Rotation;
+	UPROPERTY()
+	float TimeStamp;
+};
+
 class ACommanderController;
 class ARecastNavMesh;
 
@@ -116,7 +128,19 @@ protected:
 	UPROPERTY()
 	ARecastNavMesh* ActiveNavMesh;
 
+	UPROPERTY(ReplicatedUsing = OnRep_ServerMoveData)
+	FMoveData ServerMoveData;
 
+	UPROPERTY()
+	TArray<FMoveData> MoveDataBuffer;
+
+	//This is client side only and should not be replicated
+	//How far back in time the client should interpolate the server data and is based on a rough-ish average time between server updates using lerp. 
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float InterpDelay;
+	//The max distance the client is allowed to be from the server location before it snaps to it. 
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float MaxClientLocationDeviation;
 public:
 	UEnemyBoidMovementComponent();
 
@@ -139,4 +163,11 @@ public:
 	EBoidMovementMode GetMovementMode() { return MovementMode; }
 	bool IsAtTarget();
 	void InitializeNavMeshPointer();
+
+
+	UFUNCTION()
+	void OnRep_ServerMoveData();
+	UFUNCTION()
+	void ClientSideEntityInterpolation();
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

@@ -154,7 +154,7 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 void ACommanderController::RemovePawnEnemy(AActor* enemy)
 {
 	AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
-	if (!enemyPawn)
+	if (!enemyPawn && !ControlledEnemies.Contains(enemyPawn))
 	{
 		return;
 	}
