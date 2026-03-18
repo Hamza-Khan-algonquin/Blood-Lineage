@@ -611,7 +611,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     const FVector2D Anchor(1.f, 0.f);
 
     StandardTooltip->SetAnchor(Anchor);
-    StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+    StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
     StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }

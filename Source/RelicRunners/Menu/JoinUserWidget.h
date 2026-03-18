@@ -215,7 +215,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_BoarSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_BoarSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* BullBorder;
 
@@ -224,7 +225,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_BullSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_BullSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* LionBorder;
 
@@ -233,7 +235,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_LionSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LionSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* HydraBorder;
 
@@ -242,7 +245,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_HydraSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_HydraSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* CerberusBorder;
 
@@ -251,7 +255,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_CerberusSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_CerberusSection1;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_Start = nullptr;
 

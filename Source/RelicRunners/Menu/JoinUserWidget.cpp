@@ -123,7 +123,7 @@ FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPo
 	FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
 
 	TArray<UBorder*> Borders = { B_Health, B_Defence, B_Strength, B_Agility, B_Intelligence,
-								 B_Ability1, B_Ability2, B_Ability3, B_Ability4 };
+								 B_Ability1, B_Ability2, B_Ability3, B_Ability4, B_BoarSection1, B_BullSection1, B_LionSection1, B_HydraSection1, B_CerberusSection1 };
 
 	UBorder* HoveredBorder = nullptr;
 	for (UBorder* Border : Borders)
@@ -197,8 +197,12 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 
 	FString StatKey = "";
 	int RawValue = 0;
+	int RawValue1 = 0;
+	int RawValue2 = 0;
 	FString AbilityName = "";
 	FString AbilityDesc = "";
+	bool Difficulty = false;
+	FName DifficultyName = "Boar";
 
 	if (HoveredBorder == B_Health)				{ StatKey = "Health";       RawValue = Info.Health; }
 	else if (HoveredBorder == B_Defence)		{ StatKey = "Defence";      RawValue = Info.Armor; }
@@ -211,14 +215,40 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 	else if (HoveredBorder == B_Ability3)		{ StatKey = "Ability3"; AbilityName = Info.Ability3; AbilityDesc = Info.Ability3Description1; }
 	else if (HoveredBorder == B_Ability4)		{ StatKey = "Ability4"; AbilityName = Info.Ability4; AbilityDesc = Info.Ability4Description1; }
 
-	FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
+	else if (HoveredBorder == B_BoarSection1) { StatKey = "BoarDifficulty"; RawValue = 0; Difficulty = true; DifficultyName = "Boar"; }
+	else if (HoveredBorder == B_BullSection1) { StatKey = "BullDifficulty"; RawValue = 0; Difficulty = true; DifficultyName = "Bull";}
+	else if (HoveredBorder == B_LionSection1) { StatKey = "LionDifficulty"; RawValue = 0; Difficulty = true; DifficultyName = "Lion";}
+	else if (HoveredBorder == B_HydraSection1) { StatKey = "HydraDifficulty"; RawValue = 0; Difficulty = true; DifficultyName = "Hydra";}
+	else if (HoveredBorder == B_CerberusSection1) { StatKey = "CerberusDifficulty"; RawValue = 0; Difficulty = true; DifficultyName = "Cerberus";}
 
-	StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+	FVector2D Anchor(0.f, 1.f);
+	FVector2D Offset(5.0f, 5.0f);
+
+	FTooltipData TD;
+	if (!Difficulty)
+	{
+		TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
+		StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
+	}
+	else
+	{
+		ARelicRunnersGameState* RunnersGameState = GetWorld()->GetGameState<ARelicRunnersGameState>();
+		if (!RunnersGameState) return;
+
+		FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(DifficultyName);
+
+		Anchor = FVector2D(1.f, 1.f);
+		Offset = FVector2D(-5.0f, 5.0f);
+		TD = ItemStats::GetStatTooltipData(StatKey, (diffInfo.HealthPercent*100), (diffInfo.DamagePercent * 100), diffInfo.LuckAmount, AbilityName, AbilityDesc);
+		StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
+		StandardTooltip->SetIcon(TD.Icon1, TD.IconColor1, 1);
+		StandardTooltip->SetIcon(TD.Icon2, TD.IconColor2, 2);
+		StandardTooltip->SetIcon(TD.Icon3, TD.IconColor3, 3);
+	}
+
 	StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
 
 	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
-	const FVector2D Offset(5.0f, 5.0f);
-	const FVector2D Anchor(0.f, 1.f);
 
 	StandardTooltip->SetAnchor(Anchor);
 	StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);

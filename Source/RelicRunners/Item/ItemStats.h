@@ -40,6 +40,24 @@ public:
 
     UPROPERTY()
     FLinearColor IconColor;
+
+    UPROPERTY()
+    class UTexture2D* Icon1;
+
+    UPROPERTY()
+    FLinearColor IconColor1;
+
+    UPROPERTY()
+    class UTexture2D* Icon2;
+
+    UPROPERTY()
+    FLinearColor IconColor2;
+
+    UPROPERTY()
+    class UTexture2D* Icon3;
+
+    UPROPERTY()
+    FLinearColor IconColor3;
 };
 
 struct FForgeResultOdds
@@ -71,7 +89,7 @@ public:
     {
         FTooltipData Data;
 
-        if (!BorderType.Contains("Ability"))
+        if (!BorderType.Contains("Ability") && !BorderType.Contains("Difficulty"))
         {
             Data.Value = FText::AsNumber(StatValue);
         }
@@ -230,6 +248,81 @@ public:
             Data.IconColor = GetIconColor("Mana");
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
             Data.Descriptions.Add(FText::FromString("<Blue>+1%</> <Default>Mana regen per meta point.</>"));
+        }
+        else if (BorderType == "BoarDifficulty")
+        {
+            Data.Name = FText::FromString("Boar | Difficulty");
+            Data.Icon = LoadIcon("BoarDifficulty");
+            Data.IconColor = FLinearColor(1,0.5,0,1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "BullDifficulty")
+        {
+            Data.Name = FText::FromString("Bull | Difficulty");
+            Data.Icon = LoadIcon("BullDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "LionDifficulty")
+        {
+            Data.Name = FText::FromString("Lion | Difficulty");
+            Data.Icon = LoadIcon("LionDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "HydraDifficulty")
+        {
+            Data.Name = FText::FromString("Hydra | Difficulty");
+            Data.Icon = LoadIcon("HydraDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "CerberusDifficulty")
+        {
+            Data.Name = FText::FromString("Cerberus | Difficulty");
+            Data.Icon = LoadIcon("CerberusDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
         }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {
