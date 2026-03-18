@@ -15,12 +15,6 @@ UNaturesBlessing::UNaturesBlessing()
 	Cost = 30;
 	LastUseTime = -100.f;
 
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> VFXAsset(TEXT("/Game/Particles/NatureBlessing/NewNiagaraSystem.NewNiagaraSystem"));
-
-	if (VFXAsset.Succeeded())
-	{
-		AbilityVFX = VFXAsset.Object;
-	}
 }
 
 void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -56,6 +50,23 @@ void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
     // it turns on the invincibility for the character 
 	PS->SetInvincible(true);
+
+	AController* Controller = nullptr;
+
+	if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+	{
+		Controller = CurrentActorInfo->PlayerController.Get();
+	}
+
+	if (Controller)
+	{
+
+		if (PS)
+		{
+			PS->Multicast_SpawnVFX(FVector(0), FRotator::ZeroRotator, FVector(2.f), AbilityVFX, true);
+		}
+
+	}
 
 	ActorInfo->AvatarActor->GetWorldTimerManager().SetTimer(EndTimer,FTimerDelegate::CreateUObject(this, &UNaturesBlessing::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), InvincibleDuration, false);
 }

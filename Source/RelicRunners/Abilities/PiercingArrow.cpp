@@ -11,7 +11,8 @@
 #include "RelicRunners/Enemy/EnemyPawn.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
-
+#include "Components/PrimitiveComponent.h"
+#include "Particles/ParticleSystem.h"
 
 UPiercingArrow::UPiercingArrow()
 {
@@ -88,6 +89,7 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     // Arc trajectory
     ProjectileVelocity = AvatarActor->GetActorForwardVector() * 3200.f + FVector(0, 0, 100.f);
 
+
     // Start ticking projectile
     World->GetTimerManager().SetTimer(ProjectileTimer, this, &UPiercingArrow::TickArrow, 0.016f, true);
 
@@ -116,8 +118,9 @@ void UPiercingArrow::TickArrow()
 
     bool bHit = World->SweepSingleByChannel(Hit,ProjectileLocation,NewLocation,FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(ProjectileRadius),Params);
 
+
     //debug sphere at the projectile location
-    DrawDebugSphere(World, NewLocation, ProjectileRadius, 12, FColor::Yellow, false, 0.1f);
+    //DrawDebugSphere(World, NewLocation, ProjectileRadius, 12, FColor::Yellow, false, 0.1f);
 
     if (bHit)
     {
@@ -129,6 +132,7 @@ void UPiercingArrow::TickArrow()
     }
 
     ProjectileLocation = NewLocation;
+
 }
 
 void UPiercingArrow::Explode(FVector ImpactPoint)
