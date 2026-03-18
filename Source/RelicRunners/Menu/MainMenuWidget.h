@@ -47,6 +47,9 @@ public:
     UFUNCTION(BlueprintCallable)
     void ShowCreditsWidget();
 
+    UFUNCTION(BlueprintCallable, Category = "Audio")
+    void PlayButtonClickSound();
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> ModeSelectionUserWidgetClass;
 
@@ -61,5 +64,8 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> SettingsWidgetClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    USoundBase* ButtonClickSound = nullptr;
 
 };

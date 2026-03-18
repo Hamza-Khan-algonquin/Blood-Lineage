@@ -12,6 +12,7 @@
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 
 ACommanderController::ACommanderController()
 {
@@ -42,6 +43,8 @@ void ACommanderController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
 		director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
 	}
+
+	GetWorldTimerManager().ClearTimer(SpawnTimer);
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -81,7 +84,7 @@ void ACommanderController::Tick(float DeltaTime)
 			for (int i = 1; i < players.Num(); i++)
 			{
 				float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
-				if (newDistance > distance)
+				if (newDistance < distance)
 				{
 					closestPlayer = players[i];
 					distance = newDistance;
@@ -122,25 +125,30 @@ void ACommanderController::Tick(float DeltaTime)
 
 	UpdateLODs(players, pawn->GetActorLocation());
 	AttackCheck(players, DeltaTime);
-	SpawmLoop();
+	//SpawmLoop();
 
-	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0 && !Cast<AEnemyCharacter>(GetPawn()))
+	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0)
 	{
-		Destroy();
-		//GetPawn()->Destroy();
+		if (!IsValid(BTComp) || !BTComp->IsRunning())
+		{
+			Destroy();
+		}	
 	}
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 {
-	if (!enemy) return;
+	if (!IsValid(enemy) || !IsValid(this))
+	{
+		return;
+	}
 
 	ControlledEnemies.Add(enemy);
 	enemy->MovementComponent->Commander = this;
-	if (enemy) enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->LODComponent->SetIsUpdatingLOD(false);
+	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
 void ACommanderController::RemovePawnEnemy(AActor* enemy)
@@ -150,7 +158,14 @@ void ACommanderController::RemovePawnEnemy(AActor* enemy)
 	{
 		return;
 	}
+
 	ControlledEnemies.Remove(enemyPawn);
+
+	if (IsValid(enemyPawn))
+	{
+		enemyPawn->OnDestroyed.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
+		enemyPawn->OnDeactivated.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
+	}
 }
 
 TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
@@ -161,8 +176,9 @@ TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
 void ACommanderController::SpawnPawnEnemy()
 {
 	APawn* pawn = GetPawn();
+	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (!pawn)
+	if (!pawn || !pool)
 	{
 		return;
 	}
@@ -182,12 +198,16 @@ void ACommanderController::SpawnPawnEnemy()
 	}
 
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	/*FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;*/
 
-	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
-	//AEnemyPawn* newEnemy = Cast<AEnemyPawn>(PawnEnemyToSpawn);
-	
+	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(pool->GetActor(PawnEnemyToSpawn));//Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
+	FVector origin;
+	FVector bounds;
+
+	newEnemy->GetActorBounds(true, origin, bounds);
+
+	newEnemy->SetActorLocation(spawnPosition + FVector(0, 0, bounds.Z));
 
 	//giving time for the enemy to set
 	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
@@ -199,7 +219,12 @@ void ACommanderController::SpawnPawnEnemy()
 
 void ACommanderController::SpawmLoop()
 {
-	for (int i = 0; i < MaxNumberOfEnemies; i++)
+	if (!GetWorld() || GetWorld()->TimeSeconds < 5)
+	{
+		return;
+	}
+
+	for (int i = 0; i < EnemyToSpawnPerLoop && ControlledEnemies.Num() < MaxNumberOfEnemies; i++)
 	{
 		if (CurrentLifeTimeNumberOfEnemies < MaxLifeTimeNumberOfEnemies)
 		{
@@ -274,6 +299,11 @@ void ACommanderController::OnPossess(APawn* InPawn)
 	if (StartingBehaviorTree)
 	{
 		RunBehaviorTree(StartingBehaviorTree);
+	}
+
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(SpawnTimer, this, &ACommanderController::SpawmLoop, TimeBetweenSpawnChecks, true);
 	}
 }
 

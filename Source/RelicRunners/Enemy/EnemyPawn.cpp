@@ -132,6 +132,11 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 void AEnemyPawn::HitFlash_Implementation()
 {
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+	}
+
 	HitFlashTimeline.PlayFromStart();
 	SetActorTickEnabled(true);
 	//HitFlashTimeline.SetPlaybackPosition(0.0f, false);
@@ -192,8 +197,13 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 				PS->AddExperience(CalculateXP());
 				
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
-				SpawnItem();
+				SpawnItem(PlayerLuck);
 			}
+		}
+
+		if (DeathSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
 		}
 
 		OnDied.Broadcast(this);
@@ -325,6 +335,11 @@ void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* O
 		{
 			UGameplayStatics::ApplyDamage(OtherActor, EnemyStatsComponent->GetAttackDamage(), nullptr, this, nullptr);
 		}
+
+		if (AttackHitPlayerSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, AttackHitPlayerSound, GetActorLocation());
+		}
 	}
 }
 
@@ -333,13 +348,13 @@ float AEnemyPawn::CalculateXP() const
 	return FMath::RandRange(10, 25);
 }
 
-void AEnemyPawn::SpawnItem()
+void AEnemyPawn::SpawnItem(int Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
 	float chance = FMath::FRandRange(0.f, 100.f);
 
-	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
+	if (chance <= EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(Luck))
 	{
 		if (ItemMeshDataClass)
 		{
@@ -347,7 +362,7 @@ void AEnemyPawn::SpawnItem()
 		}
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemMeshData),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData),
 			this
 		);
 
@@ -433,7 +448,7 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
 
-	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
 		MovementComponent->IsKnockedBack = false;
 		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
@@ -508,19 +523,6 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-
-	if (HitFlashCurve)
-	{
-		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-		FOnTimelineFloat inProgressFunc;
-		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
-
-		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
-
-		//putting this here for a future note of what do if I want to call something at the end
-		//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
-	}
 	
 	if (HasAuthority())
 	{
@@ -533,6 +535,21 @@ void AEnemyPawn::BeginPlay()
 
 		IsAttacking = false;
 		SetActorTickEnabled(false);
+
+		if (HitFlashCurve)
+		{
+			HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+			FOnTimelineFloat inProgressFunc;
+			inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
+
+			HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
+
+			//putting this here for a future note of what do if I want to call something at the end
+			//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
+		}
+
+		MovementComponent->InitializeNavMeshPointer();
 	}
 }
 
@@ -591,12 +608,12 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		ResetEnemy();
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	if (IsValid(pool) && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()

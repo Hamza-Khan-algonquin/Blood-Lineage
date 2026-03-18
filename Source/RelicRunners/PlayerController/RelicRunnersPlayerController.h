@@ -11,13 +11,14 @@
  *   Any use, distribution, or modification outside of these projects
  *   is strictly prohibited without explicit written permission.
  *
- *   © 2025 Tristan Anglin. All rights reserved.
+ *   ï¿½ 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Sound/SoundBase.h"
 #include "RelicRunnersPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -39,6 +40,7 @@ public:
 	void UpdateHUDAll();
 	void InventoryUI();
 	void MinimapUI();
+	void PlayerHUDUI();
 	void PauseUI();
 	void HideUI(UUserWidget* UIWidget);
 	void HandleLevelUpVisuals();
@@ -198,6 +200,14 @@ public:
 	class UInventory* Inventory;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UObjectiveLog* ObjectiveLog;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	USoundBase* InventoryOpenSound = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	USoundBase* InventoryCloseSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> CountdownTickSound = nullptr;
 	class AHades* CachedHades;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)

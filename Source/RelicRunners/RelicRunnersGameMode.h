@@ -44,6 +44,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AAphroditeCharacter> AphroditeCharacterClass;
+
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 };
 
 

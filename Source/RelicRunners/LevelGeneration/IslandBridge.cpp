@@ -3,6 +3,8 @@
 
 #include "IslandBridge.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include <Net/UnrealNetwork.h>
 
 // Sets default values
@@ -12,8 +14,13 @@ AIslandBridge::AIslandBridge():
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	USceneComponent* SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+
+	RootComponent = SceneRoot;
+
 	Bridge = CreateDefaultSubobject<UStaticMeshComponent>("Bridge Mesh");
 	Bridge->SetupAttachment(RootComponent);
+	Bridge->SetIsReplicated(true);
 
 	Barrier = CreateDefaultSubobject<UStaticMeshComponent>("Barrier Mesh");
 	Barrier->SetupAttachment(Bridge);
@@ -100,23 +107,39 @@ void AIslandBridge::OnRep_OnFinalBridgeChange()
 
 void AIslandBridge::OnFrontTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (!OtherActor->ActorHasTag("Player"))
+		return;
+
+	APawn* player = Cast<APawn>(OtherActor);
+
+	if (player == nullptr)
+		return;
+
+	if (player->GetController() == nullptr)
+		return; 
+
+	if (player->GetController()->IsLocalPlayerController())
 	{
-		if (HasAuthority())
-		{
-			OnFrontTrigger.Broadcast();
-		}
+		OnFrontTrigger.Broadcast();
 	}
 }
 
 void AIslandBridge::OnBackTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (!OtherActor->ActorHasTag("Player"))
+		return;
+
+	APawn* player = Cast<APawn>(OtherActor);
+
+	if (player == nullptr)
+		return;
+
+	if (player->GetController() == nullptr)
+		return;
+
+	if (player->GetController()->IsLocalPlayerController())
 	{
-		if (HasAuthority())
-		{
-			OnBackTrigger.Broadcast();
-		}
+		OnBackTrigger.Broadcast();
 	}
 }
 

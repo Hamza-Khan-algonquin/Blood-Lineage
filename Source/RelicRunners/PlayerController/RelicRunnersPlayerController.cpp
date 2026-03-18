@@ -677,6 +677,11 @@ void ARelicRunnersPlayerController::TrySetupPreviewRenderTarget()
 
 void ARelicRunnersPlayerController::Client_UpdateCountdown_Implementation(int NewTime)
 {
+	if (CountdownTickSound && NewTime > 0)
+	{
+		UGameplayStatics::PlaySound2D(this, CountdownTickSound);
+	}
+
 	if (LobbyWidget)
 	{
 		LobbyWidget->UpdateCountdownUI(NewTime);
@@ -718,6 +723,11 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 		else if (UIWidget == Inventory)
 		{
 			Inventory->PlayAnimation(Inventory->InventoryOpen);
+
+			if (InventoryOpenSound)
+			{
+				UGameplayStatics::PlaySound2D(this, InventoryOpenSound);
+			}
 		}
 		UIWidget->SetVisibility(ESlateVisibility::Visible);
 		UIWidget->SetIsEnabled(true);
@@ -741,6 +751,12 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 		UInventorySortingOptions::CloseAnyOpenPopup();
 
 		Inventory->PlayAnimation(Inventory->InventoryClose);
+
+		if (InventoryCloseSound)
+		{
+			UGameplayStatics::PlaySound2D(this, InventoryCloseSound);
+		}
+
 		Inventory->ToggleShopUI(false);
 		Inventory->ToggleForgeUI(false);
 
@@ -793,7 +809,28 @@ void ARelicRunnersPlayerController::MinimapUI()
 {
 	if (!MinimapWidget) return;
 
-	ToggleUI(MinimapWidget);
+	if (MinimapWidget->IsVisible())
+	{
+		MinimapWidget->RemoveFromParent();
+	}
+	else
+	{
+		MinimapWidget->AddToViewport();
+	}
+}
+
+void ARelicRunnersPlayerController::PlayerHUDUI()
+{
+	if (!PlayerHUD) return;
+
+	if (PlayerHUD->IsVisible())
+	{
+		PlayerHUD->RemoveFromParent();
+	}
+	else
+	{
+		PlayerHUD->AddToViewport();
+	}
 }
 
 void ARelicRunnersPlayerController::PauseUI()
@@ -822,7 +859,6 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 		else
 		{
 			ForceGameModeOnly();
-			MinimapUI();
 		}
 	}
 }
@@ -1184,7 +1220,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		}
 	}
 
-	float LoadingScreenTime = 3.0f;
+	float LoadingScreenTime = 6.0f;
 	if (!LoadingScreen && LoadingScreenClass)
 	{
 		FInputModeUIOnly InputMode;
@@ -1308,6 +1344,9 @@ void ARelicRunnersPlayerController::StartBossCinematicWalk()
 	SetInputMode(UIOnlyMode);
 	SetIgnoreMoveInput(true);
 
+	MinimapUI();
+	PlayerHUDUI();
+
 	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
 
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
@@ -1324,9 +1363,6 @@ void ARelicRunnersPlayerController::CheckCinematicArrival()
 	APawn* ControlledPawn = GetPawn();
 	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
 
-	PlayerHUD->SetVisibility(ESlateVisibility::Visible);
-	MinimapWidget->SetVisibility(ESlateVisibility::Visible);
-
 	if (ControlledPawn && FVector::Dist(ControlledPawn->GetActorLocation(), TargetLocation) < 100.0f)
 	{
 		FInputModeGameAndUI GameAndUIMode;
@@ -1334,6 +1370,9 @@ void ARelicRunnersPlayerController::CheckCinematicArrival()
 
 		SetIgnoreMoveInput(false);
 		GetWorldTimerManager().ClearTimer(CinematicTimerHandle);
+
+		PlayerHUDUI();
+		MinimapUI();
 
 		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Control Restored."));
 	}

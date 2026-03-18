@@ -7,6 +7,8 @@
 #include "NavigationSystem.h"
 #include <Net/UnrealNetwork.h>
 #include "DrawDebugHelpers.h"
+#include "NavMesh/RecastNavMesh.h"
+#include "Detour/DetourNavMeshQuery.h"
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -27,6 +29,7 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxTargetDistanceMultiplier = 5.f;
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
+	WallAvoidanceExtent = FVector(100.f, 100.f, 300.f);
 	EdgeAvoidanceWeight = 1;
 	MaxStepNormal = 0.1;
 	IsKnockedBack = false;
@@ -216,36 +219,20 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		
 	}
 
-	FVector edgeVector = FVector::Zero();
+/*	FVector edgeVector = FVector::Zero();
 	FVector inVector = (LastValidPosition - GetActorLocation());
 	inVector.Z = 0;
 	inVector = inVector.GetSafeNormal();
 	if (!EdgeAvoidanceVector.IsNearlyZero())
 	{
 		edgeVector = -EdgeAvoidanceVector.GetSafeNormal();
-		//edgeVector = (finalInflunceVector - (((finalInflunceVector | edgeVector) / (edgeVector | edgeVector)) * edgeVector)).GetSafeNormal();
-		//edgeVector = -(edgeVector - edgeVector.ProjectOnTo(targetDirection)).GetSafeNormal();
 
-		/*float edgeOffSet = FVector::DotProduct(finalInflunceVector, edgeVector);
-
-		if (edgeOffSet > 0)
-		{
-			//float strength = FMath::Clamp(edgeOffSet / MaxSpeed, 0.f, 1.f);
-			finalInflunceVector -= edgeOffSet * edgeVector;// *EdgeAvoidanceWeight;
-
-		}*/
-
-		//note for future self "|" is dot operator for vectors
+		
 		FVector leftDirection = FVector::CrossProduct(FVector::UpVector, edgeVector);
-		//FVector rightDirection = -leftDirection;
-		/*leftDirection = (edgeVector + leftDirection * 0.5);
-		rightDirection = (edgeVector + leftDirection * 0.5);*/
 		FVector goal = finalInflunceVector.GetSafeNormal();
-/*		if ((edgeVector | goal) > 0.9f)
-		{
-			
-		}*/
-		if ((goal | leftDirection) > 0)//< (goal | rightDirection))
+
+		//"|" is the dot product. I just felt like
+		if ((goal | leftDirection) > 0)
 		{
 			edgeVector = leftDirection.GetSafeNormal();
 		}
@@ -255,9 +242,9 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		}
 		
 		if (FVector::DotProduct(edgeVector, LastEdgeVector) < 0.f)
+		{
 			edgeVector = -edgeVector;
-		
-		//finalInflunceVector += edgeVector.GetSafeNormal() * EdgeAvoidanceWeight;
+		}
 	}
 	
 	if (!LastEdgeVector.IsNearlyZero() || !edgeVector.IsZero())
@@ -265,6 +252,58 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		edgeVector = FMath::VInterpTo(LastEdgeVector, edgeVector, delta, 5);
 		LastEdgeVector = edgeVector;
 		finalInflunceVector += (edgeVector + inVector * 0.5).GetSafeNormal() * finalInflunceVector.Length();//EdgeAvoidanceWeight;
+	}*/
+
+
+	if (ActiveNavMesh)
+	{
+		FNavLocation navLocation;
+
+		if (ActiveNavMesh->ProjectPoint(GetActorLocation(), navLocation, WallAvoidanceExtent))
+		{
+			NavNodeRef polyRef = navLocation.NodeRef;
+			TArray<FNavigationPortalEdge> wallPoints;
+	
+			ActiveNavMesh->GetPolyWallSegments(polyRef, ActiveNavMesh->GetDefaultQueryFilter(), this, wallPoints);
+
+			for (const FNavigationPortalEdge& wallPoint : wallPoints)
+			{
+				FVector closestPointOnWall = FMath::ClosestPointOnSegment(navLocation.Location, wallPoint.Left, wallPoint.Right);
+				float distanceToWall = FVector::Dist(navLocation.Location, closestPointOnWall);
+				FVector direction;
+				float strength;
+				if (distanceToWall > DistanceToStartAvoidingWalls)
+				{
+					continue;
+				}
+
+				if (!FMath::IsNearlyZero(distanceToWall))
+				{
+					strength = FMath::Clamp((1 - distanceToWall / DistanceToStartAvoidingWalls), 0, 1);
+					direction = (navLocation.Location - closestPointOnWall).GetSafeNormal2D();
+					
+				}
+				else
+				{
+					strength = 1;
+					FVector edgeDirection = (wallPoint.Left - wallPoint.Right).GetSafeNormal();
+
+					//it the cross product. Don't believe me go look at the body of FVector::CrossProduct. I just felt like being a dick to anyone who tries to read this mess
+					direction = edgeDirection ^ FVector::UpVector;
+
+					FVector polyCenter;
+					ActiveNavMesh->GetPolyCenter(wallPoint.ToRef, polyCenter);
+
+					if ((direction | polyCenter - wallPoint.GetMiddlePoint()) < 0)
+					{
+						direction *= -1;
+					}
+				}
+
+				finalInflunceVector += direction * strength * WallAvoidanceWeight;
+				//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + direction * strength * WallAvoidanceWeight * 100, FColor::Cyan, false, 0.1, 0, 3);
+			}
+		}
 	}
 
 	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + inVector.GetSafeNormal() * 100, FColor::Cyan, false, 0.1, 0, 3);
@@ -292,14 +331,19 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 	FVector newVelocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
 
-	if (newVelocity.Size2D() >= MinVelocityChange)
+	if (Commander->TargetPlayer && Commander->GetCurrentTarget() == Commander->TargetPlayer && !IsAffectiveByBundleOfJoy)
+	{
+		float slowDownPercentage = FMath::Clamp(FVector::Distance(Commander->GetCurrentTarget()->GetActorLocation() / SlowDownDistance, GetOwner()->GetActorLocation()), MinSlowDownPercentage, 1);
+		newVelocity *= slowDownPercentage;
+	}
+
+	/*if (newVelocity.Size2D() >= MinVelocityChange)
 	{
 		Velocity = newVelocity;
-	}
-	if (Velocity.Size2D() < MinMoveVelocity)
-	{
-		//Velocity = FVector::ZeroVector;
-	}
+	}*/
+
+	Velocity = newVelocity;
+
 	//Velocity = (finalInflunceVector * MaxSpeed).GetClampedToMaxSize(MaxSpeed);
 	UpdateComponentVelocity();
 
@@ -336,26 +380,6 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 	UpdateComponentVelocity();
 }
 
-bool UEnemyBoidMovementComponent::ClampToNavMesh(const FVector& DesiredMovement, FVector& out)
-{
-	FNavLocation navLocation;
-	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	FVector offset;
-	FVector standIn;
-	GetOwner()->GetActorBounds(false, standIn, offset, false);
-	offset.X = 0;
-	offset.Y = 0;
-	FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
-
-	if (navSys && navSys->ProjectPointToNavigation(DesiredMovement, navLocation, NavMeshClampExtent))
-	{
-		out = navLocation.Location + FVector(0,0, offset.Z - 5.5);
-		return true;
-	}
-
-	return false;
-}
-
 void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
 	FVector startLocation = GetActorLocation();
@@ -368,26 +392,38 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	FNavLocation navLocation;
 	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	FVector offset;
-	FVector standIn;
-	GetOwner()->GetActorBounds(false, standIn, offset, false);
+	FVector origin;
+	GetOwner()->GetActorBounds(false, origin, offset, false);
 	offset.X = 0;
 	offset.Y = 0;
-	FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
+	
+	//FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
 
-	if (navSys && navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
-	{
-		//move it down slightly to trigger the slide along the surface, as when this is not down, the y jitter up and down sometimes
-		finalMovement.Z = navLocation.Location.Z + offset.Z;
-		EdgeAvoidanceVector = FVector::Zero();
-		LastValidPosition = navLocation.Location;
-	}
-	else
-	{
-		EdgeAvoidanceVector = GetActorFeetLocation() + desiredMovement - LastValidPosition;
-		return;
-	}
+	//DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
 
-	finalMovement -= startLocation;
+	if (navSys)
+	{
+		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
+		{
+			FVector newPosition = navLocation.Location + offset;// + offset.Z;
+			//move it down slightly to trigger the slide along the surface, as when this is not down, the y jitter up and down sometimes
+			finalMovement = navLocation.Location - startLocation;
+			
+			//EdgeAvoidanceVector = FVector::Zero();
+			LastValidPosition = newPosition;
+		}
+		else if (navSys->ProjectPointToNavigation(startLocation, navLocation, FVector(100,100,200)))
+		{
+			finalMovement = (navLocation.Location - startLocation).GetSafeNormal() * Velocity.Length();
+			//finalMovement.Z = navLocation.Location.Z + offset.Z;
+		}
+		else
+		{
+			return;
+		}
+	}
+	
+	
 
 	/*FVector offset;
 	FVector standIn;
@@ -411,66 +447,47 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	//fix if we have time
 	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
-	if (hit.IsValidBlockingHit())
+	if (hit.IsValidBlockingHit() && hit.Normal.Z > 0.8)
 	{
-		if (FMath::Abs(hit.Normal.Z) < MaxStepNormal)
-		{
-			FHitResult stepHit;
-			
-			FVector stepDown = UpdatedComponent->GetComponentLocation();
-
-			SafeMoveUpdatedComponent(FVector(0,0,StepHeight), GetOwner()->GetActorRotation(), true, stepHit);
-
-			if (!stepHit.IsValidBlockingHit())
-			{
-				
-
-				FHitResult secondHit;
-				SafeMoveUpdatedComponent(finalMovement * (1.f - hit.Time), GetOwner()->GetActorRotation(), true, secondHit);
-
-				if (secondHit.IsValidBlockingHit())
-				{
-					SlideAlongSurface(finalMovement, 1.f - secondHit.Time, secondHit.Normal, secondHit);
-					Velocity = FVector::VectorPlaneProject(Velocity, secondHit.Normal);
-				}
-
-				stepDown = stepDown - UpdatedComponent->GetComponentLocation();
-
-				FHitResult FinalHit;
-				//moving back down so that it only move up the amount need
-				SafeMoveUpdatedComponent(FVector(0, 0, -stepDown.Z), GetOwner()->GetActorRotation(), true, FinalHit);
-
-			/*	if (FinalHit.IsValidBlockingHit())
-				{
-					GetOwner()->SetActorLocation(FinalHit.Location + offset);
-				}*/
-
-			}
-		}
-		else
-		{
-			SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
-			Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
-		}
+		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
+		//		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
 	}
-}
 
-void UEnemyBoidMovementComponent::GroundSnap()
-{
-	FVector start = GetOwner()->GetActorLocation();
-	FVector end = start - FVector(0, 0, 1000.f);
-	FHitResult hit;
-	FCollisionQueryParams params;
-	params.AddIgnoredActor(GetOwner());
-	bool bHit = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECC_WorldStatic, params);
-	if (bHit)
-	{
-		FVector newLocation = hit.Location;
-		FVector offset;
-		FVector standIn;
-		GetOwner()->GetActorBounds(false, standIn, offset, false);
-		GetOwner()->SetActorLocation(newLocation + FVector(0,0, offset.Z));
-	}
+	//if (hit.IsValidBlockingHit())
+	//{
+	//	if (FMath::Abs(hit.Normal.Z) < MaxStepNormal)
+	//	{
+	//		FHitResult stepHit;
+	//		
+	//		FVector stepDown = UpdatedComponent->GetComponentLocation();
+
+	//		SafeMoveUpdatedComponent(FVector(0,0,StepHeight), GetOwner()->GetActorRotation(), true, stepHit);
+	//		if (!stepHit.IsValidBlockingHit())
+	//		{
+	//			
+	//			FHitResult secondHit;
+	//			SafeMoveUpdatedComponent(finalMovement * (1.f - hit.Time), GetOwner()->GetActorRotation(), true, secondHit);
+	//			if (secondHit.IsValidBlockingHit())
+	//			{
+	//				SlideAlongSurface(finalMovement, 1.f - secondHit.Time, secondHit.Normal, secondHit);
+	//				Velocity = FVector::VectorPlaneProject(Velocity, secondHit.Normal);
+	//			}
+	//			stepDown = stepDown - UpdatedComponent->GetComponentLocation();
+	//			FHitResult FinalHit;
+	//			//moving back down so that it only move up the amount need
+	//			SafeMoveUpdatedComponent(FVector(0, 0, -stepDown.Z), GetOwner()->GetActorRotation(), true, FinalHit);
+	//		/*	if (FinalHit.IsValidBlockingHit())
+	//			{
+	//				GetOwner()->SetActorLocation(FinalHit.Location + offset);
+	//			}*/
+	//		}
+	//	}
+	//	else
+	//	{
+	//		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
+	//		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
+	//	}
+	//}
 }
 
 void UEnemyBoidMovementComponent::UpdateRotation()
@@ -549,4 +566,21 @@ bool UEnemyBoidMovementComponent::IsAtTarget()
 	
 
 	//return false;
+}
+
+void UEnemyBoidMovementComponent::InitializeNavMeshPointer()
+{
+	UNavigationSystemV1* navSys = UNavigationSystemV1::GetCurrent(GetWorld());
+	if (!navSys)
+	{
+		return;
+	}
+
+	ARecastNavMesh* recastNavMesh = Cast<ARecastNavMesh>(navSys->GetDefaultNavDataInstance());
+	if (!recastNavMesh)
+	{
+		return;
+	}
+
+	ActiveNavMesh = recastNavMesh;
 }
