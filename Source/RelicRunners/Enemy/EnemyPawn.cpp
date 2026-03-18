@@ -26,6 +26,7 @@
 #include "NiagaraComponent.h"
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 
 // Sets default values
@@ -361,8 +362,14 @@ void AEnemyPawn::SpawnItem(int Luck)
 			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
 		}
 
+		UIconLibrary* Lib = nullptr;
+		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+		{
+			Lib = GI->GlobalIconLibrary;
+		}
+
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData, Lib),
 			this
 		);
 

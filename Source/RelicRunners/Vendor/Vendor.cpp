@@ -14,6 +14,7 @@
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 AVendor::AVendor()
 {
@@ -85,6 +86,12 @@ void AVendor::GenerateStock()
 	//Force no common items in shop
 	int LootQualityIncrease = 60;
 
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
 	for (int i = 0; i < 20; ++i)
 	{
 		int ItemLevel = FMath::RandRange(MinLevel, MaxLevel);
@@ -93,7 +100,8 @@ void AVendor::GenerateStock()
 			ItemLevel,
 			ItemStats::GetRandomItemType(),
 			ItemStats::GetRandomRarityWithLuck(LootQualityIncrease),
-			ItemMeshData
+			ItemMeshData,
+			Lib
 		));
 	}
 }

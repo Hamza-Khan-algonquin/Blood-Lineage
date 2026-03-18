@@ -75,6 +75,8 @@
 #include <RelicRunners/Objective/PandorasObjective.h>
 #include <NavigationSystem.h>
 #include <Blueprint/AIBlueprintHelperLibrary.h>
+#include "NavigationPath.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -821,7 +823,7 @@ void ARelicRunnersPlayerController::MinimapUI()
 {
 	if (!MinimapWidget) return;
 
-	if (MinimapWidget->IsVisible())
+	if (MinimapWidget->IsInViewport())
 	{
 		MinimapWidget->RemoveFromParent();
 	}
@@ -835,7 +837,7 @@ void ARelicRunnersPlayerController::PlayerHUDUI()
 {
 	if (!PlayerHUD) return;
 
-	if (PlayerHUD->IsVisible())
+	if (PlayerHUD->IsInViewport())
 	{
 		PlayerHUD->RemoveFromParent();
 	}
@@ -864,14 +866,7 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	{
 		LoadingScreen->RemoveFromParent();
 
-		if (GetWorld()->GetMapName().Contains(TEXT("BossLevel")))
-		{
-			StartBossCinematicWalk();
-		}
-		else
-		{
-			ForceGameModeOnly();
-		}
+		if (!GetWorld()->GetMapName().Contains(TEXT("BossLevel"))) ForceGameModeOnly();
 	}
 }
 
@@ -1355,47 +1350,52 @@ void ARelicRunnersPlayerController::BeginPlay()
 	}
 }
 
-void ARelicRunnersPlayerController::StartBossCinematicWalk()
+void ARelicRunnersPlayerController::Client_StartCinematicWalk_Implementation(FVector TargetLocation)
 {
-	APawn* ControlledPawn = GetPawn();
-	if (!ControlledPawn) return;
+	CinematicTargetLocation = TargetLocation;
+
+
+	MinimapUI(); 
+	PlayerHUDUI(); 
 
 	FInputModeUIOnly UIOnlyMode;
 	UIOnlyMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(UIOnlyMode);
 	SetIgnoreMoveInput(true);
 
-	MinimapUI();
-	PlayerHUDUI();
+	Server_ExecuteMove(TargetLocation);
 
-	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+	GetWorldTimerManager().SetTimer(CinematicTimerHandle, this, &ARelicRunnersPlayerController::CheckCinematicArrival, 0.1f, true);
+}
 
+void ARelicRunnersPlayerController::Server_ExecuteMove_Implementation(FVector Target)
+{
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	if (NavSys)
 	{
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, TargetLocation);
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Target);
 	}
-
-	GetWorldTimerManager().SetTimer(CinematicTimerHandle, this, &ARelicRunnersPlayerController::CheckCinematicArrival, 0.1f, true);
 }
 
 void ARelicRunnersPlayerController::CheckCinematicArrival()
 {
 	APawn* ControlledPawn = GetPawn();
-	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+	if (!ControlledPawn) return;
 
-	if (ControlledPawn && FVector::Dist(ControlledPawn->GetActorLocation(), TargetLocation) < 100.0f)
+	float Distance = FVector::Dist2D(ControlledPawn->GetActorLocation(), CinematicTargetLocation);
+
+	if (Distance < 150.0f)
 	{
 		FInputModeGameAndUI GameAndUIMode;
 		SetInputMode(GameAndUIMode);
-
 		SetIgnoreMoveInput(false);
+
+		PlayerHUDUI(); 
+		MinimapUI();   
+
 		GetWorldTimerManager().ClearTimer(CinematicTimerHandle);
 
-		PlayerHUDUI();
-		MinimapUI();
-
-		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Control Restored."));
+		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Local Control Restored."));
 	}
 }
 

@@ -19,6 +19,7 @@
 #include "CoreMinimal.h"
 #include "ItemData.h"
 #include "ItemMeshData.h"
+#include "IconLibrary.h"
 
 struct FTooltipData
 {
@@ -322,12 +323,12 @@ public:
         return Item;
     }
 
-    static FItemData CreateSpecificItemData(int Level, FString ItemType, UItemMeshData* MeshData)
+    static FItemData CreateSpecificItemData(int Level, FString ItemType, UItemMeshData* MeshData, UIconLibrary* IconLibrary)
     {
-        return CreateSpecificItemData(Level, ItemType, GetRandomRarity(), MeshData);
+        return CreateSpecificItemData(Level, ItemType, GetRandomRarity(), MeshData, IconLibrary);
     }
 
-    static FItemData CreateSpecificItemData(int Level, FString ItemType, FString Rarity, UItemMeshData* MeshData)
+    static FItemData CreateSpecificItemData(int Level, FString ItemType, FString Rarity, UItemMeshData* MeshData, UIconLibrary* IconLibrary)
     {
         FItemData ItemData;
         ItemData.Rarity = Rarity;
@@ -388,10 +389,20 @@ public:
         }
 
         if (MeshData) { SetItemMeshes(ItemData, MeshData); }
-        FString ImagePath = FString::Printf(TEXT("Texture2D'/Game/ThirdPerson/Icons/%s.%s'"), *ItemData.ItemType, *ItemData.ItemType);
-        if (UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *ImagePath)))
+
+        if (IconLibrary)
         {
-            ItemData.Icon = Texture;
+            FName KeyName = FName(*ItemData.ItemType);
+            UTexture2D** FoundTexturePtr = IconLibrary->IconMap.Find(KeyName);
+
+            if (FoundTexturePtr && *FoundTexturePtr)
+            {
+                ItemData.Icon = *FoundTexturePtr;
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Icon not found in Library for Type: %s"), *ItemData.ItemType);
+            }
         }
 
         return ItemData;
@@ -591,9 +602,9 @@ public:
         return Odds.Rarity3;
     }
 
-    static FItemData CreateRandomItemData(UItemMeshData* MeshData)
+    static FItemData CreateRandomItemData(UItemMeshData* MeshData, UIconLibrary* IconLibrary)
     {
-        return CreateSpecificItemData(FMath::RandRange(1,100), GetRandomItemType(), MeshData);
+        return CreateSpecificItemData(FMath::RandRange(1,100), GetRandomItemType(), MeshData, IconLibrary);
     }
 
     static void SetItemMeshes(FItemData& ItemData, UItemMeshData* MeshData)
