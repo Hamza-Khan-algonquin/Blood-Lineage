@@ -61,4 +61,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ares")
 	TSubclassOf<URageOfTheGods> BP_RageOfTheGodsClass;
+
+	TSet<AActor*> EnemiesHitThisSwing;
+	bool bIsSwinging = false;
 };

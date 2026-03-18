@@ -159,24 +159,6 @@ void AArtemisCharacter::GiveMoonBeam()
 	}
 }
 
-
-
-void AArtemisCharacter::PlayRandomAttackAnimation()
-{
-	if (!BasicAnim)
-		return;
-
-	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
-	if (!SkeletalMeshComponent)
-		return;
-
-	UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
-	if (!AnimInstance)
-		return;
-
-	AnimInstance->Montage_Play(BasicAnim, 1.f);
-}
-
 void AArtemisCharacter::PerformSwingTrace()
 {
 }
@@ -385,29 +367,54 @@ void AArtemisCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Vel
 
 void AArtemisCharacter::BasicAttack()
 {
-	FProjectileData NewProj;
+	if (!bCanBasicAttack)
+		return;
 
-	NewProj.Location = GetActorLocation() + GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
-	NewProj.Velocity = GetActorForwardVector() * ProjectileSpeed;
-	NewProj.Elapsed = 0.f;
-	NewProj.CurrentPierces = 0;
+	bCanBasicAttack = false;
 
-	// Spawn mesh
-	if (ProjectileMeshAsset)
-	{
-		UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(this);
-		ProjectileMesh->RegisterComponent();
-		ProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
-		ProjectileMesh->SetWorldLocation(NewProj.Location);
-		ProjectileMesh->SetWorldScale3D(FVector(1.f));
-		ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		ProjectileMesh->SetWorldRotation(NewProj.Velocity.Rotation());
-
-		NewProj.Mesh = ProjectileMesh;
-	}
-
-	ActiveProjectiles.Add(NewProj);
 	PlayRandomAttackAnimation();
+
+	float SpawnDelay = 0.3f;
+
+	TWeakObjectPtr<AArtemisCharacter> WeakThis(this);
+
+	FTimerHandle SpawnHandle;
+	GetWorldTimerManager().SetTimer(
+		SpawnHandle,
+		[WeakThis]()
+		{
+			if (!WeakThis.IsValid())
+				return;
+
+			AArtemisCharacter* Self = WeakThis.Get();
+			if (!Self) return;
+
+			FProjectileData NewProj;
+
+			NewProj.Location = Self->GetActorLocation() + Self->GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
+			NewProj.Velocity = Self->GetActorForwardVector() * Self->ProjectileSpeed;
+			NewProj.Elapsed = 0.f;
+			NewProj.CurrentPierces = 0;
+
+			// Spawn mesh
+			if (Self->ProjectileMeshAsset)
+			{
+				UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(Self);
+				ProjectileMesh->RegisterComponent();
+				ProjectileMesh->SetStaticMesh(Self->ProjectileMeshAsset);
+				ProjectileMesh->SetWorldLocation(NewProj.Location);
+				ProjectileMesh->SetWorldScale3D(FVector(1.f));
+				ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				ProjectileMesh->SetWorldRotation(NewProj.Velocity.Rotation());
+
+				NewProj.Mesh = ProjectileMesh;
+			}
+
+			Self->ActiveProjectiles.Add(NewProj);
+		},
+		SpawnDelay,
+		false
+	);
 }
 
 void AArtemisCharacter::HeavyAttack()
@@ -421,6 +428,33 @@ void AArtemisCharacter::ProjectileHeavyAttack()
 	bIsAiming = false;
 }
 
+void AArtemisCharacter::PlayRandomAttackAnimation()
+{
+	if (!BasicAnim)
+		return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance)
+		return;
+
+	float Duration = AnimInstance->Montage_Play(BasicAnim, 3.5f);
+
+	if (Duration > 0.f)
+	{
+		FOnMontageEnded EndDelegate;
+		EndDelegate.BindUObject(this, &AArtemisCharacter::OnAttackMontageEnded);
+
+		AnimInstance->Montage_SetEndDelegate(EndDelegate, BasicAnim);
+	}
+}
+
+void AArtemisCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == BasicAnim)
+	{
+		bCanBasicAttack = true;
+	}
+}
 
 void AArtemisCharacter::Tick(float DeltaTime)
 {

@@ -55,6 +55,7 @@ protected:
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	virtual void HeavyAttack() override;
 	virtual void ProjectileHeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
@@ -76,6 +77,8 @@ protected:
 	float ExplosionRadius = 100.f;
 
 	FTimerHandle TimerHandle_AttackCooldown;
+
+	bool bCanBasicAttack = true;
 
 	UPROPERTY()
 	TArray<FBasicProjectile> ActiveProjectiles;

@@ -178,9 +178,7 @@ void AAresCharacter::PerformSwingTrace()
 
 	TArray<FHitResult> Hits;
 
-	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params);
-
-	AlreadyHitActors.Empty();
+	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.f), Params);
 
 	for (const FHitResult& Hit : Hits)
 	{
@@ -189,18 +187,13 @@ void AAresCharacter::PerformSwingTrace()
 			if (!AlreadyHitActors.Contains(HitActor))
 			{
 				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-				{
 					Server_HitEnemy(Enemy, Damage);
-				}
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-				{
 					Server_HitEnemy(TEnemy, Damage);
-				}
 				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-				{
 					Server_HitEnemy(TPEnemy, Damage);
-				}
-				AlreadyHitActors.Add(HitActor);
+
+				AlreadyHitActors.Add(HitActor); // mark as hit
 			}
 		}
 	}
@@ -209,35 +202,22 @@ void AAresCharacter::PerformSwingTrace()
 void AAresCharacter::BasicAttack()
 {
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-
 	if (!CanBasicAttack) return;
-	CanBasicAttack = false;
 
-	Damage = 2.0f;
+	CanBasicAttack = false;
+	Damage = 70.0f;
+
+	AlreadyHitActors.Empty(); 
 
 	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-	{
 		PlayRandomAttackAnimation();
-	}
 
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&ARelicRunnersCharacter::ResetBasicAttack,BasicAttackCooldown,false);
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetBasicAttack, BasicAttackCooldown, false);
 }
 
 void AAresCharacter::HeavyAttack()
 {
-	//if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-	//if (!CanHeavyAttack) return;
-	//CanHeavyAttack = false;
-
-	//Damage = 12.0f;
-
-	//if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-	//{
-	//	PlayRandomAttackAnimation();
-	//}
-
-	//GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void AAresCharacter::UpdateCamera(float DeltaTime)

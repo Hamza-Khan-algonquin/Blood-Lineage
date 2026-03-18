@@ -179,9 +179,8 @@ void ANemesisCharacter::PerformSwingTrace()
     Params.AddIgnoredActor(this);
 
     TArray<FHitResult> Hits;
-    GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params);
 
-    AlreadyHitActors.Empty();
+    GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.f), Params);
 
     for (const FHitResult& Hit : Hits)
     {
@@ -190,18 +189,13 @@ void ANemesisCharacter::PerformSwingTrace()
             if (!AlreadyHitActors.Contains(HitActor))
             {
                 if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                {
                     Server_HitEnemy(Enemy, Damage);
-                }
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                {
                     Server_HitEnemy(TEnemy, Damage);
-                }
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                {
                     Server_HitEnemy(TPEnemy, Damage);
-                }
-                AlreadyHitActors.Add(HitActor);
+
+                AlreadyHitActors.Add(HitActor); // mark as hit
             }
         }
     }
@@ -210,16 +204,15 @@ void ANemesisCharacter::PerformSwingTrace()
 void ANemesisCharacter::BasicAttack()
 {
     if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-
     if (!CanBasicAttack) return;
-    CanBasicAttack = false;
 
-    Damage = 1.0f;
+    CanBasicAttack = false;
+    Damage = 50.0f;
+
+    AlreadyHitActors.Empty();
 
     if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-    {
         PlayRandomAttackAnimation();
-    }
 
     GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetBasicAttack, BasicAttackCooldown, false);
 }

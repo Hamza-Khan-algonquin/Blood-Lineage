@@ -53,6 +53,7 @@ protected:
 	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
 
     virtual void PlayRandomAttackAnimation() override;
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	virtual void PerformSwingTrace() override;
 	void ShowReticle();
 	void HideReticle();
@@ -84,6 +85,8 @@ protected:
 
 	UPROPERTY()
 	float ProjectileDamage;
+
+	bool bCanBasicAttack = true;
 
 	FVector PreviousProjectileLocation;
 
