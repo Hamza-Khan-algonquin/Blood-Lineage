@@ -141,6 +141,9 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerStartingDexterity = this->PlayerStartingDexterity;
 		PS->PlayerStartingStrength = this->PlayerStartingStrength;
 		PS->PlayerStartingIntelligence = this->PlayerStartingIntelligence;
+		PS->LevelsEarned = this->LevelsEarned;
+		PS->PlayerDeaths = this->PlayerDeaths;
+		PS->EnemiesKilled = this->EnemiesKilled;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)
@@ -468,6 +471,7 @@ void ARelicRunnersPlayerState::OnLevelUp()
 {
 	PlayerXP -= PlayerXPToLevel;
 	PlayerLevel++;
+	LevelsEarned++;
 	PlayerStartingLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
 
@@ -921,5 +925,8 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, IsHost);
 	DOREPLIFETIME(ARelicRunnersPlayerState, DeathState);
 	DOREPLIFETIME(ARelicRunnersPlayerState, bIsInvincible);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerDeaths);
+	DOREPLIFETIME(ARelicRunnersPlayerState, LevelsEarned);
+	DOREPLIFETIME(ARelicRunnersPlayerState, EnemiesKilled);
 }
 

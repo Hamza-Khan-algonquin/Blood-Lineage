@@ -221,6 +221,21 @@ public:
 	int MetaXPToNextLevel;
 	int MetaXPGainInRun;
 
+	UPROPERTY(Replicated)
+	int PlayerDeaths = 0;
+
+	int GetDeaths() { return PlayerDeaths; }
+
+	UPROPERTY(Replicated)
+	int EnemiesKilled = 0;
+
+	int GetEnemiesKilled() { return EnemiesKilled; }
+
+	UPROPERTY(Replicated)
+	int LevelsEarned = 0;
+
+	int GetLevelsEarned() { return LevelsEarned; }
+
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;
     UAttributeSet* GetAttributeSet() const { return AttributeSet; }

@@ -196,7 +196,7 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 			if (PS)
 			{
 				PS->AddExperience(CalculateXP());
-				
+				PS->EnemiesKilled++;
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
 				SpawnItem(PlayerLuck);
 			}
