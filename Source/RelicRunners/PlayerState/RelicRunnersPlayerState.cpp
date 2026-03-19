@@ -496,16 +496,19 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	{
 		StartingWeapon = "Bow";
 		DexterityIncrease = 3;
+		StrengthIncrease = 2;
 	}
 	else if (SelectedClass == "Aphrodite")
 	{
 		StartingWeapon = "Staff";
 		IntelligenceIncrease = 3;
+		StrengthIncrease = 1;
 	}
 	else if (SelectedClass == "Nemesis")
 	{
 		StartingWeapon = "Sword";
 		DexterityIncrease = 3;
+		StrengthIncrease = 4;
 	}
 	else
 	{
