@@ -227,10 +227,16 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 
 	UE_LOG(LogTemp, Log, TEXT("SERVER: Generating items using PlayerState MeshData."));
 
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
 	for (int i = 0; i < 4; i++)
 	{
 		FString RandomType = ItemStats::GetRandomItemType();
-		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, "Common", ItemMeshData);
+		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, "Common", ItemMeshData, Lib);
 		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
 		if (!Item) continue;
 
@@ -261,7 +267,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		StartingWeapon = "Greatsword";
 	}
 
-	UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData), InventoryComponent);
+	UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData, Lib), InventoryComponent);
 	InventoryComponent->AddItem(Item);
 	Server_EquipItemByID(Item->ItemData.UniqueID);
 

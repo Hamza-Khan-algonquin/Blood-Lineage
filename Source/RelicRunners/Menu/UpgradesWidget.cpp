@@ -99,7 +99,7 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 		TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, "", "");
 	}
 
-	StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+	StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
 	StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
 
 	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);

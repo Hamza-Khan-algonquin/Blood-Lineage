@@ -12,7 +12,9 @@
 #include "RelicRunners/Item/ItemData.h"
 #include "RelicRunners/Inventory/Inventory.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 AVendor::AVendor()
 {
@@ -57,10 +59,50 @@ void AVendor::GenerateStock()
 	{
 		return;
 	}
+	
+	int MinLevel = 999;
+	int MaxLevel = 1;
+	bool FoundPlayers = false;
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get());
+		if (TargetPC && TargetPC->PlayerState)
+		{
+			int PlayerLevel = TargetPC->GetPlayerState<ARelicRunnersPlayerState>()->PlayerLevel;
+
+			MinLevel = FMath::Min(MinLevel, PlayerLevel);
+			MaxLevel = FMath::Max(MaxLevel, PlayerLevel);
+			FoundPlayers = true;
+		}
+	}
+
+	if (!FoundPlayers)
+	{
+		MinLevel = 1;
+		MaxLevel = 1;
+	}
+
+	//Force no common items in shop
+	int LootQualityIncrease = 60;
+
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
 
 	for (int i = 0; i < 20; ++i)
 	{
-		Stock.Add(ItemStats::CreateSpecificItemData(1, ItemStats::GetRandomItemType(), ItemMeshData));
+		int ItemLevel = FMath::RandRange(MinLevel, MaxLevel);
+
+		Stock.Add(ItemStats::CreateSpecificItemData(
+			ItemLevel,
+			ItemStats::GetRandomItemType(),
+			ItemStats::GetRandomRarityWithLuck(LootQualityIncrease),
+			ItemMeshData,
+			Lib
+		));
 	}
 }
 
