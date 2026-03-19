@@ -234,6 +234,7 @@ public:
 	TArray<class AObjectiveBase*> ObjectiveArrays;
 
 	TArray<class APackedLevelActor*> ObstacleArrays;
+	TArray<class UInstancedStaticMeshComponent*> InstanceMeshComponentArray;
 
 	class ALevelChangeTrigger* LevelTrigger;
 

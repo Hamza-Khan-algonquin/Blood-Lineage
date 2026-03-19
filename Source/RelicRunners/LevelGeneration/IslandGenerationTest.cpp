@@ -49,10 +49,10 @@ AIslandGenerationTest::AIslandGenerationTest() :
 	LevelTrigger(nullptr),
 	IsActivated(false)
 {
-	PrimaryActorTick.bCanEverTick = false;
-
 	USceneComponent* RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
 	RootComponent = RootScene;
+
+	PrimaryActorTick.bCanEverTick = false;
 
 	GenerationValuesComponent = CreateDefaultSubobject<UIslandSpawningValuesComponent>("GenerationValues");
 	GenerationValuesComponent->SetIsReplicated(true);
@@ -222,7 +222,7 @@ void AIslandGenerationTest::ActivateIsland()
 	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
 	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
 
-	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset + GetActorLocation(), GetActorRotation());
+	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset + GetActorLocation() + FVector(0,0,10000), GetActorRotation());
 }
 
 void AIslandGenerationTest::SetIslandVisibility(bool visible)
@@ -255,6 +255,11 @@ void AIslandGenerationTest::SetIslandVisibility(bool visible)
 	for (AObjectiveBase* obj : ObjectiveArrays)
 	{
 		obj->SetActorHiddenInGame(!visible);
+	}
+
+	for (UInstancedStaticMeshComponent* ismComp : InstanceMeshComponentArray)
+	{
+		ismComp->SetVisibility(visible);
 	}
 
 	if (FloorISMComp)
@@ -1647,23 +1652,48 @@ void AIslandGenerationTest::CreateFloor()
 	if (FullFloorPieceTransforms.IsEmpty())
 		return;
 
+	UInstancedStaticMeshComponent* ISMComp = NewObject<UInstancedStaticMeshComponent>(this, TEXT("IslandFloorComponent"));
+	ISMComp->SetIsReplicated(true);
+	ISMComp->SetupAttachment(RootComponent);
+	ISMComp->SetCollisionObjectType(ECC_GameTraceChannel3);
+
+	ISMComp->SetNetAddressable();
+	AddInstanceComponent(ISMComp);
+
 	if (GenerationValuesComponent->FloorMeshes.FullFloorMesh)
 	{
-		if (FloorISMComp->GetStaticMesh() != nullptr && FloorISMComp->GetStaticMesh() != GenerationValuesComponent->FloorMeshes.FullFloorMesh)
-		{
-			FloorISMComp->SetStaticMesh(GenerationValuesComponent->FloorMeshes.FullFloorMesh);
-		}
+		ISMComp->SetStaticMesh(GenerationValuesComponent->FloorMeshes.FullFloorMesh);
 	}
 	if (GenerationValuesComponent->FloorMeshes.FloorMaterial)
 	{
-		if (FloorISMComp->GetMaterial(0) != nullptr && FloorISMComp->GetMaterial(0) != GenerationValuesComponent->FloorMeshes.FloorMaterial)
-		{
-			FloorISMComp->SetMaterial(0, GenerationValuesComponent->FloorMeshes.FloorMaterial);
-		}
+		ISMComp->SetMaterial(0, GenerationValuesComponent->FloorMeshes.FloorMaterial);
 	}
 
-	FloorISMComp->AddInstances(FullFloorPieceTransforms, false, false, true);
-	FloorISMComp->RegisterComponent();
+	ISMComp->AddInstances(FullFloorPieceTransforms, false, false, true);
+
+	ISMComp->RegisterComponent();
+
+	InstanceMeshComponentArray.Add(ISMComp);
+
+	//if (GenerationValuesComponent->FloorMeshes.FullFloorMesh)
+	//{
+	//	if (FloorISMComp->GetStaticMesh() != nullptr && FloorISMComp->GetStaticMesh() != GenerationValuesComponent->FloorMeshes.FullFloorMesh)
+	//	{
+	//		FloorISMComp->SetStaticMesh(GenerationValuesComponent->FloorMeshes.FullFloorMesh);
+	//	}
+	//}
+	//if (GenerationValuesComponent->FloorMeshes.FloorMaterial)
+	//{
+	//	if (FloorISMComp->GetMaterial(0) != nullptr && FloorISMComp->GetMaterial(0) != GenerationValuesComponent->FloorMeshes.FloorMaterial)
+	//	{
+	//		FloorISMComp->SetMaterial(0, GenerationValuesComponent->FloorMeshes.FloorMaterial);
+	//	}
+	//}
+
+	//FloorISMComp->SetCanEverAffectNavigation(true);
+	//FloorISMComp->AddInstances(FullFloorPieceTransforms, false, false, true);
+	//FloorISMComp->RegisterComponent();
+
 }
 
 void AIslandGenerationTest::IncrementObjective()

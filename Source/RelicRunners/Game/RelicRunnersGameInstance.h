@@ -116,6 +116,9 @@ public:
     UPROPERTY(Replicated)
     int StageNumber = 0;
 
+    UPROPERTY(BlueprintReadOnly, Category = "Session")
+    bool bIsMatchLocked = false;
+
 private:
 
 

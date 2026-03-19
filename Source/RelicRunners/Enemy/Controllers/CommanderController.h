@@ -43,6 +43,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	APawn* TargetPlayer;
 
+	float TargetDistance;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TMap<TObjectPtr<APawn>, float> RemainingTimeToAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -94,6 +96,9 @@ public:
 	void UpdateTarget(APawn* newTarget);
 protected:
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void InitializeDirectorBinding();
 	virtual void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION(BlueprintCallable)
