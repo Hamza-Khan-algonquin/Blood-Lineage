@@ -13,7 +13,9 @@ class RELICRUNNERS_API UFlowFieldComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
-public:
+
+
+protected:
 	UPROPERTY()
 	//NavNodeRef is just a uint64 so I use that instead of a FNavNodeRef to avoid a include
 	TMap<uint64, FVector> FlowField;
@@ -23,7 +25,7 @@ public:
 	ARecastNavMesh* ActiveNavMesh;
 	UPROPERTY(EditAnywhere)
 	float FieldRadius;
-protected:
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere)
 	bool DrawFlowField = false;
@@ -32,6 +34,8 @@ public:
 	// Sets default values for this component's properties
 	UFlowFieldComponent();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
+	FVector GetDirection(FVector location, FVector extent);
+	float GetFieldRadius() { return FieldRadius; }
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

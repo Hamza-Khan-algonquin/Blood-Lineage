@@ -9,6 +9,7 @@
 #include "DrawDebugHelpers.h"
 #include "NavMesh/RecastNavMesh.h"
 #include "Detour/DetourNavMeshQuery.h"
+#include "RelicRunners/Flow Field/FlowFieldComponent.h"
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -96,9 +97,14 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 	FVector finalInflunceVector = { 0,0,0 };
 
+	float distanceToTarget = 0;
+
 	FVector targetDirection;
+	FVector targetPosition;
 	//just define as a big number to get ride of a warning
 	float distanceFromTargetRadius = 100000;
+
+	APawn* target = Commander->GetCurrentTarget();
 
 	//int boidsEffectingSeparation = 0;
 
@@ -111,10 +117,11 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		targetDirection = BundleOfJoyLocation - GetOwner()->GetActorLocation();
 		
 	}
-	else if(APawn * target = Commander->GetCurrentTarget())
+	else if(IsValid(target))
 	{
-		targetDirection = target->GetActorLocation() - GetOwner()->GetActorLocation();
-		float distanceToTarget = targetDirection.Size();
+		targetPosition = target->GetActorLocation();
+		targetDirection = targetPosition - GetOwner()->GetActorLocation();
+		distanceToTarget = targetDirection.Size();
 		distanceFromTargetRadius = distanceToTarget - TargetRadius;
 
 		if (FocuseMode == EBoidFocuseMode::Velocity && distanceToTarget <= FocuseOnTargetDistance && Commander->BoidShouldFocusePlayer)
@@ -195,79 +202,36 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 		finalInflunceVector += targetDirection.GetSafeNormal() * BundleOfJoyWeight;
 		//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + targetVector.GetSafeNormal() * BundleOfJoyWeight, FColor::Purple, false, 0.1, 0, 3);
 	}
-	else if (Commander->GetCurrentTarget())
-	{
-		if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
-		{
-			targetVector = targetDirection.GetSafeNormal() * FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceMultiplier, MaxTargetDistanceMultiplier);
-		}
-		else
-		{
-			targetVector = FVector::Zero();
-
-			//target direction is already normalized so don't need to worry about the dividing step in projection
-			targetDirection.Normalize();
-
-			//project alignmentVector on to targetDirection and than subtract that from aligment to get a perpendicular angle to targetDirection that magnitude is the differents in between the project and aligment vectors
-			//Desmos has a 3d graphing calculator now. yaaaaa
-			alignmentVector -= targetDirection * FVector::DotProduct(alignmentVector, targetDirection);
-			alignmentVector.Normalize();
-
-			coherenceVector -= targetDirection * FVector::DotProduct(coherenceVector, targetDirection);
-			coherenceVector.Normalize();
-
-
-			alignmentVector = FVector::Zero();
-			coherenceVector = FVector::Zero();
-		}
-
-		finalInflunceVector += (targetVector * TargetWeight);
-
-		/*targetDirection.Normalize();
-		FVector orbitVector = FVector::CrossProduct(targetDirection, FVector::UpVector);
-		finalInflunceVector += (orbitVector * OrbitWeight);*/
-		
-	}
-
-/*	FVector edgeVector = FVector::Zero();
-	FVector inVector = (LastValidPosition - GetActorLocation());
-	inVector.Z = 0;
-	inVector = inVector.GetSafeNormal();
-	if (!EdgeAvoidanceVector.IsNearlyZero())
-	{
-		edgeVector = -EdgeAvoidanceVector.GetSafeNormal();
-
-		
-		FVector leftDirection = FVector::CrossProduct(FVector::UpVector, edgeVector);
-		FVector goal = finalInflunceVector.GetSafeNormal();
-
-		//"|" is the dot product. I just felt like
-		if ((goal | leftDirection) > 0)
-		{
-			edgeVector = leftDirection.GetSafeNormal();
-		}
-		else
-		{
-			edgeVector = -leftDirection.GetSafeNormal();
-		}
-		
-		if (FVector::DotProduct(edgeVector, LastEdgeVector) < 0.f)
-		{
-			edgeVector = -edgeVector;
-		}
-	}
-	
-	if (!LastEdgeVector.IsNearlyZero() || !edgeVector.IsZero())
-	{
-		edgeVector = FMath::VInterpTo(LastEdgeVector, edgeVector, delta, 5);
-		LastEdgeVector = edgeVector;
-		finalInflunceVector += (edgeVector + inVector * 0.5).GetSafeNormal() * finalInflunceVector.Length();//EdgeAvoidanceWeight;
-	}*/
-
 
 	if (ActiveNavMesh)
 	{
 		FNavLocation navLocation;
+
+		if (!IsAffectiveByBundleOfJoy && IsValid(target))
+		{
+
+			if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
+			{
+				float targetMult = FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceMultiplier, MaxTargetDistanceMultiplier);
+				FVector StartLocation = UpdatedComponent->GetComponentLocation();
+				FVector EndLocation = targetPosition;
+				FVector HitLocation;
+				bool didHit = ActiveNavMesh->NavMeshRaycast(ActiveNavMesh, StartLocation, EndLocation, HitLocation, ActiveNavMesh->GetDefaultQueryFilter(), this);
+
+				UFlowFieldComponent* flowField = target->GetComponentByClass<UFlowFieldComponent>();
+
+				if (didHit && IsValid(flowField) && distanceFromTargetRadius < TargetRadius && flowField->GetFieldRadius() < distanceToTarget)
+				{
+					targetVector = flowField->GetDirection(UpdatedComponent->GetComponentLocation(), { 100,100,100 }) * targetMult;
+				}
+				else
+				{
+					targetVector = targetDirection.GetSafeNormal() * targetMult;
+				}
+			}
+
+			finalInflunceVector += (targetVector * TargetWeight);
+		}
 
 		if (ActiveNavMesh->ProjectPoint(GetActorLocation(), navLocation, WallAvoidanceExtent))
 		{

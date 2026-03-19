@@ -36,6 +36,19 @@ void UFlowFieldComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+FVector UFlowFieldComponent::GetDirection(FVector location, FVector extent)
+{
+	FNavLocation navLocation;
+
+	ActiveNavMesh->ProjectPoint(location, navLocation, extent);
+	if (FlowField.Contains(navLocation.NodeRef))
+	{
+		return FlowField[navLocation.NodeRef];
+	}
+
+	return FVector::Zero();
+}
+
 
 // Called when the game starts
 void UFlowFieldComponent::BeginPlay()
@@ -56,7 +69,6 @@ void UFlowFieldComponent::BeginPlay()
 	}
 
 	ActiveNavMesh = recastNavMesh;
-	
 }
 
 inline void UFlowFieldComponent::GenerateFlowField(FVector targetLocation)
