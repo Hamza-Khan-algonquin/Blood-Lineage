@@ -95,13 +95,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		return 0;
 	}
 
-	if (HasAuthority())
-	{
-		HitFlash();
-
-		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
-	}
+	
 	
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -125,6 +119,14 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 				//RemainingStunTime = AttackDamageEvent->StunDuration;
 			}
 		}
+
+		if (HasAuthority())
+		{
+			HitFlash();
+
+			FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+			ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
+		}
 	}
 
 	return DamageAmount;
@@ -139,27 +141,6 @@ void AEnemyPawn::HitFlash_Implementation()
 
 	HitFlashTimeline.PlayFromStart();
 	SetActorTickEnabled(true);
-	//HitFlashTimeline.SetPlaybackPosition(0.0f, false);
-	//HitFlashTimeline.Play();
-/*	for (UMaterialInstanceDynamic* element : DynamicMaterials)
-	{
-		if (element)
-		{
-			element->SetScalarParameterValue("HitFlashValue", 10.0f);
-		}
-	}
-	//DynamicMaterial->SetScalarParameterValue("HitFlashValue", 10.0f);
-
-	FTimerHandle temp;
-	GetWorldTimerManager().SetTimer(temp, [this]() {
-		for (UMaterialInstanceDynamic* element : this->DynamicMaterials)
-		{
-			if (element)
-			{
-				element->SetScalarParameterValue("HitFlashValue", 0.0f);
-			}
-		}
-	}, 0.5f, false);*/
 }
 
 void AEnemyPawn::UpdateHitFlash(float strength)
@@ -176,6 +157,7 @@ void AEnemyPawn::UpdateHitFlash(float strength)
 void AEnemyPawn::EndHitFlash()
 {
 	HitFlashTimeline.Stop();
+	UpdateHitFlash(0);
 	if (!IsAttacking)
 	{
 		SetActorTickEnabled(false);
@@ -227,14 +209,14 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
 {
-	if (!DeathEffect)
+	EndHitFlash();
+
+	if (DeathEffect)
 	{
-		return;
+		UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
+
+		deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
 	}
-
-	UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
-
-	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
 }
 
 inline bool AEnemyPawn::IsDead()

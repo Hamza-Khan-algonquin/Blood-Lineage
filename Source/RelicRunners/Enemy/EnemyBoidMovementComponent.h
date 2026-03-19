@@ -134,13 +134,16 @@ protected:
 	UPROPERTY()
 	TArray<FMoveData> MoveDataBuffer;
 
-	//This is client side only and should not be replicated
-	//How far back in time the client should interpolate the server data and is based on a rough-ish average time between server updates using lerp. 
+	
 	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
 	float InterpDelay;
 	//The max distance the client is allowed to be from the server location before it snaps to it. 
 	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
 	float MaxClientLocationDeviation;
+	UPROPERTY()
+	float AvgReplicationDelta;
+	UPROPERTY()
+	float TargetInterpDelay;
 public:
 	UEnemyBoidMovementComponent();
 
@@ -168,6 +171,6 @@ public:
 	UFUNCTION()
 	void OnRep_ServerMoveData();
 	UFUNCTION()
-	void ClientSideEntityInterpolation();
+	void ClientSideEntityInterpolation(float delta);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

@@ -35,6 +35,7 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	IsKnockedBack = false;
 	InterpDelay = 0.1f;
 	MaxClientLocationDeviation = 200.f;
+	AvgReplicationDelta = 0.1f;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -44,7 +45,7 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	if (GetOwnerRole() != ROLE_Authority && !IsKnockedBack)
 	{
-		ClientSideEntityInterpolation();
+		ClientSideEntityInterpolation(DeltaTime);
 
 		return;
 	}
@@ -405,13 +406,15 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	GetOwner()->GetActorBounds(true, origin, offset, false);
 	offset.X = 0;
 	offset.Y = 0;
+	offset.Z -= 10;
 	
 	//FVector actualExtent = GetActorFeetLocation() + offset;//NavMeshClampExtent + offset;
 
 	//DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
 
-	if (navSys)
+	if (navSys)//ActiveNavMesh)
 	{
+		//ActiveNavMesh->FindMoveAlongSurface(*GetOwner(), finalMovement, navLocation, NavMeshClampExtent);
 		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
 		{
 			FVector newPosition = navLocation.Location + offset;// + offset.Z;
@@ -433,34 +436,13 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 		}
 	}
 	
-	
 
-	/*FVector offset;
-	FVector standIn;
-	GetOwner()->GetActorBounds(false, standIn, offset, false);
-
-	FNavLocation navLocation;
-	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	if (navSys->ProjectPointToNavigation(finalMovement, navLocation, GetActorFeetLocation() + offset))
-	{
-		finalMovement.Z = navLocation.Location.Z; 
-	}
-	else
-	{
-		return;
-	}
-
-	finalMovement -= GetOwner()->GetActorLocation();*/
-
-	//GetOwner()->SetActorLocation(finalMovement);
-
-	//fix if we have time
 	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
 	if (hit.IsValidBlockingHit() && hit.Normal.Z > 0.8)
 	{
 		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
-		//		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
+		//Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);
 	}
 
 	
@@ -565,30 +547,41 @@ void UEnemyBoidMovementComponent::OnRep_ServerMoveData()
 {
 	ServerMoveData.TimeStamp = GetWorld()->GetTimeSeconds();
 
-	if (MoveDataBuffer.Num() > 1)
+/*	if (MoveDataBuffer.Num() > 2)
 	{
 		float clientDelta = ServerMoveData.TimeStamp - MoveDataBuffer.Last().TimeStamp;
 
 		//Finds the delay between the server and client and lerps towards it to make sure the interpolation is smooth when the delay changes. This is just simpluare than calculating the true average delay.
-		InterpDelay = FMath::Lerp(InterpDelay, clientDelta, 0.2f);
-	}
+		AvgReplicationDelta = FMath::Lerp(AvgReplicationDelta, clientDelta, 0.05f);
+
+		TargetInterpDelay = FMath::Clamp(AvgReplicationDelta * 1.5f, 0.05f, 0.5f);
+	}*/
 
 	MoveDataBuffer.Add(ServerMoveData);
-	if (MoveDataBuffer.Num() > 5)
+
+	if (MoveDataBuffer.Num() > 6)
 	{
 		MoveDataBuffer.RemoveAt(0);
 	}
 
 }
 
-void UEnemyBoidMovementComponent::ClientSideEntityInterpolation()
+void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 {
 	if (MoveDataBuffer.Num() < 2)
 	{
 		return;
 	}
 
-	float clientRenderTime = GetWorld()->GetTimeSeconds() - InterpDelay;
+	float clientDelta = MoveDataBuffer.Last().TimeStamp - MoveDataBuffer[MoveDataBuffer.Num() - 2].TimeStamp;
+
+	AvgReplicationDelta = FMath::FInterpTo(AvgReplicationDelta, clientDelta, delta, 1.0f);
+
+	TargetInterpDelay = FMath::Clamp(AvgReplicationDelta * 1.5f, 0.05f, 0.5f);
+
+	InterpDelay = FMath::FInterpTo(InterpDelay, TargetInterpDelay, delta, 5.0f);
+
+	float clientRenderTime = GetWorld()->GetTimeSeconds() - (InterpDelay);
 
 	//loop through the move data buffer and find the two move data that the client render time is in between
 	for (int i = 0; i < MoveDataBuffer.Num() - 1; i++)
