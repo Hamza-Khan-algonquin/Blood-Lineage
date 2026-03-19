@@ -89,7 +89,7 @@ public:
     {
         FTooltipData Data;
 
-        if (!BorderType.Contains("Ability") && !BorderType.Contains("Difficulty"))
+        if (!BorderType.Contains("Ability") && !BorderType.Contains("Difficulty") && !BorderType.Contains("HealthPotion"))
         {
             Data.Value = FText::AsNumber(StatValue);
         }
@@ -191,6 +191,13 @@ public:
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
             Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Luck per meta point.</>"));
+        }
+        else if (BorderType == "HealthPotion")
+        {
+            Data.Name = FText::FromString("Health Potion");
+            Data.Icon = LoadIcon("PotionIcon");
+            Data.IconColor = GetIconColor("Purity");
+            Data.Descriptions.Add(FText::FromString("<Default>Heals player based off of purity stat.</>"));
         }
         else if (BorderType == "Purity")
         {
@@ -324,11 +331,33 @@ public:
             Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
         }
+        else if (BorderType == "CurrentDifficulty")
+        {
+            Data.Name = FText::FromString(AbilityName + " | Difficulty");
+            Data.Icon = LoadIcon(AbilityName + "Difficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+            }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {
             Data.Icon = nullptr;
             Data.Name = FText::FromString(AbilityName);
             Data.Descriptions.Add(FText::FromString(AbilityDesc));
+        }
+        else if (BorderType == "AbilityUpgrade")
+        {
+            Data.Name = FText::FromString("Stat Upgrade");
+            Data.Icon = LoadIcon("AbilityIcon");
+            Data.IconColor = GetIconColor("EnemyDamage");
+            Data.Descriptions.Add(FText::FromString("<Default>Spend points to get additional stats.</>"));
         }
 
         return Data;

@@ -257,6 +257,9 @@ public:
 	class UBorder* B_CerberusSection;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_CerberusSection1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_CurrentSection1;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_Start = nullptr;
 
