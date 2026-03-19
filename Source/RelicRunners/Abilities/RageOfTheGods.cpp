@@ -78,6 +78,11 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
     }
 
+    if (ActorInfo->AvatarActor->HasAuthority())
+    {
+        PS->Multicast_SpawnVFX(FVector(0, 0, 0), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
+    }
+
     LastUseTime = World->GetTimeSeconds();
 
     PulsesExecuted = 0;
@@ -104,9 +109,6 @@ void URageOfTheGods::StartPulse()
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, false, false);
         return;
     }
-
-
-
 
     TWeakObjectPtr<URageOfTheGods> WeakThis(this);
     GetWorld()->GetTimerManager().SetTimer(ExpansionTimerHandle, [WeakThis, WeakAvatar](){if (!WeakThis.IsValid() || !WeakAvatar.IsValid()) return;WeakThis->ExpandPulse(WeakAvatar.Get());}, 0.05f, true);

@@ -41,6 +41,8 @@ protected:
     float DotDuration;
     float DotTimeElapsed;
 
-    UPROPERTY()
-    TObjectPtr<UFXSystemComponent> SpawnedVFXComponent;
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<AActor> ProjectileClass;
+
+    AActor* SpawnedProjectile = nullptr;
 };

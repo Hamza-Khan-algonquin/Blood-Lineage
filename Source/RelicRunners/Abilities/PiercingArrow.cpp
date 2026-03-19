@@ -89,6 +89,16 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     // Arc trajectory
     ProjectileVelocity = AvatarActor->GetActorForwardVector() * 3200.f + FVector(0, 0, 100.f);
 
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Owner = AvatarActor;
+    SpawnParams.Instigator = Cast<APawn>(AvatarActor);
+
+    SpawnedProjectile = World->SpawnActor<AActor>(
+        ProjectileClass,
+        ProjectileLocation,
+        AvatarActor->GetActorRotation(),
+        SpawnParams
+    );
 
     // Start ticking projectile
     World->GetTimerManager().SetTimer(ProjectileTimer, this, &UPiercingArrow::TickArrow, 0.016f, true);
@@ -111,6 +121,13 @@ void UPiercingArrow::TickArrow()
     ProjectileVelocity.Z += Gravity * DeltaTime;
 
     FVector NewLocation = ProjectileLocation + ProjectileVelocity * DeltaTime;
+
+    if (SpawnedProjectile)
+    {
+        SpawnedProjectile->SetActorLocation(ProjectileLocation);
+
+        SpawnedProjectile->SetActorRotation(ProjectileVelocity.Rotation());
+    }
 
     FHitResult Hit;
     FCollisionQueryParams Params;
@@ -149,8 +166,10 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
     DotCenter = ImpactPoint;
     DotTimeElapsed = 0.f;
 
-    // Draw debug explosion field
-    DrawDebugSphere(World, DotCenter, AreaRadius, 16, FColor::Red, false, DotDuration);
+    if (SpawnedProjectile)
+    {
+        SpawnedProjectile->Destroy();
+    }
 
     // Start DoT ticking
     World->GetTimerManager().SetTimer(DotTimer,this,&UPiercingArrow::ApplyDotTick,DotTickRate,true);
