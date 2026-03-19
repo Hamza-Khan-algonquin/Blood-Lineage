@@ -84,7 +84,7 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 
     // Initial projectile setup
-    ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+    ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 500.f + FVector(0, 0, 50.f);
 
     // Arc trajectory
     ProjectileVelocity = AvatarActor->GetActorForwardVector() * 3200.f + FVector(0, 0, 100.f);
@@ -93,12 +93,7 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     SpawnParams.Owner = AvatarActor;
     SpawnParams.Instigator = Cast<APawn>(AvatarActor);
 
-    SpawnedProjectile = World->SpawnActor<AActor>(
-        ProjectileClass,
-        ProjectileLocation,
-        AvatarActor->GetActorRotation(),
-        SpawnParams
-    );
+    SpawnedProjectile = World->SpawnActor<AActor>(ProjectileClass,ProjectileLocation,AvatarActor->GetActorRotation(),SpawnParams);
 
     // Start ticking projectile
     World->GetTimerManager().SetTimer(ProjectileTimer, this, &UPiercingArrow::TickArrow, 0.016f, true);
@@ -136,9 +131,6 @@ void UPiercingArrow::TickArrow()
     bool bHit = World->SweepSingleByChannel(Hit,ProjectileLocation,NewLocation,FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(ProjectileRadius),Params);
 
 
-    //debug sphere at the projectile location
-    //DrawDebugSphere(World, NewLocation, ProjectileRadius, 12, FColor::Yellow, false, 0.1f);
-
     if (bHit)
     {
         // debug sphere
@@ -168,7 +160,7 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
 
     if (SpawnedProjectile)
     {
-        SpawnedProjectile->Destroy();
+        //SpawnedProjectile->Destroy();
     }
 
     // Start DoT ticking
