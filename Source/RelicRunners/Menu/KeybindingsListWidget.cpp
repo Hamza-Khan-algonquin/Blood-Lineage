@@ -48,7 +48,7 @@ void UKeybindingsListWidget::OnBindButtonClicked()
         Settings->StartRebinding(this);
     }
 
-    if (TB_Bind) TB_Bind->SetText(FText::FromString(TEXT("???")));
+    //if (TB_Bind) TB_Bind->SetText(FText::FromString(TEXT("???")));
 }
 
 UKeybindingsListData* UKeybindingsListWidget::GetKeybindData() const
