@@ -84,7 +84,7 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 
     // Initial projectile setup
-    ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 500.f + FVector(0, 0, 50.f);
+    ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
 
     // Arc trajectory
     ProjectileVelocity = AvatarActor->GetActorForwardVector() * 3200.f + FVector(0, 0, 100.f);
@@ -95,8 +95,10 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
     SpawnedProjectile = World->SpawnActor<AActor>(ProjectileClass,ProjectileLocation,AvatarActor->GetActorRotation(),SpawnParams);
 
-    // Start ticking projectile
-    World->GetTimerManager().SetTimer(ProjectileTimer, this, &UPiercingArrow::TickArrow, 0.016f, true);
+    FTimerDelegate TimerDel;
+    TimerDel.BindLambda([this](){if (this) {TickArrow(); }});
+
+    World->GetTimerManager().SetTimer( ProjectileTimer, TimerDel, 0.016f, true);
 
     // Duration failsafe 
     World->GetTimerManager().SetTimer(DurationTimer,[this](){Explode(ProjectileLocation);},3.f,false);
@@ -104,44 +106,53 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UPiercingArrow::TickArrow()
 {
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    UE_LOG(LogTemp, Warning, TEXT("TickArrow firing"));
 
-    UWorld* World = AvatarActor->GetWorld();
-    if (!World) return;
+    if (!SpawnedProjectile)
+        return;
 
-    const float DeltaTime = 0.016f;
+    UWorld* World = SpawnedProjectile->GetWorld();
+    if (!World)
+        return;
+
+    const float DeltaTime = World->GetDeltaSeconds();
+
+    // Current position 
+    FVector CurrentLocation = SpawnedProjectile->GetActorLocation();
 
     // Apply gravity
     ProjectileVelocity.Z += Gravity * DeltaTime;
 
-    FVector NewLocation = ProjectileLocation + ProjectileVelocity * DeltaTime;
+    // Predict next position
+    FVector NewLocation = CurrentLocation + ProjectileVelocity * DeltaTime;
 
-    if (SpawnedProjectile)
-    {
-        SpawnedProjectile->SetActorLocation(ProjectileLocation);
-
-        SpawnedProjectile->SetActorRotation(ProjectileVelocity.Rotation());
-    }
-
+    // Collision setup
     FHitResult Hit;
     FCollisionQueryParams Params;
-    Params.AddIgnoredActor(AvatarActor);
 
-    bool bHit = World->SweepSingleByChannel(Hit,ProjectileLocation,NewLocation,FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(ProjectileRadius),Params);
+    // Ignore important actors
+    Params.AddIgnoredActor(SpawnedProjectile);
+    Params.AddIgnoredActor(SpawnedProjectile->GetOwner());
 
+    // Sweep
+    bool bHit = World->SweepSingleByChannel(Hit, CurrentLocation, NewLocation,FQuat::Identity, ECC_GameTraceChannel1,FCollisionShape::MakeSphere(ProjectileRadius), Params);
 
     if (bHit)
     {
-        // debug sphere
+        UE_LOG(LogTemp, Warning, TEXT("Projectile hit: %s"), *GetNameSafe(Hit.GetActor()));
+
         DrawDebugSphere(World, Hit.ImpactPoint, AreaRadius, 16, FColor::Red, false, 2.f);
 
         Explode(Hit.ImpactPoint);
         return;
     }
 
-    ProjectileLocation = NewLocation;
+    // Move projectile
+    SpawnedProjectile->SetActorLocation(NewLocation);
+    SpawnedProjectile->SetActorRotation(ProjectileVelocity.Rotation());
 
+    // Sync internal state
+    ProjectileLocation = NewLocation;
 }
 
 void UPiercingArrow::Explode(FVector ImpactPoint)
@@ -164,7 +175,7 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
     }
 
     // Start DoT ticking
-    World->GetTimerManager().SetTimer(DotTimer,this,&UPiercingArrow::ApplyDotTick,DotTickRate,true);
+    World->GetTimerManager().SetTimer(DotTimer, FTimerDelegate::CreateLambda([this](){if (this){ApplyDotTick();}}),DotTickRate,true);
 }
 
 void UPiercingArrow::ApplyDotTick()

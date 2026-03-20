@@ -151,8 +151,7 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
                 if (ActorInfo->IsLocallyControlled())
                 {
-                    if (ARelicRunnersPlayerController* RPC =
-                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
                     {
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
                     }

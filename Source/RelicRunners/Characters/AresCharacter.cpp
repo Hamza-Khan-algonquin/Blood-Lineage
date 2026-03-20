@@ -53,6 +53,8 @@ void AAresCharacter::PossessedBy(AController* NewController)
 		GiveWarBanner();
 		GiveRageofTheGods();
 	}
+
+
 }
 
 // Called when PlayerState is replicated on clients
@@ -202,24 +204,51 @@ void AAresCharacter::PerformSwingTrace()
 void AAresCharacter::BasicAttack()
 {
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-	if (!CanBasicAttack) return;
 
-	CanBasicAttack = false;
-	Damage = 100.0f;
+	if (!HasAuthority())
+	{
+		Server_PlayAttack();
+		return;
+	}
 
-	AlreadyHitActors.Empty(); 
-
-	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-		PlayRandomAttackAnimation();
-
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+	HandleAttack();
 }
 
-void AAresCharacter::HeavyAttack()
+void AAresCharacter::Server_PlayAttack_Implementation()
 {
-
+	HandleAttack();
 }
 
+void AAresCharacter::HandleAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+		return;
+
+	Damage = 100.0f;
+	AlreadyHitActors.Empty();
+
+	Multicast_PlayAttack();
+
+	GetWorldTimerManager().SetTimer(
+		TimerHandle_AttackCooldown,
+		this,
+		&AAresCharacter::ResetBasicAttack,
+		BasicAttackCooldown,
+		false
+	);
+}
+
+void AAresCharacter::Multicast_PlayAttack_Implementation()
+{
+	if (!BasicAnim) return;
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->Montage_Play(BasicAnim);
+	}
+}
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
 	const FString MapName = GetWorld()->GetMapName();

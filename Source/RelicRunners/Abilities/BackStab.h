@@ -23,12 +23,11 @@ protected:
     AActor* FindBackstabTarget(AActor* AvatarActor) const;
     void ExecuteBackStabSequence();
     void ReturnPlayerToOriginalPosition();
-    void PerformBackStabDamage(AActor* AvatarActor);
+    void PerformBackStabDamage(AActor* AvatarActor, AActor* TargetEnemy);
 
     float Range;
 
     FTimerHandle BackStabDamageTimerHandle;
-    FTimerHandle BackStabDelayHandle;
     int CurrentBackStabCount;
     float SweepRadius = 300.f;
     float DamageDelay = 0.3f;

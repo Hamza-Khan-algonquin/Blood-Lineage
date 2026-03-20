@@ -10,7 +10,7 @@ UNaturesBlessing::UNaturesBlessing()
 
 	AbilityName = FName("NaturesBlessing");
 
-	InvincibleDuration = 3.0f;
+	InvincibleDuration = 5.0f;
 	CooldownTimer = 14.f;
 	Cost = 30;
 	LastUseTime = -100.f;

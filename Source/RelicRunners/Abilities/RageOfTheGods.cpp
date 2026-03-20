@@ -83,6 +83,20 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PS->Multicast_SpawnVFX(FVector(0, 0, 0), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
     }
 
+    ACharacter* Character = Cast<ACharacter>(AvatarActor);
+    if (Character)
+    {
+        USkeletalMeshComponent* Mesh1 = Character->GetMesh();
+        if (Mesh1 && OverlayMaterial)
+        {
+            // Create dynamic material
+            OverlayMID = UMaterialInstanceDynamic::Create(OverlayMaterial, this);
+
+            // Apply to mesh (overlay or replace slot)
+            Mesh1->SetOverlayMaterial(OverlayMID); 
+        }
+    }
+
     LastUseTime = World->GetTimeSeconds();
 
     PulsesExecuted = 0;
@@ -179,6 +193,18 @@ void URageOfTheGods::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         return;
     }
 
+    ACharacter* Character = Cast<ACharacter>(GetAvatarActorFromActorInfo());
+    if (Character)
+    {
+        USkeletalMeshComponent* Mesh = Character->GetMesh();
+        if (Mesh)
+        {
+            // Remove overlay material
+            Mesh->SetOverlayMaterial(nullptr);
+        }
+    }
+
+    OverlayMID = nullptr;
     UWorld* World = ActorInfo->AvatarActor->GetWorld();
     if (!World)
     {
