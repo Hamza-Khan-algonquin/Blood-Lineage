@@ -1162,8 +1162,6 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			PlayerHUD->AddToViewport();
 			PlayerHUD->UpdateBindText();
 		}
-		UWorld* World = GetWorld();
-		if (!World) return;
 
 
 			if (MapName.Contains(TEXT("BossLevel")))
@@ -1176,10 +1174,9 @@ void ARelicRunnersPlayerController::InitLocalUI()
 				PlayerHUD->ToggleBossBar(false);
 				PlayerHUD->ToggleExpBar(true);
 			}
-		}
+		
 	}
 
-	SetupObjectives();
 
 	if (!MinimapWidget && MinimapClass)
 	{
@@ -1275,6 +1272,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 	}
 
 	TryBindUI();
+
 }
 
 void ARelicRunnersPlayerController::SetupLobbyView()

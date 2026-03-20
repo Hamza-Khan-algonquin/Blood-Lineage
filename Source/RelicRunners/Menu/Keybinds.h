@@ -57,7 +57,7 @@ public:
     float MasterVolume = 1.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
-    bool bAutoLoot = false;
+    bool bAutoLoot = true;
 };
 
 static FString GetReadableKeyName(const FKey& Key)
