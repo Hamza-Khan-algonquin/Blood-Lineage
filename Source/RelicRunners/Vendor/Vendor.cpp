@@ -84,7 +84,7 @@ void AVendor::GenerateStock()
 	}
 
 	//Force no common items in shop
-	int LootQualityIncrease = 60;
+	int LootQualityIncrease = 70;
 
 	UIconLibrary* Lib = nullptr;
 	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())

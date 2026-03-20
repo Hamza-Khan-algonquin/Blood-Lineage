@@ -20,7 +20,6 @@ AAresCharacter::AAresCharacter()
 {
 	Damage = 8.0f;
 
-	
 }
 
 void AAresCharacter::BeginPlay()
@@ -54,6 +53,8 @@ void AAresCharacter::PossessedBy(AController* NewController)
 		GiveWarBanner();
 		GiveRageofTheGods();
 	}
+
+
 }
 
 // Called when PlayerState is replicated on clients
@@ -179,9 +180,7 @@ void AAresCharacter::PerformSwingTrace()
 
 	TArray<FHitResult> Hits;
 
-	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity,ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params);
-
-	AlreadyHitActors.Empty();
+	GetWorld()->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.f), Params);
 
 	for (const FHitResult& Hit : Hits)
 	{
@@ -190,18 +189,13 @@ void AAresCharacter::PerformSwingTrace()
 			if (!AlreadyHitActors.Contains(HitActor))
 			{
 				if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-				{
 					Server_HitEnemy(Enemy, Damage);
-				}
 				else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-				{
 					Server_HitEnemy(TEnemy, Damage);
-				}
 				else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-				{
 					Server_HitEnemy(TPEnemy, Damage);
-				}
-				AlreadyHitActors.Add(HitActor);
+
+				AlreadyHitActors.Add(HitActor); // mark as hit
 			}
 		}
 	}
@@ -211,36 +205,50 @@ void AAresCharacter::BasicAttack()
 {
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-	if (!CanBasicAttack) return;
-	CanBasicAttack = false;
-
-	Damage = 2.0f;
-
-	if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+	if (!HasAuthority())
 	{
-		PlayRandomAttackAnimation();
+		Server_PlayAttack();
+		return;
 	}
 
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&ARelicRunnersCharacter::ResetBasicAttack,BasicAttackCooldown,false);
+	HandleAttack();
 }
 
-void AAresCharacter::HeavyAttack()
+void AAresCharacter::Server_PlayAttack_Implementation()
 {
-	//if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-
-	//if (!CanHeavyAttack) return;
-	//CanHeavyAttack = false;
-
-	//Damage = 12.0f;
-
-	//if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-	//{
-	//	PlayRandomAttackAnimation();
-	//}
-
-	//GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+	HandleAttack();
 }
 
+void AAresCharacter::HandleAttack()
+{
+	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+
+	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+		return;
+
+	Damage = 100.0f;
+	AlreadyHitActors.Empty();
+
+	Multicast_PlayAttack();
+
+	GetWorldTimerManager().SetTimer(
+		TimerHandle_AttackCooldown,
+		this,
+		&AAresCharacter::ResetBasicAttack,
+		BasicAttackCooldown,
+		false
+	);
+}
+
+void AAresCharacter::Multicast_PlayAttack_Implementation()
+{
+	if (!BasicAnim) return;
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->Montage_Play(BasicAnim);
+	}
+}
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
 	const FString MapName = GetWorld()->GetMapName();

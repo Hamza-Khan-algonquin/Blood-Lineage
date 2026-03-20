@@ -41,11 +41,17 @@ protected:
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
-	virtual void HeavyAttack() override;
+	void HandleAttack();
 	virtual void UpdateCamera(float DeltaTime) override;
 	void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
 	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
 	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAttack();
+
+	UFUNCTION(Server, Reliable)
+	void Server_PlayAttack();
 
 	UPROPERTY()
 	float Damage;
@@ -61,4 +67,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ares")
 	TSubclassOf<URageOfTheGods> BP_RageOfTheGodsClass;
+
+	TSet<AActor*> EnemiesHitThisSwing;
+	bool bIsSwinging = false;
 };

@@ -71,7 +71,7 @@ AEnemyPawn::AEnemyPawn()
 	bAlwaysRelevant = false;
 	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 
-	KnockBackStrength = 1000;
+	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
 }

@@ -880,5 +880,3 @@ void ARelicRunnersCharacter::UltimateAbility()
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
 
-
-
