@@ -24,8 +24,6 @@ public:
 	class UKeybindingsListData* GetKeybindData() const;
 	void RefreshVisual();
 
-	UFUNCTION()
-	void OnResetIndividualButtonClicked();
 private:
 	class UKeybindingsListData* KeybindData;
 
@@ -38,6 +36,5 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_BindButton;
 
-	UPROPERTY(meta = (BindWidget))
-	class UButton* B_ResetIndividual;
+
 };

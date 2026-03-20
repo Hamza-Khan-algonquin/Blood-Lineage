@@ -65,11 +65,3 @@ void UKeybindingsListWidget::RefreshVisual()
     TB_Bind->SetText(DisplayText);
 }
 
-void UKeybindingsListWidget::OnResetIndividualButtonClicked()
-{
-    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-    if (B_ResetIndividual)
-    {
-        GI->ResetIndividualKey(KeybindData->Name);
-    }
-}
