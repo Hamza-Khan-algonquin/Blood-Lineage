@@ -128,9 +128,9 @@ void ARelicRunnersGameMode::TriggerPostGameForAll()
             {
                 FPlayerPostGameData Stats;
                 Stats.Username = PS->GetPlayerName();
-                Stats.LevelsEarned = 0;
-                Stats.EnemiesKilled = 0;
-                Stats.Deaths = 1;
+                Stats.LevelsEarned = PS->GetLevelsEarned();
+                Stats.EnemiesKilled = PS->GetEnemiesKilled();
+                Stats.Deaths = PS->GetDeaths();
                 Stats.MetaLevel = PS->MetaLevel;
                 Stats.MetaXP = PS->MetaXP;
                 Stats.MetaXPToNextLevel = PS->MetaXPToNextLevel;

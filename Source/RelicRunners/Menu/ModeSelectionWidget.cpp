@@ -142,9 +142,21 @@ void UModeSelectionWidget::TutorialButtonClicked()
 
 void UModeSelectionWidget::UpgradesButtonClicked()
 {
-	if (ParentMenu)
+	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (GameInstance)
 	{
-		ParentMenu->ShowUpgradesWidget();
+		if (!GameInstance->SelectedSaveSlot)
+		{
+			//No savefile so prompt player to make one
+			PromptCreateSaveFile();
+		}
+		else
+		{
+			if (ParentMenu)
+			{
+				ParentMenu->ShowUpgradesWidget();
+			}
+		}
 	}
 }
 

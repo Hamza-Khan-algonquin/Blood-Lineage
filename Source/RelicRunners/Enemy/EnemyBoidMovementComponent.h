@@ -22,6 +22,18 @@ enum class EBoidFocuseMode : uint8
 	Disabled
 };
 
+USTRUCT()
+struct FMoveData
+{
+	GENERATED_BODY()
+	UPROPERTY()
+	FVector Location;
+	UPROPERTY()
+	FRotator Rotation;
+	UPROPERTY()
+	float TimeStamp;
+};
+
 class ACommanderController;
 class ARecastNavMesh;
 
@@ -61,6 +73,8 @@ protected:
 	float MaxTargetDistanceMultiplier;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float DistanceToStartAvoidingWalls;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float DistanceFromWallToLoseTargetWeight;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float CoherenceWeight;
@@ -70,8 +84,6 @@ protected:
 	float AlignmentWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float TargetWeight;
-	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
-	float EdgeAvoidanceWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float WallAvoidanceWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
@@ -116,7 +128,22 @@ protected:
 	UPROPERTY()
 	ARecastNavMesh* ActiveNavMesh;
 
+	UPROPERTY(ReplicatedUsing = OnRep_ServerMoveData)
+	FMoveData ServerMoveData;
 
+	UPROPERTY()
+	TArray<FMoveData> MoveDataBuffer;
+
+	
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float InterpDelay;
+	//The max distance the client is allowed to be from the server location before it snaps to it. 
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float MaxClientLocationDeviation;
+	UPROPERTY()
+	float AvgReplicationDelta;
+	UPROPERTY()
+	float TargetInterpDelay;
 public:
 	UEnemyBoidMovementComponent();
 
@@ -139,4 +166,11 @@ public:
 	EBoidMovementMode GetMovementMode() { return MovementMode; }
 	bool IsAtTarget();
 	void InitializeNavMeshPointer();
+
+
+	UFUNCTION()
+	void OnRep_ServerMoveData();
+	UFUNCTION()
+	void ClientSideEntityInterpolation(float delta);
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

@@ -235,11 +235,16 @@ void UBundleOfJoy::Explode()
         CalculateAbilityDamage(AvatarActor, Actor, Damage);
     }
 
-    for (AEnemyPawn* enemy : EffectedEnemies)
+    for (TWeakObjectPtr<AEnemyPawn> weakEnemy : EffectedEnemies)
     {
-        if (enemy && enemy->MovementComponent)
+        if (weakEnemy.IsValid())
         {
-            enemy->MovementComponent->IsAffectiveByBundleOfJoy = false;
+            AEnemyPawn* enemy = weakEnemy.Get();
+
+            if (IsValid(enemy->MovementComponent))
+            {
+                enemy->MovementComponent->IsAffectiveByBundleOfJoy = false;
+            }
         }
     }
     

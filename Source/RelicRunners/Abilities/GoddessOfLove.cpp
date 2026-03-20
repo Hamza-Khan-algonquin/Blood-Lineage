@@ -20,7 +20,7 @@ UGoddessOfLove::UGoddessOfLove()
 	CooldownTimer = 10.f;
 	Cost = 60;
     ElapsedDOTTime = 0.f;
-    DOTTickInterval = 1.f;
+    DOTTickInterval = 0.5f;
     DOTDuration = 0.7f;
     PassiveRegenTickInterval = 1.f;
 }
