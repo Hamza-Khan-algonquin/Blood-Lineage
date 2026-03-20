@@ -6,6 +6,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "SettingsWidget.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 void UKeybindingsListWidget::NativeConstruct()
 {
@@ -62,4 +63,13 @@ void UKeybindingsListWidget::RefreshVisual()
 
     FText DisplayText = KeybindData->Keybind.IsValid() ? FText::FromString(KeybindData->ReadableBind) : FText::FromString(TEXT("None"));
     TB_Bind->SetText(DisplayText);
+}
+
+void UKeybindingsListWidget::OnResetIndividualButtonClicked()
+{
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+    if (B_ResetIndividual)
+    {
+        GI->ResetIndividualKey(KeybindData->Name);
+    }
 }

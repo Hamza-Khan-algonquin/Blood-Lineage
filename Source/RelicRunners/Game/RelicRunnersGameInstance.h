@@ -74,9 +74,10 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void ResetToDefaults();
+    void ResetIndividualKey(const FString& ActionName);
     UFUNCTION(BlueprintCallable)
     void ApplyKeybindings();
-   
+
 
     //Savefiles
     UFUNCTION(BlueprintCallable)

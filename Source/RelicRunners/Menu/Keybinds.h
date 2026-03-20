@@ -8,7 +8,7 @@ USTRUCT(BlueprintType)
 struct FKeybinding
 {
     GENERATED_BODY()
-
+public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Keybinding")
     FString Name;
 
@@ -31,6 +31,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
     TArray<FKeybinding> KeyBinds;
+
+    int GetBindIndex(const FString& ActionName);
+    void SetNewBind(int index, FKey bind) { KeyBinds[index].Bind = bind; }
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
     bool InvertedXMouse = false;

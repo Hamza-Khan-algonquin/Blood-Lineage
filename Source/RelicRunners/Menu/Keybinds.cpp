@@ -34,3 +34,17 @@ FKey UKeybinds::GetKeyForAction(const FString& ActionName) const
     }
     return EKeys::Invalid;
 }
+
+int UKeybinds::GetBindIndex(const FString& ActionName)
+{
+    int index = 0;
+    for (const FKeybinding& Bind : KeyBinds)
+    {
+        if (Bind.Name.Equals(ActionName, ESearchCase::IgnoreCase))
+        {
+            return index;
+        }
+        index++;
+    }
+    return 0;
+}

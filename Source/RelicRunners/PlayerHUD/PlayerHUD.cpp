@@ -132,9 +132,6 @@ void UPlayerHUD::UpdateBindText()
 	if (TB_UltimateAbility)
 		TB_UltimateAbility->SetText(FText::FromString(UltimateKey));
 
-	if (TB_HealthPotion)
-		TB_HealthPotion->SetText(FText::FromString(HealthPot));
-
 }
 
 void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)

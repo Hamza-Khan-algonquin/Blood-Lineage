@@ -52,6 +52,12 @@ void URelicRunnersGameInstance::ResetToDefaults()
     ApplyKeybindings();
 }
 
+void URelicRunnersGameInstance::ResetIndividualKey(const FString& ActionName)
+{
+    Keys->SetNewBind(Keys->GetBindIndex(ActionName), DefaultKeys->GetKeyForAction(ActionName));
+    ApplyKeybindings();
+}
+
 void URelicRunnersGameInstance::ApplyKeybindings()
 {
     APlayerController* PC = GetFirstLocalPlayerController();
@@ -128,6 +134,8 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     }
 
 }
+
+
 
 USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)
 {
