@@ -135,7 +135,7 @@ void AIslandGenerationTest::Generate()
 			int whileLoopLimit = 0;
 
 			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
-			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Safe)
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle >= EIslandFloorObstacle::Safe)
 			{
 				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
 
@@ -441,7 +441,7 @@ void AIslandGenerationTest::InitializeFloor()
 	FloorValuesArray.Add(newFloorValues);
 }
 
-void AIslandGenerationTest::ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle)
+void AIslandGenerationTest::ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle, bool isPayloadPath)
 {
 	int index = x + (y * width);
 
@@ -450,15 +450,21 @@ void AIslandGenerationTest::ForceFloorBool(bool forcedFloor, int x, int y, int w
 	if (!forcedFloor)
 		return;
 
-	if (FloorValuesArray[index].IslandFloorObstacle == EIslandFloorObstacle::None)
-		return;
+	//if (FloorValuesArray[index].IslandFloorObstacle == EIslandFloorObstacle::None)
+	//	return;
 
-	if (FloorValuesArray[index].IslandFloorObstacle >= EIslandFloorObstacle::Start)
+	//if (FloorValuesArray[index].IslandFloorObstacle == EIslandFloorObstacle::PayloadPath)
+	//	return;
+
+	if (FloorValuesArray[index].IslandFloorObstacle >= EIslandFloorObstacle::CapturableFlag)
 		return;
 
 	if (!canSpawnObstacle)
 	{
-		FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::None;
+		FloorValuesArray[index].IslandFloorObstacle = isPayloadPath ?
+			EIslandFloorObstacle::PayloadPath :
+			EIslandFloorObstacle::None;
+
 		return;
 	}
 
@@ -526,7 +532,7 @@ void AIslandGenerationTest::FindStartToEndPath(int startingIndex, int targetInde
 		bReachEndY = currentY == targetY;
 		if (!(bReachEndX && bReachEndY))
 		{
-			ForceFloorBool(true, currentX, currentY, width, true);
+			ForceFloorBool(true, currentX, currentY, width, true, false);
 		}
 	}
 }
@@ -578,7 +584,7 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 
 		if (!(bReachEndX && bReachEndY))
 		{
-			ForceFloorBool(true, currentX, currentY, width, false);
+			ForceFloorBool(true, currentX, currentY, width, false, true);
 
 			if (payloadActor && bValueHasChanged)
 			{
@@ -1725,6 +1731,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 		break;
 	case EIslandFloorObstacle::None:
+	case EIslandFloorObstacle::PayloadPath:
 
 		if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
 		{
@@ -1781,9 +1788,9 @@ void AIslandGenerationTest::CreateFloor()
 	//	}
 	//}
 
-	//FloorISMComp->SetCanEverAffectNavigation(true);
 	//FloorISMComp->AddInstances(FullFloorPieceTransforms, false, false, true);
 	//FloorISMComp->RegisterComponent();
+	//FloorISMComp->SetCanEverAffectNavigation(true);
 
 }
 

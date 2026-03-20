@@ -36,7 +36,7 @@ enum class EIslandFloorObstacle : uint8
 	Safe,
 	CapturableFlag,
 	EnemyZone,
-	DeliveryPath,
+	PayloadPath,
 	SurvivalZone,
 	Start,
 	End,
@@ -103,7 +103,7 @@ public:
 	void InitializeFloor();
 
 	//If this is called, the tile's *IsFullTile* variable will be set to *forcedFloor* regardless of what *InitializeFloor()* set it to.
-	void ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle);
+	void ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle, bool isPayloadPath);
 
 	//Sets wether or not the current tile will have a modular obstacle spawned on top of itself.
 	void InitializeModularObstacle(FSIslandFloorValues& floorValue, bool canGenerateHoles) const;
