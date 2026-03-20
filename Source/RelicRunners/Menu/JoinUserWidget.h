@@ -76,6 +76,14 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Countdown;
 
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_StartButton;
+
+	bool IsCountingDown = false;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* TimerImage;
+
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	class UWidgetAnimation* Timer;
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
@@ -207,7 +215,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_BoarSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_BoarSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* BullBorder;
 
@@ -216,7 +225,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_BullSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_BullSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* LionBorder;
 
@@ -225,7 +235,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_LionSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_LionSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* HydraBorder;
 
@@ -234,7 +245,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_HydraSection;
-
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_HydraSection1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* CerberusBorder;
 
@@ -243,7 +255,11 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_CerberusSection;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_CerberusSection1;
 
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_CurrentSection1;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_Start = nullptr;
 

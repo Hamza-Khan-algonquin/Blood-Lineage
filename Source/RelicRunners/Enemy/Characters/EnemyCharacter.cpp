@@ -15,6 +15,7 @@
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/Enemy/EnemyStats.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
 {
@@ -200,7 +201,13 @@ void AEnemyCharacter::SpawnItem()
 
 		if (chance <= EnemyStatsComponent->GetChanceToDropItem())
 		{
-			UItemObject* DroppedItem = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemMeshData), this);
+			UIconLibrary* Lib = nullptr;
+			if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+			{
+				Lib = GI->GlobalIconLibrary;
+			}
+
+			UItemObject* DroppedItem = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemMeshData, Lib), this);
 
 			// Spawn new dropped item
 			FActorSpawnParameters Params;

@@ -30,6 +30,7 @@
 #include "RelicRunners/Item/ItemActor.h"
 #include "RelicRunners/Director System/Director.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 // Sets default values
 AEnemyCharacterAI::AEnemyCharacterAI()
@@ -311,9 +312,15 @@ void AEnemyCharacterAI::InitializeStartingEquipment()
 		"Necklace", "Arms",
 	};
 
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
 	for (const FString& ItemName : StartingItems)
 	{
-		UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(EnemyLevel, ItemName, ItemMeshData), InventoryComponent);
+		UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(EnemyLevel, ItemName, ItemMeshData, Lib), InventoryComponent);
 
 		if (Item)
 		{

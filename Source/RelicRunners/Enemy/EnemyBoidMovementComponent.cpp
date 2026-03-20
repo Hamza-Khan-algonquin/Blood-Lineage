@@ -447,7 +447,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 	//fix if we have time
 	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
-	if (hit.IsValidBlockingHit() && hit.Normal.Z > 0.8)
+	if (hit.IsValidBlockingHit())
 	{
 		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
 		//		Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);

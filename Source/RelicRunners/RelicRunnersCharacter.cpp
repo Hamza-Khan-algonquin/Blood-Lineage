@@ -250,7 +250,7 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	if (RelicPlayerState) RelicPlayerState->DeathState = true;
+	if (RelicPlayerState) RelicPlayerState->DeathState = true; RelicPlayerState->PlayerDeaths++;
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
@@ -879,6 +879,4 @@ void ARelicRunnersCharacter::UltimateAbility()
 	ActivateUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
-
-
 

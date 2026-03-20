@@ -46,6 +46,11 @@ public:
 
 	class ARelicRunnersCharacter* OwningCharacter;
 
+	void RefreshPreview();
+
+	UPROPERTY()
+	class ARelicRunnersPlayerState* LinkedPlayerState;
+
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<UAnimInstance> HealerAnim;
 

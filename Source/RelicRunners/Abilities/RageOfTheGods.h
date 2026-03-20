@@ -42,4 +42,10 @@ protected:
 
 	float KnockbackStrength = 5000.f;
 
+	UPROPERTY()
+	UMaterialInstanceDynamic* OverlayMID = nullptr;
+
+	UPROPERTY(EditDefaultsOnly)
+	UMaterialInterface* OverlayMaterial;
+
 };
