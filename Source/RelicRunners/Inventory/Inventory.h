@@ -133,6 +133,7 @@ public:
 	TSubclassOf<class UInventoryItemOptions> InventoryItemOptionsClass;
 	UPROPERTY(EditAnywhere, Category = "Popup")
 	TSubclassOf<class UInventorySortingOptions> InventorySortingOptionsClass;
+	class UBorder* CurrentHoveredBorder;
 	UPROPERTY()
 	class UStandardTooltip* StandardTooltip;
 	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
@@ -148,7 +149,6 @@ public:
 	float ForgeChance1;
 	float ForgeChance2;
 	float ForgeChance3;
-	class UBorder* CurrentHoveredBorder;
 	int CycleCount;
 	FTimerHandle FuseTimerHandle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PreviewActor")
@@ -504,7 +504,26 @@ public:
 	class UImage* I_Mainhand;
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* EquippedCanvas;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability1;
 
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability3;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability4;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_HealthPotion;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_AbilityUpgrade;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Class")
+	class UClassInfo* ClassDataAsset = nullptr;
 protected:
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

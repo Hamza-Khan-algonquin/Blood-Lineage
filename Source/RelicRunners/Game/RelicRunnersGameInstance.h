@@ -112,6 +112,11 @@ public:
     TMap<FUniqueNetIdRepl, FPendingClientTravel> PendingClientTravels;
     TWeakPtr<class IOnlineSession, ESPMode::ThreadSafe> SessionInterface;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
+    TSubclassOf<class UIconLibrary> IconLibraryClass;
+
+    UPROPERTY()
+    class UIconLibrary* GlobalIconLibrary;
 
     UPROPERTY(Replicated)
     int StageNumber = 0;

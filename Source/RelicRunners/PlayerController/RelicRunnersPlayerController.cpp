@@ -75,6 +75,8 @@
 #include <RelicRunners/Objective/PandorasObjective.h>
 #include <NavigationSystem.h>
 #include <Blueprint/AIBlueprintHelperLibrary.h>
+#include "NavigationPath.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -162,6 +164,8 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 
 	if (IsLocalController())
 	{
+		PlayerPreviewInstance = nullptr;
+
 		PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 		RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
@@ -217,6 +221,8 @@ void ARelicRunnersPlayerController::OnRep_PlayerState()
 void ARelicRunnersPlayerController::PostSeamlessTravel()
 {
 	Super::PostSeamlessTravel();
+
+	PlayerPreviewInstance = nullptr;
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
@@ -288,6 +294,10 @@ void ARelicRunnersPlayerController::SyncUI()
 		if (!PlayerPreviewInstance && PlayerPreviewClass)
 		{
 			int UniqueID = RelicPlayerState->GetPlayerId();
+
+			//Playerstate isnt ready yet retry
+			if (UniqueID <= 0) return;
+
 			FVector SpawnLoc = FVector(-50000.0f - (UniqueID * 10000.0f), -50000.0f, -2000.0f);
 
 			FActorSpawnParameters Params;
@@ -297,6 +307,10 @@ void ARelicRunnersPlayerController::SyncUI()
 
 			if (PlayerPreviewInstance)
 			{
+				PlayerPreviewInstance->LinkedPlayerState = RelicPlayerState;
+				//Manual trigger since BeginPlay might have already fired
+				PlayerPreviewInstance->RefreshPreview();
+
 				UE_LOG(LogTemp, Warning, TEXT("Local Client: Spawned Preview Actor at %s"), *SpawnLoc.ToString());
 				TrySetupPreviewRenderTarget();
 			}
@@ -446,6 +460,14 @@ void ARelicRunnersPlayerController::Client_LeaveSession_Implementation()
 void ARelicRunnersPlayerController::HandleLevelUpVisuals()
 {
 	if (!IsLocalController()) return;
+
+	if (GetWorld() == nullptr || GetWorld()->IsBeingCleanedUp() == true) return;
+
+	if (!LevelUpHUDClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LevelUpHUDClass is null on Controller!"));
+		return;
+	}
 
 	if (LevelUpHUD)
 	{
@@ -809,7 +831,7 @@ void ARelicRunnersPlayerController::MinimapUI()
 {
 	if (!MinimapWidget) return;
 
-	if (MinimapWidget->IsVisible())
+	if (MinimapWidget->IsInViewport())
 	{
 		MinimapWidget->RemoveFromParent();
 	}
@@ -823,7 +845,7 @@ void ARelicRunnersPlayerController::PlayerHUDUI()
 {
 	if (!PlayerHUD) return;
 
-	if (PlayerHUD->IsVisible())
+	if (PlayerHUD->IsInViewport())
 	{
 		PlayerHUD->RemoveFromParent();
 	}
@@ -852,14 +874,7 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	{
 		LoadingScreen->RemoveFromParent();
 
-		if (GetWorld()->GetMapName().Contains(TEXT("BossLevel")))
-		{
-			StartBossCinematicWalk();
-		}
-		else
-		{
-			ForceGameModeOnly();
-		}
+		if (!GetWorld()->GetMapName().Contains(TEXT("BossLevel"))) ForceGameModeOnly();
 	}
 }
 
@@ -1075,9 +1090,18 @@ void ARelicRunnersPlayerController::PostGameUI()
 		if (PostGameWidget)
 		{
 			PostGameWidget->AddToViewport();
-			
+
 			SetInputMode(FInputModeUIOnly());
 			bShowMouseCursor = true;
+
+			FTimerHandle UnusedHandle;
+			GetWorldTimerManager().SetTimer(UnusedHandle, [this]()
+				{
+					if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+					{
+						GI->BackToMainMenu();
+					}
+				}, 5.0f, false);
 		}
 	}
 }
@@ -1334,47 +1358,52 @@ void ARelicRunnersPlayerController::BeginPlay()
 	}
 }
 
-void ARelicRunnersPlayerController::StartBossCinematicWalk()
+void ARelicRunnersPlayerController::Client_StartCinematicWalk_Implementation(FVector TargetLocation)
 {
-	APawn* ControlledPawn = GetPawn();
-	if (!ControlledPawn) return;
+	CinematicTargetLocation = TargetLocation;
+
+
+	MinimapUI(); 
+	PlayerHUDUI(); 
 
 	FInputModeUIOnly UIOnlyMode;
 	UIOnlyMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(UIOnlyMode);
 	SetIgnoreMoveInput(true);
 
-	MinimapUI();
-	PlayerHUDUI();
+	Server_ExecuteMove(TargetLocation);
 
-	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+	GetWorldTimerManager().SetTimer(CinematicTimerHandle, this, &ARelicRunnersPlayerController::CheckCinematicArrival, 0.1f, true);
+}
 
+void ARelicRunnersPlayerController::Server_ExecuteMove_Implementation(FVector Target)
+{
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	if (NavSys)
 	{
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, TargetLocation);
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Target);
 	}
-
-	GetWorldTimerManager().SetTimer(CinematicTimerHandle, this, &ARelicRunnersPlayerController::CheckCinematicArrival, 0.1f, true);
 }
 
 void ARelicRunnersPlayerController::CheckCinematicArrival()
 {
 	APawn* ControlledPawn = GetPawn();
-	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+	if (!ControlledPawn) return;
 
-	if (ControlledPawn && FVector::Dist(ControlledPawn->GetActorLocation(), TargetLocation) < 100.0f)
+	float Distance = FVector::Dist2D(ControlledPawn->GetActorLocation(), CinematicTargetLocation);
+
+	if (Distance < 150.0f)
 	{
 		FInputModeGameAndUI GameAndUIMode;
 		SetInputMode(GameAndUIMode);
-
 		SetIgnoreMoveInput(false);
+
+		PlayerHUDUI(); 
+		MinimapUI();   
+
 		GetWorldTimerManager().ClearTimer(CinematicTimerHandle);
 
-		PlayerHUDUI();
-		MinimapUI();
-
-		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Control Restored."));
+		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Local Control Restored."));
 	}
 }
 

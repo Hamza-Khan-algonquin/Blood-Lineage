@@ -26,6 +26,7 @@
 #include "NiagaraComponent.h"
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 
 // Sets default values
@@ -70,7 +71,7 @@ AEnemyPawn::AEnemyPawn()
 	bAlwaysRelevant = false;
 	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 
-	KnockBackStrength = 1000;
+	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
 }
@@ -177,7 +178,7 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 			if (PS)
 			{
 				PS->AddExperience(CalculateXP());
-				
+				PS->EnemiesKilled++;
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
 				SpawnItem(PlayerLuck);
 			}
@@ -350,8 +351,14 @@ void AEnemyPawn::SpawnItem(int Luck)
 			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
 		}
 
+		UIconLibrary* Lib = nullptr;
+		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+		{
+			Lib = GI->GlobalIconLibrary;
+		}
+
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData, Lib),
 			this
 		);
 

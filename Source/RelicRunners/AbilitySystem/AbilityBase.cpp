@@ -37,7 +37,8 @@ void UAbilityBase::PlayAbilityCastSound(const FGameplayAbilityActorInfo* ActorIn
 
     UGameplayStatics::PlaySoundAtLocation(Avatar, AbilityCastSound, Avatar->GetActorLocation());
 }
-// In your Character class or a Utility header
+
+
 void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* TargetActor, float BaseDamage)
 {
     if (!InstigatorActor || !TargetActor) return;

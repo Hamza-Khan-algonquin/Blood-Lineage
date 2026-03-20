@@ -23,6 +23,7 @@
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/Item/IconLibrary.h"
 
 void URelicRunnersGameInstance::Init()
 {
@@ -33,6 +34,12 @@ void URelicRunnersGameInstance::Init()
     if (OnlineSubsystem)
     {
         SessionInterface = OnlineSubsystem;
+    }
+
+    //Icons
+    if (IconLibraryClass)
+    {
+        GlobalIconLibrary = NewObject<UIconLibrary>(this, IconLibraryClass);
     }
 
     //Keybinds

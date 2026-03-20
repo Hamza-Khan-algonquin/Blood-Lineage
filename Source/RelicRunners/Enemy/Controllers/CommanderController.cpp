@@ -143,29 +143,27 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 		return;
 	}
 
-	ControlledEnemies.Add(enemy);
+	ControlledEnemies.AddUnique(enemy);
 	enemy->MovementComponent->Commander = this;
-	enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDied.AddUniqueDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDestroyed.AddUniqueDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDeactivated.AddUniqueDynamic(this, &ACommanderController::RemovePawnEnemy);
 	enemy->LODComponent->SetIsUpdatingLOD(false);
 }
 
 void ACommanderController::RemovePawnEnemy(AActor* enemy)
 {
 	AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
-	if (!enemyPawn && !ControlledEnemies.Contains(enemyPawn))
+
+	if (!enemyPawn || !IsValid(enemyPawn) || !ControlledEnemies.Contains(enemyPawn))
 	{
 		return;
 	}
 
-	ControlledEnemies.Remove(enemyPawn);
+	enemyPawn->OnDestroyed.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemyPawn->OnDeactivated.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
 
-	if (IsValid(enemyPawn))
-	{
-		enemyPawn->OnDestroyed.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
-		enemyPawn->OnDeactivated.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
-	}
+	ControlledEnemies.Remove(enemyPawn);
 }
 
 TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
