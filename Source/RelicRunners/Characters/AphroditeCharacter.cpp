@@ -520,19 +520,20 @@ void AAphroditeCharacter::Tick(float DeltaTime)
                 }
 
 
-                if (Hit.bBlockingHit)
-                {
                 Projectile.AlreadyHitActors.Add(HitActor);
 
-                if (Projectile.Mesh)
+                if (Hit.bBlockingHit || bEnemyHit)
                 {
-                    Projectile.Mesh->DestroyComponent();
-                }
 
-                // Remove projectile after hit
-                ActiveProjectiles.RemoveAt(i);
-                break;
-}
+                    if (Projectile.Mesh)
+                    {
+                        Projectile.Mesh->DestroyComponent();
+                    }
+
+                    // Remove projectile after hit
+                    ActiveProjectiles.RemoveAt(i);
+                    break;
+                }
             }
         }
 
