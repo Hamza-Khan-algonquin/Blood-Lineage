@@ -43,7 +43,7 @@ private:
     UPROPERTY()
     FVector AttractionCenter;
 
-    TArray<AEnemyPawn*> EffectedEnemies;
+    TArray<TWeakObjectPtr<AEnemyPawn>> EffectedEnemies;
 
     void Explode();
     void Attract();

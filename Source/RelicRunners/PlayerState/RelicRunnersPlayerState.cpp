@@ -141,6 +141,9 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerStartingDexterity = this->PlayerStartingDexterity;
 		PS->PlayerStartingStrength = this->PlayerStartingStrength;
 		PS->PlayerStartingIntelligence = this->PlayerStartingIntelligence;
+		PS->LevelsEarned = this->LevelsEarned;
+		PS->PlayerDeaths = this->PlayerDeaths;
+		PS->EnemiesKilled = this->EnemiesKilled;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)
@@ -468,6 +471,7 @@ void ARelicRunnersPlayerState::OnLevelUp()
 {
 	PlayerXP -= PlayerXPToLevel;
 	PlayerLevel++;
+	LevelsEarned++;
 	PlayerStartingLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
 
@@ -492,16 +496,19 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	{
 		StartingWeapon = "Bow";
 		DexterityIncrease = 3;
+		StrengthIncrease = 2;
 	}
 	else if (SelectedClass == "Aphrodite")
 	{
 		StartingWeapon = "Staff";
 		IntelligenceIncrease = 3;
+		StrengthIncrease = 1;
 	}
 	else if (SelectedClass == "Nemesis")
 	{
 		StartingWeapon = "Sword";
 		DexterityIncrease = 3;
+		StrengthIncrease = 4;
 	}
 	else
 	{
@@ -546,7 +553,10 @@ void ARelicRunnersPlayerState::OnLevelUp()
 
 	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
 
-	Client_OnLevelUp();
+	if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetPlayerController()))
+	{
+		PC->HandleLevelUpVisuals();
+	}
 	PlayLevelUpSound();
 }
 
@@ -793,9 +803,14 @@ void ARelicRunnersPlayerState::SetIsHost(bool NewIsHost)
 
 void ARelicRunnersPlayerState::OnRep_PlayerLevel(int OldLevel)
 {
-	if (PlayerLevel > OldLevel)
+	if (bIsInitialSync)
 	{
-		//Show UI Popup
+		bIsInitialSync = false;
+		return;
+	}
+
+	if (OldLevel > 0 && PlayerLevel > OldLevel)
+	{
 		Client_OnLevelUp();
 	}
 }
@@ -921,5 +936,8 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, IsHost);
 	DOREPLIFETIME(ARelicRunnersPlayerState, DeathState);
 	DOREPLIFETIME(ARelicRunnersPlayerState, bIsInvincible);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerDeaths);
+	DOREPLIFETIME(ARelicRunnersPlayerState, LevelsEarned);
+	DOREPLIFETIME(ARelicRunnersPlayerState, EnemiesKilled);
 }
 

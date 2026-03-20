@@ -71,7 +71,7 @@ void USaveFileListWidget::Setup(USaveFileListData* InData)
         //Format as HH:MM:SS
         FString FormattedTime = FString::Printf(TEXT("%02dh %02dm %02ds"), Hours, Minutes, Seconds);
 
-        TB_TimePlayed->SetText(FText::FromString(FormattedTime));
+        TB_TimePlayed->SetText(FText::FromString(""));
 
     }
 }
@@ -98,6 +98,7 @@ void USaveFileListWidget::SetSelected(bool bSelected)
     FLinearColor SelectedOutlineColor = FLinearColor(1.0f, 0.5f, 0.0f, 1.0f);
     FLinearColor DefaultColor = FLinearColor::White;
     FLinearColor DelectedColor = FLinearColor(0.062f, 0.049f, 0.031f, 1.0f);
+    FLinearColor DelectedColor2 = FLinearColor(0.05f, 0.05f, 0.05f, 1.0f);
 
     FLinearColor ActiveTextColor = bSelected ? SelectedOutlineColor : DefaultColor;
 
@@ -113,13 +114,13 @@ void USaveFileListWidget::SetSelected(bool bSelected)
     TimeFont.OutlineSettings.OutlineColor = ActiveTextColor;
     TB_TimePlayed->SetFont(TimeFont);
 
-    B_SaveFile->SetBrushColor(bSelected ? FLinearColor::Black : DelectedColor);
-    B_Upgrades->SetBrushColor(bSelected ? FLinearColor::Black : DelectedColor);
-    B_Edit->SetBrushColor(bSelected ? FLinearColor::Black : DelectedColor);
+    B_SaveFile->SetBrushColor(bSelected ? DelectedColor2 : DelectedColor);
+    B_Upgrades->SetBrushColor(bSelected ? DelectedColor2 : DelectedColor);
+    B_Edit->SetBrushColor(bSelected ? DelectedColor2 : DelectedColor);
 
     SaveFileButton->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
     EditButton->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
-    Upgrades->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
+    Upgrades->SetBackgroundColor(bSelected ? DefaultColor : DefaultColor);
 }
 
 void USaveFileListWidget::OnEditButtonClicked()

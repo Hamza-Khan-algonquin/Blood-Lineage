@@ -461,6 +461,14 @@ void ARelicRunnersPlayerController::HandleLevelUpVisuals()
 {
 	if (!IsLocalController()) return;
 
+	if (GetWorld() == nullptr || GetWorld()->IsBeingCleanedUp() == true) return;
+
+	if (!LevelUpHUDClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LevelUpHUDClass is null on Controller!"));
+		return;
+	}
+
 	if (LevelUpHUD)
 	{
 		LevelUpHUD->RemoveFromParent();

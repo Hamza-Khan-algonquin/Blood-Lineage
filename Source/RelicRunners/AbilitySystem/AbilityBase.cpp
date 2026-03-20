@@ -85,7 +85,7 @@ void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* Targe
         FinalDamage *= CritDamageMultiplier;
     }
 
-    UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, InstigatorActor, UDamageType::StaticClass());
+    UGameplayStatics::ApplyDamage(TargetActor, FMath::Clamp(FinalDamage, 0, 1000000), InstigatorController, InstigatorActor, UDamageType::StaticClass());
 }
 
 

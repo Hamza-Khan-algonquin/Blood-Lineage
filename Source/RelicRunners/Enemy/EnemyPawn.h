@@ -102,6 +102,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
 	FTimerHandle AttackHandle;
+
+
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();

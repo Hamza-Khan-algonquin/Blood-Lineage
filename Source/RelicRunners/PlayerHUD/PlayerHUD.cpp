@@ -130,6 +130,8 @@ void UPlayerHUD::UpdateBindText()
 	FString UtilityKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Utility Ability")));
 	FString DefenceKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Defence Ability")));
 	FString UltimateKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Ultimate Ability")));
+	FString HealthPotKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Health Potion")));
+	FString AbilityUpgradeKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Ability Selection")));
 
 	if (TB_DamageAbility)
 		TB_DamageAbility->SetText(FText::FromString(DamageKey));
@@ -142,6 +144,12 @@ void UPlayerHUD::UpdateBindText()
 
 	if (TB_UltimateAbility)
 		TB_UltimateAbility->SetText(FText::FromString(UltimateKey));
+
+	if (TB_HealthPotionBind)
+		TB_HealthPotionBind->SetText(FText::FromString(HealthPotKey));
+
+	if (TB_AbilitySelection)
+		TB_AbilitySelection->SetText(FText::FromString(AbilityUpgradeKey));
 }
 
 void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)

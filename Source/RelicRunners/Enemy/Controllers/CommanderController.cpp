@@ -155,7 +155,10 @@ void ACommanderController::RemovePawnEnemy(AActor* enemy)
 {
 	AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
 
-	if (!enemyPawn || !ControlledEnemies.Contains(enemyPawn)) return;
+	if (!enemyPawn || !IsValid(enemyPawn) || !ControlledEnemies.Contains(enemyPawn))
+	{
+		return;
+	}
 
 	enemyPawn->OnDestroyed.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
 	enemyPawn->OnDeactivated.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
