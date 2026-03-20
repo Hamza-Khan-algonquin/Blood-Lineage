@@ -21,10 +21,9 @@ void UIslandSpawningValuesComponent::GetLifetimeReplicatedProps(TArray<FLifetime
 	DOREPLIFETIME(UIslandSpawningValuesComponent, IslandStartEnd);
 	DOREPLIFETIME(UIslandSpawningValuesComponent, FloorMeshes);
 	DOREPLIFETIME(UIslandSpawningValuesComponent, ObstacleValues);
-	DOREPLIFETIME(UIslandSpawningValuesComponent, HoleValues);
 	DOREPLIFETIME(UIslandSpawningValuesComponent, VantageValues);
+	DOREPLIFETIME(UIslandSpawningValuesComponent, SafeSpotValues);
 	DOREPLIFETIME(UIslandSpawningValuesComponent, FlagObjectiveValues);
-	DOREPLIFETIME(UIslandSpawningValuesComponent, EnemyZoneObjectiveValues);
 	DOREPLIFETIME(UIslandSpawningValuesComponent, PayloadObjectiveValues);
 	DOREPLIFETIME(UIslandSpawningValuesComponent, SurvivalZoneObjectiveValues);
 }

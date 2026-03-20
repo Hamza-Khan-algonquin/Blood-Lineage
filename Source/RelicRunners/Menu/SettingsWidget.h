@@ -204,6 +204,9 @@ public:
 	UFUNCTION()
 	void OnAudioDevicesFound(const TArray<FAudioOutputDeviceInfo>& Devices);
 
+	UFUNCTION()
+	void OnOutputDevicesSwapped(const FSwapAudioOutputResult& Result);
+
 	//Volume Slider
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	USlider* MasterVolumeSlider = nullptr;
@@ -225,6 +228,20 @@ public:
 
 	void ApplyMasterVolume(float Volume);
 	void UpdateMasterVolumeText(float Volume);
+
+	//anti-aliasing
+	UPROPERTY(meta = (BindWidget))
+	UComboBoxString* AntiAliasingDropDown = nullptr;
+
+	UFUNCTION()
+	void HandleAntiAliasingChanged(FString Item, ESelectInfo::Type SelectionType);
+
+	//auto loot
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UCheckBox* AutoLoot = nullptr;
+
+	UFUNCTION()
+	void OnAutoLootChanged(bool bIsChecked);
 
 protected:
 	UFUNCTION()

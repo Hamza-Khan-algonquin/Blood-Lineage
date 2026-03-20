@@ -12,6 +12,7 @@
 #include "HadesSweepPrediction.h"
 #include "HadesSlamPrediction.h"
 #include "HadesSlamSweepPrediction.h"
+#include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
 
 AHades::AHades()
 {
@@ -54,14 +55,21 @@ void AHades::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage, fl
 void AHades::BeginPlay()
 {
     Super::BeginPlay();
-    if (GhostCycloneSystem)
+    if(GhostCycloneSystem)
     {
         ActiveCycloneComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), GhostCycloneSystem, FVector(0.f, 0.f, -300.f));
+
         ActiveCycloneComp->SetIsReplicated(true);
+
     }
+
     if (HasAuthority())
     {
-        ScheduleNextAttack(2.0f);
+        FTimerHandle StartDelayHandle;
+        GetWorldTimerManager().SetTimer(StartDelayHandle, this, &AHades::TriggerAllPlayersCinematicWalk, 5.0f, false);
+
+        SpawnBridge();
+        SelectRandomTarget();
     }
 }
 
@@ -83,6 +91,38 @@ void AHades::Tick(float DeltaTime)
     }
 }
 
+void AHades::TriggerAllPlayersCinematicWalk()
+{
+    if (!HasAuthority()) return;
+
+    ScheduleCinematicSlam(2.0f);
+
+    TArray<FVector> CinematicSpots;
+    CinematicSpots.Add(FVector(3000.f, -1410.f, 90));
+    CinematicSpots.Add(FVector(3650.f, -1410.f, 90));
+    CinematicSpots.Add(FVector(1410.f, -3000.f, 90));
+    CinematicSpots.Add(FVector(1410.f, -3650.f, 90));
+
+    for (int i = CinematicSpots.Num() - 1; i > 0; i--)
+    {
+        int j = FMath::RandRange(0, i);
+        CinematicSpots.Swap(i, j);
+    }
+
+    int SpotIndex = 0;
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(It->Get()))
+        {
+            if (SpotIndex < CinematicSpots.Num())
+            {
+                PC->Client_StartCinematicWalk(CinematicSpots[SpotIndex]);
+                SpotIndex++;
+            }
+        }
+    }
+}
+
 void AHades::OnRep_VortexForce()
 {
     if (ActiveCycloneComp)
@@ -95,6 +135,12 @@ void AHades::ScheduleNextAttack(float Delay)
 {
     if (!HasAuthority()) return;
     GetWorldTimerManager().SetTimer(AttackLoopTimer, this, &AHades::ExecuteAttack, Delay, false);
+}
+
+void AHades::ScheduleCinematicSlam(float Delay)
+{
+    if (!HasAuthority()) return;
+    GetWorldTimerManager().SetTimer(AttackLoopTimer, this, &AHades::CinematicSlam, Delay, false);
 }
 
 void AHades::ResetAllStates()
@@ -174,6 +220,78 @@ void AHades::ExecuteAttack()
     }
 }
 
+void AHades::SpawnBridge()
+{
+    FVector TargetLocation(4650.0f, -4620.0f, -112.0f);
+    FRotator TargetRotation = FRotator::ZeroRotator;
+
+    if (BridgeClass)
+    {
+        FActorSpawnParameters Params;
+        Params.Owner = this;
+        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+        BridgeToDestroy = GetWorld()->SpawnActor<AActor>(BridgeClass, TargetLocation, TargetRotation, Params);
+        BridgeToDestroy->SetReplicates(true);
+
+        UE_LOG(LogTemp, Log, TEXT("Hades: Bridge spawned at X=4650, Y=-4620, Z=-112"));
+    }
+}
+
+void AHades::CinematicSlam()
+{
+    if (!HasAuthority()) return;
+
+    if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
+
+    MulticastPlayAttackMontage(SlamMontage, 0.25f, 0);
+
+    LastAttack = "Slam";
+    bIsBusy = true;
+
+    FVector Origin = FVector::ZeroVector;
+    FVector Dir = (CurrentTarget->GetActorLocation() - Origin).GetSafeNormal2D();
+    FVector SlamLoc = FVector(3400, -3400, 20.0f);
+    LockRotationTo(SlamLoc, true);
+
+    float Delay = 8;
+
+    AHadesSlamPrediction* Pred = GetWorld()->SpawnActor<AHadesSlamPrediction>(SlamPredictionClass, SlamLoc, FRotator::ZeroRotator);
+    if (Pred)
+    {
+        Pred->Duration = Delay;
+        Pred->TargetScale = FVector(18.0f, 18.0f, 1.0f);
+        Pred->bShouldScale = true;
+        Pred->SetLifeSpan(Delay + 0.2f);
+    }
+
+    TWeakObjectPtr<AHades> WeakSelf(this);
+    GetWorldTimerManager().SetTimer(AbilityLogicTimer, [WeakSelf, SlamLoc]() {
+        AHades* StrongSelf = WeakSelf.Get();
+
+        if (StrongSelf)
+        {
+            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
+
+            StrongSelf->bIsBusy = false;
+            StrongSelf->bIsLookingAtAbilityTarget = false;
+            StrongSelf->ScheduleNextAttack(2.0f);
+
+            StrongSelf->MulticastOnBridgeDestroyed(StrongSelf->BridgeToDestroy->GetActorLocation());
+            if (StrongSelf->BridgeToDestroy)
+            {
+                StrongSelf->BridgeToDestroy->Destroy();
+                StrongSelf->BridgeToDestroy = nullptr;
+            }
+        }
+        }, Delay, false);
+}
+
+void AHades::MulticastOnBridgeDestroyed_Implementation(FVector Location)
+{
+    UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BridgeCrumbleFX, Location);
+}
+
 void AHades::PlaySlam()
 {
     if (!HasAuthority()) return;
@@ -201,16 +319,15 @@ void AHades::PlaySlam()
 
     TWeakObjectPtr<AHades> WeakSelf(this);
     GetWorldTimerManager().SetTimer(AbilityLogicTimer, [WeakSelf, SlamLoc]() {
-        if (WeakSelf.IsValid())
+        AHades* StrongSelf = WeakSelf.Get();
+
+        if (StrongSelf)
         {
-            WeakSelf->ExecuteDamage(SlamLoc, 1800.0f);
-            //Incase boss dies
-            if (WeakSelf.IsValid())
-            {
-                WeakSelf->bIsBusy = false;
-                WeakSelf->bIsLookingAtAbilityTarget = false;
-                WeakSelf->ScheduleNextAttack(2.0f);
-            }
+            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
+
+            StrongSelf->bIsBusy = false;
+            StrongSelf->bIsLookingAtAbilityTarget = false;
+            StrongSelf->ScheduleNextAttack(2.0f);
         }
         }, Delay, false);
 }

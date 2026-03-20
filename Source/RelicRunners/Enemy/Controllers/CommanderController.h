@@ -29,6 +29,14 @@ public:
 	int MaxLifeTimeNumberOfEnemies;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int EnemyToSpawnPerLoop;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TimeBetweenSpawnChecks;
+
+	FTimerHandle SpawnTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SpawnRadius;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -42,6 +50,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	APawn* TargetPlayer;
+
+	float TargetDistance;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TMap<TObjectPtr<APawn>, float> RemainingTimeToAttack;
@@ -94,6 +104,7 @@ public:
 	void UpdateTarget(APawn* newTarget);
 protected:
 	virtual void BeginPlay() override;
+
 	virtual void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION(BlueprintCallable)

@@ -18,7 +18,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Sound/SoundBase.h"
 #include "Inventory.generated.h"
+
 
 USTRUCT(BlueprintType)
 struct FItemOptionsUIConfig
@@ -131,6 +133,7 @@ public:
 	TSubclassOf<class UInventoryItemOptions> InventoryItemOptionsClass;
 	UPROPERTY(EditAnywhere, Category = "Popup")
 	TSubclassOf<class UInventorySortingOptions> InventorySortingOptionsClass;
+	class UBorder* CurrentHoveredBorder;
 	UPROPERTY()
 	class UStandardTooltip* StandardTooltip;
 	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
@@ -146,11 +149,31 @@ public:
 	float ForgeChance1;
 	float ForgeChance2;
 	float ForgeChance3;
-	class UBorder* CurrentHoveredBorder;
 	int CycleCount;
 	FTimerHandle FuseTimerHandle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PreviewActor")
 	TObjectPtr<UMaterialInstanceDynamic> PreviewActorMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ArmorEquipSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ArmorUnequipSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* BuySound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* SellSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ForgePlaceSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ForgePressSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* ForgeSuccessSound = nullptr;
 
 	//Functions
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
@@ -172,6 +195,7 @@ public:
 	void ToggleShopUI(bool value);
 	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+	void PlayUISound(USoundBase* Sound);
 
 	UFUNCTION()
 	void UpdateForgeUI();
@@ -241,6 +265,8 @@ public:
 	class UBorder* B_Mana = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_PlayerLevel = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UBorder* B_MetaLevel = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTileView* VendorSlots;
 
@@ -421,6 +447,8 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Gold;
 	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_MetaLevel;
+	UPROPERTY(meta = (BindWidget))
 	class UButton* B_Helmet;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_Upper;
@@ -476,7 +504,26 @@ public:
 	class UImage* I_Mainhand;
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* EquippedCanvas;
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability1;
 
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability3;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Ability4;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_HealthPotion;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_AbilityUpgrade;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Class")
+	class UClassInfo* ClassDataAsset = nullptr;
 protected:
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

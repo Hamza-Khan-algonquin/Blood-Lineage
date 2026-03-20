@@ -3,6 +3,8 @@
 
 #include "IslandBridge.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include <Net/UnrealNetwork.h>
 
 // Sets default values
@@ -12,8 +14,10 @@ AIslandBridge::AIslandBridge():
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+
 	Bridge = CreateDefaultSubobject<UStaticMeshComponent>("Bridge Mesh");
-	Bridge->SetupAttachment(RootComponent);
+	RootComponent = Bridge;
+	Bridge->SetIsReplicated(true);
 
 	Barrier = CreateDefaultSubobject<UStaticMeshComponent>("Barrier Mesh");
 	Barrier->SetupAttachment(Bridge);
@@ -46,8 +50,28 @@ void AIslandBridge::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Barrier->SetVisibility(true);
+	Barrier->SetVisibility(false);
 	Barrier->SetCollisionProfileName("BlockAll");
+	BackBarrier->SetVisibility(false);
+}
+
+void AIslandBridge::Create()
+{
+	if (HasAuthority())
+	{
+		Barrier->SetVisibility(true);
+
+		if (IsFinalBridge)
+		{
+			BackBarrier->SetVisibility(true);
+			BackBarrier->SetCollisionProfileName("BlockAll");
+		}
+		else
+		{
+			BackBarrier->SetVisibility(false);
+			BackBarrier->SetCollisionProfileName("NoCollision");
+		}
+	}
 }
 
 void AIslandBridge::Activate()
@@ -65,16 +89,6 @@ void AIslandBridge::SetFinalBridge(bool isFinal)
 	if (HasAuthority())
 	{
 		IsFinalBridge = isFinal;
-		if (IsFinalBridge)
-		{
-			BackBarrier->SetVisibility(true);
-			BackBarrier->SetCollisionProfileName("BlockAll");
-		}
-		else
-		{
-			BackBarrier->SetVisibility(false);
-			BackBarrier->SetCollisionProfileName("NoCollision");
-		}
 	}
 }
 
@@ -100,23 +114,39 @@ void AIslandBridge::OnRep_OnFinalBridgeChange()
 
 void AIslandBridge::OnFrontTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (!OtherActor->ActorHasTag("Player"))
+		return;
+
+	APawn* player = Cast<APawn>(OtherActor);
+
+	if (player == nullptr)
+		return;
+
+	if (player->GetController() == nullptr)
+		return; 
+
+	if (player->GetController()->IsLocalPlayerController())
 	{
-		if (HasAuthority())
-		{
-			OnFrontTrigger.Broadcast();
-		}
+		OnFrontTrigger.Broadcast();
 	}
 }
 
 void AIslandBridge::OnBackTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->ActorHasTag("Player"))
+	if (!OtherActor->ActorHasTag("Player"))
+		return;
+
+	APawn* player = Cast<APawn>(OtherActor);
+
+	if (player == nullptr)
+		return;
+
+	if (player->GetController() == nullptr)
+		return;
+
+	if (player->GetController()->IsLocalPlayerController())
 	{
-		if (HasAuthority())
-		{
-			OnBackTrigger.Broadcast();
-		}
+		OnBackTrigger.Broadcast();
 	}
 }
 

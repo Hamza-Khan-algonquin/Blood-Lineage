@@ -8,6 +8,7 @@
 #include "PayloadActor.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "RelicRunners/PlayerController/RelicRunnersPlayerController.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AIslandSpawner::AIslandSpawner():
@@ -72,10 +73,11 @@ void AIslandSpawner::BeginPlay()
 				newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
 				newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
 				newIsland->GenerationValuesComponent->SetVantagePointValues(GenerationValuesComponent->VantageValues);
+				newIsland->GenerationValuesComponent->SetSafeSpotValues(GenerationValuesComponent->SafeSpotValues);
 				newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
-				newIsland->GenerationValuesComponent->SetEnemyZoneObjectiveValues(GenerationValuesComponent->EnemyZoneObjectiveValues);
 				newIsland->GenerationValuesComponent->SetPayloadObjectiveValues(GenerationValuesComponent->PayloadObjectiveValues);
 				newIsland->GenerationValuesComponent->SetSurvivalZoneObjectiveValues(GenerationValuesComponent->SurvivalZoneObjectiveValues);
+				newIsland->SetNumStages(NumStages);
 
 				if (CameraActor)
 					newIsland->CameraActor = CameraActor;
@@ -125,18 +127,6 @@ void AIslandSpawner::BeginPlay()
 				Islands[i]->SetActorLocation(FVector(offsetX, offsetY, Islands[i]->GetActorLocation().Z));
 			}
 
-			/*
-			for (int i = 0; i < NumIslands; i++)
-			{
-				if (i == NumIslands-1)
-				{
-					Islands[i]->SetFinalIsland(true);
-				}
-
-				Islands[i]->Generate();
-			}
-			*/
-
 			if (CurrentSpawnedIsland == NumIslands - 1)
 			{
 				Islands[CurrentSpawnedIsland]->SetFinalIsland(true);
@@ -157,8 +147,23 @@ void AIslandSpawner::BeginPlay()
 			}
 		}
 	}
+	
 	UpdateControllerStageUI(gameInstance->StageNumber);
 	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
+}
+
+void AIslandSpawner::OnRep_IslandArrayChange()
+{
+	if (Islands.IsEmpty())
+		return;
+
+	for (AIslandGenerationTest* isl : Islands)
+	{
+		isl->OnObjectiveIslandObjectiveComplete.AddDynamic(this, &AIslandSpawner::GenerateNewIsland);
+		isl->OnSetCameraChange.AddDynamic(this, &AIslandSpawner::ChangeIslandCamera);
+		isl->OnSetCameraChangeBack.AddDynamic(this, &AIslandSpawner::ChangeIslandVisibility);
+
+	}
 }
 
 void AIslandSpawner::GenerateNewIsland()
@@ -170,8 +175,6 @@ void AIslandSpawner::GenerateNewIsland()
 		{
 			Islands[CurrentSpawnedIsland]->SetFinalIsland(true);
 		}
-
-		//Islands[CurrentSpawnedIsland]->Generate();
 		Islands[CurrentSpawnedIsland]->ActivateIsland();
 	}
 	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
@@ -201,4 +204,11 @@ void AIslandSpawner::ChangeIslandVisibility(int islandIndex)
 		}
 
 	}
+}
+
+void AIslandSpawner::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AIslandSpawner, Islands);
 }

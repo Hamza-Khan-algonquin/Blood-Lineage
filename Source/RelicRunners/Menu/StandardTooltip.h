@@ -18,7 +18,7 @@ public:
 
 	void SetAnchor(FVector2D anchor);
 
-	void SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor);
+	void SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor, int index);
 
 protected:
 	virtual void NativeConstruct() override;
@@ -27,25 +27,34 @@ protected:
 	class UImage* Icon;
 
 	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon3;
+
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Name;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Value;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description1;
+	class URichTextBlock* TB_Desc1;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description2;
+	class URichTextBlock* TB_Desc2;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description3;
+	class URichTextBlock* TB_Desc3;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description4;
+	class URichTextBlock* TB_Desc4;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* TB_Description5;
+	class URichTextBlock* TB_Desc5;
 
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Description1;

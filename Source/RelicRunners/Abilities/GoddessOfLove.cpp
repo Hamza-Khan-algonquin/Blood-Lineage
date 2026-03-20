@@ -18,9 +18,9 @@ UGoddessOfLove::UGoddessOfLove()
 	AreaRadius = 1000.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
-	Cost = 50;
+	Cost = 60;
     ElapsedDOTTime = 0.f;
-    DOTTickInterval = 1.f;
+    DOTTickInterval = 0.5f;
     DOTDuration = 0.7f;
     PassiveRegenTickInterval = 1.f;
 }
@@ -30,6 +30,13 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
+    if (!AvatarActor)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
@@ -64,8 +71,10 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
     // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - Cost);
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)
@@ -207,7 +216,7 @@ void UGoddessOfLove::TickDamage()
         DrawDebugLine(World, DamageOrigin, Enemy->GetActorLocation(), LineColor, false, DOTTickInterval, 0, 2.f);
         DrawDebugString(World, Enemy->GetActorLocation() + FVector(0, 0, 80.f), FString::Printf(TEXT("DPS x%.2f"), DamageMultiplier), nullptr, LineColor, DOTTickInterval);
 
-        UGameplayStatics::ApplyDamage(Enemy, ScaledDamage, CurrentActorInfo->PlayerController.Get(), OwnerActor, nullptr);
+        CalculateAbilityDamage(OwnerActor, Enemy, ScaledDamage);
     }
 
     if (ElapsedDOTTime >= DOTDuration)

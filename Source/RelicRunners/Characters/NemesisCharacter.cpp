@@ -27,6 +27,17 @@ ANemesisCharacter::ANemesisCharacter()
 void ANemesisCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (USkeletalMeshComponent* Mesh1 = GetMesh())
+    {
+        if (UAnimInstance* AnimInstance = Mesh1->GetAnimInstance())
+        {
+            AnimInstance->OnMontageEnded.AddDynamic(
+                this,
+                &ANemesisCharacter::OnMontageEnded
+            );
+        }
+    }
 }
 
 // Called when player takes control of this character
@@ -126,7 +137,6 @@ void ANemesisCharacter::ActivateDefenceAbilities()
     {
         // Activate Impunity ability
         AbilitySystem->TryActivateAbilityByClass(BP_NaturesBlessingClass);
-
     }
 }
 
@@ -139,7 +149,6 @@ void ANemesisCharacter::ActivateUtilityAbilities()
     {
         // Activate Vengeful Dance ability
         AbilitySystem->TryActivateAbilityByClass(BP_VengefulDanceClass);
-
     }
 }
 
@@ -154,22 +163,28 @@ void ANemesisCharacter::ActivateUltimateAbilities()
     }
 }
 
-void ANemesisCharacter::PlayRandomAttackAnimation()
+void ANemesisCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-    if (!BasicAnim)
-        return;
+    if (Montage != BasicAnim) return;
 
-    USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
-    if (!SkeletalMeshComponent)
-        return;
+    bIsAttacking = false;
 
-    UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
-    if (!AnimInstance)
-        return;
+    if (bBufferedInput)
+    {
+        bBufferedInput = false;
 
-    AnimInstance->Montage_Play(BasicAnim, 1.f);
+        int32 NextIndex = CurrentComboIndex + 1;
+
+        if (NextIndex <= 2)
+        {
+            StartAttack(NextIndex);
+            return;
+        }
+    }
+
+    ResetCombo();
+    CanBasicAttack = true;
 }
-
 void ANemesisCharacter::PerformSwingTrace()
 {
     FVector Start = GetMesh()->GetSocketLocation("MainhandSocket");
@@ -179,12 +194,15 @@ void ANemesisCharacter::PerformSwingTrace()
     Params.AddIgnoredActor(this);
 
     TArray<FHitResult> Hits;
-    GetWorld()->SweepMultiByChannel(
-        Hits, Start, End, FQuat::Identity,
-        ECC_GameTraceChannel1, FCollisionShape::MakeSphere(100.0f), Params
-    );
 
-    AlreadyHitActors.Empty();
+    GetWorld()->SweepMultiByChannel(Hits,Start,End,FQuat::Identity, ECC_GameTraceChannel1,FCollisionShape::MakeSphere(100.f),Params);
+
+    float AppliedDamage = 120.0f;
+
+    if (CurrentComboIndex == 2)
+    {
+        AppliedDamage = 150.0f;
+    }
 
     for (const FHitResult& Hit : Hits)
     {
@@ -193,17 +211,12 @@ void ANemesisCharacter::PerformSwingTrace()
             if (!AlreadyHitActors.Contains(HitActor))
             {
                 if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                {
-                    Server_HitEnemy(Enemy);
-                }
+                    Server_HitEnemy(Enemy, AppliedDamage);
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                {
-                    Server_HitEnemy(TEnemy);
-                }
+                    Server_HitEnemy(TEnemy, AppliedDamage);
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                {
-                    Server_HitEnemy(TPEnemy);
-                }
+                    Server_HitEnemy(TPEnemy, AppliedDamage);
+
                 AlreadyHitActors.Add(HitActor);
             }
         }
@@ -212,36 +225,64 @@ void ANemesisCharacter::PerformSwingTrace()
 
 void ANemesisCharacter::BasicAttack()
 {
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+    if (!BasicAnim || !CanBasicAttack) return;
 
-    if (!CanBasicAttack) return;
-    CanBasicAttack = false;
+    UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+    if (!AnimInstance) return;
 
-    Damage = 1.0f;
-
-    if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+    if (bIsAttacking)
     {
-        PlayRandomAttackAnimation();
+        bBufferedInput = true;
+        return;
     }
 
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &ARelicRunnersCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+    StartAttack(0);
 }
 
+void ANemesisCharacter::StartAttack(int32 ComboIndex)
+{
+    bIsAttacking = true;
+    bBufferedInput = false;
+
+    CurrentComboIndex = ComboIndex;
+
+    Damage = (ComboIndex == 2) ? 150.0f : 120.0f;
+
+    AlreadyHitActors.Empty();
+
+    UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+    if (!AnimInstance) return;
+
+    AnimInstance->Montage_Play(BasicAnim);
+
+    if (ComboIndex == 0)
+        AnimInstance->Montage_JumpToSection(FName("Attack1"), BasicAnim);
+    else if (ComboIndex == 1)
+        AnimInstance->Montage_JumpToSection(FName("Attack2"), BasicAnim);
+    else if (ComboIndex == 2)
+        AnimInstance->Montage_JumpToSection(FName("Attack3"), BasicAnim);
+}
+
+void ANemesisCharacter::ResetCombo()
+{
+    CurrentComboIndex = 0;
+    bBufferedInput = false;
+}
 void ANemesisCharacter::HeavyAttack()
 {
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-    if (!CanHeavyAttack) return;
-    CanHeavyAttack = false;
+    //if (!CanHeavyAttack) return;
+    //CanHeavyAttack = false;
 
-    Damage = 10.0f;
+    //Damage = 10.0f;
 
-    if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-    {
-        PlayRandomAttackAnimation();
-    }
+    //if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
+    //{
+    //    PlayRandomAttackAnimation();
+    //}
 
-    GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
+    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void ANemesisCharacter::UpdateCamera(float DeltaTime)
@@ -387,10 +428,3 @@ void ANemesisCharacter::UpdateCameraRotation( float DeltaTime,const FVector& Vel
     }
 }
 
-void ANemesisCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-    if (HitActor)
-    {
-        UGameplayStatics::ApplyDamage(HitActor, Damage, GetController(), this, nullptr);
-    }
-}

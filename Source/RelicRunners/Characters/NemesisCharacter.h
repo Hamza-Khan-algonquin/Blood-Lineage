@@ -24,7 +24,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     class UClassInfo* ClassInfo;
 
-    virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:
     virtual void BeginPlay() override;
@@ -33,14 +32,18 @@ protected:
     virtual void ActivateUtilityAbilities() override;
     virtual void ActivateUltimateAbilities() override;
 
+    UFUNCTION()
+    void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
     void GiveImpunity();
     void GiveBackStab();
     void GiveVengefulDance();
     void GiveDivinePunishment();
 
-    virtual void PlayRandomAttackAnimation() override;
     virtual void PerformSwingTrace() override;
     virtual void BasicAttack() override;
+    void StartAttack(int32 ComboIndex);
+    void ResetCombo();
     virtual void HeavyAttack() override;
 
     virtual void UpdateCamera(float DeltaTime) override;
@@ -50,6 +53,13 @@ protected:
 
     UPROPERTY()
     float Damage;
+    bool bIsAttacking = false;
+    int32 CurrentComboIndex = 0;
+    bool bBufferedInput = false;
+    UPROPERTY(EditAnywhere, Category = "Combat")
+    float ComboResetTime = 0.5f; // time allowed between clicks
+
+    FTimerHandle ComboResetTimer;
 
     UPROPERTY(EditDefaultsOnly, Category = "Nemesis")
     TSubclassOf<UBackStab> BP_BackStabClass;

@@ -85,7 +85,7 @@ void ALevelChangeTrigger::ChangeLevel()
 	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(World->GetFirstPlayerController());
 	if (!RPC) return;
 
-	RPC->TravelCleanUI();
+	RPC->CleanUI();
 
 	FString TravelURL = TargetLevel + TEXT("?listen");
 	World->ServerTravel(TravelURL, true);
@@ -94,7 +94,6 @@ void ALevelChangeTrigger::ChangeLevel()
 void ALevelChangeTrigger::Server_Activate_Implementation()
 {
 	IsActive = true;
-	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Level Trigger has been activated")));
 }
 
 void ALevelChangeTrigger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

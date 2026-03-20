@@ -112,6 +112,12 @@ public:
 	class UTextBlock* TB_HealthPotion;
 
 	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_HealthPotionBind;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilitySelection;
+
+	UPROPERTY(meta = (BindWidget))
 	class UImage* BloodyOverlay;
 
 	FTimerHandle DamageCooldownHandle;
@@ -139,5 +145,4 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartUltimateCooldown(float CooldownTime);
-
 };

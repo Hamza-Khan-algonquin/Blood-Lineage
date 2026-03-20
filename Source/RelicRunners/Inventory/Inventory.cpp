@@ -11,7 +11,7 @@
  *   Any use, distribution, or modification outside of these projects
  *   is strictly prohibited without explicit written permission.
  *
- *   © 2025 Tristan Anglin. All rights reserved.
+ *   ï¿½ 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
 #include "Inventory.h"
@@ -49,7 +49,12 @@
 #include "InventorySlotsEntry.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
 #include <Blueprint/SlateBlueprintLibrary.h>
+#include "Components/AudioComponent.h"
 #include "Animation/WidgetAnimation.h"
+#include "RelicRunners/Menu/SaveFileListData.h"
+#include <ClassData.h>
+#include "ClassInfo.h"
+
 
 void UInventory::NativeConstruct()
 {
@@ -377,6 +382,8 @@ void UInventory::SetPreviewActorImage(UTextureRenderTarget2D* RenderTarget)
 
 void UInventory::EquipItem(UItemObject* Item)
 {
+    PlayUISound(ArmorEquipSound);
+
     if (Item->IsNewItem) Item->IsNewItem = false;
 
     if (OwningCharacter->RelicPlayerState)
@@ -389,6 +396,8 @@ void UInventory::EquipItem(UItemObject* Item)
 
 void UInventory::UnequipItem(UItemObject* Item)
 {
+    PlayUISound(ArmorUnequipSound);
+
     if (OwningCharacter && Item)
     {
         OwningCharacter->RelicPlayerState->Server_UnequipItemByID(Item->GetUniqueID());
@@ -412,6 +421,8 @@ void UInventory::BuyItem(UItemObject* Item)
 {
     if (!Item) return;
 
+    PlayUISound(BuySound);
+
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
         AVendor* Shop = Cast<AVendor>(CurrentVendor);
@@ -422,6 +433,8 @@ void UInventory::BuyItem(UItemObject* Item)
 void UInventory::SellItem(UItemObject* Item)
 {
     if (!Item) return;
+
+    PlayUISound(SellSound);
 
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {
@@ -507,7 +520,14 @@ FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
         B_Luck,           
         B_Mana,           
         B_PlayerLevel,    
-        B_Purity          
+        B_Purity,
+        B_MetaLevel,
+        B_Ability1,
+        B_Ability2,
+        B_Ability3,
+        B_Ability4,
+        B_AbilityUpgrade,
+        B_HealthPotion
     };
 
     UBorder* HoveredBorder = nullptr;
@@ -540,7 +560,8 @@ FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
         ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
     }
 
-    return FReply::Handled();
+    if(CurrentHoveredBorder) return FReply::Handled();
+    else return FReply::Unhandled();
 }
 
 void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
@@ -549,8 +570,17 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     if (!HoveredBorder) return;
 
+    if (!StandardTooltipClass || !ClassDataAsset || !HoveredBorder) return;
+
     APlayerController* PC = GetOwningPlayer();
     if (!PC) return;
+    ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+    if (!RPC) return;
+    ARelicRunnersPlayerState* RPS = Cast<ARelicRunnersPlayerState>(RPC->PlayerState);
+    if (!RPS) return;
+
+    FClassData* Info = nullptr;
+    if (RPS->SelectedClass != "None") Info = &ClassDataAsset->Classes[RPS->SelectedClass];
 
     if (!StandardTooltip)
     {
@@ -562,6 +592,10 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     FString StatKey = "";
     int RawValue = 0;
+    FString AbilityName;
+    FString AbilityDesc;
+
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
 
     if      (HoveredBorder == B_Health)         { StatKey = "Health";       RawValue = Stats.TotalHealth; }
     else if (HoveredBorder == B_Defence)        { StatKey = "Defence";      RawValue = Stats.TotalArmor; }
@@ -572,11 +606,33 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_Mana)           { StatKey = "Mana";         RawValue = Stats.TotalResource; }
     else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = Stats.PlayerLevel; }
     else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = Stats.TotalPotionEfficiency; }
+    else if (HoveredBorder == B_MetaLevel && GI->SelectedSaveSlot)      { StatKey = "MetaLevel";    RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
+    else if (HoveredBorder == B_AbilityUpgrade) { StatKey = "AbilityUpgrade"; }
+    else if (HoveredBorder == B_HealthPotion) { StatKey = "HealthPotion"; }
+    else if (HoveredBorder == B_Ability1) { StatKey = "Ability1"; if (Info) AbilityName = Info->Ability1; if (Info) AbilityDesc = Info->Ability1Description1; }
+    else if (HoveredBorder == B_Ability2) { StatKey = "Ability2"; if (Info) AbilityName = Info->Ability2; if (Info) AbilityDesc = Info->Ability2Description1; }
+    else if (HoveredBorder == B_Ability3) { StatKey = "Ability3"; if (Info) AbilityName = Info->Ability3; if (Info) AbilityDesc = Info->Ability3Description1; }
+    else if (HoveredBorder == B_Ability4) { StatKey = "Ability4"; if (Info) AbilityName = Info->Ability4; if (Info) AbilityDesc = Info->Ability4Description1; }
 
+    FVector2D Offset(-5.0f, 5.0f);
+    FVector2D Anchor(1.f, 0.f);
     FTooltipData TD;
     if (HoveredBorder == B_Mana)
     {
         TD = ItemStats::GetStatTooltipData(StatKey, RawValue, Stats.TotalResourceRegen, Stats.TotalResourceTime, "", "");
+    }
+    else if (HoveredBorder == B_PlayerLevel)
+    {
+        if (GI->SelectedSaveSlot)
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, RawValue, GI->SelectedSaveSlot->SaveData.MetaStartingLevel, 0, "", "");
+        }
+    }
+    else if (HoveredBorder == B_Ability1 || HoveredBorder == B_Ability2 || HoveredBorder == B_Ability3 || HoveredBorder == B_Ability4 || HoveredBorder == B_AbilityUpgrade || HoveredBorder == B_HealthPotion)
+    {
+        Offset = FVector2D(0, -50.0f);
+        Anchor = FVector2D(0.5f, 1);
+        TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
     }
     else
     {
@@ -585,13 +641,28 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
 
-    const FVector2D Offset(-5.0f, 5.0f);
-    const FVector2D Anchor(1.f, 0.f);
-
     StandardTooltip->SetAnchor(Anchor);
-    StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+    StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
     StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
+}
+
+void UInventory::PlayUISound(USoundBase* Sound)
+{
+    if (!Sound) return;
+
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        const float RandomPitch = FMath::FRandRange(0.80f, 1.80f);
+        
+        if (UAudioComponent* AC = UGameplayStatics::SpawnSound2D(PC, Sound))
+        {
+            AC->SetPitchMultiplier(RandomPitch);
+            return;
+        }
+
+        UGameplayStatics::PlaySound2D(PC, Sound);
+    }
 }
 
 void UInventory::HelmetSlotClicked()
@@ -787,10 +858,13 @@ void UInventory::ForgeItem(UItemObject* Item)
     if (!ForgeCanvas->IsVisible() || !Item) return;
     if (Item->GetRarity() == "Relic") return;
 
+    PlayUISound(ForgePlaceSound);
+    
     if (InventoryComponent->ForgeItemResult)
     {
         CancelForgingAnimation();
     }
+
     InventoryComponent->Server_AddToForge(Item->GetUniqueID());
 
     UpdateForgeUI();
@@ -821,6 +895,8 @@ void UInventory::SetForgeTooltip(UImage* IconWidget, UBorder* BorderWidget, UIte
 void UInventory::OnFuseButtonPressed()
 {
     if (!InventoryComponent->ForgeItemLeft || !InventoryComponent->ForgeItemRight) return;
+
+    PlayUISound(ForgePressSound);
 
     InventoryComponent->Server_FuseItems();
 
@@ -867,6 +943,8 @@ void UInventory::CycleRarityVisuals()
 void UInventory::CompleteForgeSequence()
 {
     if (!InventoryComponent->ForgeItemResult) return;
+
+    PlayUISound(ForgeSuccessSound);
 
     FLinearColor FinalColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color;
 
@@ -1146,6 +1224,9 @@ void UInventory::OnEquippedStatsUpdated(const FEquippedStatsSummary& Stats)
     if (TB_Luck)            TB_Luck->SetText(FText::AsNumber(Stats.TotalLuck));
     if (TB_Purity)          TB_Purity->SetText(FText::AsNumber(Stats.TotalPotionEfficiency));
     if (TB_Mana)            TB_Mana->SetText(FText::AsNumber(Stats.TotalResource));
+
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+    if (TB_MetaLevel && GI->SelectedSaveSlot)       TB_MetaLevel->SetText(FText::AsNumber(GI->SelectedSaveSlot->GetMetaLevel()));
 
     if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
     {

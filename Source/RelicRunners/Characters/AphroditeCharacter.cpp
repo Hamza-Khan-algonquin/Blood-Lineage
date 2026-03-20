@@ -24,7 +24,7 @@ AAphroditeCharacter::AAphroditeCharacter()
     PrimaryActorTick.bCanEverTick = true;
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
-    ProjectileDamage = 90.0f;
+    ProjectileDamage = 40.0f;
 }
 
 void AAphroditeCharacter::BeginPlay()
@@ -122,7 +122,7 @@ void AAphroditeCharacter::GiveBundleOfJoy()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UBundleOfJoy::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_BundleOfJoyClass))
     {
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_BundleOfJoyClass, 1, 0));
     }
@@ -132,7 +132,7 @@ void AAphroditeCharacter::GiveMirrorOfDesire()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UMirrorOfDesireAbility::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_MirrorOfDesireClass))
     {
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_MirrorOfDesireClass, 1, 0));
     }
@@ -142,7 +142,7 @@ void AAphroditeCharacter::GiveKissOfLife()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UKissOfLife::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_KissOfLifeClass))
     {
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_KissOfLifeClass, 1, 0));
     }
@@ -152,7 +152,7 @@ void AAphroditeCharacter::GiveGoddessOfLove()
 {
     if (!AbilitySystem) return;
 
-    if (!AbilitySystem->FindAbilitySpecFromClass(UGoddessOfLove::StaticClass()))
+    if (!AbilitySystem->FindAbilitySpecFromClass(BP_GoddessOfLoveClass))
     {
         AbilitySystem->GiveAbility(FGameplayAbilitySpec(BP_GoddessOfLoveClass, 1, 0));
     }
@@ -364,78 +364,90 @@ void AAphroditeCharacter::UpdateCameraRotation(float DeltaTime, const FVector& V
     }
 }
 
-
 void AAphroditeCharacter::PlayRandomAttackAnimation()
 {
+    if (!BasicAnim)
+        return;
 
     UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-    if (!AnimInstance) return;
+    if (!AnimInstance)
+        return;
 
-    TArray<UAnimSequence*> SwordAttacks;
-    if (SwordBasicAttack0) SwordAttacks.Add(SwordBasicAttack0);
-    if (SwordBasicAttack1) SwordAttacks.Add(SwordBasicAttack1);
-    if (SwordBasicAttack2) SwordAttacks.Add(SwordBasicAttack2);
-    if (SwordBasicAttack3) SwordAttacks.Add(SwordBasicAttack3);
+    float Duration = AnimInstance->Montage_Play(BasicAnim, 1.5f);
 
-    if (SwordAttacks.Num() > 0)
+    if (Duration > 0.f)
     {
-        int Index = FMath::RandRange(0, SwordAttacks.Num() - 1);
-        AnimInstance->PlaySlotAnimationAsDynamicMontage(SwordAttacks[Index], FName("DefaultSlot"));
+        FOnMontageEnded EndDelegate;
+        EndDelegate.BindUObject(this, &AAphroditeCharacter::OnAttackMontageEnded);
+
+        AnimInstance->Montage_SetEndDelegate(EndDelegate, BasicAnim);
     }
 }
 
 void AAphroditeCharacter::BasicAttack()
 {
-    //if (!bIsAiming) return;
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    //if (!CanBasicAttack) return;
+    if (!bCanBasicAttack)
+        return;
 
-    CanBasicAttack = true;
-
-    ProjectileDamage = 40.0f;
-
-    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
-
-    FBasicProjectile NewProjectile;
-    NewProjectile.Location = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
-    NewProjectile.Velocity = GetActorForwardVector() * ProjectileSpeed;
-    NewProjectile.ElapsedTime = 0.f;
-
-    ActiveProjectiles.Add(NewProjectile);
+    bCanBasicAttack = false;
 
     PlayRandomAttackAnimation();
 
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetBasicAttack,BasicAttackCooldown,false );
+    float SpawnDelay = 0.5f;
+
+    TWeakObjectPtr<AAphroditeCharacter> WeakThis(this);
+
+    FTimerHandle SpawnHandle;
+    GetWorldTimerManager().SetTimer(
+        SpawnHandle,
+        [WeakThis]()
+        {
+            if (!WeakThis.IsValid())
+                return;
+
+            AAphroditeCharacter* Self = WeakThis.Get();
+            if (!Self) return;
+
+            FBasicProjectile NewProj;
+
+            NewProj.Location = Self->GetActorLocation() + Self->GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
+            NewProj.Velocity = Self->GetActorForwardVector() * Self->ProjectileSpeed;
+            NewProj.ElapsedTime = 0.f;
+
+            // Spawn mesh
+            if (Self->ProjectileMeshAsset)
+            {
+                UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(Self);
+                ProjectileMesh->RegisterComponent();
+                ProjectileMesh->SetStaticMesh(Self->ProjectileMeshAsset);
+                ProjectileMesh->SetWorldLocation(NewProj.Location);
+                ProjectileMesh->SetWorldScale3D(FVector(0.2f));
+                ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                ProjectileMesh->SetWorldRotation(NewProj.Velocity.Rotation());
+
+                NewProj.Mesh = ProjectileMesh;
+            }
+
+            Self->ActiveProjectiles.Add(NewProj);
+        },
+        SpawnDelay,
+        false
+    );
 }
 
+void AAphroditeCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+    if (Montage == BasicAnim)
+    {
+        bCanBasicAttack = true;
+    }
+
+}
 
 void AAphroditeCharacter::HeavyAttack()
 {
     bIsAiming = true;
 
-    if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
-    if (!CanHeavyAttack) return;
-
-    CanHeavyAttack = false;
-
-    ProjectileDamage = 40.0f;
-
-    if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
-
-    FBasicProjectile NewProjectile;
-    NewProjectile.Location =GetActorLocation()+ GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
-
-    NewProjectile.Velocity =
-        GetActorForwardVector() * ProjectileSpeed;
-
-    NewProjectile.ElapsedTime = 0.f;
-
-    ActiveProjectiles.Add(NewProjectile);
-
-    PlayRandomAttackAnimation();
-
-    // Cooldown
-    GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown,this,&AAphroditeCharacter::ResetHeavyAttack,HeavyAttackCooldown,false);
 }
 
 
@@ -445,14 +457,6 @@ void AAphroditeCharacter::ProjectileHeavyAttack()
 }
 
 
-void AAphroditeCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
-{
-    if (HitActor)
-    {
-        UGameplayStatics::ApplyDamage(HitActor, 90.f, GetController(), this, nullptr);
-
-    }
-}
 
 void AAphroditeCharacter::Tick(float DeltaTime)
 {
@@ -467,7 +471,11 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Projectile.PreviousLocation = Projectile.Location;
         Projectile.Location += Projectile.Velocity * DeltaTime;
 
-        DrawDebugSphere(GetWorld(), Projectile.Location, 15.f, 12, FColor::Red, false, 0.f);
+        if (Projectile.Mesh)
+        {
+            Projectile.Mesh->SetWorldLocation(Projectile.Location);
+            Projectile.Mesh->SetWorldRotation(Projectile.Velocity.Rotation());
+        }
 
         TArray<FHitResult> Hits;
         FCollisionQueryParams Params;
@@ -482,37 +490,101 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             {
                 if (Projectile.AlreadyHitActors.Contains(HitActor))
                     continue;
-                //Server_HitEnemy(Enemy);
 
-                else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+                bool bEnemyHit = false;
+
+                if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
                 {
-                    Server_HitEnemy(TEnemy);
+                    //Server_HitEnemy(TEnemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+                    bEnemyHit = true;
+
                 }
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
                 {
-                    Server_HitEnemy(TPEnemy);
+                    //Server_HitEnemy(TPEnemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+                    bEnemyHit = true;
+
                 }
                 else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
                 {
-                    Server_HitEnemy(Enemy);
+                    //Server_HitEnemy(Enemy, ProjectileDamage);
+                    ExplodeProjectile(HitActor->GetActorLocation());
+                    bEnemyHit = true;
 
                 }
+                else if (!bEnemyHit)
+                {
+                    ExplodeProjectile(Hit.ImpactPoint);
+                }
+
 
                 Projectile.AlreadyHitActors.Add(HitActor);
-                // Remove projectile after hit
-                ActiveProjectiles.RemoveAt(i);
-                break;
+
+                if (Hit.bBlockingHit || bEnemyHit)
+                {
+
+                    if (Projectile.Mesh)
+                    {
+                        Projectile.Mesh->DestroyComponent();
+                    }
+
+                    // Remove projectile after hit
+                    ActiveProjectiles.RemoveAt(i);
+                    break;
+                }
             }
         }
-        continue;
 
         if (Projectile.ElapsedTime >= ProjectileLifetime)
         {
+
+            if (Projectile.Mesh)
+            {
+                Projectile.Mesh->DestroyComponent();
+            }
+
+
             ActiveProjectiles.RemoveAt(i);
         }
     }
 }
 
+void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)
+{
+    TArray<FHitResult> Hits;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    FCollisionShape Sphere = FCollisionShape::MakeSphere(ExplosionRadius);
+
+    bool bHit = GetWorld()->SweepMultiByChannel(Hits,ImpactPoint,ImpactPoint, FQuat::Identity,ECC_GameTraceChannel1,Sphere,Params);
+
+    if (!bHit) return;
+
+    for (const FHitResult& Hit : Hits)
+    {
+        if (AActor* HitActor = Hit.GetActor())
+        {
+            if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
+            {
+                Server_HitEnemy(TEnemy, ProjectileDamage);
+            }
+            else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
+            {
+                Server_HitEnemy(TPEnemy, ProjectileDamage);
+            }
+            else if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+            {
+                Server_HitEnemy(Enemy, ProjectileDamage);
+            }
+        }
+    }
+
+    DrawDebugSphere(GetWorld(), ImpactPoint, ExplosionRadius, 20, FColor::Orange, false, 1.f);
+}
 
 
 

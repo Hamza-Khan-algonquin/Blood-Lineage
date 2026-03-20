@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/IUserObjectListEntry.h"
+#include "Sound/SoundBase.h"
 #include "ObjectiveItemEntry.generated.h"
 
 UCLASS()
@@ -22,6 +23,15 @@ protected:
 
     UPROPERTY(meta = (BindWidgetAnim), Transient)
     class UWidgetAnimation* Completion;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    USoundBase* PandoraCompleteSound = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    USoundBase* PayloadCompleteSound = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    USoundBase* FlagCompleteSound = nullptr;
 
     virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
     void RefreshFlagVisuals(class UFlagData* FlagData, class UFlagsObjective* Widget);

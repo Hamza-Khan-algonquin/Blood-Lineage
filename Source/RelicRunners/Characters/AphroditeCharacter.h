@@ -17,6 +17,7 @@ struct FBasicProjectile
 	float ElapsedTime = 0.f;
 
 	TSet<AActor*> AlreadyHitActors;
+	UStaticMeshComponent* Mesh = nullptr;
 };
 
 UCLASS()
@@ -30,11 +31,11 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
-	virtual void Server_HitEnemy_Implementation(AActor* HitActor) override;
 
 protected:
 	virtual void BeginPlay() override;
 	void Tick(float DeltaTime);
+	void ExplodeProjectile(const FVector& ImpactPoint);
 	virtual void ActivateDamageAbilities() override;
 	virtual void ActivateDefenceAbilities() override;
 	virtual void ActivateUtilityAbilities() override;
@@ -54,6 +55,7 @@ protected:
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	virtual void HeavyAttack() override;
 	virtual void ProjectileHeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
@@ -71,12 +73,20 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	float ProjectileDamage = 90.f;
 
+	UPROPERTY(EditAnywhere, Category = "Projectile")
+	float ExplosionRadius = 100.f;
+
 	FTimerHandle TimerHandle_AttackCooldown;
+
+	bool bCanBasicAttack = true;
 
 	UPROPERTY()
 	TArray<FBasicProjectile> ActiveProjectiles;
 
 	bool bIsAiming = false;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UStaticMesh* ProjectileMeshAsset = nullptr;
 
 	// Camera offset when aiming
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")

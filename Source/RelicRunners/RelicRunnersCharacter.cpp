@@ -57,6 +57,7 @@
 #include <Kismet/KismetMathLibrary.h>
 #include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
+#include "RelicRunnersGameMode.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -163,6 +164,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	OffhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	OffhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 
+	
 	//UI
 	PlayerHUDWorld = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidgetComponent"));
 	PlayerHUDWorld->SetupAttachment(GetMesh());
@@ -172,7 +174,6 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	PlayerHUDWorld->SetDrawAtDesiredSize(true);
 	PlayerHUDWorld->SetVisibility(true);
 	PlayerHUDWorld->CastShadow = false;
-
 
 	bAlwaysRelevant = true;
 	SetReplicates(true);
@@ -221,6 +222,7 @@ void ARelicRunnersCharacter::PossessedBy(AController* NewController)
 
 	if (RelicPlayerState)
 	{
+		RelicPlayerState->DeathState = false;
 		const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
 		SyncEquippedVisuals(EquippedEntries);
 	}
@@ -236,7 +238,8 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 	{
 		int Defence = RelicPlayerState->GetInventoryComponent()->CachedEquippedStats.TotalArmor;
 		float Reduction = (1.0f - (ItemStats::GetDefencePerc(Defence) / 100.0f));
-		int DamageTaken = ActualDamage * Reduction;
+		float DamageTaken = ActualDamage * Reduction;
+		ActualDamage = DamageTaken;
 		RelicPlayerState->ModifyHealth(-DamageTaken);
 	}
 
@@ -245,8 +248,27 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	SetActorLocation(respawnPoint);
-	if (RelicPlayerState) RelicPlayerState->ResetHealth();
+	if (RelicPlayerState) RelicPlayerState->DeathState = true; RelicPlayerState->PlayerDeaths++;
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+		if (RPC)
+		{
+			RPC->CleanUI();
+			RPC->ChangeState(NAME_Spectating);
+			RPC->SpectatingUI();
+			RPC->Client_RequestSaveStats();
+		}
+
+		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+		{
+			GM->CheckGameOver();
+		}
+	}
+
+	Destroy();
 }
 
 void ARelicRunnersCharacter::OnRep_PlayerState()
@@ -432,9 +454,52 @@ void ARelicRunnersCharacter::PlayRandomAttackAnimation()
 	
 }
 
-void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* HitActor)
+void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor, float BaseDamage)
 {
+	if (!TargetActor) return;
 
+	AController* InstigatorController = GetInstigatorController();
+	if (!InstigatorController) return;
+
+	APlayerController* PC = Cast<APlayerController>(InstigatorController);
+
+	UInventoryComponent* InventoryComponent = nullptr;
+	if (PC)
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			InventoryComponent = PS->GetInventoryComponent();
+		}
+	}
+
+	float PercentStrengthIncrease = 0.f;
+	float CritChance = 0.f;
+	float CritDamageMultiplier = 1.f;
+
+	if (InventoryComponent)
+	{
+		int Strength = InventoryComponent->CachedEquippedStats.TotalStrength;
+		int CritValue = InventoryComponent->CachedEquippedStats.TotalDexterity;
+
+		PercentStrengthIncrease = ItemStats::GetStrengthPerc(Strength);
+
+		CritChance = ItemStats::GetCritPerc(CritValue);
+		CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
+		CritDamageMultiplier = ItemStats::GetCritDmgPerc(CritValue);
+	}
+
+	float FinalDamage = BaseDamage * (1.f + PercentStrengthIncrease / 100.f);
+
+	// Roll for crit
+	float RandomRoll = FMath::FRandRange(1.f, 100.f);
+	bool bIsCrit = RandomRoll <= CritChance;
+
+	if (bIsCrit)
+	{
+		FinalDamage *= CritDamageMultiplier;
+	}
+
+	UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this, nullptr);
 }
 
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const
@@ -479,7 +544,10 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	//Lock look input on boss level
-	if (GetWorld()->GetMapName().Contains("BossLevel")) return;
+	UWorld* const World = GetWorld();
+	if (!World) return;
+
+	if (World->GetMapName().Contains("BossLevel")) return;
 	else if (Controller != nullptr)
 	{
 		float XSens = 1.0f;
@@ -517,9 +585,12 @@ void ARelicRunnersCharacter::Interact()
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	if (GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
+	UWorld* const World = GetWorld();
+	if (!World) return;
+
+	if (World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
 	{
-		DrawDebugSphere(GetWorld(), Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
+		DrawDebugSphere(World, Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && HitActor->Implements<UInteractInterface>())
 		{
@@ -740,6 +811,8 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 	OnRep_VisualsChanged();
 }
 
+
+
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 {
 	return FString::Printf(TEXT("/Game/ThirdPerson/Meshes/Items/%s/%s.%s"),
@@ -810,8 +883,4 @@ void ARelicRunnersCharacter::UltimateAbility()
 	ActivateUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
-
-
-
-
 

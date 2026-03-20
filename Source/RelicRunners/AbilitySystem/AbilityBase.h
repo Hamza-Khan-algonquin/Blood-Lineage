@@ -6,6 +6,7 @@
 #include "RelicRunners/PlayerHUD/PlayerHUD.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Sound/SoundBase.h"
 #include "AbilityBase.generated.h"
 
 UENUM(BlueprintType)
@@ -40,6 +41,13 @@ public:
     virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+
+
+    void PlayAbilityCastSound(const FGameplayAbilityActorInfo* ActorInfo) const;
+
+    void CalculateAbilityDamage(AActor* InstigatorActor, AActor* TargetActor, float BaseDamage);
+
+    float CalculateAbilityMana(AActor* InstigatorActor, float BaseMana);
 
     UAnimMontage* PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage);
 
@@ -88,6 +96,9 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
     TObjectPtr<UNiagaraSystem> AbilityVFX1 = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> AbilityCastSound = nullptr;
 
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* AbilityAnim;

@@ -6,6 +6,7 @@
 #include "RelicRunners/AbilitySystem/AbilityBase.h"
 #include "PiercingArrow.generated.h"
 
+
 UCLASS()
 class RELICRUNNERS_API UPiercingArrow : public UAbilityBase
 {
@@ -38,8 +39,10 @@ protected:
     float ProjectileRadius;
     float DotTickRate;
     float DotDuration;
-    float DamagePerTick;
     float DotTimeElapsed;
 
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<AActor> ProjectileClass;
 
+    AActor* SpawnedProjectile = nullptr;
 };

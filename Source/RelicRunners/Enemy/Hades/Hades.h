@@ -27,6 +27,9 @@ public:
     UPROPERTY()
     class UNiagaraComponent* ActiveCycloneComp;
 
+    UPROPERTY()
+    class UNiagaraSystem* BridgeCrumbleFX;
+
     UPROPERTY(EditAnywhere, Category = "Animations")
     class UAnimMontage* FireballMontage;
 
@@ -81,6 +84,8 @@ public:
     void OnRep_CurrentHealth();
     int ObelisksHit = 0;
 
+    bool InCinematic = true;
+
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "AI")
     AActor* CurrentTarget;
 
@@ -111,8 +116,13 @@ protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+    void TriggerAllPlayersCinematicWalk();
+
     void ExecuteAttack();
+    void SpawnBridge();
+    void CinematicSlam();
     void ScheduleNextAttack(float Delay);
+    void ScheduleCinematicSlam(float Delay);
     void ResetAllStates(); 
     void CheckPhaseTransition();
     void SelectRandomTarget();
@@ -125,10 +135,19 @@ protected:
     void ExecuteDamage(FVector ImpactLocation, float ImpactRadius);
     void LockRotationTo(FVector TargetLocation, bool bInstant);
     UFUNCTION(NetMulticast, Unreliable)
+    void MulticastOnBridgeDestroyed(FVector Location);
+    UFUNCTION(NetMulticast, Unreliable)
     void MulticastQuickTurn(FRotator NewRotation);
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastSnapRotation(FRotator NewRotation);
+
     FVector CalculateFireballLocation(FVector Center);
+
+    UPROPERTY(EditAnywhere, Category = "Boss Mechanics")
+    TSubclassOf<AActor> BridgeClass;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Boss Mechanics")
+    AActor* BridgeToDestroy;
 
     UPROPERTY(Replicated)
     FVector AbilityLookAtTarget;

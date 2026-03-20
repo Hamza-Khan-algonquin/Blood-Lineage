@@ -15,11 +15,12 @@ UMoonbeam::UMoonbeam()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 25;              
+    Cost = 60;              
     CooldownDuration = 10.f;   
     LastUseTime = -100.f;   
     Duration = 5.f;
     AreaRadius = 100.f;
+	Damage = 20.f;
 }
 
 void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
@@ -50,8 +51,10 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         return;
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
 
-    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - Cost);
+    // Spend resource
+    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - FinalManaCost);
     PlayerState->UpdateRemoteHUDResource();
     
     if (AbilityAnim)
@@ -61,6 +64,23 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
 
     if (OwnerChar->HasAuthority())
     {
+        AController* Controller = nullptr;
+
+        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+        {
+            Controller = CurrentActorInfo->PlayerController.Get();
+        }
+
+        if (Controller)
+        {
+            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+            if (PS)
+            {
+                PS->Multicast_SpawnVFX(FVector(0), FRotator(0, 0, 0), FVector(1.f), AbilityVFX, true);
+            }
+        }
+
         // Disable movement
         OwnerChar->GetCharacterMovement()->DisableMovement();
         OwnerChar->GetCharacterMovement()->StopMovementImmediately();
@@ -97,19 +117,6 @@ void UMoonbeam::BeamTick()
     FVector Forward = ControlRot.Vector();
     FVector End = Start + (Forward * BeamLength);
 
-    // Draw main beam line
-    DrawDebugLine( World,Start, End, FColor::Purple, false,TickInterval,0,4.f);
-
-    // Draw spheres along beam path 
-    const int32 Steps = 10;
-    for (int32 i = 0; i <= Steps; i++)
-    {
-        float Alpha = (float)i / (float)Steps;
-        FVector Point = FMath::Lerp(Start, End, Alpha);
-
-        DrawDebugSphere(World,Point,AreaRadius,12, FColor::Blue, false, TickInterval);
-    }
-
     TArray<FHitResult> Hits;
     FCollisionShape Sphere = FCollisionShape::MakeSphere(AreaRadius);
 
@@ -126,7 +133,7 @@ void UMoonbeam::BeamTick()
 
         if (Pawn == OwnerChar) continue;
 
-        UGameplayStatics::ApplyDamage(Pawn,DamagePerTick,OwnerChar->GetController(),OwnerChar,nullptr);
+        CalculateAbilityDamage(OwnerChar, Pawn, Damage);
     }
 }
 

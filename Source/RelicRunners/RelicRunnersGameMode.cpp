@@ -28,6 +28,7 @@
 #include "GameFramework/PlayerController.h"
 #include "PlayerController/RelicRunnersPlayerController.h"
 #include "Game/RelicRunnersGameInstance.h"
+#include "Game/PostGameWidget.h"
 
 ARelicRunnersGameMode::ARelicRunnersGameMode()
 {
@@ -89,4 +90,74 @@ APawn* ARelicRunnersGameMode::SpawnDefaultPawnFor_Implementation(AController* Ne
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
     return GetWorld()->SpawnActor<APawn>(PawnClassToSpawn, StartSpot->GetActorLocation(), StartSpot->GetActorRotation(), Params);
+}
+
+void ARelicRunnersGameMode::CheckGameOver()
+{
+    bool AllPlayersDead = true;
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(It->Get());
+        if (RPC)
+        {
+            ARelicRunnersPlayerState* PS = RPC->GetPlayerState<ARelicRunnersPlayerState>();
+            if (PS && !PS->DeathState)
+            {
+                AllPlayersDead = false;
+                break;
+            }
+        }
+    }
+
+    if (AllPlayersDead)
+    {
+        TriggerPostGameForAll();
+    }
+}
+
+void ARelicRunnersGameMode::TriggerPostGameForAll()
+{
+    TArray<FPlayerPostGameData> AllPlayersStats;
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+        {
+            if (ARelicRunnersPlayerState* PS = RPC->GetPlayerState<ARelicRunnersPlayerState>())
+            {
+                FPlayerPostGameData Stats;
+                Stats.Username = PS->GetPlayerName();
+                Stats.LevelsEarned = PS->GetLevelsEarned();
+                Stats.EnemiesKilled = PS->GetEnemiesKilled();
+                Stats.Deaths = PS->GetDeaths();
+                Stats.MetaLevel = PS->MetaLevel;
+                Stats.MetaXP = PS->MetaXP;
+                Stats.MetaXPToNextLevel = PS->MetaXPToNextLevel;
+                Stats.MetaXPGainInRun = PS->MetaXPGainInRun;
+
+                AllPlayersStats.Add(Stats);
+            }
+        }
+    }
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+        {
+            RPC->Client_ShowPostGame(AllPlayersStats);
+        }
+    }
+}
+
+void ARelicRunnersGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
+    if (GI && GI->bIsMatchLocked)
+    {
+        ErrorMessage = TEXT("Match_Already_In_Progress");
+    }
 }
