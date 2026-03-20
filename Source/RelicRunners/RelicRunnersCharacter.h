@@ -185,6 +185,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
+
 	
 
 protected:

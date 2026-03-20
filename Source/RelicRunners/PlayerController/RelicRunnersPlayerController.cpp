@@ -1020,6 +1020,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (PlayerHUD)
 		{
 			PlayerHUD->AddToViewport();
+			PlayerHUD->UpdateBindText();
 		}
 		UWorld* World = GetWorld();
 		if (!World) return;

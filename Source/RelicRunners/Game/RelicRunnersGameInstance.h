@@ -68,10 +68,15 @@ public:
     class UKeybinds* Keys;
     UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Input")
     class UKeybinds* DefaultKeys;
+
+    UPROPERTY()
+    class UInputMappingContext* ActiveMappingContext = nullptr;
+
     UFUNCTION(BlueprintCallable)
     void ResetToDefaults();
     UFUNCTION(BlueprintCallable)
     void ApplyKeybindings();
+   
 
     //Savefiles
     UFUNCTION(BlueprintCallable)

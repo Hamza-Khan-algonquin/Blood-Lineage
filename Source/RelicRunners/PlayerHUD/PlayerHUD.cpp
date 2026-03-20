@@ -107,6 +107,7 @@ void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
 
 void UPlayerHUD::UpdateBindText()
 {
+	UE_LOG(LogTemp, Warning, TEXT("UpdateBindText CALLED"));
 	UWorld* World = GetWorld();
 	if (!World) return;
 
@@ -117,6 +118,7 @@ void UPlayerHUD::UpdateBindText()
 	FString UtilityKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Utility Ability")));
 	FString DefenceKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Defence Ability")));
 	FString UltimateKey = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Ultimate Ability")));
+	FString HealthPot = GetReadableKeyName(GI->Keys->GetKeyForAction(TEXT("Health Potion")));
 
 	if (TB_DamageAbility)
 		TB_DamageAbility->SetText(FText::FromString(DamageKey));
@@ -129,6 +131,10 @@ void UPlayerHUD::UpdateBindText()
 
 	if (TB_UltimateAbility)
 		TB_UltimateAbility->SetText(FText::FromString(UltimateKey));
+
+	if (TB_HealthPotion)
+		TB_HealthPotion->SetText(FText::FromString(HealthPot));
+
 }
 
 void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)

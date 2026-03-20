@@ -16,10 +16,13 @@
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
+#include "InputMappingContext.h"
+#include <RelicRunners/PlayerHUD/PlayerHUD.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
+#include "RelicRunners/RelicRunnersCharacter.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
 #include "Net/UnrealNetwork.h"
@@ -58,19 +61,22 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     if (!RPC) return;
 
     UInputMappingContext* OldMappingContext = RPC->GetInputMappingContext();
-    if (!OldMappingContext)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ApplyKeybindings: No InputMappingContext set!"));
-        return;
-    }
+    if (!OldMappingContext) return;
 
     UInputMappingContext* MappingContext = DuplicateObject<UInputMappingContext>(OldMappingContext, this);
+    if (!MappingContext) return;
 
     UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-    if (!Subsystem) return;
 
-    Subsystem->RemoveMappingContext(OldMappingContext);
+    if (!Subsystem) return;
+   
+    if (ActiveMappingContext)
+    {
+        Subsystem->RemoveMappingContext(ActiveMappingContext);
+        ActiveMappingContext = nullptr;
+    }
     MappingContext->UnmapAll();
+
 
     UInputAction* LookAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/ThirdPerson/Input/Actions/IA_Look.IA_Look"));
     if (LookAction)
@@ -97,12 +103,12 @@ void URelicRunnersGameInstance::ApplyKeybindings()
         }
 
         MappingContext->MapKey(FoundAction, Binding.Bind);
-
         UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s > %s"), *Binding.Name, *GetReadableKeyName(Binding.Bind));
 
     }
 
     Subsystem->AddMappingContext(MappingContext, 0);
+    ActiveMappingContext = MappingContext;
 
     TSharedRef<FUserNavigationConfig> NavConfig = MakeShared<FUserNavigationConfig>();
 
@@ -110,6 +116,17 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FSlateApplication::Get().SetNavigationConfig(NavConfig);
     }
+
+    if (RPC && RPC->PlayerHUD)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ApplyKeybindings finished, trying HUD update"));
+        RPC->PlayerHUD->UpdateBindText();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("PlayerController or PlayerHUD is null"));
+    }
+
 }
 
 USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)

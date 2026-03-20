@@ -30,7 +30,7 @@ class RELICRUNNERS_API UPlayerHUD : public UUserWidget
 	
 public:
 
-	void NativeConstruct();
+	virtual void NativeConstruct();
 
 	void ToggleExpBar(bool value);
 

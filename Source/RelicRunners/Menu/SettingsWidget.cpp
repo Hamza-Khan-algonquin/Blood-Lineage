@@ -337,10 +337,15 @@ FReply USettingsWidget::HandleKeyBindPressed(FKey PressedKey)
 	//Prevent duplicate keys
 	for (UKeybindingsListData* Binding : DefaultKeybindings)
 	{
-		if (Binding != Data && Binding->Keybind == PressedKey)
+		if (Binding->Name != Data->Name && Binding->Keybind == PressedKey)
 		{
 			Binding->Keybind = EKeys::Invalid;
 			Binding->ReadableBind = TEXT("None");
+		}
+		else if (Binding->Name == Data->Name)
+		{
+			Binding->Keybind = PressedKey;
+			Binding->ReadableBind = GetReadableKeyName(PressedKey);
 		}
 	}
 
