@@ -236,6 +236,8 @@ public:
 
 	int GetLevelsEarned() { return LevelsEarned; }
 
+	bool bIsInitialSync = true;
+
     //Getters
 	EInventorySorting GetCurrentSortingMethod() const;
     UAttributeSet* GetAttributeSet() const { return AttributeSet; }

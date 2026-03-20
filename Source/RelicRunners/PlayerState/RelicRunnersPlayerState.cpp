@@ -553,7 +553,10 @@ void ARelicRunnersPlayerState::OnLevelUp()
 
 	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
 
-	Client_OnLevelUp();
+	if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetPlayerController()))
+	{
+		PC->HandleLevelUpVisuals();
+	}
 	PlayLevelUpSound();
 }
 
@@ -800,9 +803,14 @@ void ARelicRunnersPlayerState::SetIsHost(bool NewIsHost)
 
 void ARelicRunnersPlayerState::OnRep_PlayerLevel(int OldLevel)
 {
-	if (PlayerLevel > OldLevel)
+	if (bIsInitialSync)
 	{
-		//Show UI Popup
+		bIsInitialSync = false;
+		return;
+	}
+
+	if (OldLevel > 0 && PlayerLevel > OldLevel)
+	{
 		Client_OnLevelUp();
 	}
 }

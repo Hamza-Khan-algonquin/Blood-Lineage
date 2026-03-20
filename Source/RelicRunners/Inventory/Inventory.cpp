@@ -579,7 +579,8 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     ARelicRunnersPlayerState* RPS = Cast<ARelicRunnersPlayerState>(RPC->PlayerState);
     if (!RPS) return;
 
-    const FClassData& Info = ClassDataAsset->Classes[RPS->SelectedClass];
+    FClassData* Info = nullptr;
+    if (RPS->SelectedClass != "None") Info = &ClassDataAsset->Classes[RPS->SelectedClass];
 
     if (!StandardTooltip)
     {
@@ -593,7 +594,6 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     int RawValue = 0;
     FString AbilityName;
     FString AbilityDesc;
-
 
     URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
 
@@ -609,10 +609,10 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_MetaLevel && GI->SelectedSaveSlot)      { StatKey = "MetaLevel";    RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
     else if (HoveredBorder == B_AbilityUpgrade) { StatKey = "AbilityUpgrade"; }
     else if (HoveredBorder == B_HealthPotion) { StatKey = "HealthPotion"; }
-    else if (HoveredBorder == B_Ability1) { StatKey = "Ability1"; AbilityName = Info.Ability1; AbilityDesc = Info.Ability1Description1; }
-    else if (HoveredBorder == B_Ability2) { StatKey = "Ability2"; AbilityName = Info.Ability2; AbilityDesc = Info.Ability2Description1; }
-    else if (HoveredBorder == B_Ability3) { StatKey = "Ability3"; AbilityName = Info.Ability3; AbilityDesc = Info.Ability3Description1; }
-    else if (HoveredBorder == B_Ability4) { StatKey = "Ability4"; AbilityName = Info.Ability4; AbilityDesc = Info.Ability4Description1; }
+    else if (HoveredBorder == B_Ability1) { StatKey = "Ability1"; if (Info) AbilityName = Info->Ability1; if (Info) AbilityDesc = Info->Ability1Description1; }
+    else if (HoveredBorder == B_Ability2) { StatKey = "Ability2"; if (Info) AbilityName = Info->Ability2; if (Info) AbilityDesc = Info->Ability2Description1; }
+    else if (HoveredBorder == B_Ability3) { StatKey = "Ability3"; if (Info) AbilityName = Info->Ability3; if (Info) AbilityDesc = Info->Ability3Description1; }
+    else if (HoveredBorder == B_Ability4) { StatKey = "Ability4"; if (Info) AbilityName = Info->Ability4; if (Info) AbilityDesc = Info->Ability4Description1; }
 
     FVector2D Offset(-5.0f, 5.0f);
     FVector2D Anchor(1.f, 0.f);
