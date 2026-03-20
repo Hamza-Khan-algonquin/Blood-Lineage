@@ -217,7 +217,7 @@ void ACommanderController::SpawnPawnEnemy()
 
 void ACommanderController::SpawmLoop()
 {
-	if (!GetWorld() || GetWorld()->TimeSeconds < 5)
+	if (!GetWorld() || GetWorld()->GetTimeSeconds() <= 10)
 	{
 		return;
 	}
