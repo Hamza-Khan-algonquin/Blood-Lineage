@@ -32,11 +32,11 @@ enum class EIslandFloorObstacle : uint8
 {
 	None,
 	Basic,
-	Hole,
 	Vantage,
+	Safe,
 	CapturableFlag,
 	EnemyZone,
-	DeliveryPath,
+	PayloadPath,
 	SurvivalZone,
 	Start,
 	End,
@@ -82,6 +82,9 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USplineComponent* SplinePath;
 
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UInstancedStaticMeshComponent* FloorISMComp;
+
 	void InitializeValues(EIslandObjectiveType islandObjective);
 
 	void Generate();
@@ -100,13 +103,16 @@ public:
 	void InitializeFloor();
 
 	//If this is called, the tile's *IsFullTile* variable will be set to *forcedFloor* regardless of what *InitializeFloor()* set it to.
-	void ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle);
+	void ForceFloorBool(bool forcedFloor, int x, int y, int width, bool canSpawnObstacle, bool isPayloadPath);
 
 	//Sets wether or not the current tile will have a modular obstacle spawned on top of itself.
 	void InitializeModularObstacle(FSIslandFloorValues& floorValue, bool canGenerateHoles) const;
 
 	//Finds the starting and ending indexes and sets them accordingly.
 	void SetStartingAndEndingPoints(int startingIndex, int endingIndex);
+
+	//Overrides tiles set by *InitializeFloor()* and sets them as Safe Tiles.
+	void SetSafeTile(int index);
 
 	//Overrides tiles set by *InitializeFloor()* and sets them as Capturable Flag Tiles.
 	void SetFlagTile(int index);
@@ -185,6 +191,8 @@ public:
 	UFUNCTION()
 	void SetNextCameraPos();
 
+	void SetNumStages(uint8 newNumStages) {NumStages = newNumStages;}
+
 public:
 	//Client only. Used to replicate the array of floor values.
 	UFUNCTION()
@@ -235,5 +243,7 @@ public:
 	class ALevelChangeTrigger* LevelTrigger;
 
 	bool IsActivated;
+
+	uint8 NumStages;
 
 };

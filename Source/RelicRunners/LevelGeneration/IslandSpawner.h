@@ -41,6 +41,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues", meta = (ClampMin = "1", UIMin = "1"))
 	uint8 NumIslands;
 
+	UPROPERTY(EditAnywhere, Category = "GenerationValues", meta = (ClampMin = "1", UIMin = "1"))
+	uint8 NumStages;
+
 	UFUNCTION()
 	void GenerateNewIsland();
 
