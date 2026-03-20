@@ -405,6 +405,11 @@ void AAphroditeCharacter::BasicAttack()
 
     PlayRandomAttackAnimation();
 
+    if (BasicAttackSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, BasicAttackSound, GetActorLocation());
+    }
+
     GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetBasicAttack,BasicAttackCooldown,false );
 }
 

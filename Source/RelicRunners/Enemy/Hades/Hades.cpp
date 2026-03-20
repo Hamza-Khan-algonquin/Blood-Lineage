@@ -214,6 +214,11 @@ void AHades::CinematicSlam()
         {
             WeakSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
+            if (WeakSelf->SlamImpactSound)
+            {
+                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+            }
+
             WeakSelf->bIsBusy = false;
             WeakSelf->bIsLookingAtAbilityTarget = false;
             WeakSelf->ScheduleNextAttack(2.0f);
@@ -257,6 +262,12 @@ void AHades::PlaySlam()
         if (WeakSelf.IsValid())
         {
             WeakSelf->ExecuteDamage(SlamLoc, 1800.0f);
+
+            if (WeakSelf->SlamImpactSound)
+            {
+                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+            }
+
             //Incase boss dies
             if (WeakSelf.IsValid())
             {
@@ -305,6 +316,12 @@ void AHades::PlayFireball()
                 FB->SetOwner(WeakSelf.Get());
 
                 UGameplayStatics::FinishSpawningActor(FB, FTransform(WeakSelf->SkeletalMesh->GetSocketLocation(SocketName)));
+
+                if (FB->SpawnSound)
+                {
+                    UGameplayStatics::SpawnSoundAttached(FB->SpawnSound, WeakSelf->SkeletalMesh, SocketName);
+                }
+
                 FB->AttachToComponent(WeakSelf->SkeletalMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);
 
                 FTimerHandle DetachHandle;
@@ -357,6 +374,16 @@ void AHades::PlaySweep()
 
     GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this, SlamLoc]() {
         ExecuteDamage(SlamLoc, 800.0f);
+
+        if (SlamImpactSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, SlamImpactSound, SlamLoc);
+        }
+
+        if (SweepAttackSound && SkeletalMesh)
+        {
+            UGameplayStatics::SpawnSoundAttached(SweepAttackSound, SkeletalMesh);
+        }
 
         bIsInitialSlamming = false;
         bIsSweeping = true;

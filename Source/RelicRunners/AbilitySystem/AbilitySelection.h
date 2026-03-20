@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Sound/SoundBase.h"
 #include "AbilitySelection.generated.h"
 
 /**
@@ -57,6 +58,8 @@ public:
 	UPROPERTY()
 	class ARelicRunnersCharacter* OwningCharacter;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> UpgradePickSound = nullptr;
 
 	UFUNCTION()
 	void Upgrade1Clicked();

@@ -404,6 +404,12 @@ void AArtemisCharacter::BasicAttack()
 	ProjectileElapsed = 0.f;
 
 	PlayRandomAttackAnimation();
+
+	if (BasicAttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, BasicAttackSound, GetActorLocation());
+	}
+
 	AlreadyHitActors.Empty();
 
 	CurrentPierces = 0;

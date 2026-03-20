@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Sound/SoundBase.h"
 #include "HadesFireball.generated.h"
 
 UCLASS()
@@ -31,6 +32,12 @@ public:
 
     UPROPERTY()
     class AHadesPredictionBase* InternalPrediction;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> SpawnSound = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> ImpactSound = nullptr;
 
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_PlayExplosionEffects(FVector Location);

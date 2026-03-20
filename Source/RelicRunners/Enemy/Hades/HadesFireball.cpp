@@ -83,6 +83,11 @@ void AHadesFireball::Tick(float DeltaTime)
         //DrawDebugSphere(GetWorld(), TargetLocation, 400.0f, 32, FColor::Orange, false, 2.0f);
         UGameplayStatics::ApplyRadialDamage(GetWorld(), 80.0f, TargetLocation, 400.0f, nullptr, { GetOwner() }, this);
 
+        if (ImpactSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, TargetLocation);
+        }
+
         Multicast_PlayExplosionEffects(TargetLocation);
 
         if (InternalPrediction) InternalPrediction->Destroy();

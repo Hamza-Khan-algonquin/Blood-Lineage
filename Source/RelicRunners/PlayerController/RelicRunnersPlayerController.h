@@ -209,6 +209,12 @@ public:
 	TObjectPtr<USoundBase> CountdownTickSound = nullptr;
 	class AHades* CachedHades;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> AbilitySelectionOpenSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> AbilitySelectionCloseSound = nullptr;
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)

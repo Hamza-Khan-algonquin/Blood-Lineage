@@ -729,6 +729,13 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 				UGameplayStatics::PlaySound2D(this, InventoryOpenSound);
 			}
 		}
+		else if (UIWidget == AbilitySelection)
+		{
+			if (AbilitySelectionOpenSound)
+			{
+				UGameplayStatics::PlaySound2D(this, AbilitySelectionOpenSound);
+			}
+		}
 		UIWidget->SetVisibility(ESlateVisibility::Visible);
 		UIWidget->SetIsEnabled(true);
 	}
@@ -767,6 +774,11 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 	}
 	else
 	{
+		if (UIWidget == AbilitySelection && AbilitySelectionCloseSound)
+		{
+			UGameplayStatics::PlaySound2D(this, AbilitySelectionCloseSound);
+		}
+
 		UIWidget->SetVisibility(ESlateVisibility::Hidden);
 		UIWidget->SetIsEnabled(false);
 	}
