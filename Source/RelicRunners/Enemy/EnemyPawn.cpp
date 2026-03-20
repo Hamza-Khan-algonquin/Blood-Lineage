@@ -62,7 +62,7 @@ AEnemyPawn::AEnemyPawn()
 	EnemyStatsComponent->SetCurrentHealth(100.f);
 
 	bReplicates = true;
-	SetReplicateMovement(true);
+	SetReplicateMovement(false);
 
 	//times per second it replicates
 	SetNetUpdateFrequency(5.f);
@@ -196,14 +196,16 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
-		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
+		Destroy();
+
+		/*if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
 		}
 		else
 		{
 			Destroy();
-		}
+		}*/
 	}
 }
 
@@ -211,8 +213,14 @@ void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
 {
 	EndHitFlash();
 
-	if (DeathEffect)
+	if (IsValid(DeathEffect) && IsValid(this))
 	{
+		if (GetActorLocation().ContainsNaN() || GetActorRotation().ContainsNaN() || !GetActorScale().ContainsNaN())
+		{
+			UE_LOG(LogTemp, Error, TEXT("Invalid transform for Niagara spawn"));
+			return;
+		}
+
 		UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
 
 		deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
@@ -227,6 +235,7 @@ inline bool AEnemyPawn::IsDead()
 void AEnemyPawn::ResetEnemy()
 {
 	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
+	SetActorLocation(FVector::Zero());
 }
 
 void AEnemyPawn::AddEnemyToDirector()
@@ -271,9 +280,7 @@ void AEnemyPawn::AttackTick()
 
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
-			
 
-			
 			FTimerDelegate attackCallBack;
 			attackCallBack.BindLambda([this]()
 				{
@@ -395,25 +402,7 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 		CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
 	}
 	
-
-	//this->MovementComponent->IsKnockedBack = true;
 	MovementComponent->IsKnockedBack = true;
-
-	/*FTimerHandle temp;
-	GetWorldTimerManager().SetTimer(temp, [this]() {
-		if (this)
-		{
-			if (!this)
-				return;
-			if (MovementComponent)
-				MovementComponent->IsKnockedBack = false;
-			if (CapsuleComponent)
-			{
-				CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-				CapsuleComponent->SetSimulatePhysics(false);
-			}
-		}
-		}, HitFlashTimeline.GetTimelineLength(), false);*/
 }
 
 void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

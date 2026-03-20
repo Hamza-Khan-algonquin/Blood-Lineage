@@ -44,13 +44,20 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (GetOwnerRole() != ROLE_Authority && !IsKnockedBack)
+	if (GetOwnerRole() != ROLE_Authority)
 	{
 		ClientSideEntityInterpolation(DeltaTime);
 
 		return;
 	}
-	else if (IsKnockedBack)
+	
+	if (IsKnockedBack)
+	{
+		return;
+	}
+
+	//kill plain
+	if (UpdatedComponent->GetComponentLocation().Z > 1000000)
 	{
 		return;
 	}
@@ -378,6 +385,11 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 
 void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
+	if (Velocity.ContainsNaN())
+	{
+		Velocity = FVector::ZeroVector;
+	}
+
 	FVector startLocation = GetActorLocation();
 	FVector desiredMovement = Velocity * DeltaTime;
 	FVector finalMovement = startLocation + desiredMovement;

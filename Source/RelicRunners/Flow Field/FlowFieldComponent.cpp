@@ -27,12 +27,12 @@ UFlowFieldComponent::UFlowFieldComponent()
 void UFlowFieldComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	UNavigationSystemV1* navSys = UNavigationSystemV1::GetCurrent(GetWorld());
-	if (!navSys)
+	if (navSys)
 	{
-		return;
+		navSys->OnNavigationGenerationFinishedDelegate.RemoveDynamic(this, &UFlowFieldComponent::CheckForInvalidNodeRefs);
 	}
 
-	navSys->OnNavigationGenerationFinishedDelegate.RemoveDynamic(this, &UFlowFieldComponent::CheckForInvalidNodeRefs);
+	
 	Super::EndPlay(EndPlayReason);
 }
 

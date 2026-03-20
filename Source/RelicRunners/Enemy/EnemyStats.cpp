@@ -43,7 +43,7 @@ void UEnemyStats::ResetStats()
 	URelicRunnersGameInstance* gameInst = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
 	ADirector* director = ADirector::GetInstance(this);
 
-	if (!gameInst || !director)
+	if (!gameInst || !director || director->GetPlayers().Num() == 0)
 	{
 		return;
 	}
