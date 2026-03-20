@@ -496,10 +496,13 @@ void AAphroditeCharacter::Tick(float DeltaTime)
 
                 ExplodeProjectile(Hit.ImpactPoint);
 
-                Projectile.AlreadyHitActors.Add(HitActor);
-                // Remove projectile after hit
-                ActiveProjectiles.RemoveAt(i);
-                break;
+                if (Hit.bBlockingHit)
+                {
+                    Projectile.AlreadyHitActors.Add(HitActor);
+                    // Remove projectile after hit
+                    ActiveProjectiles.RemoveAt(i);
+                    break;
+                }
             }
         }
 

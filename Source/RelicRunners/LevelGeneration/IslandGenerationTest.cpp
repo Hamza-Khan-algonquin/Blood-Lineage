@@ -125,6 +125,37 @@ void AIslandGenerationTest::Generate()
 			}
 		}
 
+		int maxSafeTiles = FMath::RandRange(GenerationValuesComponent->SafeSpotValues.MaxSafeSpotAmountMin, GenerationValuesComponent->SafeSpotValues.MaxSafeSpotAmountMax);
+
+		//Override previously initialized tiles with Safe tiles
+		for (int i = 0; i < maxSafeTiles; i++)
+		{
+			int keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+			int whileLoopLimit = 0;
+
+			//If the currently selected tile can be overriden, do that, if not, find another tile. Repeat 10 time. if failed every time, give up.
+			while (FloorValuesArray[keyTileIndex].IslandFloorObstacle > EIslandFloorObstacle::Safe)
+			{
+				keyTileIndex = FMath::RandRange(0, (IslandDepth * IslandWidth) - 1);
+
+				whileLoopLimit++;
+
+				if (whileLoopLimit >= 10)
+				{
+					break;
+				}
+			}
+
+			//If it can, override the currently selected tile with the key tile and create a path from the starting tile to it.
+			if (whileLoopLimit < 10)
+			{
+				SetSafeTile(keyTileIndex);
+
+				FindStartToEndPath(startingIndex, keyTileIndex, IslandWidth);
+			}
+		}
+
 		if (!FloorValuesArray.IsEmpty())
 		{
 			for (int y = 0; y < IslandDepth; y++)
@@ -345,6 +376,14 @@ void AIslandGenerationTest::SetStartingAndEndingPoints(int startingIndex, int en
 	FloorValuesArray[endingIndex].IslandFloorObstacle = EIslandFloorObstacle::End;
 	FloorValuesArray[endingIndex].randomFloorToSpawn = 0;
 	FloorValuesArray[endingIndex].obstacleYaw = FMath::RandRange(0, 3) * 90;
+}
+
+void AIslandGenerationTest::SetSafeTile(int index)
+{
+	FloorValuesArray[index].IsFullTile = true;
+	FloorValuesArray[index].IslandFloorObstacle = EIslandFloorObstacle::Safe;
+	FloorValuesArray[index].randomFloorToSpawn = 0;
+	FloorValuesArray[index].obstacleYaw = FMath::RandRange(0, 3) * 90;
 }
 
 void AIslandGenerationTest::SetFlagTile(int index)
@@ -1487,6 +1526,58 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 		break;
 
+	case EIslandFloorObstacle::Safe:
+		if (GenerationValuesComponent->SafeSpotValues.SafeActor)
+		{
+			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(GenerationValuesComponent->SafeSpotValues.SafeActor, posOffset, FRotator(0.0f, yaw, 0.0f));
+			if (packed->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(packed, false);
+			}
+			ObstacleArrays.Add(packed);
+		}
+
+		if (obstacleWallTemplate != nullptr)
+		{
+			APackedLevelActor* wall = nullptr;
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleLeft))
+			{
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 0.0f, 0.0f));
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				ObstacleArrays.Add(wall);
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::TopMiddle))
+			{
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 90.0f, 0.0f));
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				ObstacleArrays.Add(wall);
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleRight))
+			{
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 180.0f, 0.0f));
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				ObstacleArrays.Add(wall);
+			}
+			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::BottomMiddle))
+			{
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 270.0f, 0.0f));
+				if (wall->Implements<UCullingToggleInterface>())
+				{
+					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
+				}
+				ObstacleArrays.Add(wall);
+			}
+		}
+		break;
 	case EIslandFloorObstacle::CapturableFlag:
 		if (GenerationValuesComponent->FlagObjectiveValues.Flag != nullptr)
 		{

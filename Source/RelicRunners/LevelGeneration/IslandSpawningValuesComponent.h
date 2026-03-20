@@ -110,6 +110,24 @@ struct FVantagePointValues
 };
 
 USTRUCT()
+struct FSafeSpotValues
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class APackedLevelActor> SafeActor;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class APackedLevelActor> SafeWall;
+
+	UPROPERTY(EditAnywhere)
+	uint8 MaxSafeSpotAmountMin = 0;
+
+	UPROPERTY(EditAnywhere)
+	uint8 MaxSafeSpotAmountMax = 0;
+};
+
+USTRUCT()
 struct FObjectiveFlagValues
 {
 	GENERATED_BODY()
@@ -247,6 +265,11 @@ public:
 	FVantagePointValues VantageValues;
 
 	void SetVantagePointValues(FVantagePointValues newVantageValues) { VantageValues = newVantageValues; }
+
+	UPROPERTY(Replicated, EditAnywhere)
+	FSafeSpotValues SafeSpotValues;
+
+	void SetSafeSpotValues(FSafeSpotValues newSafeSpotValues) { SafeSpotValues = newSafeSpotValues; }
 
 	UPROPERTY(Replicated, EditAnywhere)
 	FObjectiveFlagValues FlagObjectiveValues;

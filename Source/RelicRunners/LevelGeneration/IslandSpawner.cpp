@@ -73,6 +73,7 @@ void AIslandSpawner::BeginPlay()
 				newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
 				newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
 				newIsland->GenerationValuesComponent->SetVantagePointValues(GenerationValuesComponent->VantageValues);
+				newIsland->GenerationValuesComponent->SetSafeSpotValues(GenerationValuesComponent->SafeSpotValues);
 				newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
 				newIsland->GenerationValuesComponent->SetPayloadObjectiveValues(GenerationValuesComponent->PayloadObjectiveValues);
 				newIsland->GenerationValuesComponent->SetSurvivalZoneObjectiveValues(GenerationValuesComponent->SurvivalZoneObjectiveValues);

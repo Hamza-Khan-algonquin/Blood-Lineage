@@ -33,6 +33,7 @@ enum class EIslandFloorObstacle : uint8
 	None,
 	Basic,
 	Vantage,
+	Safe,
 	CapturableFlag,
 	EnemyZone,
 	DeliveryPath,
@@ -109,6 +110,9 @@ public:
 
 	//Finds the starting and ending indexes and sets them accordingly.
 	void SetStartingAndEndingPoints(int startingIndex, int endingIndex);
+
+	//Overrides tiles set by *InitializeFloor()* and sets them as Safe Tiles.
+	void SetSafeTile(int index);
 
 	//Overrides tiles set by *InitializeFloor()* and sets them as Capturable Flag Tiles.
 	void SetFlagTile(int index);
