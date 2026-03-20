@@ -31,6 +31,7 @@
 #include <Kismet/GameplayStatics.h>
 #include <ClassData.h>
 #include "ClassInfo.h"
+#include <RelicRunners/RelicRunnersGameState.h>
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -497,11 +498,18 @@ void UInventoryComponent::Server_FuseItems_Implementation()
 
     if (ItemMeshData)
     {
+        UIconLibrary* Lib = nullptr;
+        if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+        {
+            Lib = GI->GlobalIconLibrary;
+        }
+
         FItemData NewItemData = ItemStats::CreateSpecificItemData(
             NewLevel,
             NewType,
             NewRarity,
-            ItemMeshData
+            ItemMeshData,
+            Lib
         );
 
         ForgeItemResult = ItemStats::CreateItemFromData(NewItemData, this);
@@ -571,11 +579,11 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
         }
     }
 
-    //Meta
     if (const UWorld* World = GetWorld())
     {
         if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(World->GetGameInstance()))
         {
+            //Meta
             if (GI->SelectedSaveSlot) {
                 Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
                 Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth * 10;
@@ -586,6 +594,14 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
                 Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
                 Summary.TotalPotionEfficiency += GI->SelectedSaveSlot->SaveData.MetaPotionEfficiency * 5;
                 Summary.TotalResourceRegen += GI->SelectedSaveSlot->SaveData.MetaResourceRegen;
+            }
+
+            //Difficulty
+            AGameStateBase* GameState = World->GetGameState();
+            if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+            {
+                FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+                Summary.TotalLuck += diffInfo.LuckAmount;
             }
         }
     }

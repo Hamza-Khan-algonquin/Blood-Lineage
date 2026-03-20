@@ -26,6 +26,7 @@
 #include "NiagaraComponent.h"
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 
 // Sets default values
@@ -70,7 +71,7 @@ AEnemyPawn::AEnemyPawn()
 	bAlwaysRelevant = false;
 	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 
-	KnockBackStrength = 1000;
+	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
 }
@@ -348,28 +349,27 @@ float AEnemyPawn::CalculateXP() const
 	return FMath::RandRange(10, 25);
 }
 
-void AEnemyPawn::SpawnItem()
-{
-
-}
-
-void AEnemyPawn::SpawnItem(int KillersLuck)
+void AEnemyPawn::SpawnItem(int Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float Roll = FMath::FRandRange(0.f, 100.f);
-	float Chance = EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(KillersLuck);
-	if (Roll <= Chance)
+	float chance = FMath::FRandRange(0.f, 100.f);
+
+	if (chance <= EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(Luck))
 	{
 		if (ItemMeshDataClass)
 		{
 			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
 		}
 
-		float LootQualityIncrease = ItemStats::GetLootQuality(KillersLuck);
+		UIconLibrary* Lib = nullptr;
+		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+		{
+			Lib = GI->GlobalIconLibrary;
+		}
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(LootQualityIncrease), ItemMeshData),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData, Lib),
 			this
 		);
 
@@ -455,7 +455,7 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
 
-	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
 		MovementComponent->IsKnockedBack = false;
 		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
@@ -615,12 +615,12 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		ResetEnemy();
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	if (IsValid(pool) && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()

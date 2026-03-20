@@ -29,7 +29,8 @@ class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInt
 {
 	GENERATED_BODY()
 public:
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool ShouldDieIfCommanderIsDone;
 	//Delegate that is called when the enemy dies
 	UPROPERTY(BlueprintAssignable, Category = "Enemy|Delegates")
 	FEnemyCharacterDied OnDied;

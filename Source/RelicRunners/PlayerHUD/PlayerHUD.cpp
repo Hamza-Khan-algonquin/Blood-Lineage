@@ -16,12 +16,14 @@
 
 #include "PlayerHUD.h"
 #include "Components/TextBlock.h"
+#include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/VerticalBox.h"
 #include "Components/ProgressBar.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include <Kismet/GameplayStatics.h>
 #include <RelicRunners/Menu/Keybinds.h>
+#include <RelicRunners/Item/ItemStats.h>
 
 void UPlayerHUD::NativeConstruct()
 {

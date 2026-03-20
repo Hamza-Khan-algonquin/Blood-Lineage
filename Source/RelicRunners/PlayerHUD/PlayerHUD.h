@@ -139,5 +139,4 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartUltimateCooldown(float CooldownTime);
-
 };

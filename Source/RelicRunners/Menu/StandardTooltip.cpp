@@ -17,6 +17,21 @@ void UStandardTooltip::NativeConstruct()
 		Icon->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
+	if (Icon1)
+	{
+		Icon1->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (Icon2)
+	{
+		Icon2->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (Icon3)
+	{
+		Icon3->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
 	if (TB_Value)
 	{
 		TB_Value->SetVisibility(ESlateVisibility::Collapsed);
@@ -121,19 +136,29 @@ void UStandardTooltip::SetAnchor(FVector2D anchor)
 	this->SetAlignmentInViewport(anchor);
 }
 
-void UStandardTooltip::SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor)
+void UStandardTooltip::SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor, int index)
 {
-	if (!Icon) return;
+	if (!this || !IsValid(this)) return;
 
-	if (NewIcon)
+	UImage* IconRef = nullptr;
+	switch (index)
 	{
-		Icon->SetBrushFromTexture(NewIcon);
-		Icon->SetColorAndOpacity(NewColor);
-		Icon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	case 0: IconRef = Icon;  break;
+	case 1: IconRef = Icon1; break;
+	case 2: IconRef = Icon2; break;
+	case 3: IconRef = Icon3; break;
+	default: return;
 	}
-	else
+
+	if (IsValid(IconRef) && NewIcon)
 	{
-		Icon->SetVisibility(ESlateVisibility::Collapsed);
+		IconRef->SetBrushFromTexture(NewIcon);
+		IconRef->SetColorAndOpacity(NewColor);
+		IconRef->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
+	else if (IconRef)
+	{
+		IconRef->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include "RelicRunnersGameState.h"
 #include <Net/UnrealNetwork.h>
+#include "PlayerController/RelicRunnersPlayerController.h"
 
 ARelicRunnersGameState::ARelicRunnersGameState()
 {
@@ -24,7 +25,13 @@ FDifficultyInfo ARelicRunnersGameState::GetDifficultyInfo(FName DifficultyName) 
 
 void ARelicRunnersGameState::OnRep_CurrentDifficulty()
 {
-
+    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    {
+        if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+        {
+            RPC->Client_UpdateDifficulty(CurrentDifficulty);
+        }
+    }
 }
 
 void ARelicRunnersGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
