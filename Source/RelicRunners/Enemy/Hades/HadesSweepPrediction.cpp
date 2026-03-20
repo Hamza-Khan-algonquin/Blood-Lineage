@@ -56,7 +56,7 @@ void AHadesSweepPrediction::Tick(float DeltaTime)
                     {
                         if (AActor* HitActor = Overlap.GetActor())
                         {
-                            UGameplayStatics::ApplyDamage(HitActor, 80.0f, nullptr, Boss, UDamageType::StaticClass());
+                            UGameplayStatics::ApplyDamage(HitActor, 5.0f, nullptr, Boss, UDamageType::StaticClass());
                         }
                     }
                 }
