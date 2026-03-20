@@ -227,7 +227,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 
 	UE_LOG(LogTemp, Log, TEXT("SERVER: Generating items using PlayerState MeshData."));
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		FString RandomType = ItemStats::GetRandomItemType();
 		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, "Common", ItemMeshData);
@@ -573,7 +573,7 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 	{
 		int AddedMeta = FMath::RandRange(1, 3);
 		MetaXPGainInRun += AddedMeta;
-		GI->SelectedSaveSlot->AddMetaExp(AddedMeta);
+		if(GI->SelectedSaveSlot) GI->SelectedSaveSlot->AddMetaExp(AddedMeta);
 	}
 }
 

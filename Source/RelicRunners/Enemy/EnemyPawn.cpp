@@ -348,28 +348,21 @@ float AEnemyPawn::CalculateXP() const
 	return FMath::RandRange(10, 25);
 }
 
-void AEnemyPawn::SpawnItem()
-{
-
-}
-
-void AEnemyPawn::SpawnItem(int KillersLuck)
+void AEnemyPawn::SpawnItem(int Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float Roll = FMath::FRandRange(0.f, 100.f);
-	float Chance = EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(KillersLuck);
-	if (Roll <= Chance)
+	float chance = FMath::FRandRange(0.f, 100.f);
+
+	if (chance <= EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(Luck))
 	{
 		if (ItemMeshDataClass)
 		{
 			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
 		}
 
-		float LootQualityIncrease = ItemStats::GetLootQuality(KillersLuck);
-
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(LootQualityIncrease), ItemMeshData),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData),
 			this
 		);
 
@@ -455,7 +448,7 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
 
-	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
 		MovementComponent->IsKnockedBack = false;
 		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
@@ -615,12 +608,12 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		ResetEnemy();
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	if (IsValid(pool) && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()

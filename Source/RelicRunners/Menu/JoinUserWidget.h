@@ -433,6 +433,8 @@ protected:
 	UPROPERTY()
 	class UStandardTooltip* StandardTooltip;
 
+	FTimerHandle TimerHandle_DifficultyUpdate;
+
 public:
 	void OnFindSessionsComplete(FString Str, int PlayerCount);
 

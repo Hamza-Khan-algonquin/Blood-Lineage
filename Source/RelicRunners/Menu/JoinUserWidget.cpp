@@ -47,10 +47,12 @@ void UJoinUserWidget::NativeConstruct()
 	if (NemesisButton) NemesisButton->OnClicked.AddDynamic(this, &UJoinUserWidget::OnNemesisClicked);
 	SetSelectedClass("Ares");
 
+	bool IsHost = true;
 	if (const UWorld* World = GetWorld())
 	{
 		//If not host then collapse these elements
-		bool IsHost = World->GetAuthGameMode() != nullptr;
+		IsHost = World->GetAuthGameMode() != nullptr;
+		
 		StartButton->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		B_Start->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		B_BoarSection->SetVisibility(IsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
@@ -94,7 +96,20 @@ void UJoinUserWidget::NativeConstruct()
 	if (B_Hydra)    B_Hydra->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Hydra);
 	if (B_Cerberus) B_Cerberus->OnClicked.AddDynamic(this, &UJoinUserWidget::OnDifficultyClicked_Cerberus);
 
-	SetSelectedDifficulty("Boar");
+	if (!IsHost)
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			TimerHandle_DifficultyUpdate,
+			this,
+			&UJoinUserWidget::UpdateClientDifficultyUI,
+			0.5f,
+			true
+		);
+	}
+	else
+	{
+		SetSelectedDifficulty("Boar");
+	}
 
 	PlayAnimation(LeftPanelOpen);
 	PlayAnimation(RightPanelOpen);
@@ -347,19 +362,32 @@ void UJoinUserWidget::SetSelectedDifficulty(FName DifficultyKey)
 
 void UJoinUserWidget::UpdateClientDifficultyUI()
 {
-	URelicRunnersGameInstance* GameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (!GameInstance) return;
+	ARelicRunnersGameState* RunnersGameState = GetWorld()->GetGameState<ARelicRunnersGameState>();
+	if (!RunnersGameState) return;
+
+	FName ActualDifficulty = RunnersGameState->CurrentDifficulty;
+
+	if (ActualDifficulty.IsNone()) return;
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		GI->CurrentDifficulty = ActualDifficulty;
+	}
 
 	const FLinearColor DarkGold(0.6f, 0.3f, 0.f, 1.f);
-	FString IconName = GameInstance->CurrentDifficulty.ToString() + "Difficulty";
+	FString IconName = ActualDifficulty.ToString() + "Difficulty";
+
 	I_CurrentDifficulty->SetBrushFromTexture(ItemStats::LoadIcon(IconName));
 	I_CurrentDifficulty->SetColorAndOpacity(DarkGold);
-	TB_CurrentDifficulty->SetText(FText::FromName(GameInstance->CurrentDifficulty));
-	TB_CurrentEnemyDamage->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].HealthPercent));
-	TB_CurrentEnemyHealth->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].DamagePercent));
-	TB_CurrentLuck->SetText(FText::AsNumber(DifficultyMap[GameInstance->CurrentDifficulty].LuckAmount));
-}
 
+	FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(ActualDifficulty);
+	TB_CurrentDifficulty->SetText(FText::FromName(ActualDifficulty));
+	TB_CurrentEnemyDamage->SetText(FText::AsNumber(diffInfo.HealthPercent));
+	TB_CurrentEnemyHealth->SetText(FText::AsNumber(diffInfo.DamagePercent));
+	TB_CurrentLuck->SetText(FText::AsNumber(diffInfo.LuckAmount));
+
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_DifficultyUpdate);
+}
 void UJoinUserWidget::PlayButtonClickSound()
 {
 	if (!ButtonClickSound) return;

@@ -17,7 +17,7 @@ void ARootPawn::BeginPlay()
 	Super::BeginPlay();
 	
 
-	SetActorLocation(GetActorLocation() + FVector(0, 0, 100));
+	//SetActorLocation(GetActorLocation() + FVector(0, 0, 100));
 }
 
 // Called every frame

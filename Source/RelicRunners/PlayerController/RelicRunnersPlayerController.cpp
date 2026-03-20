@@ -1220,7 +1220,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		}
 	}
 
-	float LoadingScreenTime = 3.0f;
+	float LoadingScreenTime = 6.0f;
 	if (!LoadingScreen && LoadingScreenClass)
 	{
 		FInputModeUIOnly InputMode;
