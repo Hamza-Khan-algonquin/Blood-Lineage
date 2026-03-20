@@ -128,10 +128,27 @@ void ALobbyGameMode::UpdateSetup()
     }
 }
 
-void ALobbyGameMode::StartCountdown() 
+void ALobbyGameMode::StartCountdown()
 {
-    CurrentCountdown = 5;
+    CurrentCountdown = 3;
+
     GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &ALobbyGameMode::AdvanceTimer, 1.0f, true);
+
+    AdvanceTimer();
+}
+
+void ALobbyGameMode::CancelCountdown()
+{
+    GetWorldTimerManager().ClearTimer(CountdownTimerHandle);
+    CurrentCountdown = 3;
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(It->Get()))
+        {
+            PC->Client_UpdateCountdown(-1);
+        }
+    }
 }
 
 void ALobbyGameMode::AdvanceTimer()

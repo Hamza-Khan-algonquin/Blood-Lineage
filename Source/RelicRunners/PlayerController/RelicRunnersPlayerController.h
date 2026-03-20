@@ -215,6 +215,13 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)
 	class ALobbyPreview* LobbyPreviewInstance;
 
+	UFUNCTION(Server, Reliable)
+	void Server_ExecuteMove(FVector Target);
+	UFUNCTION(Client, Reliable)
+	void Client_StartCinematicWalk(FVector TargetLocation);
+
+	FVector CinematicTargetLocation;
+
 	//Timers
 	FTimerHandle UIInitialSyncTimerHandle;
 	FTimerHandle SyncDataTimerHandle;
@@ -263,7 +270,6 @@ protected:
 	void ProjectileHeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
-	void StartBossCinematicWalk();
 	void CheckCinematicArrival();
 
 	//Virtual Functions

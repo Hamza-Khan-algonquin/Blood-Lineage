@@ -18,13 +18,22 @@ public:
 
 	void SetAnchor(FVector2D anchor);
 
-	void SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor);
+	void SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor, int index);
 
 protected:
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* Icon;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Icon3;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_Name;

@@ -30,6 +30,7 @@
 #include "Components/WidgetComponent.h"
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "Sound/SoundBase.h"
+#include "Animation/WidgetAnimation.h"
 
 void UJoinUserWidget::NativeConstruct()
 {
@@ -122,7 +123,7 @@ FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPo
 	FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
 
 	TArray<UBorder*> Borders = { B_Health, B_Defence, B_Strength, B_Agility, B_Intelligence,
-								 B_Ability1, B_Ability2, B_Ability3, B_Ability4 };
+								 B_Ability1, B_Ability2, B_Ability3, B_Ability4, B_BoarSection1, B_BullSection1, B_LionSection1, B_HydraSection1, B_CerberusSection1, B_CurrentSection1 };
 
 	UBorder* HoveredBorder = nullptr;
 	for (UBorder* Border : Borders)
@@ -154,7 +155,8 @@ FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPo
 		ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
 	}
 
-	return FReply::Handled();
+	if (CurrentHoveredBorder) return FReply::Handled();
+	else return FReply::Unhandled();
 }
 
 void UJoinUserWidget::UpdateDifficultyNumbers()
@@ -196,8 +198,12 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 
 	FString StatKey = "";
 	int RawValue = 0;
+	int RawValue1 = 0;
+	int RawValue2 = 0;
 	FString AbilityName = "";
 	FString AbilityDesc = "";
+	bool Difficulty = false;
+	FName DifficultyName = "Boar";
 
 	if (HoveredBorder == B_Health)				{ StatKey = "Health";       RawValue = Info.Health; }
 	else if (HoveredBorder == B_Defence)		{ StatKey = "Defence";      RawValue = Info.Armor; }
@@ -210,14 +216,49 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 	else if (HoveredBorder == B_Ability3)		{ StatKey = "Ability3"; AbilityName = Info.Ability3; AbilityDesc = Info.Ability3Description1; }
 	else if (HoveredBorder == B_Ability4)		{ StatKey = "Ability4"; AbilityName = Info.Ability4; AbilityDesc = Info.Ability4Description1; }
 
-	FTooltipData TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
+	else if (HoveredBorder == B_BoarSection1) { StatKey = "BoarDifficulty"; Difficulty = true; DifficultyName = "Boar"; }
+	else if (HoveredBorder == B_BullSection1) { StatKey = "BullDifficulty"; Difficulty = true; DifficultyName = "Bull";}
+	else if (HoveredBorder == B_LionSection1) { StatKey = "LionDifficulty"; Difficulty = true; DifficultyName = "Lion";}
+	else if (HoveredBorder == B_HydraSection1) { StatKey = "HydraDifficulty"; Difficulty = true; DifficultyName = "Hydra";}
+	else if (HoveredBorder == B_CerberusSection1) { StatKey = "CerberusDifficulty"; Difficulty = true; DifficultyName = "Cerberus";}
+	else if (HoveredBorder == B_CurrentSection1) { StatKey = "CurrentDifficulty"; Difficulty = true; DifficultyName = "Current"; }
 
-	StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+	FVector2D Anchor(0.f, 1.f);
+	FVector2D Offset(5.0f, 5.0f);
+
+	FTooltipData TD;
+	if (!Difficulty)
+	{
+		TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
+		StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
+	}
+	else
+	{
+		ARelicRunnersGameState* RunnersGameState = GetWorld()->GetGameState<ARelicRunnersGameState>();
+		if (!RunnersGameState) return;
+
+		FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo("Boar");
+		if (DifficultyName == "Current")
+		{
+			diffInfo = RunnersGameState->GetDifficultyInfo(RunnersGameState->CurrentDifficulty);
+		}
+		else
+		{
+			diffInfo = RunnersGameState->GetDifficultyInfo(DifficultyName);
+		}
+
+		Anchor = FVector2D(1.f, 1.f);
+		Offset = FVector2D(-5.0f, 5.0f);
+		TD = ItemStats::GetStatTooltipData(StatKey, (diffInfo.HealthPercent*100), (diffInfo.DamagePercent * 100), diffInfo.LuckAmount, RunnersGameState->CurrentDifficulty.ToString(), AbilityDesc);
+		StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
+		StandardTooltip->SetIcon(TD.Icon1, TD.IconColor1, 1);
+		StandardTooltip->SetIcon(TD.Icon2, TD.IconColor2, 2);
+		StandardTooltip->SetIcon(TD.Icon3, TD.IconColor3, 3);
+	}
+
 	StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
 
 	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
-	const FVector2D Offset(5.0f, 5.0f);
-	const FVector2D Anchor(0.f, 1.f);
 
 	StandardTooltip->SetAnchor(Anchor);
 	StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
@@ -568,9 +609,24 @@ void UJoinUserWidget::StartGameButtonClicked()
 	APlayerController* PC = GetOwningPlayer();
 	if (!PC) return;
 
-	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>()) 
+	ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
+	if (!GM) return;
+
+	if (!IsCountingDown)
 	{
 		GM->StartCountdown();
+		IsCountingDown = true;
+
+		if (TB_StartButton) TB_StartButton->SetText(FText::FromString("CANCEL"));
+		StartButton->SetBackgroundColor(FLinearColor(1,0.3,0));
+	}
+	else
+	{
+		GM->CancelCountdown();
+		IsCountingDown = false;
+
+		if (TB_StartButton) TB_StartButton->SetText(FText::FromString("START"));
+		StartButton->SetBackgroundColor(FLinearColor(0, 1, 0.714));
 	}
 }
 
@@ -580,6 +636,12 @@ void UJoinUserWidget::UpdateCountdownUI(int RemainingTime) {
 	if (RemainingTime > 0) {
 		TB_Countdown->SetText(FText::AsNumber(RemainingTime));
 		PlayAnimation(Timer);
+		TimerImage->SetOpacity(1);
+	}
+	else
+	{
+		StopAnimation(Timer);
+		TimerImage->SetOpacity(0);
 	}
 }
 

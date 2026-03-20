@@ -102,52 +102,62 @@ void APlayerPreview::BeginPlay()
 {
 	Super::BeginPlay();
 
+	RefreshPreview();
+}
+
+void APlayerPreview::RefreshPreview()
+{
+	if (!LinkedPlayerState) return;
+
+	FName ClassToLoad = LinkedPlayerState->SelectedClass;
+
+	if (ClassToLoad.IsNone())
+	{
+		ClassToLoad = FName("Ares");
+		UE_LOG(LogTemp, Warning, TEXT("RefreshPreview: SelectedClass was empty! Defaulting to Ares for Debug."));
+	}
+
 	USkeletalMesh* Character = nullptr;
 	TSubclassOf<UAnimInstance> DesiredAnimBP = nullptr;
 	float ModelScale = 1.0f;
 
-	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (PC)
+	if (LinkedPlayerState)
 	{
-		ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>();
-		if (PS)
+		if (LinkedPlayerState->SelectedClass == "Ares")
 		{
-			if (PS->SelectedClass == "Ares")
-			{
-				Character = AresModel;
-				DesiredAnimBP = TankAnim;
-				ModelScale = 0.8f;
-			}
-			else if (PS->SelectedClass == "Nemesis")
-			{
-				Character = NemesisModel;
-				DesiredAnimBP = MeleeAnim;
-			}
-			else if (PS->SelectedClass == "Aphrodite")
-			{
-				Character = AphroditeModel;
-				DesiredAnimBP = HealerAnim;
-			}
-			else if (PS->SelectedClass == "Artemis")
-			{
-				Character = ArtemisModel;
-				DesiredAnimBP = RangedAnim;
-				ModelScale = 0.85f;
-			}
+			Character = AresModel;
+			DesiredAnimBP = TankAnim;
+			ModelScale = 0.8f;
+		}
+		else if (LinkedPlayerState->SelectedClass == "Nemesis")
+		{
+			Character = NemesisModel;
+			DesiredAnimBP = MeleeAnim;
+		}
+		else if (LinkedPlayerState->SelectedClass == "Aphrodite")
+		{
+			Character = AphroditeModel;
+			DesiredAnimBP = HealerAnim;
+		}
+		else if (LinkedPlayerState->SelectedClass == "Artemis")
+		{
+			Character = ArtemisModel;
+			DesiredAnimBP = RangedAnim;
+			ModelScale = 0.85f;
+		}
 
-			BodyMesh->SetSkeletalMesh(Character);
-			BodyMesh->SetRelativeScale3D(FVector(ModelScale));
-			if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim || DesiredAnimBP == TankAnim)
-			{
-				BodyMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
-				BodyMesh->SetAnimInstanceClass(DesiredAnimBP);
-			}
-			else
-			{
-				BodyMesh->SetAnimInstanceClass(nullptr);
-				BodyMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-				BodyMesh->SetAnimation(nullptr);
-			}
+		BodyMesh->SetSkeletalMesh(Character);
+		BodyMesh->SetRelativeScale3D(FVector(ModelScale));
+		if (DesiredAnimBP == HealerAnim || DesiredAnimBP == MeleeAnim || DesiredAnimBP == RangedAnim || DesiredAnimBP == TankAnim)
+		{
+			BodyMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+			BodyMesh->SetAnimInstanceClass(DesiredAnimBP);
+		}
+		else
+		{
+			BodyMesh->SetAnimInstanceClass(nullptr);
+			BodyMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+			BodyMesh->SetAnimation(nullptr);
 		}
 	}
 }

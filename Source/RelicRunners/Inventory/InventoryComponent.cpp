@@ -498,11 +498,18 @@ void UInventoryComponent::Server_FuseItems_Implementation()
 
     if (ItemMeshData)
     {
+        UIconLibrary* Lib = nullptr;
+        if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+        {
+            Lib = GI->GlobalIconLibrary;
+        }
+
         FItemData NewItemData = ItemStats::CreateSpecificItemData(
             NewLevel,
             NewType,
             NewRarity,
-            ItemMeshData
+            ItemMeshData,
+            Lib
         );
 
         ForgeItemResult = ItemStats::CreateItemFromData(NewItemData, this);

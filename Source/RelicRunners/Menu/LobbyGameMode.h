@@ -25,6 +25,7 @@ public:
     void AdvanceTimer();
     void SetDifficulty(FName NewDifficulty);
     void StartCountdown();
+    void CancelCountdown();
 protected:
     // Where to put players in lobby (pillars etc.)
     UPROPERTY(EditDefaultsOnly, Category = "Lobby")
