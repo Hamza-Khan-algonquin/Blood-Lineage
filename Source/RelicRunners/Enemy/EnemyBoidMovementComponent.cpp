@@ -107,7 +107,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	float distanceToTarget = 0;
 
 	FVector targetDirection;
-	FVector targetLocation;
+	FVector targetLocation = FVector::Zero();
 	//just define as a big number to get ride of a warning
 	float distanceFromTargetRadius = 100000;
 

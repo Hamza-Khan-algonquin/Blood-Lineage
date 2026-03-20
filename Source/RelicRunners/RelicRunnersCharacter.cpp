@@ -546,7 +546,10 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	//Lock look input on boss level
-	if (GetWorld()->GetMapName().Contains("BossLevel")) return;
+	UWorld* const World = GetWorld();
+	if (!World) return;
+
+	if (World->GetMapName().Contains("BossLevel")) return;
 	else if (Controller != nullptr)
 	{
 		float XSens = 1.0f;
@@ -584,9 +587,12 @@ void ARelicRunnersCharacter::Interact()
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	if (GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
+	UWorld* const World = GetWorld();
+	if (!World) return;
+
+	if (World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
 	{
-		DrawDebugSphere(GetWorld(), Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
+		DrawDebugSphere(World, Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && HitActor->Implements<UInteractInterface>())
 		{
