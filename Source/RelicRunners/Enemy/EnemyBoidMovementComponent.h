@@ -73,6 +73,8 @@ protected:
 	float MaxTargetDistanceMultiplier;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float DistanceToStartAvoidingWalls;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float DistanceFromWallToLoseTargetWeight;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float CoherenceWeight;
@@ -82,8 +84,6 @@ protected:
 	float AlignmentWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float TargetWeight;
-	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
-	float EdgeAvoidanceWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float WallAvoidanceWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")

@@ -31,12 +31,12 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	Velocity = { 0,0,0 };
 	NavMeshClampExtent = FVector(50.f, 50.f, 100.f);
 	WallAvoidanceExtent = FVector(100.f, 100.f, 300.f);
-	EdgeAvoidanceWeight = 1;
 	MaxStepNormal = 0.1;
 	IsKnockedBack = false;
 	InterpDelay = 0.1f;
 	MaxClientLocationDeviation = 200.f;
 	AvgReplicationDelta = 0.1f;
+	DistanceFromWallToLoseTargetWeight = 100;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -100,7 +100,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	float distanceToTarget = 0;
 
 	FVector targetDirection;
-	FVector targetPosition;
+	FVector targetLocation;
 	//just define as a big number to get ride of a warning
 	float distanceFromTargetRadius = 100000;
 
@@ -119,8 +119,8 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	}
 	else if(IsValid(target))
 	{
-		targetPosition = target->GetActorLocation();
-		targetDirection = targetPosition - GetOwner()->GetActorLocation();
+		targetLocation = target->GetActorLocation();
+		targetDirection = targetLocation - GetOwner()->GetActorLocation();
 		distanceToTarget = targetDirection.Size();
 		distanceFromTargetRadius = distanceToTarget - TargetRadius;
 
@@ -206,32 +206,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	if (ActiveNavMesh)
 	{
 		FNavLocation navLocation;
-
-		if (!IsAffectiveByBundleOfJoy && IsValid(target))
-		{
-
-			if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
-			{
-				float targetMult = FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceMultiplier, MaxTargetDistanceMultiplier);
-				FVector StartLocation = UpdatedComponent->GetComponentLocation();
-				FVector EndLocation = targetPosition;
-				FVector HitLocation;
-				bool didHit = ActiveNavMesh->NavMeshRaycast(ActiveNavMesh, StartLocation, EndLocation, HitLocation, ActiveNavMesh->GetDefaultQueryFilter(), this);
-
-				UFlowFieldComponent* flowField = target->GetComponentByClass<UFlowFieldComponent>();
-
-				if (didHit && IsValid(flowField) && distanceFromTargetRadius < TargetRadius && flowField->GetFieldRadius() < distanceToTarget)
-				{
-					targetVector = flowField->GetDirection(UpdatedComponent->GetComponentLocation(), { 100,100,100 }) * targetMult;
-				}
-				else
-				{
-					targetVector = targetDirection.GetSafeNormal() * targetMult;
-				}
-			}
-
-			finalInflunceVector += (targetVector * TargetWeight);
-		}
+		float closeWallDist = DistanceToStartAvoidingWalls;
 
 		if (ActiveNavMesh->ProjectPoint(GetActorLocation(), navLocation, WallAvoidanceExtent))
 		{
@@ -255,7 +230,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 				{
 					strength = FMath::Clamp((1 - distanceToWall / DistanceToStartAvoidingWalls), 0, 1);
 					direction = (navLocation.Location - closestPointOnWall).GetSafeNormal2D();
-					
+					closeWallDist = 0;
 				}
 				else
 				{
@@ -272,11 +247,43 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 					{
 						direction *= -1;
 					}
+
+					if (distanceToWall < closeWallDist)
+					{
+						closeWallDist = distanceToWall;
+					}
 				}
 
 				finalInflunceVector += direction * strength * WallAvoidanceWeight;
 				//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + direction * strength * WallAvoidanceWeight * 100, FColor::Cyan, false, 0.1, 0, 3);
 			}
+		}
+
+
+		if (!IsAffectiveByBundleOfJoy && IsValid(target))
+		{
+			if (FMath::Abs(distanceFromTargetRadius) > TargetDeadZone)
+			{
+				float targetMult = FMath::Clamp((distanceFromTargetRadius), -MaxTargetDistanceMultiplier, MaxTargetDistanceMultiplier);
+				FVector StartLocation = UpdatedComponent->GetComponentLocation();
+				FVector EndLocation = targetLocation;
+				FVector HitLocation;
+				bool didHit = ActiveNavMesh->NavMeshRaycast(ActiveNavMesh, StartLocation, EndLocation, HitLocation, ActiveNavMesh->GetDefaultQueryFilter(), this);
+
+				UFlowFieldComponent* flowField = target->GetComponentByClass<UFlowFieldComponent>();
+
+				if (didHit && IsValid(flowField) && flowField->GetFieldRadius() >= distanceToTarget)
+				{
+					targetVector = flowField->GetDirection(UpdatedComponent->GetComponentLocation(), { 100,100,100 }) * targetMult;
+				}
+				else
+				{
+					targetVector = targetDirection.GetSafeNormal() * targetMult;
+				}
+			}
+
+			finalInflunceVector += (targetVector * TargetWeight) * FMath::Clamp(closeWallDist / DistanceFromWallToLoseTargetWeight, 0, 1);
+			//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + targetVector * TargetWeight * 100, FColor::Emerald, false, 0.1, 0, 3);
 		}
 	}
 
@@ -285,7 +292,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + finalInflunceVector.GetSafeNormal() * 50, FColor::Black, false, 0.1, 0, 3);
 
 	//factor in the weights and add them up to get the final direction vector
-	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight) /*+ (EdgeAvoidanceVector.GetSafeNormal() * EdgeAvoidanceWeight)*/;
+	finalInflunceVector += (coherenceVector * CoherenceWeight) + (separationVector * SeparationWeight) + (alignmentVector * AlignmentWeight);
 	
 	//float totalWeight = (CoherenceWeight + SeparationWeight + AlignmentWeight);
 
@@ -331,16 +338,31 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 		return;
 	}
 	
-	FVector targetDirection;
+	FVector targetVector;
 	FVector desiredVelocity = FVector::ZeroVector;
-	//just defining as a big number to get ride of a warning
-	float distanceFromTargetRadius = 100000;
+	APawn* target = Commander->GetCurrentTarget();
 
-	targetDirection = Commander->GetCurrentTarget()->GetActorLocation() - GetOwner()->GetActorLocation();
+	targetVector = target->GetActorLocation() - GetOwner()->GetActorLocation();
 
-	if (targetDirection.Size() > DirectMoveToAcceptanceRadius)
+	if (targetVector.Size() > DirectMoveToAcceptanceRadius)
 	{
-		desiredVelocity = targetDirection.GetSafeNormal() * MaxSpeed;
+		FVector StartLocation = UpdatedComponent->GetComponentLocation();
+		FVector EndLocation = target->GetActorLocation();
+		FVector HitLocation;
+		bool didHit = ActiveNavMesh->NavMeshRaycast(ActiveNavMesh, StartLocation, EndLocation, HitLocation, ActiveNavMesh->GetDefaultQueryFilter(), this);
+
+		UFlowFieldComponent* flowField = target->GetComponentByClass<UFlowFieldComponent>();
+
+		if (didHit && IsValid(flowField) && flowField->GetFieldRadius() >= FVector::Dist(StartLocation, EndLocation))
+		{
+			targetVector = flowField->GetDirection(UpdatedComponent->GetComponentLocation(), { 100,100,100 });
+		}
+		else
+		{
+			targetVector = targetVector.GetSafeNormal();
+		}
+
+		desiredVelocity = targetVector.GetSafeNormal() * MaxSpeed;
 		FVector turnSpeed = (desiredVelocity - Velocity).GetClampedToMaxSize(MaxTurnSpeed * delta);
 
 		Velocity = (Velocity + turnSpeed).GetClampedToMaxSize(MaxSpeed);
@@ -376,10 +398,16 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	//DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
 
-	if (navSys)//ActiveNavMesh)
+	if (ActiveNavMesh)//navSys)
 	{
-		//ActiveNavMesh->FindMoveAlongSurface(*GetOwner(), finalMovement, navLocation, NavMeshClampExtent);
-		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
+		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, {100,100,200}))
+		{
+			FNavLocation navOutLocation;
+			ActiveNavMesh->FindMoveAlongSurface(navLocation, finalMovement, navOutLocation, ActiveNavMesh->GetDefaultQueryFilter(), this);
+			finalMovement = navOutLocation.Location + offset - startLocation;
+		}
+		
+		/*if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
 		{
 			FVector newPosition = navLocation.Location + offset;// + offset.Z;
 			finalMovement = newPosition - startLocation;
@@ -397,13 +425,13 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 		else
 		{
 			return;
-		}
+		}*/
 	}
 	
 
 	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
-	if (hit.IsValidBlockingHit() && hit.Normal.Z > 0.8)
+	if (hit.IsValidBlockingHit())
 	{
 		SlideAlongSurface(finalMovement, 1.f - hit.Time, hit.Normal, hit);
 		//Velocity = FVector::VectorPlaneProject(Velocity, hit.Normal);

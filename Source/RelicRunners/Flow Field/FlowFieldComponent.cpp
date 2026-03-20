@@ -110,6 +110,11 @@ void UFlowFieldComponent::GenerateFlowField(FNavLocation targetNavLocation, floa
 
 	ActiveNavMesh->FindPolysAroundCircle(targetNavLocation.Location, CurrentNodeRef, radius, ActiveNavMesh->GetDefaultQueryFilter(), this, &polys, &parentPolys, &costs, &polyCount);
 
+	if (polys.IsEmpty() || parentPolys.IsEmpty())
+	{
+		return;
+	}
+
 	for (int i = 0; i < polyCount; i++)
 	{
 		if (!parentPolys[i] || !polys[i] || FlowField.Contains(polys[i]))
