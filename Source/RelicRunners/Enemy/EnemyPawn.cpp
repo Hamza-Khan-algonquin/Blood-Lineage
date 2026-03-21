@@ -214,17 +214,28 @@ void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
 {
 	EndHitFlash();
 
-	if (IsValid(DeathEffect) && IsValid(this))
+	if (IsValid(DeathEffect))
 	{
-		if (GetActorLocation().ContainsNaN() || GetActorRotation().ContainsNaN() || !GetActorScale().ContainsNaN())
+		if (GetActorLocation().ContainsNaN() ||
+			GetActorRotation().ContainsNaN() ||
+			GetActorScale().ContainsNaN())
 		{
 			UE_LOG(LogTemp, Error, TEXT("Invalid transform for Niagara spawn"));
 			return;
 		}
 
-		UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
+		UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			DeathEffect,
+			GetActorLocation(),
+			GetActorRotation(),
+			GetActorScale()
+		);
 
-		deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
+		//if (deathEffect)
+		//{
+		//	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
+		//}
 	}
 }
 

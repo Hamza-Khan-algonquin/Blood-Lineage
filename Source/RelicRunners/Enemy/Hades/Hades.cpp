@@ -13,6 +13,9 @@
 #include "HadesSlamPrediction.h"
 #include "HadesSlamSweepPrediction.h"
 #include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include <RelicRunners/RelicRunnersGameState.h>
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 AHades::AHades()
 {
@@ -592,7 +595,8 @@ void AHades::SelectRandomTarget()
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
         APlayerController* PC = It->Get();
-        if (PC && PC->GetPawn())
+
+        if (IsValid(PC) && IsValid(PC->GetPawn()))
         {
             ValidPlayers.Add(PC->GetPawn());
         }
@@ -602,6 +606,10 @@ void AHades::SelectRandomTarget()
     {
         int RandomIndex = FMath::RandRange(0, ValidPlayers.Num() - 1);
         CurrentTarget = ValidPlayers[RandomIndex];
+    }
+    else
+    {
+        CurrentTarget = nullptr;
     }
 }
 
@@ -663,6 +671,30 @@ void AHades::Die()
     if (ActiveCycloneComp)
     {
         ActiveCycloneComp->DestroyComponent();
+    }
+
+    //Meta XP
+    ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>();
+    URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+
+    if (GS && GI)
+    {
+        FDifficultyInfo DiffInfo = GS->GetDifficultyInfo(GI->CurrentDifficulty);
+
+        for (APlayerState* PS : GS->PlayerArray)
+        {
+            if (ARelicRunnersPlayerState* RRPS = Cast<ARelicRunnersPlayerState>(PS))
+            {
+                int AddedMeta = FMath::RandRange(400, 500) * DiffInfo.MetaXPIncrease;
+
+                RRPS->MetaXPGainInRun += AddedMeta;
+
+                if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(RRPS->GetOwner()))
+                {
+                    PC->Client_RegisterMetaXPGain(AddedMeta);
+                }
+            }
+        }
     }
 
     Destroy();

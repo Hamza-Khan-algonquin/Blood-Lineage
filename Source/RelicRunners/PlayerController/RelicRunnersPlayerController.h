@@ -39,8 +39,7 @@ public:
 	void UpdateHUDAbilityPoints(int Points);
 	void UpdateHUDAll();
 	void InventoryUI();
-	void MinimapUI();
-	void PlayerHUDUI();
+	void SetGameplayUIActive(bool bActive);
 	void PauseUI();
 	void HideUI(UUserWidget* UIWidget);
 	void HandleLevelUpVisuals();
@@ -117,6 +116,9 @@ public:
 	void Client_UpdateCountdown(int NewTime);
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateDifficulty(FName NewDifficulty);
+
+	UFUNCTION(Client, Reliable)
+	void Client_RegisterMetaXPGain(int Amount);
 	UFUNCTION()
 	void UpdatePreviewWithEquippedItems();
 	UFUNCTION()
@@ -270,6 +272,7 @@ protected:
 	void ProjectileHeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
+	void RestoreGameAndUI();
 	void CheckCinematicArrival();
 
 	//Virtual Functions

@@ -581,32 +581,32 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 	}
 
 	PlayerXP += Amount;
-
 	while (PlayerXP >= PlayerXPToLevel)
 	{
 		OnLevelUp();
 	}
 
-	//For server
 	UpdateRemoteHUDAbility();
 	UpdateRemoteHUDExperience();
 
-	//Meta XP
-	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetWorld()->GetGameInstance()))
+	int AddedMeta = 0;
+	if (ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>())
 	{
-		if (ARelicRunnersGameState* RunnersGameState = GetWorld()->GetGameState<ARelicRunnersGameState>())
+		if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 		{
-			FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
-			int AddedMeta = FMath::FRandRange(1.0, 3.0) * diffInfo.MetaXPIncrease;
+			FDifficultyInfo diffInfo = GS->GetDifficultyInfo(GI->CurrentDifficulty);
+			AddedMeta = FMath::RandRange(1, 3) * diffInfo.MetaXPIncrease;
 			MetaXPGainInRun += AddedMeta;
-			if (GI->SelectedSaveSlot) GI->SelectedSaveSlot->AddMetaExp(AddedMeta);
 		}
 	}
 
-	//Gold
-	float Chance = 10.0;
-	float Roll = FMath::FRandRange(0.0, 100.0);
-	if (Roll < Chance)
+	if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetOwner()))
+	{
+		PC->Client_RegisterMetaXPGain(AddedMeta);
+	}
+
+	float Chance = 10.0f;
+	if (FMath::FRandRange(0.0f, 100.0f) < Chance)
 	{
 		AddGold(1);
 	}
