@@ -222,6 +222,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector respawnPoint;
 
+	AActor* CurrentFocusedActor = nullptr;
+
 	//Timers
 	FTimerHandle HealthRegenTimerHandle;
 	FTimerHandle DelegateBindHandle;

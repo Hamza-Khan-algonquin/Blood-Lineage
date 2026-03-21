@@ -26,10 +26,10 @@
 #include "RelicRunners/Inventory/InventoryToolTip.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
-#include "RelicRunners/RelicRunnersCharacter.h"
 #include "Components/SphereComponent.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include "RelicRunners/Menu/Keybinds.h"
+#include "Components/VerticalBox.h"
 
 AItemActor::AItemActor()
 {
@@ -85,6 +85,12 @@ void AItemActor::InitializeTooltipWidget()
     TooltipWidgetComponent->SetRelativeScale3D(FVector(0.1f));
     TooltipWidgetComponent->SetPivot(FVector2D(0.5f, 1.f));
     TooltipWidgetComponent->CastShadow = false;
+    TooltipWidgetComponent->SetComponentTickEnabled(true);
+
+    if (!TooltipWidgetComponent->IsRegistered())
+    {
+        TooltipWidgetComponent->RegisterComponent();
+    }
 }
 
 
@@ -107,7 +113,7 @@ void AItemActor::Tick(float DeltaTime)
     Rotation.Yaw += DeltaTime * 45.f;
     SetActorRotation(Rotation);
 
-    if (TooltipWidgetComponent && GetWorld())
+    if (TooltipWidgetComponent && TooltipWidgetComponent->IsVisible() && GetWorld())
     {
         APlayerCameraManager* CamManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
         if (CamManager)
@@ -121,8 +127,6 @@ void AItemActor::Tick(float DeltaTime)
             TooltipWidgetComponent->SetWorldRotation(LookAtRotation);
         }
     }
-
-  
 }
 
 void AItemActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -210,6 +214,7 @@ void AItemActor::SetupVisuals()
         if (UInventoryToolTip* Tooltip = Cast<UInventoryToolTip>(Widget))
         {
             Tooltip->Setup(ItemData, RarityData.Color);
+            Tooltip->ItemTooltip->SetVisibility(ESlateVisibility::Visible);
         }
     }
 }

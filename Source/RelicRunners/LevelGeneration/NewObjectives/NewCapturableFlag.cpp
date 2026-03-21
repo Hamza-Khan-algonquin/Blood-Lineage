@@ -9,11 +9,13 @@
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "Components/StaticMeshComponent.h"
 #include <Net/UnrealNetwork.h>
+#include "Components/WidgetComponent.h"
+#include <Kismet/GameplayStatics.h>
 
 ANewCapturableFlag::ANewCapturableFlag()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	TriggerBox = CreateDefaultSubobject<UBoxComponent>("TriggerCollision");
 	TriggerBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -21,12 +23,62 @@ ANewCapturableFlag::ANewCapturableFlag()
 	TriggerBox->SetGenerateOverlapEvents(true);
 	TriggerBox->SetupAttachment(Origin);
 
-	TextComponent = CreateDefaultSubobject<UTextRenderComponent>("TextComponent");
-	TextComponent->SetupAttachment(Origin);
-	TextComponent->SetText(FText::FromString("Press E to Interact"));
+	TooltipWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidget"));
+	TooltipWidgetComponent->SetupAttachment(RootComponent);
+	TooltipWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	TooltipWidgetComponent->SetDrawAtDesiredSize(true);
+	TooltipWidgetComponent->SetUsingAbsoluteRotation(true);
+	TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 0));
+	TooltipWidgetComponent->SetRelativeScale3D(FVector(0.3f));
+	TooltipWidgetComponent->SetPivot(FVector2D(0.5f, 1.f));
+	TooltipWidgetComponent->CastShadow = false;
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> TooltipWidgetBPClass(TEXT("/Game/Inventory/BP_InventoryToolTipWorld"));
+	if (TooltipWidgetBPClass.Succeeded())
+	{
+		TooltipWidgetClass = TooltipWidgetBPClass.Class;
+		TooltipWidgetComponent->SetWidgetClass(TooltipWidgetClass);
+	}
 
 	bReplicates = true;
 	bAlwaysRelevant = true;
+}
+
+void ANewCapturableFlag::InitializeTooltipWidget()
+{
+	if (!TooltipWidgetComponent->GetUserWidgetObject())
+	{
+		TooltipWidgetComponent->SetWidgetClass(TooltipWidgetClass);
+		TooltipWidgetComponent->InitWidget();
+	}
+
+	TooltipWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	TooltipWidgetComponent->SetDrawAtDesiredSize(true);
+	TooltipWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 200));
+	TooltipWidgetComponent->SetRelativeScale3D(FVector(0.3f));
+	TooltipWidgetComponent->SetPivot(FVector2D(0.5f, 1.f));
+	TooltipWidgetComponent->CastShadow = false;
+	TooltipWidgetComponent->SetComponentTickEnabled(true);
+
+	if (!TooltipWidgetComponent->IsRegistered())
+	{
+		TooltipWidgetComponent->RegisterComponent();
+	}
+}
+
+void ANewCapturableFlag::ShowTooltip_Implementation(bool bShow)
+{
+	if (TooltipWidgetComponent)
+	{
+		TooltipWidgetComponent->SetVisibility(bShow);
+	}
+}
+
+void ANewCapturableFlag::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitializeTooltipWidget();
 }
 
 void ANewCapturableFlag::Interact_Implementation(ARelicRunnersCharacter* Char)
@@ -55,14 +107,39 @@ void ANewCapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 	TextComponent->SetText(FText::FromString("Complete!"));
 
 	FString text = HasAuthority() ? "Server: " : "Client: ";
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
 
 	BeaconMesh->SetVisibility(false);
 	OnObjectiveActivated.Broadcast();
 
+	if (TooltipWidgetComponent)
+	{
+		TooltipWidgetComponent->SetHiddenInGame(true);
+	}
+
 	PlayFlagAnimation();
 }
 
+void ANewCapturableFlag::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!TooltipWidgetComponent) return;
+
+	APlayerCameraManager* CamManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	if (CamManager)
+	{
+		FVector CameraLocation = CamManager->GetCameraLocation();
+		FVector WidgetLocation = TooltipWidgetComponent->GetComponentLocation();
+
+		FRotator LookAtRotation = (CameraLocation - WidgetLocation).Rotation();
+
+		LookAtRotation.Pitch = 0.f;
+		LookAtRotation.Roll = 0.f;
+
+		TooltipWidgetComponent->SetWorldRotation(LookAtRotation);
+	}
+}
 void ANewCapturableFlag::OnActiveChange()
 {
 	isActive = true;

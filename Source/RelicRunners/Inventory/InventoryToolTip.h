@@ -38,6 +38,9 @@ public:
 
 	//UI Elements
 	UPROPERTY(meta = (BindWidget))
+	class UVerticalBox* ItemTooltip;
+
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_LevelTooltip;
 
 	UPROPERTY(meta = (BindWidget))

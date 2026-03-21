@@ -58,6 +58,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
 #include "RelicRunnersGameMode.h"
+#include "Engine/OverlapResult.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -371,26 +372,60 @@ void ARelicRunnersCharacter::TraceForInteractables()
 {
 	if (!IsLocallyControlled()) return;
 
-	const FVector PlayerLocation = GetActorLocation();
-	const FVector PlayerForward = FollowCamera->GetForwardVector();
-
+	const FVector TraceStart = FollowCamera->GetComponentLocation();
+	const FVector LookDir = FollowCamera->GetForwardVector();
 	const float MaxDistance = 800.f;
-	const float MinFacingDot = 0.f; // 1 = perfectly facing, 0 = 90 degrees off
 
-	for (TActorIterator<AItemActor> It(GetWorld()); It; ++It)
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionShape SelectionSphere = FCollisionShape::MakeSphere(MaxDistance);
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->OverlapMultiByChannel(
+		OverlapResults,
+		GetActorLocation(),
+		FQuat::Identity,
+		ECC_Visibility,
+		SelectionSphere,
+		Params
+	);
+
+	AActor* BestTarget = nullptr;
+	float BestDot = 0.6f;
+
+	if (bHit)
 	{
-		AItemActor* Item = *It;
+		for (const FOverlapResult& Result : OverlapResults)
+		{
+			AActor* FoundActor = Result.GetActor();
 
-		if (!Item || !Item->Implements<UInteractInterface>()) continue;
+			if (FoundActor && FoundActor->Implements<UInteractInterface>())
+			{
+				FVector ToActor = (FoundActor->GetActorLocation() - TraceStart).GetSafeNormal();
+				float DotProduct = FVector::DotProduct(LookDir, ToActor);
 
-		FVector ToItem = Item->GetActorLocation() - PlayerLocation;
-		float Distance = ToItem.Size();
+				if (DotProduct > BestDot)
+				{
+					BestDot = DotProduct;
+					BestTarget = FoundActor;
+				}
+			}
+		}
+	}
 
-		bool bWithinDistance = Distance <= MaxDistance;
-		bool bFacingItem = FVector::DotProduct(PlayerForward, ToItem.GetSafeNormal()) > MinFacingDot;
+	if (BestTarget != CurrentFocusedActor)
+	{
+		if (CurrentFocusedActor)
+		{
+			IInteractInterface::Execute_ShowTooltip(CurrentFocusedActor, false);
+		}
 
-		bool bShouldShow = bWithinDistance && bFacingItem;
-		IInteractInterface::Execute_ShowTooltip(Item, bShouldShow);
+		CurrentFocusedActor = BestTarget;
+
+		if (CurrentFocusedActor)
+		{
+			IInteractInterface::Execute_ShowTooltip(CurrentFocusedActor, true);
+		}
 	}
 }
 
