@@ -199,6 +199,7 @@ void AAresCharacter::PerformSwingTrace()
 			}
 		}
 	}
+	DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
 }
 
 void AAresCharacter::BasicAttack()
