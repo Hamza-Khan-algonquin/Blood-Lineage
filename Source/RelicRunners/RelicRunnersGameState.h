@@ -19,6 +19,8 @@ struct FDifficultyInfo
 	float DamagePercent;
 
 	float LuckAmount;
+
+	float MetaXPIncrease;
 };
 
 

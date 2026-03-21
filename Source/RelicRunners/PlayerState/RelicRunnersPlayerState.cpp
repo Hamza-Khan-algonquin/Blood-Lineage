@@ -36,6 +36,7 @@
 #include <Kismet/GameplayStatics.h>
 #include <ClassInfo.h>
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
+#include <RelicRunners/RelicRunnersGameState.h>
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {
@@ -475,6 +476,12 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	PlayerStartingLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
 
+	if (HealthPotionCount < 3)
+	{
+		HealthPotionCount++;
+		UpdateRemoteHUDHealthPotions();
+	}
+
 	//Ability points
 	PlayerAbilityPoints++;
 
@@ -508,7 +515,7 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	{
 		StartingWeapon = "Sword";
 		DexterityIncrease = 3;
-		StrengthIncrease = 4;
+		StrengthIncrease = 6;
 	}
 	else
 	{
@@ -587,9 +594,21 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 	//Meta XP
 	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetWorld()->GetGameInstance()))
 	{
-		int AddedMeta = FMath::RandRange(1, 3);
-		MetaXPGainInRun += AddedMeta;
-		if(GI->SelectedSaveSlot) GI->SelectedSaveSlot->AddMetaExp(AddedMeta);
+		if (ARelicRunnersGameState* RunnersGameState = GetWorld()->GetGameState<ARelicRunnersGameState>())
+		{
+			FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+			int AddedMeta = FMath::FRandRange(1.0, 3.0) * diffInfo.MetaXPIncrease;
+			MetaXPGainInRun += AddedMeta;
+			if (GI->SelectedSaveSlot) GI->SelectedSaveSlot->AddMetaExp(AddedMeta);
+		}
+	}
+
+	//Gold
+	float Chance = 10.0;
+	float Roll = FMath::FRandRange(0.0, 100.0);
+	if (Roll < Chance)
+	{
+		AddGold(1);
 	}
 }
 
