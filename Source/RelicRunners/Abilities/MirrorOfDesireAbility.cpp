@@ -9,7 +9,6 @@ UMirrorOfDesireAbility::UMirrorOfDesireAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 30;
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     AreaRadius = 300.f;

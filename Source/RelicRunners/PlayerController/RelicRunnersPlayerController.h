@@ -78,6 +78,7 @@ public:
 
 	UFUNCTION()
 	void UpdateCharacterVisuals();
+	void UpdateAllAbilityManaUI();
 	UFUNCTION()
 	void DisableInventoryUIFromTimer();
 	UFUNCTION()
@@ -221,6 +222,14 @@ public:
 	void Server_ExecuteMove(FVector Target);
 	UFUNCTION(Client, Reliable)
 	void Client_StartCinematicWalk(FVector TargetLocation);
+
+	float BaseCostAbility1 = 0.f;
+	float BaseCostAbility2 = 0.f;
+	float BaseCostAbility3 = 0.f;
+	float BaseCostAbility4 = 0.f;
+
+	UFUNCTION(BlueprintCallable, Category = "Abilities")
+	float GetCalculatedManaCost(float BaseMana);
 
 	FVector CinematicTargetLocation;
 

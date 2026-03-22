@@ -237,16 +237,6 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		Lib = GI->GlobalIconLibrary;
 	}
 
-	for (int i = 0; i < 4; i++)
-	{
-		FString RandomType = ItemStats::GetRandomItemType();
-		FItemData ItemData = ItemStats::CreateSpecificItemData(1, RandomType, "Common", ItemMeshData, Lib);
-		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
-		if (!Item) continue;
-
-		InventoryComponent->AddItem(Item);
-	}
-
 	FString StartingWeapon = "";
 	if (SelectedClass == "Ares")
 	{
@@ -271,9 +261,57 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		StartingWeapon = "Greatsword";
 	}
 
-	UItemObject* Item = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData, Lib), InventoryComponent);
-	InventoryComponent->AddItem(Item);
-	Server_EquipItemByID(Item->ItemData.UniqueID);
+	UItemObject* Weapon = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData, Lib), InventoryComponent);
+	InventoryComponent->AddItem(Weapon);
+	Server_EquipItemByID(Weapon->ItemData.UniqueID);
+
+	//Level up for meta starting level
+	while (PlayerLevel != InventoryComponent->CachedEquippedStats.PlayerLevel)
+	{
+		OnStartingLevelUp();
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		FString RandomType = ItemStats::GetRandomItemType();
+		FItemData ItemData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), RandomType, "Common", ItemMeshData, Lib);
+		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+		if (!Item) continue;
+
+		InventoryComponent->AddItem(Item);
+	}
+
+	//Give some equipped items to make up for missing early levels
+	if (PlayerLevel > 1)
+	{
+		//Itemtype pool
+		TArray<FString> ItemTypes = { TEXT("Arms"), TEXT("Helmet"), TEXT("Necklace"), TEXT("Lower"), TEXT("Upper") };
+
+		for (int i = ItemTypes.Num() - 1; i > 0; i--)
+		{
+			int j = FMath::RandRange(0, i);
+			ItemTypes.Swap(i, j);
+		}
+
+		//Loop for each level gained (Max 5 items if PlayerLevel is 6)
+		int ItemsToGive = FMath::Min(PlayerLevel - 1, 5);
+
+		for (int i = 0; i < ItemsToGive; i++)
+		{
+			FString SelectedType = ItemTypes[i];
+
+			int RandomItemLevel = FMath::RandRange(1, PlayerLevel);
+
+			FItemData ItemData = ItemStats::CreateSpecificItemData(RandomItemLevel, SelectedType, ItemStats::GetRandomRarity(), ItemMeshData, Lib);
+			UItemObject* ItemToEquip = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
+
+			if (ItemToEquip)
+			{
+				InventoryComponent->AddItem(ItemToEquip);
+				Server_EquipItemByID(ItemToEquip->ItemData.UniqueID);
+			}
+		}
+	}
 
 	//Initialize class specific starting stats
 	if (InventoryComponent->ClassInfo)
@@ -286,11 +324,6 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		PlayerStartingIntelligence += Stats.Intelligence;
 	}
 
-	//Level up for meta starting level
-	while (PlayerLevel != InventoryComponent->CachedEquippedStats.PlayerLevel)
-	{
-		OnStartingLevelUp();
-	}
 	HasReceivedStarterItems = true;
 }
 
@@ -744,7 +777,7 @@ void ARelicRunnersPlayerState::Server_SellItem_Implementation(const FItemData& I
 
 EInventorySorting ARelicRunnersPlayerState::GetCurrentSortingMethod() const
 {
-	return InventoryComponent ? InventoryComponent->CurrentSortingMethod : EInventorySorting::SortByRarity;
+	return InventoryComponent ? InventoryComponent->CurrentSortingMethod : EInventorySorting::SortByLevel;
 }
 
 void ARelicRunnersPlayerState::Server_EquipItemByID_Implementation(FGuid ID)

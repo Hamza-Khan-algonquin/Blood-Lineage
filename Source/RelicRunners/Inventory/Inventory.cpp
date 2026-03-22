@@ -346,7 +346,7 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
         OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
     }
 
-    InventoryComponent->SetSortingMethod(EInventorySorting::SortByRarity);
+    InventoryComponent->SetSortingMethod(EInventorySorting::SortByLevel);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());
 }
 

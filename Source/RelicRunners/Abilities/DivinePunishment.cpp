@@ -15,10 +15,8 @@ UDivinePunishment::UDivinePunishment()
 	Duration = 5.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
-	Cost = 65;
 	Damage = 100.f;
     AreaRadius = 500.f;
-
 }
 
 void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

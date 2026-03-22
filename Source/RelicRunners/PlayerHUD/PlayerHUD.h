@@ -118,6 +118,18 @@ public:
 	class UTextBlock* TB_AbilitySelection;
 
 	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilityMana1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilityMana2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilityMana3;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilityMana4;
+
+	UPROPERTY(meta = (BindWidget))
 	class UImage* BloodyOverlay;
 
 	FTimerHandle DamageCooldownHandle;
@@ -131,7 +143,7 @@ public:
 	float UltimateRemainingTime = 0.f;
 
 	void UpdateBindText();
-
+	void UpdateAbilityManaCosts(float Mana1, float Mana2, float Mana3, float Mana4);
 	void RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime);
 
 	UFUNCTION(BlueprintCallable)

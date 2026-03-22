@@ -100,6 +100,14 @@ void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 	TB_Health->SetText(FText::FromString(HealthString));
 }
 
+void UPlayerHUD::UpdateAbilityManaCosts(float Mana1, float Mana2, float Mana3, float Mana4)
+{
+	if (TB_AbilityMana1) TB_AbilityMana1->SetText(FText::AsNumber(FMath::RoundToInt(Mana1)));
+	if (TB_AbilityMana2) TB_AbilityMana2->SetText(FText::AsNumber(FMath::RoundToInt(Mana2)));
+	if (TB_AbilityMana3) TB_AbilityMana3->SetText(FText::AsNumber(FMath::RoundToInt(Mana3)));
+	if (TB_AbilityMana4) TB_AbilityMana4->SetText(FText::AsNumber(FMath::RoundToInt(Mana4)));
+}
+
 void UPlayerHUD::UpdateHUDResource(float CurrentResource, float MaxResource)
 {
 	float ResourcePercent = MaxResource > 0 ? CurrentResource / MaxResource : 0.f;
@@ -116,7 +124,6 @@ void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
 	TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentLevel)));
 	TB_Experience->SetText(FText::FromString(FString::Printf(TEXT("%d / %d XP"), FMath::RoundToInt(CurrentXP), FMath::RoundToInt(XPToLevel))));
 }
-
 
 void UPlayerHUD::UpdateBindText()
 {
@@ -154,22 +161,14 @@ void UPlayerHUD::UpdateBindText()
 
 void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
 {
-	if (!CooldownText || CooldownTime <= 0.f)
-	{
-		return;
-	}
-
-	if (RemainingTime > 0.f)
-	{
-		return;
-	}
+	if (!CooldownText || CooldownTime <= 0.f) return;
+	if (RemainingTime > 0.f) return;
 
 	RemainingTime = CooldownTime;
 	CooldownText->SetText(
 		FText::AsNumber(FMath::CeilToInt(RemainingTime))
 	);
 
-	// Clear any existing timer BEFORE setting a new one
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(TimerHandle);
@@ -184,7 +183,7 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 			TimerHandle,
 			[this, CooldownTextWeak, RemainingTimePtr]()
 			{
-				// Widget or HUD is gone — do nothing
+				//Widget or HUD is gone — do nothing
 				if (!CooldownTextWeak.IsValid() || !RemainingTimePtr)
 				{
 					return;

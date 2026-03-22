@@ -665,6 +665,41 @@ void ARelicRunnersCharacter::Interact()
 	}
 }
 
+void ARelicRunnersCharacter::InitializeAbilityCosts()
+{
+	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(GetController());
+	if (!RPC) return;
+
+	RPC->BaseCostAbility1 = GetAbilityCost(AbilityClass_1);
+	RPC->BaseCostAbility2 = GetAbilityCost(AbilityClass_2);
+	RPC->BaseCostAbility3 = GetAbilityCost(AbilityClass_3);
+	RPC->BaseCostAbility4 = GetAbilityCost(AbilityClass_4);
+
+	RPC->UpdateAllAbilityManaUI();
+}
+
+float ARelicRunnersCharacter::GetAbilityCost(TSubclassOf<UAbilityBase> AbilityClass)
+{
+	if (!AbilityClass)
+	{
+		return 0.f;
+	}
+
+	UObject* CDO = AbilityClass->GetDefaultObject();
+	if (!CDO)
+	{
+		return 0.f;
+	}
+
+	UAbilityBase* DefaultAbility = Cast<UAbilityBase>(CDO);
+	if (DefaultAbility)
+	{
+		return DefaultAbility->Cost;
+	}
+
+	return 0.f;
+}
+
 void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const FItemData& Data)
 {
 	bool FoundAndRemoved = false;
@@ -848,12 +883,28 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 	OnRep_VisualsChanged();
 }
 
-
-
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 {
-	return FString::Printf(TEXT("/Game/ThirdPerson/Meshes/Items/%s/%s.%s"),
-		*ItemType, *ItemType, *ItemType);
+	FString Suffix = "";
+
+	bool IsWeapon = ItemType.Equals("Sword", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Bow", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Greatsword", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Staff", ESearchCase::IgnoreCase);
+
+	if (!IsWeapon)
+	{
+		if (ARelicRunnersPlayerState* RPS = GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			if (!RPS->SelectedClass.IsNone())
+			{
+				Suffix = RPS->SelectedClass.ToString();
+			}
+		}
+	}
+
+	return FString::Printf(TEXT("/Game/ThirdPerson/Meshes/Items/%s/%s%s.%s%s"),
+		*ItemType, *ItemType, *Suffix, *ItemType, *Suffix);
 }
 
 USkeletalMeshComponent* ARelicRunnersCharacter::GetSkeletalMeshComponentByItemType(const FString& ItemType)

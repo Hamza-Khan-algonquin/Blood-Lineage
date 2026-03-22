@@ -16,7 +16,6 @@ UEarthquakeAbility::UEarthquakeAbility()
     ConeAngle = 90.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 40;
 	Damage = 100.f;
 }
 

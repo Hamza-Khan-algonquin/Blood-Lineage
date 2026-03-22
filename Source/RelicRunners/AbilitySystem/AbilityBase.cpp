@@ -26,7 +26,10 @@ void UAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
+void UAbilityBase::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
+{
 
+}
 
 void UAbilityBase::PlayAbilityCastSound(const FGameplayAbilityActorInfo* ActorInfo) const
 {
@@ -88,40 +91,16 @@ void UAbilityBase::CalculateAbilityDamage(AActor* InstigatorActor, AActor* Targe
     UGameplayStatics::ApplyDamage(TargetActor, FMath::Clamp(FinalDamage, 0, 1000000), InstigatorController, InstigatorActor, UDamageType::StaticClass());
 }
 
-
 float UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana)
 {
     if (!InstigatorActor) return BaseMana;
 
-    AController* InstigatorController = InstigatorActor->GetInstigatorController();
-    if (!InstigatorController) return BaseMana;
-
-    APlayerController* PC = Cast<APlayerController>(InstigatorController);
-
-    UInventoryComponent* InventoryComponent = nullptr;
-    if (PC)
+    if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(InstigatorActor->GetInstigatorController()))
     {
-        if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
-        {
-            InventoryComponent = PS->GetInventoryComponent();
-        }
+        return PC->GetCalculatedManaCost(BaseMana);
     }
 
-    float ManaReductionPercent = 0.f;
-
-    if (InventoryComponent)
-    {
-        float ManaReductionValue = InventoryComponent->CachedEquippedStats.TotalIntelligence;
-        ManaReductionPercent = ItemStats::GetAbilityCostPerc(ManaReductionValue);
-    }
-
-    // Apply reduction
-    float FinalManaCost = BaseMana * (1.f - ManaReductionPercent / 100.f);
-
-    FinalManaCost = FMath::Max(FinalManaCost, 0.f);
-
-    return FinalManaCost;
-
+    return BaseMana;
 }
 
 UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)

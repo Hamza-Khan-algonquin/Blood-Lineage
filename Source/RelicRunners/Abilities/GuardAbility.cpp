@@ -13,7 +13,6 @@ UGuardAbility::UGuardAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 50;
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     Duration = 0.f;

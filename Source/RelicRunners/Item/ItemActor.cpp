@@ -249,7 +249,10 @@ void AItemActor::OnAutoLootSphereBeginOverlap(UPrimitiveComponent* OverlappedCom
     if (!Char) return;
     if (GI->Keys->bAutoLoot == false) return;
 
-    HandlePickup(Cast<ARelicRunnersCharacter>(OtherActor));
+    if (HasAuthority())
+    {
+        HandlePickup(Char);
+    }
 }
 
 void AItemActor::HandlePickup(ARelicRunnersCharacter* Char)

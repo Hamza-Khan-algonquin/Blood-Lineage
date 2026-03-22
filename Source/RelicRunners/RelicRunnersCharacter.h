@@ -100,6 +100,8 @@ public:
 	void MoveInDirection(EAxis::Type Axis, float Value);
 	void Look(const FInputActionValue& Value);
 	void Interact();
+	void InitializeAbilityCosts();
+	float GetAbilityCost(TSubclassOf<UAbilityBase> AbilityClass);
 	void DamageAbility();
 	void DefenceAbility();
 	void UtilityAbility();
@@ -127,7 +129,17 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_HitEnemy(AActor* TargetActor, float BaseDamage);
 
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	TSubclassOf<class UAbilityBase> AbilityClass_1;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	TSubclassOf<class UAbilityBase> AbilityClass_2;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	TSubclassOf<class UAbilityBase> AbilityClass_3;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	TSubclassOf<class UAbilityBase> AbilityClass_4;
 
 	//Getters
 	FString GetMeshPathByItemType(const FString& ItemType);

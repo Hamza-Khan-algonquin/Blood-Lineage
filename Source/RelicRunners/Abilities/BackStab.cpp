@@ -24,7 +24,6 @@ UBackStab::UBackStab()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 30;
 	ConeAngle = 80.f;
 	Range = 600.f;
 	BehindOffset = 120.f;

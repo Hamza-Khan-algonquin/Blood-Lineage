@@ -19,8 +19,6 @@ UBundleOfJoy::UBundleOfJoy()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
-
 }
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

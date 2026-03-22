@@ -16,7 +16,6 @@ UKissOfLife::UKissOfLife()
     Duration = 10.f;
     CooldownTimer = 12.f;
     LastUseTime = -100.f;
-    Cost = 50;
     AreaRadius = 600.f;
 
 }

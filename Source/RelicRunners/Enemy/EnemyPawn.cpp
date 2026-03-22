@@ -381,32 +381,25 @@ void AEnemyPawn::SpawnItem(int Luck)
 		FActorSpawnParameters Params;
 		Params.Owner = this;
 		Params.Instigator = this;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
+		//Use Deferred Spawning
+		AItemActor* Dropped = GetWorld()->SpawnActorDeferred<AItemActor>(
+			ItemActorClass,
+			FTransform(FRotator::ZeroRotator, FinalLoc),
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+		);
 
 		if (Dropped)
 		{
+			//This ensures Auto-Loot can't trigger until the data is valid!
+			Dropped->ItemData = DroppedItem->ItemData;
 			Dropped->Initialize(DroppedItem->ItemData);
+			Dropped->FinishSpawning(FTransform(FRotator::ZeroRotator, FinalLoc));
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
-
-		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
-		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-		Params.Instigator = this;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
-		if (Dropped)
-		{
-			Dropped->Initialize(Data);
-			Dropped->SetReplicates(true);
-			Dropped->SetReplicateMovement(true);
-		}*/
 	}
 }
 

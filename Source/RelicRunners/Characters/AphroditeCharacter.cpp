@@ -25,12 +25,13 @@ AAphroditeCharacter::AAphroditeCharacter()
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
     ProjectileDamage = 40.0f;
+
+
 }
 
 void AAphroditeCharacter::BeginPlay()
 {
     Super::BeginPlay();
-
 }
 
 // Called when player takes control of this character
@@ -57,6 +58,13 @@ void AAphroditeCharacter::PossessedBy(AController* NewController)
         GiveKissOfLife();
         GiveGoddessOfLove();
     }
+
+    AbilityClass_1 = BP_BundleOfJoyClass;
+    AbilityClass_2 = BP_MirrorOfDesireClass;
+    AbilityClass_3 = BP_KissOfLifeClass;
+    AbilityClass_4 = BP_GoddessOfLoveClass;
+
+    InitializeAbilityCosts();
 }
 
 // Called when PlayerState is replicated on clients

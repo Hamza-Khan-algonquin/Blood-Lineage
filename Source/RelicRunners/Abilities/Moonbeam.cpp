@@ -14,8 +14,7 @@
 UMoonbeam::UMoonbeam()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
-
-    Cost = 60;              
+             
     CooldownDuration = 10.f;   
     LastUseTime = -100.f;   
     Duration = 5.f;

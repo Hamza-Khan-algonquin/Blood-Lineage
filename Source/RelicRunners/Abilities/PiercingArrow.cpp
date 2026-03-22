@@ -20,7 +20,6 @@ UPiercingArrow::UPiercingArrow()
 
     Duration = 10.f;    
     CooldownTimer = 10.f;
-    Cost = 30;
     LastUseTime = -100.f;
     AreaRadius = 600.f;
 
