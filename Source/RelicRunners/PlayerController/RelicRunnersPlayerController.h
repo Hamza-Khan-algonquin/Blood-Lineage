@@ -229,7 +229,7 @@ public:
 	float BaseCostAbility4 = 0.f;
 
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
-	float GetCalculatedManaCost(float BaseMana);
+	int GetCalculatedManaCost(float BaseMana);
 
 	FVector CinematicTargetLocation;
 

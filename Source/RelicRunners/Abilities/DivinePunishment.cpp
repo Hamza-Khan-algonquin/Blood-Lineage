@@ -58,19 +58,6 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
-    // Must have PlayerState and enough resource
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
-
     CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
 
     if (AbilityAnim)

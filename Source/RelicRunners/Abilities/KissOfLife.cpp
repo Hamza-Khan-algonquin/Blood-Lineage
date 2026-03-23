@@ -46,18 +46,6 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         return;
     }
 
-    if (PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
-
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);

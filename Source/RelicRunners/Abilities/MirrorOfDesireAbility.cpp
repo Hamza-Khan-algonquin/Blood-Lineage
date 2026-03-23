@@ -33,19 +33,6 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
         return;
     }
 
-    ARelicRunnersPlayerState* PS = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
-
     // Debug: show sphere
     DrawDebugSphere(OwnerChar->GetWorld(), OwnerChar->GetActorLocation(), 300.f, 32, FColor::Purple, false, Duration, 0, 2.f);
 

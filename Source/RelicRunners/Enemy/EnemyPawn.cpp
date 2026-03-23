@@ -71,6 +71,8 @@ AEnemyPawn::AEnemyPawn()
 	bAlwaysRelevant = false;
 	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 
+	CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
+
 	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
@@ -408,11 +410,7 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 	CapsuleComponent->SetSimulatePhysics(true);
 	CapsuleComponent->AddImpulse(forces, NAME_None, true);
 	CapsuleComponent->SetNotifyRigidBodyCollision(true);
-	if (!CapsuleComponent->OnComponentHit.Contains(this, FName(TEXT("GroundCheck"))))
-	{
-		CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
-	}
-	
+
 	MovementComponent->IsKnockedBack = true;
 }
 
@@ -435,7 +433,6 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 		MovementComponent->IsKnockedBack = false;
 		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 		CapsuleComponent->SetSimulatePhysics(false);
-		CapsuleComponent->OnComponentHit.RemoveDynamic(this, &AEnemyPawn::GroundCheck);
 		CapsuleComponent->SetNotifyRigidBodyCollision(false);
 	}
 }

@@ -517,17 +517,17 @@ void ARelicRunnersPlayerController::UpdateAllAbilityManaUI()
 {
 	if (!PlayerHUD || !GetPawn()) return;
 
-	float Cost1 = GetCalculatedManaCost(BaseCostAbility1);
-	float Cost2 = GetCalculatedManaCost(BaseCostAbility2);
-	float Cost3 = GetCalculatedManaCost(BaseCostAbility3);
-	float Cost4 = GetCalculatedManaCost(BaseCostAbility4);
+	int Cost1 = GetCalculatedManaCost(BaseCostAbility1);
+	int Cost2 = GetCalculatedManaCost(BaseCostAbility2);
+	int Cost3 = GetCalculatedManaCost(BaseCostAbility3);
+	int Cost4 = GetCalculatedManaCost(BaseCostAbility4);
 
 	PlayerHUD->UpdateAbilityManaCosts(Cost1, Cost2, Cost3, Cost4);
 }
 
-float ARelicRunnersPlayerController::GetCalculatedManaCost(float BaseMana)
+int ARelicRunnersPlayerController::GetCalculatedManaCost(float BaseMana)
 {
-	float Intelligence = 0.f;
+	int Intelligence = 0;
 
 	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
 	{
@@ -539,9 +539,9 @@ float ARelicRunnersPlayerController::GetCalculatedManaCost(float BaseMana)
 
 	float ReductionPercent = ItemStats::GetAbilityCostPerc(Intelligence);
 
-	float FinalCost = BaseMana * (1.f - (ReductionPercent / 100.f));
+	int FinalCost = BaseMana * (1.f - (ReductionPercent / 100.f));
 
-	return FMath::Max(FinalCost, 0.f);
+	return FMath::Max(FinalCost, 0);
 }
 
 void ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems()

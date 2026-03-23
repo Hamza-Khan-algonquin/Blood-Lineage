@@ -678,17 +678,17 @@ void ARelicRunnersCharacter::InitializeAbilityCosts()
 	RPC->UpdateAllAbilityManaUI();
 }
 
-float ARelicRunnersCharacter::GetAbilityCost(TSubclassOf<UAbilityBase> AbilityClass)
+int ARelicRunnersCharacter::GetAbilityCost(TSubclassOf<UAbilityBase> AbilityClass)
 {
 	if (!AbilityClass)
 	{
-		return 0.f;
+		return 0;
 	}
 
 	UObject* CDO = AbilityClass->GetDefaultObject();
 	if (!CDO)
 	{
-		return 0.f;
+		return 0;
 	}
 
 	UAbilityBase* DefaultAbility = Cast<UAbilityBase>(CDO);
@@ -697,7 +697,7 @@ float ARelicRunnersCharacter::GetAbilityCost(TSubclassOf<UAbilityBase> AbilityCl
 		return DefaultAbility->Cost;
 	}
 
-	return 0.f;
+	return 0;
 }
 
 void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const FItemData& Data)

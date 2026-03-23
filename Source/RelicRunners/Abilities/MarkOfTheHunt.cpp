@@ -59,20 +59,6 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    ARelicRunnersPlayerState* PlayerState = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
-
-    if (!PlayerState || PlayerState->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - FinalManaCost);
-    PlayerState->UpdateRemoteHUDResource();
-
     AActor* Avatar = ActorInfo->AvatarActor.Get();
 
     FVector BaseLocation = Avatar->GetActorLocation() + Avatar->GetActorForwardVector() * 100.f + FVector(0, 0, 50);

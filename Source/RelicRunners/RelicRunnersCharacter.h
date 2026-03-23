@@ -101,7 +101,7 @@ public:
 	void Look(const FInputActionValue& Value);
 	void Interact();
 	void InitializeAbilityCosts();
-	float GetAbilityCost(TSubclassOf<UAbilityBase> AbilityClass);
+	int GetAbilityCost(TSubclassOf<UAbilityBase> AbilityClass);
 	void DamageAbility();
 	void DefenceAbility();
 	void UtilityAbility();

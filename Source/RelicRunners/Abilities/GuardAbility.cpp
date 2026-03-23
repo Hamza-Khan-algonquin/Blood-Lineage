@@ -45,19 +45,6 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         return;
     }
 
-    ARelicRunnersPlayerState* PS = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
-
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
-
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);

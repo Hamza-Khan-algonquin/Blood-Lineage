@@ -42,6 +42,8 @@ public:
 
 	void UpdateHUDHealthPotions(int HealthPotions);
 
+	void UpdateBloodSplatter(float HealthPercent, float InDeltaTime);
+
 	void UpdateHUDHealth(float CurrentHealth, float MaxHealth);
 
 	void UpdateHUDResource(float CurrentResource, float MaxResource);
@@ -130,13 +132,35 @@ public:
 	class UTextBlock* TB_AbilityMana4;
 
 	UPROPERTY(meta = (BindWidget))
-	class UImage* BloodyOverlay;
+	class UProgressBar* ResourceBar_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UProgressBar* HealthBar_1;
+
+	float GhostHealthPercent = 0.f;
+	bool bShouldDrainHealthGhost = false;
+	FTimerHandle HealthGhostTimerHandle;
+
+	void StartHealthGhostDrain() { bShouldDrainHealthGhost = true; }
 
 	FTimerHandle DamageCooldownHandle;
 	FTimerHandle DefenceCooldownHandle;
 	FTimerHandle UtilityCooldownHandle;
 	FTimerHandle UltimateCooldownHandle;
 
+	float GhostPercent = 0.f;
+
+	bool ShouldDrainGhost = false;
+	FTimerHandle GhostDelayTimerHandle;
+
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
+	void StartGhostDrain() { ShouldDrainGhost = true; }
+
+	UPROPERTY(EditAnywhere, Category = "UI | Effects")
+	class UMaterialParameterCollection* BloodMPC;
+
+	float CurrentBloodIntensity = 0.f;
 	float DamageRemainingTime = 0.f;
 	float DefenceRemainingTime = 0.f;
 	float UtilityRemainingTime = 0.f;

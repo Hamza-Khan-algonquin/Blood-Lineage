@@ -71,19 +71,6 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
-    // Must have PlayerState and enough resource
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
-
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
