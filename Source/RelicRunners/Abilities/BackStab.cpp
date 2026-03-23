@@ -24,7 +24,6 @@ UBackStab::UBackStab()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 30;
 	ConeAngle = 80.f;
 	Range = 600.f;
 	BehindOffset = 120.f;
@@ -35,7 +34,6 @@ UBackStab::UBackStab()
 void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
 
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
     {
@@ -64,26 +62,6 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-
-    // Get PlayerState safely
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
-    {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
-
-    // Must have PlayerState and enough resource
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 
     LastUseTime = World->GetTimeSeconds();
 

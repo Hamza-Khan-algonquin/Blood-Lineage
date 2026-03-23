@@ -16,7 +16,6 @@ UKissOfLife::UKissOfLife()
     Duration = 10.f;
     CooldownTimer = 12.f;
     LastUseTime = -100.f;
-    Cost = 50;
     AreaRadius = 600.f;
 
 }
@@ -46,18 +45,6 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-
-    if (PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)
     {

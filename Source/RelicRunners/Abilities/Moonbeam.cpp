@@ -14,8 +14,7 @@
 UMoonbeam::UMoonbeam()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
-
-    Cost = 60;              
+             
     CooldownDuration = 10.f;   
     LastUseTime = -100.f;   
     Duration = 5.f;
@@ -42,20 +41,6 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-
-    ARelicRunnersPlayerState* PlayerState = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
-
-    if (!PlayerState || PlayerState->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PlayerState->SetPlayerResource(PlayerState->GetPlayerResource() - FinalManaCost);
-    PlayerState->UpdateRemoteHUDResource();
     
     if (AbilityAnim)
     {

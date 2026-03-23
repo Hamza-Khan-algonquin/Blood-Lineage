@@ -5,6 +5,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "RelicRunners/Inventory/InventoryComponent.h"
 
 UWarBannerAbility::UWarBannerAbility()
 {
@@ -13,11 +14,9 @@ UWarBannerAbility::UWarBannerAbility()
     Duration = 15.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 40;
     AreaRadius = 600.f;
 
 }
-
 
 void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
@@ -57,20 +56,9 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     if (ActorInfo->PlayerController.IsValid())
     {
         PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        PS->BuffedStrength += 50;
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(ActorInfo->PlayerController->GetPawn());
     }
-
-    // Must have PlayerState and enough resource
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)
     {
@@ -83,7 +71,7 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
     ApplyAllyBuffs(BannerLocation);
 
-    //PS->SetPlayerStrength(PS->PlayerStrength * BuffAmount);
+
 
 }
 
@@ -210,6 +198,14 @@ void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
                     }
                 }
             }
+        }
+        // Get PlayerState safely
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+            PS->BuffedStrength -= 50;
+            PS->GetInventoryComponent()->UpdateTotalEquippedStats(ActorInfo->PlayerController->GetPawn());
         }
     }
 }

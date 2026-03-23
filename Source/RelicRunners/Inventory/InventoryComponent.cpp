@@ -383,6 +383,11 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
         Character->SetMovementSpeed(NewMovementSpeed);
     }
 
+    if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PawnOwner->GetController()))
+    {
+        RPC->UpdateAllAbilityManaUI();
+    }
+
     OnStatsChanged.Broadcast(CachedEquippedStats);
 }
 

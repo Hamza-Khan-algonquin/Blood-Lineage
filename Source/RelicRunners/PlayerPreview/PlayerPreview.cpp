@@ -243,33 +243,48 @@ void APlayerPreview::SetPreviewMeshByItemType(const FString& ItemType, UObject* 
 	if (ItemType == "Upper")
 	{
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
-		if (UpperMesh && Mesh) UpperMesh->SetSkeletalMesh(Mesh);
+		if (IsValid(UpperMesh) && IsValid(Mesh))
+		{
+			UpperMesh->SetSkeletalMesh(Mesh);
+		}
 	}
 	else if (ItemType == "Lower")
 	{
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
-		if (LowerMesh && Mesh) LowerMesh->SetSkeletalMesh(Mesh);
+		if (IsValid(LowerMesh) && IsValid(Mesh))
+		{
+			LowerMesh->SetSkeletalMesh(Mesh);
+		}
 	}
 	else if (ItemType == "Arms")
 	{
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
-		if (ArmsMesh && Mesh) ArmsMesh->SetSkeletalMesh(Mesh);
+		if (IsValid(ArmsMesh) && IsValid(Mesh))
+		{
+			ArmsMesh->SetSkeletalMesh(Mesh);
+		}
 	}
 	else if (ItemType == "Helmet")
 	{
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
-		if (HelmetMesh && Mesh) HelmetMesh->SetSkeletalMesh(Mesh);
+		if (IsValid(HelmetMesh) && IsValid(Mesh))
+		{
+			HelmetMesh->SetSkeletalMesh(Mesh);
+		}
 	}
 	else if (ItemType == "Necklace")
 	{
 		USkeletalMesh* Mesh = Cast<USkeletalMesh>(MeshAsset);
-		if (NecklaceMesh && Mesh) NecklaceMesh->SetSkeletalMesh(Mesh);
+		if (IsValid(NecklaceMesh) && IsValid(Mesh))
+		{
+			NecklaceMesh->SetSkeletalMesh(Mesh);
+		}
 	}
 	else if (ItemType == "Greatsword")
 	{
 		UStaticMesh* Mesh = Cast<UStaticMesh>(MeshAsset);
 		if (MainhandItemMesh && Mesh) MainhandItemMesh->SetStaticMesh(Mesh);
-		if (OffhandItemMesh) OffhandItemMesh->SetStaticMesh(ShieldAsset);
+		if (OffhandItemMesh && Mesh) OffhandItemMesh->SetStaticMesh(ShieldAsset);
 	}
 	else if (ItemType == "Sword" || ItemType == "Staff" || ItemType == "Bow")
 	{

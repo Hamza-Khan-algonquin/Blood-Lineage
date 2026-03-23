@@ -13,7 +13,6 @@ UGuardAbility::UGuardAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 50;
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     Duration = 0.f;
@@ -45,19 +44,6 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-
-    ARelicRunnersPlayerState* PS = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
-
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 
     if (AbilityAnim)
     {

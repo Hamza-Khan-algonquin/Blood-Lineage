@@ -39,8 +39,7 @@ public:
 	void UpdateHUDAbilityPoints(int Points);
 	void UpdateHUDAll();
 	void InventoryUI();
-	void MinimapUI();
-	void PlayerHUDUI();
+	void SetGameplayUIActive(bool bActive);
 	void PauseUI();
 	void HideUI(UUserWidget* UIWidget);
 	void HandleLevelUpVisuals();
@@ -79,6 +78,7 @@ public:
 
 	UFUNCTION()
 	void UpdateCharacterVisuals();
+	void UpdateAllAbilityManaUI();
 	UFUNCTION()
 	void DisableInventoryUIFromTimer();
 	UFUNCTION()
@@ -117,6 +117,9 @@ public:
 	void Client_UpdateCountdown(int NewTime);
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateDifficulty(FName NewDifficulty);
+
+	UFUNCTION(Client, Reliable)
+	void Client_RegisterMetaXPGain(int Amount);
 	UFUNCTION()
 	void UpdatePreviewWithEquippedItems();
 	UFUNCTION()
@@ -220,6 +223,14 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_StartCinematicWalk(FVector TargetLocation);
 
+	float BaseCostAbility1 = 0.f;
+	float BaseCostAbility2 = 0.f;
+	float BaseCostAbility3 = 0.f;
+	float BaseCostAbility4 = 0.f;
+
+	UFUNCTION(BlueprintCallable, Category = "Abilities")
+	int GetCalculatedManaCost(float BaseMana);
+
 	FVector CinematicTargetLocation;
 
 	//Timers
@@ -270,6 +281,7 @@ protected:
 	void ProjectileHeavyAttack();
 	void SetupMinimapRenderTarget();
 	void RetrySetup();
+	void RestoreGameAndUI();
 	void CheckCinematicArrival();
 
 	//Virtual Functions

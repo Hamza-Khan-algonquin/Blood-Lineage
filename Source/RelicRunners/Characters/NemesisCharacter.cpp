@@ -64,6 +64,13 @@ void ANemesisCharacter::PossessedBy(AController* NewController)
         GiveVengefulDance();
         GiveDivinePunishment();
     }
+
+    AbilityClass_1 = BP_BackStabClass;
+    AbilityClass_2 = BP_NaturesBlessingClass;
+    AbilityClass_3 = BP_VengefulDanceClass;
+    AbilityClass_4 = BP_DivinePunishmentClass;
+
+    InitializeAbilityCosts();
 }
 
 // Called when PlayerState is replicated on clients

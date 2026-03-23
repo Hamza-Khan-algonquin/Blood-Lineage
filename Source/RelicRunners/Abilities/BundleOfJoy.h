@@ -30,8 +30,6 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BundleOfJoy")
     float AttractionStrength = 800.f;
 
-
-
 private:
     FTimerHandle ExplosionTimer;
     FTimerHandle AttractTimer;
