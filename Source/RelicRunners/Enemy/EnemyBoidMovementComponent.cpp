@@ -50,11 +50,11 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 {
-	/*if (!GetOwner()->HasAuthority())
+	if (!GetOwner()->HasAuthority())
 	{
 		ClientSideEntityInterpolation(delta);
 		return;
-	}*/
+	}
 
 	//kill plain
 	if (UpdatedComponent->GetComponentLocation().Z > 1000000)
@@ -67,8 +67,6 @@ void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 	{
 		MoveInDirection(delta);
 		UpdateRotation();
-		//update the server move data for clients to interpolate 
-		//ServerMoveData = FMoveData(UpdatedComponent->GetComponentLocation(), UpdatedComponent->GetComponentRotation(), 0.0f);
 	}
 }
 

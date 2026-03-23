@@ -99,7 +99,6 @@ void UFlockComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 void FMoveData::PostReplicatedAdd(const FMoveDataArray& InArraySerializer)
 {
-	UE_LOG(LogTemp, Warning, TEXT("PostReplicatedAdd called for BoidID: %d"), this->BoidID);
 	for (UEnemyBoidMovementComponent* boid : InArraySerializer.Owner->BoidMovementComponents)
 	{
 		if (!IsValid(boid))
@@ -117,7 +116,6 @@ void FMoveData::PostReplicatedAdd(const FMoveDataArray& InArraySerializer)
 
 void FMoveData::PostReplicatedChange(const FMoveDataArray & InArraySerializer)
 {
-	UE_LOG(LogTemp, Warning, TEXT("PostReplicatedChange called for BoidID: %d"), this->BoidID);
 	for (UEnemyBoidMovementComponent* boid : InArraySerializer.Owner->BoidMovementComponents)
 	{
 		if (!IsValid(boid))
