@@ -14,6 +14,7 @@
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 	VisualRange = 1000.f;
 	FeildOfView = 180.f;
 	DefaultSeparationRange = 200.f;
@@ -44,40 +45,48 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (GetOwnerRole() != ROLE_Authority)
-	{
-		ClientSideEntityInterpolation(DeltaTime);
+	UpdateMovement(DeltaTime);
+}
 
+void UEnemyBoidMovementComponent::UpdateMovement(float delta)
+{
+	/*if (!GetOwner()->HasAuthority())
+	{
+		ClientSideEntityInterpolation(delta);
+		return;
+	}*/
+
+	//kill plain
+	if (UpdatedComponent->GetComponentLocation().Z > 1000000)
+	{
+		GetOwner()->Destroy();
 		return;
 	}
-	
+
+	if (MovementMode != EBoidMovementMode::Disabled)
+	{
+		MoveInDirection(delta);
+		UpdateRotation();
+		//update the server move data for clients to interpolate 
+		//ServerMoveData = FMoveData(UpdatedComponent->GetComponentLocation(), UpdatedComponent->GetComponentRotation(), 0.0f);
+	}
+}
+
+void UEnemyBoidMovementComponent::UpdateMovementInfo(float delta)
+{
 	if (IsKnockedBack)
 	{
 		return;
 	}
 
-	//kill plain
-	if (UpdatedComponent->GetComponentLocation().Z > 1000000)
+	switch (MovementMode)
 	{
-		return;
-	}
-
-	switch(MovementMode)
-	{ 	
 	case EBoidMovementMode::Boid:
-		CalculateBoidDirection(DeltaTime);
+		CalculateBoidDirection(delta);
 		break;
 	case EBoidMovementMode::DirectMoveTo:
-		CalculateMoveToDirection(DeltaTime);
+		CalculateMoveToDirection(delta);
 		break;
-	}
-
-	if (MovementMode != EBoidMovementMode::Disabled)
-	{
-		MoveInDirection(DeltaTime);
-		UpdateRotation();
-		//update the server move data for clients to interpolate 
-		ServerMoveData = FMoveData(UpdatedComponent->GetComponentLocation(), UpdatedComponent->GetComponentRotation(), 0.0f);
 	}
 }
 
@@ -415,7 +424,13 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, {100,100,200}))
 		{
 			FNavLocation navOutLocation;
-			ActiveNavMesh->FindMoveAlongSurface(navLocation, finalMovement, navOutLocation, ActiveNavMesh->GetDefaultQueryFilter(), this);
+			if (!ActiveNavMesh->FindMoveAlongSurface(navLocation, finalMovement, navOutLocation, ActiveNavMesh->GetDefaultQueryFilter(), this))
+			{
+				if (!navSys->ProjectPointToNavigation(startLocation, navLocation, { 200,200,200 }))
+				{
+					return;
+				}
+			}
 			finalMovement = navOutLocation.Location + offset - startLocation;
 		}
 		
@@ -547,27 +562,22 @@ void UEnemyBoidMovementComponent::InitializeNavMeshPointer()
 	ActiveNavMesh = recastNavMesh;
 }
 
-void UEnemyBoidMovementComponent::OnRep_ServerMoveData()
+void UEnemyBoidMovementComponent::AddToMoveDataBuffer(FVector newLocation, FRotator newRotation)
 {
-	ServerMoveData.TimeStamp = GetWorld()->GetTimeSeconds();
+	FMoveDataWithTimeStamp moveDataTimeStamped;
+	moveDataTimeStamped.Location = newLocation;
+	moveDataTimeStamped.Rotation = newRotation;
 
-/*	if (MoveDataBuffer.Num() > 2)
-	{
-		float clientDelta = ServerMoveData.TimeStamp - MoveDataBuffer.Last().TimeStamp;
 
-		//Finds the delay between the server and client and lerps towards it to make sure the interpolation is smooth when the delay changes. This is just simpluare than calculating the true average delay.
-		AvgReplicationDelta = FMath::Lerp(AvgReplicationDelta, clientDelta, 0.05f);
+	moveDataTimeStamped.TimeStamp = GetWorld()->GetTimeSeconds();
 
-		TargetInterpDelay = FMath::Clamp(AvgReplicationDelta * 1.5f, 0.05f, 0.5f);
-	}*/
 
-	MoveDataBuffer.Add(ServerMoveData);
+	MoveDataBuffer.Add(moveDataTimeStamped);
 
 	if (MoveDataBuffer.Num() > 6)
 	{
 		MoveDataBuffer.RemoveAt(0);
 	}
-
 }
 
 void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
@@ -630,5 +640,5 @@ void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 void UEnemyBoidMovementComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UEnemyBoidMovementComponent, ServerMoveData);
+	DOREPLIFETIME(UEnemyBoidMovementComponent, ServerSideID);
 }

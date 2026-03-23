@@ -23,15 +23,15 @@ enum class EBoidFocuseMode : uint8
 };
 
 USTRUCT()
-struct FMoveData
+struct FMoveDataWithTimeStamp
 {
 	GENERATED_BODY()
 	UPROPERTY()
-	FVector Location;
+	FVector Location = FVector::ZeroVector;
 	UPROPERTY()
-	FRotator Rotation;
+	FRotator Rotation = FRotator::ZeroRotator;
 	UPROPERTY()
-	float TimeStamp;
+	float TimeStamp = -1;
 };
 
 class ACommanderController;
@@ -48,6 +48,8 @@ public:
 	bool IsKnockedBack;
 	bool IsAffectiveByBundleOfJoy = false;
 	FVector BundleOfJoyLocation;
+	UPROPERTY(Replicated)
+	int32 ServerSideID = -1;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float VisualRange;
@@ -128,11 +130,8 @@ protected:
 	UPROPERTY()
 	ARecastNavMesh* ActiveNavMesh;
 
-	UPROPERTY(ReplicatedUsing = OnRep_ServerMoveData)
-	FMoveData ServerMoveData;
-
 	UPROPERTY()
-	TArray<FMoveData> MoveDataBuffer;
+	TArray<FMoveDataWithTimeStamp> MoveDataBuffer;
 
 	
 	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
@@ -144,10 +143,16 @@ protected:
 	float AvgReplicationDelta;
 	UPROPERTY()
 	float TargetInterpDelay;
+
+	
 public:
 	UEnemyBoidMovementComponent();
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+
+	void UpdateMovement(float delta);
+	void UpdateMovementInfo(float delta);
+
 	//calculate the direction the boid should be move in and update the velocity
 	void CalculateBoidDirection(float delta);
 	//calculate the direction the actor should move in to get to the target and update the velocity
@@ -166,10 +171,8 @@ public:
 	EBoidMovementMode GetMovementMode() { return MovementMode; }
 	bool IsAtTarget();
 	void InitializeNavMeshPointer();
+	void AddToMoveDataBuffer(FVector newLocation, FRotator newRotation);
 
-
-	UFUNCTION()
-	void OnRep_ServerMoveData();
 	UFUNCTION()
 	void ClientSideEntityInterpolation(float delta);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
