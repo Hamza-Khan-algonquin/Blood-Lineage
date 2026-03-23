@@ -1204,23 +1204,20 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			PlayerHUD->AddToViewport();
 			PlayerHUD->UpdateBindText();
 		}
-
-
-			if (MapName.Contains(TEXT("BossLevel")))
-			{
-				PlayerHUD->ToggleBossBar(true);
-				PlayerHUD->ToggleExpBar(true);
-			}
-			else
-			{
-				PlayerHUD->ToggleBossBar(false);
-				PlayerHUD->ToggleExpBar(true);
-			}
+		if (MapName.Contains(TEXT("BossLevel")))
+		{
+			PlayerHUD->ToggleBossBar(true);
+			PlayerHUD->ToggleExpBar(true);
+		}
+		else
+		{
+			PlayerHUD->ToggleBossBar(false);
+			PlayerHUD->ToggleExpBar(true);
 		}
 		UpdateAllAbilityManaUI();
-
 	}
 
+	SetupObjectives();
 
 	if (!MinimapWidget && MinimapClass)
 	{
