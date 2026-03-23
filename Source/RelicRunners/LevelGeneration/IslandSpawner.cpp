@@ -166,6 +166,32 @@ void AIslandSpawner::OnRep_IslandArrayChange()
 	}
 }
 
+void AIslandSpawner::SyncObjectiveToSinglePlayer(ARelicRunnersPlayerController* TargetPC)
+{
+	if (!TargetPC || !Islands.IsValidIndex(CurrentSpawnedIsland)) return;
+
+	AIslandGenerationTest* ActiveIsland = Islands[CurrentSpawnedIsland];
+
+	ARelicRunnersPlayerController::FPendingObjective NewObjective;
+
+	switch (ActiveIsland->IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Flag;
+		NewObjective.FlagCount = ActiveIsland->ObjectiveAmount;
+		break;
+	case EIslandObjectiveType::MoveThePayload:
+		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Payload;
+		break;
+	case EIslandObjectiveType::Survival:
+		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Pandora;
+		NewObjective.PandoraTime = ActiveIsland->GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
+		break;
+	}
+
+	TargetPC->AddObjectiveToBuffer(NewObjective);
+}
+
 void AIslandSpawner::GenerateNewIsland()
 {
 	CurrentSpawnedIsland++;

@@ -22,7 +22,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
-
+#include "EngineUtils.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -77,6 +77,7 @@
 #include <Blueprint/AIBlueprintHelperLibrary.h>
 #include "NavigationPath.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include <RelicRunners/LevelGeneration/IslandSpawner.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -132,6 +133,7 @@ void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeP
 
 	DOREPLIFETIME(ARelicRunnersPlayerController, PlayerPreviewInstance);
 	DOREPLIFETIME(ARelicRunnersPlayerController, LobbyPreviewInstance);
+	DOREPLIFETIME(ARelicRunnersPlayerController, ObjectiveBuffer);
 }
 
 void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
@@ -965,6 +967,21 @@ void ARelicRunnersPlayerController::SetupObjectives()
 			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
 		}
 	}
+
+	if (IsLocalController())
+	{
+		Server_RequestCurrentObjective();
+	}
+}
+
+void ARelicRunnersPlayerController::Server_RequestCurrentObjective_Implementation()
+{
+	// Find the Spawner in the world
+	for (TActorIterator<AIslandSpawner> It(GetWorld()); It; ++It)
+	{
+		It->SyncObjectiveToSinglePlayer(this);
+		break;
+	}
 }
 
 void ARelicRunnersPlayerController::UpdatePayloadObjective(float NewProgress)
@@ -1018,36 +1035,94 @@ void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FSt
 	}
 }
 
-void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
+void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+	if (!ObjectiveLog || !ObjectiveStageTitle || !ObjectiveLog->ObjectiveTreeView) return;
 
-	UPayloadData* PayloadGoal = NewObject<UPayloadData>(this);
-	PayloadGoal->ProgressFraction = 0.0f;
+	if (ObjectiveBuffer.Num() > 0)
+	{
+		GetWorldTimerManager().ClearTimer(TimerHandle_UIWait);
 
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
+		ObjectiveLog->ObjectiveTreeView->ClearListItems();
+		ObjectiveLog->ObjectiveTreeView->AddItem(ObjectiveStageTitle);
+		ObjectiveStageTitle->SubObjectives.Empty();
 
-	ClearOldObjectives();
+		for (const FPendingObjective& Pending : ObjectiveBuffer)
+		{
+			Internal_AddObjectiveFromBuffer(Pending);
+		}
+
+		ObjectiveLog->ObjectiveTreeView->SetItemExpansion(ObjectiveStageTitle, true);
+		ObjectiveLog->ObjectiveTreeView->RequestRefresh();
+
+		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Catch-up Successful. Buffer Flushed."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Waiting for Objective Data from Server..."));
+	}
 }
 
-void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int NumFlags)
+void ARelicRunnersPlayerController::Internal_AddObjectiveFromBuffer(const FPendingObjective& Data)
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+	UObjectiveItemData* NewGoal = nullptr;
 
-	UFlagData* FlagGoal = NewObject<UFlagData>(this);
-	FlagGoal->Flag1Active = false;
-	FlagGoal->Flag2Active = false;
-	FlagGoal->Flag3Active = false;
-	FlagGoal->Flag1Enabled = (NumFlags >= 1);
-	FlagGoal->Flag2Enabled = (NumFlags >= 2);
-	FlagGoal->Flag3Enabled = (NumFlags == 3);
+	if (Data.Type == EObjectiveType::Enemies)
+	{
+		UEnemiesData* EnemiesGoal = NewObject<UEnemiesData>(this);
+		EnemiesGoal->EnemiesRemaining = Data.EnemyCount;
+		NewGoal = EnemiesGoal;
+	}
+	else if (Data.Type == EObjectiveType::Pandora)
+	{
+		UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
+		PandoraGoal->Percent = 1.0f;
+		int Seconds = FMath::CeilToInt(FMath::Fmod(Data.PandoraTime, 60.0f));
+		PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%d"), Seconds);
+		NewGoal = PandoraGoal;
+	}
+	else if (Data.Type == EObjectiveType::Payload)
+	{
+		UPayloadData* PayloadGoal = NewObject<UPayloadData>(this);
+		PayloadGoal->ProgressFraction = 0.0f;
+		NewGoal = PayloadGoal;
+	}
+	else if (Data.Type == EObjectiveType::Flag)
+	{
+		UFlagData* FlagGoal = NewObject<UFlagData>(this);
+		FlagGoal->Flag1Active = false;
+		FlagGoal->Flag2Active = false;
+		FlagGoal->Flag3Active = false;
+		FlagGoal->Flag1Enabled = (Data.FlagCount >= 1);
+		FlagGoal->Flag2Enabled = (Data.FlagCount >= 2);
+		FlagGoal->Flag3Enabled = (Data.FlagCount == 3);
+		NewGoal = FlagGoal;
+	}
 
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
-
-	ClearOldObjectives();
+	if (NewGoal)
+	{
+		ObjectiveLog->AddObjective(ObjectiveStageTitle, NewGoal);
+	}
 }
 
-void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation()
+void ARelicRunnersPlayerController::AddObjectiveToBuffer(FPendingObjective NewObjective)
+{
+	if (HasAuthority())
+	{
+		ObjectiveBuffer.Add(NewObjective);
+
+		MARK_PROPERTY_DIRTY_FROM_NAME(ARelicRunnersPlayerController, ObjectiveBuffer, this);
+
+		UE_LOG(LogTemp, Warning, TEXT("SERVER: Added objective to PC: %s. Buffer Count: %d"), *GetName(), ObjectiveBuffer.Num());
+	}
+
+	if (IsLocalController())
+	{
+		OnRep_ObjectiveBuffer();
+	}
+}
+
+void ARelicRunnersPlayerController::Server_DecrementFlagObjective_Implementation()
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
@@ -1065,51 +1140,11 @@ void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation
 	}
 }
 
-void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(int TotalEnemies)
+void ARelicRunnersPlayerController::OnRep_ObjectiveBuffer()
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+	if (!ObjectiveLog || !ObjectiveStageTitle) return;
 
-	UEnemiesData* EnemiesGoal = NewObject<UEnemiesData>(this);
-	EnemiesGoal->EnemiesRemaining = TotalEnemies;
-
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
-
-	ClearOldObjectives();
-}
-
-void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(float Time)
-{
-	if (!ObjectiveStageTitle || !ObjectiveLog || !ObjectiveLog->ObjectiveTreeView) return;
-
-	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
-	PandoraGoal->Percent = 1.0f;
-
-	int Seconds = FMath::CeilToInt(FMath::Fmod(Time, 60.0f));
-	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%d"), Seconds);
-
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
-
-	ClearOldObjectives();
-}
-
-void ARelicRunnersPlayerController::AnimateOldObjectives()
-{
-
-}
-
-void ARelicRunnersPlayerController::ClearOldObjectives()
-{
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
-
-	if (ObjectiveStageTitle->SubObjectives.Num() > 1)
-	{
-		for (int i = ObjectiveStageTitle->SubObjectives.Num() - 1; i > 0; --i)
-		{
-			ObjectiveStageTitle->SubObjectives.RemoveAt(i);
-		}
-
-		ObjectiveLog->RefreshLog(ObjectiveStageTitle);
-	}
+	FlushObjectiveBuffer();
 }
 
 void ARelicRunnersPlayerController::SpectatingUI()

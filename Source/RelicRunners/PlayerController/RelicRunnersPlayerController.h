@@ -24,6 +24,32 @@
 class UInputMappingContext;
 class UInventoryComponent;
 
+UENUM(BlueprintType)
+enum class EObjectiveType : uint8 {
+	None,
+	Flag,
+	Payload,
+	Enemies,
+	Pandora
+};
+
+USTRUCT(BlueprintType)
+struct FPendingObjective {
+	GENERATED_BODY()
+
+		UPROPERTY()
+	int32 FlagCount = 0;
+
+	UPROPERTY()
+	int32 EnemyCount = 0;
+
+	UPROPERTY()
+	float PandoraTime = 0.0f;
+
+	UPROPERTY()
+	EObjectiveType Type = EObjectiveType::None;
+};
+
 UCLASS()
 class RELICRUNNERS_API ARelicRunnersPlayerController : public APlayerController
 {
@@ -49,10 +75,27 @@ public:
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
-	void AnimateOldObjectives();
+	enum class EObjectiveType { None, Flag, Payload, Enemies, Pandora };
+	struct FPendingObjective {
+		int32 FlagCount = 0;
+		int32 EnemyCount = 0;
+		float PandoraTime = 0.0f;
+		EObjectiveType Type = EObjectiveType::None;
+	};
+
+	FTimerHandle TimerHandle_UIWait;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ObjectiveBuffer)
+	TArray<FPendingObjective> ObjectiveBuffer;
+
+	void AddObjectiveToBuffer(FPendingObjective NewObjective);
 
 	UFUNCTION()
-	void ClearOldObjectives();
+	void OnRep_ObjectiveBuffer();
+
+	void FlushObjectiveBuffer();
+
+	void Internal_AddObjectiveFromBuffer(const FPendingObjective& Data);
 
 	void SpectatingUI();
 
@@ -61,20 +104,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowPostGame(const TArray<FPlayerPostGameData>& FinalStats);
 
-	UFUNCTION(Client, Reliable)
-	void Client_DecrementFlagObjective();
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddFlagObjective(int NumFlags);
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddEnemiesObjective(int TotalEnemies);
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddPandoraObjective(float Time);
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddPayloadObjective();
+	UFUNCTION(Server, Reliable)
+	void Server_DecrementFlagObjective();
 
 	UFUNCTION()
 	void UpdateCharacterVisuals();
@@ -201,6 +232,7 @@ public:
 	class UMainMenuWidget* MainMenuWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UInventory* Inventory;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UObjectiveLog* ObjectiveLog;
 	
@@ -270,6 +302,8 @@ protected:
 	void LoadingScreenUI();
 	void ForceGameModeOnly();
 	void SetupObjectives();
+	UFUNCTION(Server, Reliable)
+	void Server_RequestCurrentObjective();
 	void RemoveOtherUI(UUserWidget* KeepAlive);
 	void DamageAbility();
 	void DefenceAbility();
@@ -302,6 +336,8 @@ protected:
 	class ARelicRunnersCharacter* PossessedPawn;
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 	class ARelicRunnersPlayerState* RelicPlayerState;
+
+	UPROPERTY()
 	class UTitleData* ObjectiveStageTitle;
 
 	//Input
