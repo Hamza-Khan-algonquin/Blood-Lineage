@@ -150,15 +150,19 @@ void UStandardTooltip::SetIcon(UTexture2D* NewIcon, const FLinearColor& NewColor
 	default: return;
 	}
 
-	if (IsValid(IconRef) && NewIcon)
+	if (IsValid(IconRef))
 	{
-		IconRef->SetBrushFromTexture(NewIcon);
-		IconRef->SetColorAndOpacity(NewColor);
-		IconRef->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-	}
-	else if (IconRef)
-	{
-		IconRef->SetVisibility(ESlateVisibility::Collapsed);
+		if (NewIcon)
+		{
+			IconRef->SetBrushFromTexture(NewIcon);
+			IconRef->SetColorAndOpacity(NewColor);
+			IconRef->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+		else
+		{
+			// If we have a valid ref but NO icon provided, hide it
+			IconRef->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 }
 

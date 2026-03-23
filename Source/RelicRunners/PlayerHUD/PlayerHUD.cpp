@@ -24,6 +24,7 @@
 #include <Kismet/GameplayStatics.h>
 #include <RelicRunners/Menu/Keybinds.h>
 #include <RelicRunners/Item/ItemStats.h>
+#include <Kismet/KismetMaterialLibrary.h>
 
 void UPlayerHUD::NativeConstruct()
 {
@@ -33,7 +34,6 @@ void UPlayerHUD::NativeConstruct()
 	{
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
-	if (BloodyOverlay) BloodyOverlay->SetColorAndOpacity(FLinearColor(1, 1, 1, 0));
 	UpdateBindText();
 }
 
@@ -79,33 +79,115 @@ void UPlayerHUD::UpdateHUDHealthPotions(int HealthPotions)
 	TB_HealthPotion->SetText(FText::FromString(FString::Printf(TEXT("%d"), HealthPotions)));
 }
 
+void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
+{
+	float TargetIntensity = 0.f;
+	if (HealthPercent < 1.f)
+	{
+		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.4f), FVector2D(1.f, 0.f), HealthPercent);
+
+		float Pulse = (FMath::Sin(GetWorld()->GetTimeSeconds() * 3.0f) * 0.2f) + 0.8f;
+		TargetIntensity *= Pulse;
+	}
+
+	CurrentBloodIntensity = FMath::FInterpTo(CurrentBloodIntensity, TargetIntensity, InDeltaTime, 2.0f);
+
+	if (BloodMPC)
+	{
+		UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), BloodMPC, FName("BloodIntensity"), CurrentBloodIntensity);
+	}
+}
+
 void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
 {
 	float HealthPercent = MaxHealth > 0 ? CurrentHealth / MaxHealth : 0.f;
-	
-	if (BloodyOverlay) BloodyOverlay->SetColorAndOpacity(FLinearColor(1, 1, 1, 1 - (HealthPercent + 0.2)));
+	float PreviousPercent = HealthBar->GetPercent();
 
 	HealthBar->SetPercent(HealthPercent);
-	FString HealthString;
 
-	if (CurrentHealth >= MaxHealth)
-	{
-		HealthString = FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth));
-	}
-	else
-	{
-		HealthString = FString::Printf(TEXT("%.1f / %d"), CurrentHealth, FMath::RoundToInt(MaxHealth));
-	}
-
+	FString HealthString = (CurrentHealth >= MaxHealth) ?
+		FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth)) :
+		FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentHealth), FMath::RoundToInt(MaxHealth));
 	TB_Health->SetText(FText::FromString(HealthString));
+
+	if (HealthPercent < PreviousPercent)
+	{
+		float DamageTaken = PreviousPercent - HealthPercent;
+
+		//If damage is > 5% of health, or we weren't draining yet
+		if (DamageTaken > 0.05f || !bShouldDrainHealthGhost)
+		{
+			bShouldDrainHealthGhost = false;
+			GetWorld()->GetTimerManager().ClearTimer(HealthGhostTimerHandle);
+			GetWorld()->GetTimerManager().SetTimer(HealthGhostTimerHandle, this, &UPlayerHUD::StartHealthGhostDrain, 1.0f, false);
+		}
+	}
+	else if (HealthPercent > GhostHealthPercent)
+	{
+		GhostHealthPercent = HealthPercent;
+		HealthBar_1->SetPercent(GhostHealthPercent);
+	}
+}
+
+void UPlayerHUD::UpdateAbilityManaCosts(float Mana1, float Mana2, float Mana3, float Mana4)
+{
+	if (TB_AbilityMana1) TB_AbilityMana1->SetText(FText::AsNumber(FMath::RoundToInt(Mana1)));
+	if (TB_AbilityMana2) TB_AbilityMana2->SetText(FText::AsNumber(FMath::RoundToInt(Mana2)));
+	if (TB_AbilityMana3) TB_AbilityMana3->SetText(FText::AsNumber(FMath::RoundToInt(Mana3)));
+	if (TB_AbilityMana4) TB_AbilityMana4->SetText(FText::AsNumber(FMath::RoundToInt(Mana4)));
 }
 
 void UPlayerHUD::UpdateHUDResource(float CurrentResource, float MaxResource)
 {
 	float ResourcePercent = MaxResource > 0 ? CurrentResource / MaxResource : 0.f;
+	float PreviousPercent = ResourceBar->GetPercent();
 
 	ResourceBar->SetPercent(ResourcePercent);
 	TB_Resource->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), FMath::RoundToInt(CurrentResource), FMath::RoundToInt(MaxResource))));
+
+	if (ResourcePercent < PreviousPercent)
+	{
+		ShouldDrainGhost = false;
+		GetWorld()->GetTimerManager().ClearTimer(GhostDelayTimerHandle);
+		GetWorld()->GetTimerManager().SetTimer(GhostDelayTimerHandle, this, &UPlayerHUD::StartGhostDrain, 1.0f, false);
+	}
+
+	if (ResourcePercent > GhostPercent)
+	{
+		GhostPercent = ResourcePercent;
+		ResourceBar_1->SetPercent(GhostPercent);
+	}
+}
+
+void UPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	if (ShouldDrainGhost && GhostPercent > ResourceBar->GetPercent())
+	{
+		GhostPercent = FMath::FInterpTo(GhostPercent, ResourceBar->GetPercent(), InDeltaTime, 3.f);
+		ResourceBar_1->SetPercent(GhostPercent);
+
+		if (FMath::IsNearlyEqual(GhostPercent, ResourceBar->GetPercent(), 0.001f))
+		{
+			GhostPercent = ResourceBar->GetPercent();
+			ResourceBar_1->SetPercent(GhostPercent);
+			ShouldDrainGhost = false;
+		}
+	}
+
+	if (bShouldDrainHealthGhost && GhostHealthPercent > HealthBar->GetPercent())
+	{
+		GhostHealthPercent = FMath::FInterpTo(GhostHealthPercent, HealthBar->GetPercent(), InDeltaTime, 3.f);
+		HealthBar_1->SetPercent(GhostHealthPercent);
+	}
+	else if (GhostHealthPercent < HealthBar->GetPercent())
+	{
+		GhostHealthPercent = HealthBar->GetPercent();
+		HealthBar_1->SetPercent(GhostHealthPercent);
+	}
+
+	//UpdateBloodSplatter(HealthBar->GetPercent(), InDeltaTime);
 }
 
 void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
@@ -116,7 +198,6 @@ void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
 	TB_Level->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentLevel)));
 	TB_Experience->SetText(FText::FromString(FString::Printf(TEXT("%d / %d XP"), FMath::RoundToInt(CurrentXP), FMath::RoundToInt(XPToLevel))));
 }
-
 
 void UPlayerHUD::UpdateBindText()
 {
@@ -161,22 +242,14 @@ void UPlayerHUD::UpdateBindText()
 
 void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
 {
-	if (!CooldownText || CooldownTime <= 0.f)
-	{
-		return;
-	}
-
-	if (RemainingTime > 0.f)
-	{
-		return;
-	}
+	if (!CooldownText || CooldownTime <= 0.f) return;
+	if (RemainingTime > 0.f) return;
 
 	RemainingTime = CooldownTime;
 	CooldownText->SetText(
 		FText::AsNumber(FMath::CeilToInt(RemainingTime))
 	);
 
-	// Clear any existing timer BEFORE setting a new one
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(TimerHandle);
@@ -191,7 +264,7 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 			TimerHandle,
 			[this, CooldownTextWeak, RemainingTimePtr]()
 			{
-				// Widget or HUD is gone — do nothing
+				//Widget or HUD is gone — do nothing
 				if (!CooldownTextWeak.IsValid() || !RemainingTimePtr)
 				{
 					return;

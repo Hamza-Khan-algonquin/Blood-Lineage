@@ -346,7 +346,7 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
         OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
     }
 
-    InventoryComponent->SetSortingMethod(EInventorySorting::SortByRarity);
+    InventoryComponent->SetSortingMethod(EInventorySorting::SortByLevel);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());
 }
 
@@ -606,7 +606,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_Mana)           { StatKey = "Mana";         RawValue = Stats.TotalResource; }
     else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = Stats.PlayerLevel; }
     else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = Stats.TotalPotionEfficiency; }
-    else if (HoveredBorder == B_MetaLevel && GI->SelectedSaveSlot)      { StatKey = "MetaLevel";    RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
+    else if (HoveredBorder == B_MetaLevel)      { StatKey = "MetaLevel";    if(GI->SelectedSaveSlot) RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
     else if (HoveredBorder == B_AbilityUpgrade) { StatKey = "AbilityUpgrade"; }
     else if (HoveredBorder == B_HealthPotion) { StatKey = "HealthPotion"; }
     else if (HoveredBorder == B_Ability1) { StatKey = "Ability1"; if (Info) AbilityName = Info->Ability1; if (Info) AbilityDesc = Info->Ability1Description1; }
@@ -626,6 +626,21 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         if (GI->SelectedSaveSlot)
         {
             TD = ItemStats::GetStatTooltipData(StatKey, RawValue, GI->SelectedSaveSlot->SaveData.MetaStartingLevel, 0, "", "");
+        }
+        else
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, "", "");
+        }
+    }
+    else if (HoveredBorder == B_MetaLevel)
+    {
+        if (GI->SelectedSaveSlot)
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, "", "");
+        }
+        else
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, 0, 0, 0, "", "");
         }
     }
     else if (HoveredBorder == B_Ability1 || HoveredBorder == B_Ability2 || HoveredBorder == B_Ability3 || HoveredBorder == B_Ability4 || HoveredBorder == B_AbilityUpgrade || HoveredBorder == B_HealthPotion)

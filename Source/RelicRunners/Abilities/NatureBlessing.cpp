@@ -12,7 +12,6 @@ UNaturesBlessing::UNaturesBlessing()
 
 	InvincibleDuration = 5.0f;
 	CooldownTimer = 14.f;
-	Cost = 30;
 	LastUseTime = -100.f;
 
 }
@@ -30,9 +29,8 @@ void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 	ARelicRunnersPlayerState* PS =ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
 
-	if (!PS || PS->GetPlayerResource() < Cost)
+	if (!PS)
 	{
-		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
 
@@ -41,12 +39,6 @@ void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-
-	float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-	// Spend resource
-	PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-	PS->UpdateRemoteHUDResource();
 
     // it turns on the invincibility for the character 
 	PS->SetInvincible(true);

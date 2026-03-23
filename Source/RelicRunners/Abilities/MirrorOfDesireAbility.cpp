@@ -9,7 +9,6 @@ UMirrorOfDesireAbility::UMirrorOfDesireAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Cost = 30;
     CooldownDuration = 10.f;
     LastUseTime = -100.f;
     AreaRadius = 300.f;
@@ -33,19 +32,6 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-
-    ARelicRunnersPlayerState* PS = OwnerChar->GetPlayerState<ARelicRunnersPlayerState>();
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 
     // Debug: show sphere
     DrawDebugSphere(OwnerChar->GetWorld(), OwnerChar->GetActorLocation(), 300.f, 32, FColor::Purple, false, Duration, 0, 2.f);

@@ -42,6 +42,8 @@ public:
 
 	void UpdateHUDHealthPotions(int HealthPotions);
 
+	void UpdateBloodSplatter(float HealthPercent, float InDeltaTime);
+
 	void UpdateHUDHealth(float CurrentHealth, float MaxHealth);
 
 	void UpdateHUDResource(float CurrentResource, float MaxResource);
@@ -118,20 +120,54 @@ public:
 	class UTextBlock* TB_AbilitySelection;
 
 	UPROPERTY(meta = (BindWidget))
-	class UImage* BloodyOverlay;
+	class UTextBlock* TB_AbilityMana1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilityMana2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilityMana3;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TB_AbilityMana4;
+
+	UPROPERTY(meta = (BindWidget))
+	class UProgressBar* ResourceBar_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UProgressBar* HealthBar_1;
+
+	float GhostHealthPercent = 0.f;
+	bool bShouldDrainHealthGhost = false;
+	FTimerHandle HealthGhostTimerHandle;
+
+	void StartHealthGhostDrain() { bShouldDrainHealthGhost = true; }
 
 	FTimerHandle DamageCooldownHandle;
 	FTimerHandle DefenceCooldownHandle;
 	FTimerHandle UtilityCooldownHandle;
 	FTimerHandle UltimateCooldownHandle;
 
+	float GhostPercent = 0.f;
+
+	bool ShouldDrainGhost = false;
+	FTimerHandle GhostDelayTimerHandle;
+
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
+	void StartGhostDrain() { ShouldDrainGhost = true; }
+
+	UPROPERTY(EditAnywhere, Category = "UI | Effects")
+	class UMaterialParameterCollection* BloodMPC;
+
+	float CurrentBloodIntensity = 0.f;
 	float DamageRemainingTime = 0.f;
 	float DefenceRemainingTime = 0.f;
 	float UtilityRemainingTime = 0.f;
 	float UltimateRemainingTime = 0.f;
 
 	void UpdateBindText();
-
+	void UpdateAbilityManaCosts(float Mana1, float Mana2, float Mana3, float Mana4);
 	void RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime);
 
 	UFUNCTION(BlueprintCallable)

@@ -24,6 +24,8 @@ public:
     UPROPERTY(Replicated, BlueprintReadWrite, Category = "Sweep")
     float StartYaw = 0.0f;
 
+    TMap<AActor*, float> HitCooldownMap;
+
 protected:
     virtual void Tick(float DeltaTime) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

@@ -26,13 +26,11 @@ AArtemisCharacter::AArtemisCharacter()
 	ProjectileSpeed = 5000.f;
 	ProjectileLifetime = 2.f;
 	ProjectileDamage = 70.0f;
-
 }
 
 void AArtemisCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called when player takes control of this character
@@ -59,6 +57,13 @@ void AArtemisCharacter::PossessedBy(AController* NewController)
 		GiveMarkOfTheHunt();
 		GiveMoonBeam();
 	}
+
+	AbilityClass_1 = BP_PiercingArrowClass;
+	AbilityClass_2 = BP_ImpunityClass;
+	AbilityClass_3 = BP_MarkOfTheHuntClass;
+	AbilityClass_4 = BP_MoonbeamClass;
+
+	InitializeAbilityCosts();
 }
 
 // Called when PlayerState is replicated on clients
