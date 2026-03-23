@@ -92,6 +92,25 @@ struct FNormalObstacleValues
 };
 
 USTRUCT()
+struct FObstacleTypeValues
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	uint8 BuildingObstacleMaxAmount;
+
+	UPROPERTY(EditAnywhere)
+	FNormalObstacleValues BuildingObstacles;
+
+	UPROPERTY(EditAnywhere)
+	uint8 EnvironmentObstacleMaxAmount;
+
+	UPROPERTY(EditAnywhere)
+	FNormalObstacleValues EnvironmentObstacles;
+
+};
+
+USTRUCT()
 struct FVantagePointValues
 {
 	GENERATED_BODY()
@@ -225,8 +244,8 @@ enum class EIslandObjectiveType : uint8
 {
 	None = 0 UMETA(Hidden),
 	CaptureTheFlag = 1 << 0,
-	MoveThePayload = 1 << 2,
-	Survival = 1 << 3,
+	MoveThePayload = 1 << 1,
+	Survival = 1 << 2,
 };
 ENUM_CLASS_FLAGS(EIslandObjectiveType);
 
@@ -260,6 +279,11 @@ public:
 	FNormalObstacleValues ObstacleValues;
 
 	void SetObstacleValues(FNormalObstacleValues newObstacles) { ObstacleValues = newObstacles; }
+
+	UPROPERTY(Replicated, EditAnywhere)
+	FObstacleTypeValues ObstacleTypeValues;
+
+	void SetObstacleTypeValues(FObstacleTypeValues newObstacleTypeValues) { ObstacleTypeValues = newObstacleTypeValues; }
 
 	UPROPERTY(Replicated, EditAnywhere)
 	FVantagePointValues VantageValues;

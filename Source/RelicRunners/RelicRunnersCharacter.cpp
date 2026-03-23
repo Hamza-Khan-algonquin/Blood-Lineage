@@ -59,6 +59,8 @@
 #include "TimerManager.h"
 #include "RelicRunnersGameMode.h"
 
+#include "Camera/CameraShakeBase.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 ARelicRunnersCharacter::ARelicRunnersCharacter()
@@ -241,6 +243,10 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 		float DamageTaken = ActualDamage * Reduction;
 		ActualDamage = DamageTaken;
 		RelicPlayerState->ModifyHealth(-DamageTaken);
+
+		if (HitCameraShake)
+			GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(GetWorld(), HitCameraShake, FollowCamera->GetComponentLocation(), 0.0f, 500.0f, 1.0f);
+
 	}
 
 	return ActualDamage;

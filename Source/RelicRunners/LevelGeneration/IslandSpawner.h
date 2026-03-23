@@ -44,6 +44,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues", meta = (ClampMin = "1", UIMin = "1"))
 	uint8 NumStages;
 
+	UPROPERTY(EditAnywhere, Category = "GenerationValues")
+	bool IsObjectivesRandom = false;
+
 	UFUNCTION()
 	void GenerateNewIsland();
 
