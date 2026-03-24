@@ -92,7 +92,7 @@ public:
 	UTextBlock* TB_BrightnessValue = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
-	float MinBrightness = -2.0f;
+	float MinBrightness = -0.5f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
 	float MaxBrightnes = 0.f;

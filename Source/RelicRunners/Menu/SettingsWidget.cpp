@@ -324,18 +324,18 @@ void USettingsWidget::OnBrightnessChanged(float Value)
 
 void USettingsWidget::ApplyBrightness(float ExposureComp)
 {
-	if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+	for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
 	{
-		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
-		{
-			FPostProcessSettings& PPS = Camera->PostProcessSettings;
+		if (CamItr->GetWorld() != GetWorld()) continue;
 
-			PPS.bOverride_AutoExposureBias = true;
-			PPS.AutoExposureBias = ExposureComp;
+		FPostProcessSettings& PPS = CamItr->PostProcessSettings;
 
-			Camera->PostProcessBlendWeight = 1.0f;
-		}
+		PPS.bOverride_AutoExposureBias = true;
+		PPS.AutoExposureBias = ExposureComp;
+
+		CamItr->PostProcessBlendWeight = 1.0f;
 	}
+	
 }
 
 void USettingsWidget::UpdateBrightnessText(float Gamma)
@@ -480,7 +480,7 @@ void USettingsWidget::HandleResolutionSelectionChanged(FString SelectedItem, ESe
 	{
 		const FIntPoint NewRes = ResMap[SelectedItem];
 
-		GS->SetFullscreenMode(EWindowMode::Windowed);
+		GS->SetFullscreenMode(EWindowMode::Fullscreen);
 		GS->SetScreenResolution(NewRes);
 		GS->ApplyResolutionSettings(false);
 		GS->SaveSettings();
@@ -596,7 +596,7 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 			FPostProcessSettings& PPS = Camera->PostProcessSettings;
 
 			PPS.bOverride_MotionBlurAmount = true;
-			PPS.MotionBlurAmount = bEnabled ? 0.8f : 0.0f;
+			PPS.MotionBlurAmount = bEnabled ? 0.9f : 0.0f;
 
 			Camera->PostProcessBlendWeight = 1.0f;
 		}
@@ -615,34 +615,31 @@ void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type Sel
 	else if (Item == "Deutranopia")
 	{
 		ApplyColorLUT(LUT_Deuternopia);
+
 	}
 	else if (Item == "Tritanopia")
 	{
 		ApplyColorLUT(LUT_Tritanopia);
+
 	}
 }
 
 void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 {
-	ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
-	if (!Character) return;
-
-	UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>();
-	if (!Camera) return;
 	
-	Camera->PostProcessBlendWeight = 1.0f;
+	for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
+	{
+		if (CamItr->GetWorld() != GetWorld()) continue;
 
-	FPostProcessSettings& PPS = Camera->PostProcessSettings;
+		CamItr->PostProcessBlendWeight = 1.0f;
 
-	PPS.bOverride_ColorGradingLUT = true;
-	PPS.ColorGradingLUT = LUT;
-
-	PPS.bOverride_ColorGradingIntensity = true;
-	PPS.ColorGradingIntensity = 0.3f;
+		FPostProcessSettings& PPS = CamItr->PostProcessSettings;
+		PPS.bOverride_ColorGradingLUT = true;
+		PPS.ColorGradingLUT = LUT;
+		PPS.bOverride_ColorGradingIntensity = true;
+		PPS.ColorGradingIntensity = 0.3f;
+	}
 }
-
-
-
 
 void USettingsWidget::HandleOutputDeviceChanged(FString Item, ESelectInfo::Type SelectionType)
 {
