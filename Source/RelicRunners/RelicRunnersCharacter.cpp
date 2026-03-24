@@ -888,7 +888,8 @@ FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 	bool IsWeapon = ItemType.Equals("Sword", ESearchCase::IgnoreCase) ||
 		ItemType.Equals("Bow", ESearchCase::IgnoreCase) ||
 		ItemType.Equals("Greatsword", ESearchCase::IgnoreCase) ||
-		ItemType.Equals("Staff", ESearchCase::IgnoreCase);
+		ItemType.Equals("Staff", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Shield", ESearchCase::IgnoreCase);
 
 	if (!IsWeapon)
 	{
