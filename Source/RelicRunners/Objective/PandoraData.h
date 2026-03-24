@@ -16,4 +16,10 @@ public:
 	float Percent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString TimeRemainingText;
+
+	UPROPERTY()
+	TWeakObjectPtr<UUserWidget> AssociatedWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
+	class UTexture2D* PandoraImage;
 };

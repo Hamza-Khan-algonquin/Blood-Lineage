@@ -20,4 +20,10 @@ public:
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	class UWidgetAnimation* Completion;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_Progress;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* I_Pandora;
 };

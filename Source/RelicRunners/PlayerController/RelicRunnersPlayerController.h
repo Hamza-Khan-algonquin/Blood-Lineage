@@ -97,7 +97,7 @@ public:
 
 	void FlushObjectiveBuffer();
 
-	void Internal_AddObjectiveFromBuffer(const FPendingObjective& Data);
+	class UObjectiveItemData* Internal_AddObjectiveFromBuffer(const FPendingObjective& Data);
 
 	void SpectatingUI();
 

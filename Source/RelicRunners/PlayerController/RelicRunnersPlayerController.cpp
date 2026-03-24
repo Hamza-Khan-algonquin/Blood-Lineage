@@ -1014,6 +1014,12 @@ void ARelicRunnersPlayerController::Internal_SetPandoraUI(float NewPercent, cons
 		{
 			PandoraGoal->Percent = NewPercent;
 			PandoraGoal->TimeRemainingText = NewTimeText;
+
+			if (PandoraGoal->Percent >= 1.0f && !PandoraGoal->Completed)
+			{
+				PandoraGoal->Completed = true;
+			}
+
 			ObjectiveLog->UpdateObjective(PandoraGoal);
 			return;
 		}
@@ -1029,6 +1035,12 @@ void ARelicRunnersPlayerController::Internal_SetPayloadUI(float NewProgress)
 		if (UPayloadData* PayloadGoal = Cast<UPayloadData>(SubObj))
 		{
 			PayloadGoal->ProgressFraction = NewProgress;
+
+			if (PayloadGoal->ProgressFraction >= 1.0f && !PayloadGoal->Completed)
+			{
+				PayloadGoal->Completed = true;
+			}
+
 			ObjectiveLog->UpdateObjective(PayloadGoal);
 			return;
 		}
@@ -1079,9 +1091,14 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 		ObjectiveLog->ObjectiveTreeView->AddItem(ObjectiveStageTitle);
 		ObjectiveStageTitle->SubObjectives.Empty();
 
-		for (const FPendingObjective& Pending : ObjectiveBuffer)
+		for (int i = 0; i < ObjectiveBuffer.Num(); ++i)
 		{
-			Internal_AddObjectiveFromBuffer(Pending);
+			UObjectiveItemData* NewGoal = Internal_AddObjectiveFromBuffer(ObjectiveBuffer[i]);
+
+			if (NewGoal && i < ObjectiveBuffer.Num() - 1)
+			{
+				NewGoal->Completed = true;
+			}
 		}
 
 		ObjectiveLog->ObjectiveTreeView->SetItemExpansion(ObjectiveStageTitle, true);
@@ -1095,7 +1112,7 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 	}
 }
 
-void ARelicRunnersPlayerController::Internal_AddObjectiveFromBuffer(const FPendingObjective& Data)
+UObjectiveItemData* ARelicRunnersPlayerController::Internal_AddObjectiveFromBuffer(const FPendingObjective& Data)
 {
 	UObjectiveItemData* NewGoal = nullptr;
 
@@ -1135,6 +1152,8 @@ void ARelicRunnersPlayerController::Internal_AddObjectiveFromBuffer(const FPendi
 	{
 		ObjectiveLog->AddObjective(ObjectiveStageTitle, NewGoal);
 	}
+
+	return NewGoal;
 }
 
 void ARelicRunnersPlayerController::AddObjectiveToBuffer(FPendingObjective NewObjective)
@@ -1195,6 +1214,15 @@ void ARelicRunnersPlayerController::Internal_SetFlagUI(int CapturedCount)
 			FlagGoal->Flag2Active = (CapturedCount >= 2);
 			FlagGoal->Flag3Active = (CapturedCount >= 3);
 
+			bool AllClear = true;
+			if (FlagGoal->Flag1Enabled && !FlagGoal->Flag1Active) AllClear = false;
+			if (FlagGoal->Flag2Enabled && !FlagGoal->Flag2Active) AllClear = false;
+			if (FlagGoal->Flag3Enabled && !FlagGoal->Flag3Active) AllClear = false;
+
+			if (AllClear && !FlagGoal->Completed)
+			{
+				FlagGoal->Completed = true;
+			}
 			ObjectiveLog->UpdateObjective(FlagGoal);
 			return;
 		}
