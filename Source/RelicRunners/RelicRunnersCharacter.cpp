@@ -59,6 +59,7 @@
 #include "TimerManager.h"
 #include "RelicRunnersGameMode.h"
 #include "Engine/OverlapResult.h"
+#include "RelicRunners/RelicRunnersGameState.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -249,21 +250,37 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	if (RelicPlayerState) RelicPlayerState->DeathState = true; RelicPlayerState->PlayerDeaths++;
+	if (!HasAuthority()) return;
 
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC)
+	if (RelicPlayerState)
 	{
-		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
-		if (RPC)
+		RelicPlayerState->DeathState = true;
+		RelicPlayerState->PlayerDeaths++;
+	}
+
+	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(GetController());
+	if (RPC)
+	{
+		RPC->ChangeState(NAME_Spectating);
+		RPC->Client_RequestSaveStats();
+
+		if (RPC->IsLocalController())
 		{
 			RPC->CleanUI();
-			RPC->ChangeState(NAME_Spectating);
 			RPC->SpectatingUI();
-			RPC->Client_RequestSaveStats();
 		}
+	}
 
-		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+	if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+	{
+		ARelicRunnersGameState* GS = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
+
+		if (GS && GS->PlayerArray.Num() > 1)
+		{
+			FTimerHandle TimerHandle_GameOver;
+			GetWorldTimerManager().SetTimer(TimerHandle_GameOver, GM, &ARelicRunnersGameMode::CheckGameOver, 1.5f, false);
+		}
+		else
 		{
 			GM->CheckGameOver();
 		}

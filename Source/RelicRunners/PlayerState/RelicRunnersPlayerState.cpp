@@ -775,6 +775,20 @@ void ARelicRunnersPlayerState::Server_SellItem_Implementation(const FItemData& I
 	RPC->Client_UpdateVendorUI(Vendor);
 }
 
+void ARelicRunnersPlayerState::OnRep_DeathState()
+{
+	if (DeathState && GetPlayerController() && GetPlayerController()->IsLocalController())
+	{
+		if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(GetPlayerController()))
+		{
+			RPC->CleanUI();
+			RPC->ChangeState(NAME_Spectating);
+			RPC->SpectatingUI();
+			RPC->Client_RequestSaveStats();
+		}
+	}
+}
+
 EInventorySorting ARelicRunnersPlayerState::GetCurrentSortingMethod() const
 {
 	return InventoryComponent ? InventoryComponent->CurrentSortingMethod : EInventorySorting::SortByLevel;

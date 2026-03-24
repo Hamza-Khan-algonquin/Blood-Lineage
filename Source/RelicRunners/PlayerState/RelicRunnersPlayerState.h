@@ -213,8 +213,11 @@ public:
 	bool IsInvincible() const { return bIsInvincible; }
 	void SetInvincible(bool bNewInvincible) { bIsInvincible = bNewInvincible; } 
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_DeathState)
 	bool DeathState = false;
+
+	UFUNCTION()
+	void OnRep_DeathState();
 
 	int MetaLevel;
 	int MetaXP;
