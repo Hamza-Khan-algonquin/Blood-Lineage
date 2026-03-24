@@ -19,6 +19,7 @@
 #include "CoreMinimal.h"
 #include "ItemData.h"
 #include "ItemMeshData.h"
+#include "IconLibrary.h"
 
 struct FTooltipData
 {
@@ -39,6 +40,24 @@ public:
 
     UPROPERTY()
     FLinearColor IconColor;
+
+    UPROPERTY()
+    class UTexture2D* Icon1;
+
+    UPROPERTY()
+    FLinearColor IconColor1;
+
+    UPROPERTY()
+    class UTexture2D* Icon2;
+
+    UPROPERTY()
+    FLinearColor IconColor2;
+
+    UPROPERTY()
+    class UTexture2D* Icon3;
+
+    UPROPERTY()
+    FLinearColor IconColor3;
 };
 
 struct FForgeResultOdds
@@ -70,7 +89,7 @@ public:
     {
         FTooltipData Data;
 
-        if (!BorderType.Contains("Ability"))
+        if (!BorderType.Contains("Ability") && !BorderType.Contains("Difficulty") && !BorderType.Contains("HealthPotion"))
         {
             Data.Value = FText::AsNumber(StatValue);
         }
@@ -161,8 +180,8 @@ public:
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
         }
         else if (BorderType == "MetaLuck")
         {
@@ -172,6 +191,13 @@ public:
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
             Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Luck per meta point.</>"));
+        }
+        else if (BorderType == "HealthPotion")
+        {
+            Data.Name = FText::FromString("Health Potion");
+            Data.Icon = LoadIcon("PotionIcon");
+            Data.IconColor = GetIconColor("Purity");
+            Data.Descriptions.Add(FText::FromString("<Default>Heals player based off of purity stat.</>"));
         }
         else if (BorderType == "Purity")
         {
@@ -230,11 +256,108 @@ public:
             Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
             Data.Descriptions.Add(FText::FromString("<Blue>+1%</> <Default>Mana regen per meta point.</>"));
         }
+        else if (BorderType == "BoarDifficulty")
+        {
+            Data.Name = FText::FromString("Boar | Difficulty");
+            Data.Icon = LoadIcon("BoarDifficulty");
+            Data.IconColor = FLinearColor(1,0.5,0,1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "BullDifficulty")
+        {
+            Data.Name = FText::FromString("Bull | Difficulty");
+            Data.Icon = LoadIcon("BullDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "LionDifficulty")
+        {
+            Data.Name = FText::FromString("Lion | Difficulty");
+            Data.Icon = LoadIcon("LionDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "HydraDifficulty")
+        {
+            Data.Name = FText::FromString("Hydra | Difficulty");
+            Data.Icon = LoadIcon("HydraDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "CerberusDifficulty")
+        {
+            Data.Name = FText::FromString("Cerberus | Difficulty");
+            Data.Icon = LoadIcon("CerberusDifficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+        }
+        else if (BorderType == "CurrentDifficulty")
+        {
+            Data.Name = FText::FromString(AbilityName + " | Difficulty");
+            Data.Icon = LoadIcon(AbilityName + "Difficulty");
+            Data.IconColor = FLinearColor(1, 0.5, 0, 1);
+            Data.Icon1 = LoadIcon("EnemyHealth");
+            Data.IconColor1 = GetIconColor("EnemyHealth");
+            Data.Icon2 = LoadIcon("EnemyDamage");
+            Data.IconColor2 = GetIconColor("EnemyDamage");
+            Data.Icon3 = LoadIcon("LuckIcon");
+            Data.IconColor3 = GetIconColor("Luck");
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyHealth>{0}%</> <Default>Enemy Health</>"), FText::AsNumber(StatValue)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<EnemyDamage>{0}%</> <Default>Enemy Damage</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Luck>+{0}</> <Default>Luck</>"), FText::AsNumber(StatValue3)));
+            }
         else if (BorderType == "Ability1" || BorderType == "Ability2" || BorderType == "Ability3" || BorderType == "Ability4")
         {
             Data.Icon = nullptr;
             Data.Name = FText::FromString(AbilityName);
             Data.Descriptions.Add(FText::FromString(AbilityDesc));
+        }
+        else if (BorderType == "AbilityUpgrade")
+        {
+            Data.Name = FText::FromString("Stat Upgrade");
+            Data.Icon = LoadIcon("AbilityIcon");
+            Data.IconColor = GetIconColor("EnemyDamage");
+            Data.Descriptions.Add(FText::FromString("<Default>Spend points to get additional stats.</>"));
         }
 
         return Data;
@@ -282,6 +405,23 @@ public:
         return "Common";
     }
 
+    static FString GetRandomRarityWithLuck(float OddsIncrease)
+    {
+        float Roll = FMath::FRandRange(OddsIncrease, 100.f);
+        float Cumulative = 0.f;
+
+        for (const auto& Pair : GetRarityDataMap())
+        {
+            Cumulative += Pair.Value.Chance;
+            if (Roll <= Cumulative)
+            {
+                return Pair.Key;
+            }
+        }
+
+        return "Common";
+    }
+
     static FString GetRandomItemType()
     {
         static const TArray<FString> ItemTypes = {
@@ -305,12 +445,12 @@ public:
         return Item;
     }
 
-    static FItemData CreateSpecificItemData(int Level, FString ItemType, UItemMeshData* MeshData)
+    static FItemData CreateSpecificItemData(int Level, FString ItemType, UItemMeshData* MeshData, UIconLibrary* IconLibrary)
     {
-        return CreateSpecificItemData(Level, ItemType, GetRandomRarity(), MeshData);
+        return CreateSpecificItemData(Level, ItemType, GetRandomRarity(), MeshData, IconLibrary);
     }
 
-    static FItemData CreateSpecificItemData(int Level, FString ItemType, FString Rarity, UItemMeshData* MeshData)
+    static FItemData CreateSpecificItemData(int Level, FString ItemType, FString Rarity, UItemMeshData* MeshData, UIconLibrary* IconLibrary)
     {
         FItemData ItemData;
         ItemData.Rarity = Rarity;
@@ -357,7 +497,7 @@ public:
         if (ArmorTypes.Contains(ItemData.ItemType))
         {
             ItemData.Health = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max)) * SizeMult));
-            ItemData.Armor = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max)) * SizeMult));
+            ItemData.Armor = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max))));
 
             AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
 
@@ -371,10 +511,20 @@ public:
         }
 
         if (MeshData) { SetItemMeshes(ItemData, MeshData); }
-        FString ImagePath = FString::Printf(TEXT("Texture2D'/Game/ThirdPerson/Icons/%s.%s'"), *ItemData.ItemType, *ItemData.ItemType);
-        if (UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *ImagePath)))
+
+        if (IconLibrary)
         {
-            ItemData.Icon = Texture;
+            FName KeyName = FName(*ItemData.ItemType);
+            UTexture2D** FoundTexturePtr = IconLibrary->IconMap.Find(KeyName);
+
+            if (FoundTexturePtr && *FoundTexturePtr)
+            {
+                ItemData.Icon = *FoundTexturePtr;
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Icon not found in Library for Type: %s"), *ItemData.ItemType);
+            }
         }
 
         return ItemData;
@@ -433,7 +583,7 @@ public:
     }
     static float GetLootChance(int Value)
     {
-        float Percent = Value * 1.75f;
+        float Percent = Value * 1.75;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -447,42 +597,42 @@ public:
 
     static float GetChanceToNotConsume(int Value)
     {
-        float Percent = Value / 3;
+        float Percent = Value / 2.9;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetDefencePerc(int Value)
     {
-        float Percent = Value / 2.5;
+        float Percent = Value / 4.0;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetStrengthPerc(int Value)
     {
-        float Percent = Value / 1.75;
+        float Percent = Value * 1.17;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetSpeedPerc(int Value)
     {
-        float Percent = Value / 4.8;
+        float Percent = Value / 3.8;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritPerc(int Value)
     {
-        float Percent = Value / 2.3;
+        float Percent = Value / 2.1;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritDmgPerc(int Value)
     {
-        float Percent = 1.5 + (Value / 100);
+        float Percent = 1.5 + (Value / 100.0f);
 
         return RoundToDecimal(Percent, 1);
     }
@@ -574,9 +724,9 @@ public:
         return Odds.Rarity3;
     }
 
-    static FItemData CreateRandomItemData(UItemMeshData* MeshData)
+    static FItemData CreateRandomItemData(UItemMeshData* MeshData, UIconLibrary* IconLibrary)
     {
-        return CreateSpecificItemData(FMath::RandRange(1,100), GetRandomItemType(), MeshData);
+        return CreateSpecificItemData(FMath::RandRange(1,100), GetRandomItemType(), MeshData, IconLibrary);
     }
 
     static void SetItemMeshes(FItemData& ItemData, UItemMeshData* MeshData)

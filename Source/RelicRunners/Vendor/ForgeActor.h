@@ -26,7 +26,12 @@ public:
 
 	UPROPERTY()
 	class UInventory* LinkedInventoryWidget;
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* TooltipWidgetComponent;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> TooltipWidgetClass;
 
+	void InitializeTooltipWidget();
 	// IInteractInterface
 	virtual void Interact_Implementation(ARelicRunnersCharacter* Char) override;
 	virtual FItemData GetItemData_Implementation() override;

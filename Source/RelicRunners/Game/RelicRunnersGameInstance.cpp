@@ -16,13 +16,17 @@
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
+#include "InputMappingContext.h"
+#include <RelicRunners/PlayerHUD/PlayerHUD.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
+#include "RelicRunners/RelicRunnersCharacter.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
 #include "Net/UnrealNetwork.h"
+#include "RelicRunners/Item/IconLibrary.h"
 
 void URelicRunnersGameInstance::Init()
 {
@@ -33,6 +37,12 @@ void URelicRunnersGameInstance::Init()
     if (OnlineSubsystem)
     {
         SessionInterface = OnlineSubsystem;
+    }
+
+    //Icons
+    if (IconLibraryClass)
+    {
+        GlobalIconLibrary = NewObject<UIconLibrary>(this, IconLibraryClass);
     }
 
     //Keybinds
@@ -58,19 +68,22 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     if (!RPC) return;
 
     UInputMappingContext* OldMappingContext = RPC->GetInputMappingContext();
-    if (!OldMappingContext)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ApplyKeybindings: No InputMappingContext set!"));
-        return;
-    }
+    if (!OldMappingContext) return;
 
     UInputMappingContext* MappingContext = DuplicateObject<UInputMappingContext>(OldMappingContext, this);
+    if (!MappingContext) return;
 
     UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-    if (!Subsystem) return;
 
-    Subsystem->RemoveMappingContext(OldMappingContext);
+    if (!Subsystem) return;
+   
+    if (ActiveMappingContext)
+    {
+        Subsystem->RemoveMappingContext(ActiveMappingContext);
+        ActiveMappingContext = nullptr;
+    }
     MappingContext->UnmapAll();
+
 
     UInputAction* LookAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/ThirdPerson/Input/Actions/IA_Look.IA_Look"));
     if (LookAction)
@@ -97,12 +110,12 @@ void URelicRunnersGameInstance::ApplyKeybindings()
         }
 
         MappingContext->MapKey(FoundAction, Binding.Bind);
-
         UE_LOG(LogTemp, Log, TEXT("ApplyKeybindings: %s > %s"), *Binding.Name, *GetReadableKeyName(Binding.Bind));
 
     }
 
     Subsystem->AddMappingContext(MappingContext, 0);
+    ActiveMappingContext = MappingContext;
 
     TSharedRef<FUserNavigationConfig> NavConfig = MakeShared<FUserNavigationConfig>();
 
@@ -110,7 +123,20 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FSlateApplication::Get().SetNavigationConfig(NavConfig);
     }
+
+    if (RPC && RPC->PlayerHUD)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ApplyKeybindings finished, trying HUD update"));
+        RPC->PlayerHUD->UpdateBindText();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("PlayerController or PlayerHUD is null"));
+    }
+
 }
+
+
 
 USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)
 {
@@ -354,6 +380,14 @@ void URelicRunnersGameInstance::JoinGame(int SessionIndex)
 {
     if (!SessionInterface.IsValid() || !SessionSearch.IsValid() || SessionIndex < 0 || SessionIndex >= SessionSearch->SearchResults.Num()) return;
 
+    const FOnlineSessionSearchResult& SelectedResult = SessionSearch->SearchResults[SessionIndex];
+
+    if (!SelectedResult.Session.SessionSettings.bShouldAdvertise || !SelectedResult.Session.SessionSettings.bAllowJoinInProgress)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Join blocked: Match already started or private."));
+        return;
+    }
+
     if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
     {
         //If local session exists, destroy it first and queue join
@@ -370,7 +404,6 @@ void URelicRunnersGameInstance::JoinGame(int SessionIndex)
         Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
         Sess->OnJoinSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnJoinSessionComplete);
         Sess->JoinSession(0, NAME_GameSession, SessionSearch->SearchResults[SessionIndex]);
-        ClientTravelToSession(0, NAME_GameSession);
     }
 }
 
@@ -397,6 +430,14 @@ void URelicRunnersGameInstance::OnSessionDestroyedThenJoin(FName SessionName, bo
         return;
     }
 
+    const FOnlineSessionSearchResult& SelectedResult = SessionSearch->SearchResults[PendingJoinIndex];
+
+    if (!SelectedResult.Session.SessionSettings.bShouldAdvertise || !SelectedResult.Session.SessionSettings.bAllowJoinInProgress)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Join blocked: Match already started or private."));
+        return;
+    }
+
     if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
     {
         Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
@@ -409,8 +450,16 @@ void URelicRunnersGameInstance::OnSessionDestroyedThenJoin(FName SessionName, bo
 
 void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
+    if (Result != EOnJoinSessionCompleteResult::Success)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Join failed at the network level. Result: %d"), (int32)Result);
+        return;
+    }
+
     if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
     {
+        Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
+
         FString ConnectInfo;
         if (!Sess->GetResolvedConnectString(SessionName, ConnectInfo, NAME_GamePort) || ConnectInfo.IsEmpty())
         {
@@ -427,11 +476,6 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
             PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
         }
     }
-
-    if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
-    {
-        Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
-    }
 }
 
 void URelicRunnersGameInstance::StartSessionGame()
@@ -443,8 +487,8 @@ void URelicRunnersGameInstance::StartSessionGame()
     UE_LOG(LogTemp, Warning, TEXT("NetDriver: %s"), NetDriver ? *NetDriver->GetName() : TEXT("NULL"));
     UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
 
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen");
-    UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] Host starting travel to %s"), *TravelURL);
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen?GameStarted=1");
+    UE_LOG(LogTemp, Warning, TEXT("[GameInstance] Host starting travel to %s"), *TravelURL);
 
     TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin();
     if (!Sess.IsValid())
@@ -453,11 +497,22 @@ void URelicRunnersGameInstance::StartSessionGame()
         return;
     }
 
+    //For mid game joins
+    //FOnlineSessionSettings* CurrentSettings = Sess->GetSessionSettings(NAME_GameSession);
+    //if (CurrentSettings)
+    //{
+    //    FString GameTitle = FString::Printf(TEXT("%s's Game"), *PlayerName);
+    //    CurrentSettings->Set(SETTING_MAPNAME, GameTitle, EOnlineDataAdvertisementType::ViaOnlineService);
+    //    Sess->UpdateSession(NAME_GameSession, *CurrentSettings, true);
+    //}
+
     FOnlineSessionSettings* CurrentSettings = Sess->GetSessionSettings(NAME_GameSession);
     if (CurrentSettings)
     {
-        FString GameTitle = FString::Printf(TEXT("%s's Game"), *PlayerName);
-        CurrentSettings->Set(SETTING_MAPNAME, GameTitle, EOnlineDataAdvertisementType::ViaOnlineService);
+        CurrentSettings->bShouldAdvertise = false;
+        CurrentSettings->bAllowJoinInProgress = false;
+        CurrentSettings->bAllowJoinViaPresence = false;
+        CurrentSettings->Set(SETTING_MAPNAME, FString("Match In Progress"), EOnlineDataAdvertisementType::ViaOnlineService);
         Sess->UpdateSession(NAME_GameSession, *CurrentSettings, true);
     }
 
@@ -465,6 +520,9 @@ void URelicRunnersGameInstance::StartSessionGame()
     if (!RPC) return;
 
     RPC->CleanUI();
+
+    bIsMatchLocked = true;
+    StageNumber = 0;
 
     World->ServerTravel(TravelURL, true);
 }

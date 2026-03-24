@@ -19,8 +19,6 @@ UBundleOfJoy::UBundleOfJoy()
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
-    Cost = 50;
-
 }
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -54,26 +52,6 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // If commit fails, end the ability 
         return; // Exit early
     }
-
-    // Get PlayerState safely
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
-    {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
-
-    // Must have PlayerState and enough resource
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 
     PlayAbilityCastSound(ActorInfo);
 
@@ -235,11 +213,16 @@ void UBundleOfJoy::Explode()
         CalculateAbilityDamage(AvatarActor, Actor, Damage);
     }
 
-    for (AEnemyPawn* enemy : EffectedEnemies)
+    for (TWeakObjectPtr<AEnemyPawn> weakEnemy : EffectedEnemies)
     {
-        if (enemy && enemy->MovementComponent)
+        if (weakEnemy.IsValid())
         {
-            enemy->MovementComponent->IsAffectiveByBundleOfJoy = false;
+            AEnemyPawn* enemy = weakEnemy.Get();
+
+            if (IsValid(enemy->MovementComponent))
+            {
+                enemy->MovementComponent->IsAffectiveByBundleOfJoy = false;
+            }
         }
     }
     

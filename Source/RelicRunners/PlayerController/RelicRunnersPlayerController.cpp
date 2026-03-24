@@ -75,6 +75,8 @@
 #include <RelicRunners/Objective/PandorasObjective.h>
 #include <NavigationSystem.h>
 #include <Blueprint/AIBlueprintHelperLibrary.h>
+#include "NavigationPath.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -162,6 +164,8 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 
 	if (IsLocalController())
 	{
+		PlayerPreviewInstance = nullptr;
+
 		PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 		RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
@@ -217,6 +221,8 @@ void ARelicRunnersPlayerController::OnRep_PlayerState()
 void ARelicRunnersPlayerController::PostSeamlessTravel()
 {
 	Super::PostSeamlessTravel();
+
+	PlayerPreviewInstance = nullptr;
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
@@ -288,6 +294,10 @@ void ARelicRunnersPlayerController::SyncUI()
 		if (!PlayerPreviewInstance && PlayerPreviewClass)
 		{
 			int UniqueID = RelicPlayerState->GetPlayerId();
+
+			//Playerstate isnt ready yet retry
+			if (UniqueID <= 0) return;
+
 			FVector SpawnLoc = FVector(-50000.0f - (UniqueID * 10000.0f), -50000.0f, -2000.0f);
 
 			FActorSpawnParameters Params;
@@ -297,6 +307,10 @@ void ARelicRunnersPlayerController::SyncUI()
 
 			if (PlayerPreviewInstance)
 			{
+				PlayerPreviewInstance->LinkedPlayerState = RelicPlayerState;
+				//Manual trigger since BeginPlay might have already fired
+				PlayerPreviewInstance->RefreshPreview();
+
 				UE_LOG(LogTemp, Warning, TEXT("Local Client: Spawned Preview Actor at %s"), *SpawnLoc.ToString());
 				TrySetupPreviewRenderTarget();
 			}
@@ -343,6 +357,17 @@ void ARelicRunnersPlayerController::TryBindUI()
 	else
 	{
 		GetWorldTimerManager().SetTimer(UIInitialSyncTimerHandle, this, &ARelicRunnersPlayerController::TryBindUI, 0.1f, true);
+	}
+}
+
+void ARelicRunnersPlayerController::Client_RegisterMetaXPGain_Implementation(int Amount)
+{
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->SelectedSaveSlot)
+		{
+			GI->SelectedSaveSlot->AddMetaExp(Amount);
+		}
 	}
 }
 
@@ -447,6 +472,14 @@ void ARelicRunnersPlayerController::HandleLevelUpVisuals()
 {
 	if (!IsLocalController()) return;
 
+	if (GetWorld() == nullptr || GetWorld()->IsBeingCleanedUp() == true) return;
+
+	if (!LevelUpHUDClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LevelUpHUDClass is null on Controller!"));
+		return;
+	}
+
 	if (LevelUpHUD)
 	{
 		LevelUpHUD->RemoveFromParent();
@@ -478,6 +511,37 @@ void ARelicRunnersPlayerController::UpdateCharacterVisuals()
 
 	const TArray<FEquippedItemEntry>& EquippedEntries = RelicPlayerState->GetInventoryComponent()->EquippedItems;
 	Char->SyncEquippedVisuals(EquippedEntries);
+}
+
+void ARelicRunnersPlayerController::UpdateAllAbilityManaUI()
+{
+	if (!PlayerHUD || !GetPawn()) return;
+
+	int Cost1 = GetCalculatedManaCost(BaseCostAbility1);
+	int Cost2 = GetCalculatedManaCost(BaseCostAbility2);
+	int Cost3 = GetCalculatedManaCost(BaseCostAbility3);
+	int Cost4 = GetCalculatedManaCost(BaseCostAbility4);
+
+	PlayerHUD->UpdateAbilityManaCosts(Cost1, Cost2, Cost3, Cost4);
+}
+
+int ARelicRunnersPlayerController::GetCalculatedManaCost(float BaseMana)
+{
+	int Intelligence = 0;
+
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		if (UInventoryComponent* Inv = PS->GetInventoryComponent())
+		{
+			Intelligence = Inv->CachedEquippedStats.TotalIntelligence;
+		}
+	}
+
+	float ReductionPercent = ItemStats::GetAbilityCostPerc(Intelligence);
+
+	int FinalCost = BaseMana * (1.f - (ReductionPercent / 100.f));
+
+	return FMath::Max(FinalCost, 0);
 }
 
 void ARelicRunnersPlayerController::UpdatePreviewWithEquippedItems()
@@ -817,11 +881,32 @@ void ARelicRunnersPlayerController::InventoryUI()
 	ToggleUI(Inventory);
 }
 
-void ARelicRunnersPlayerController::MinimapUI()
+void ARelicRunnersPlayerController::SetGameplayUIActive(bool bActive)
 {
-	if (!MinimapWidget) return;
+	ESlateVisibility NewVisibility = bActive ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
 
-	ToggleUI(MinimapWidget);
+	if (MinimapWidget)
+	{
+		if (bActive && !MinimapWidget->IsInViewport()) MinimapWidget->AddToViewport();
+		MinimapWidget->SetVisibility(NewVisibility);
+	}
+
+	if (PlayerHUD)
+	{
+		if (bActive && !PlayerHUD->IsInViewport()) PlayerHUD->AddToViewport();
+		PlayerHUD->SetVisibility(NewVisibility);
+	}
+
+	if (Inventory)
+	{
+		if (bActive) {
+			Inventory->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		else {
+			Inventory->SetVisibility(ESlateVisibility::Collapsed);
+			Inventory->SetKeyboardFocus();
+		}
+	}
 }
 
 void ARelicRunnersPlayerController::PauseUI()
@@ -843,15 +928,7 @@ void ARelicRunnersPlayerController::LoadingScreenUI()
 	{
 		LoadingScreen->RemoveFromParent();
 
-		if (GetWorld()->GetMapName().Contains(TEXT("BossLevel")))
-		{
-			StartBossCinematicWalk();
-		}
-		else
-		{
-			ForceGameModeOnly();
-			MinimapUI();
-		}
+		if (!GetWorld()->GetMapName().Contains(TEXT("BossLevel"))) ForceGameModeOnly();
 	}
 }
 
@@ -1067,9 +1144,18 @@ void ARelicRunnersPlayerController::PostGameUI()
 		if (PostGameWidget)
 		{
 			PostGameWidget->AddToViewport();
-			
+
 			SetInputMode(FInputModeUIOnly());
 			bShowMouseCursor = true;
+
+			FTimerHandle UnusedHandle;
+			GetWorldTimerManager().SetTimer(UnusedHandle, [this]()
+				{
+					if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+					{
+						GI->BackToMainMenu();
+					}
+				}, 5.0f, false);
 		}
 	}
 }
@@ -1128,18 +1214,19 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (PlayerHUD)
 		{
 			PlayerHUD->AddToViewport();
-
-			if (MapName.Contains(TEXT("BossLevel")))
-			{
-				PlayerHUD->ToggleBossBar(true);
-				PlayerHUD->ToggleExpBar(true);
-			}
-			else
-			{
-				PlayerHUD->ToggleBossBar(false);
-				PlayerHUD->ToggleExpBar(true);
-			}
+			PlayerHUD->UpdateBindText();
 		}
+		if (MapName.Contains(TEXT("BossLevel")))
+		{
+			PlayerHUD->ToggleBossBar(true);
+			PlayerHUD->ToggleExpBar(true);
+		}
+		else
+		{
+			PlayerHUD->ToggleBossBar(false);
+			PlayerHUD->ToggleExpBar(true);
+		}
+		UpdateAllAbilityManaUI();
 	}
 
 	SetupObjectives();
@@ -1212,7 +1299,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		}
 	}
 
-	float LoadingScreenTime = 3.0f;
+	float LoadingScreenTime = 6.0f;
 	if (!LoadingScreen && LoadingScreenClass)
 	{
 		FInputModeUIOnly InputMode;
@@ -1238,6 +1325,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 	}
 
 	TryBindUI();
+
 }
 
 void ARelicRunnersPlayerController::SetupLobbyView()
@@ -1326,44 +1414,70 @@ void ARelicRunnersPlayerController::BeginPlay()
 	}
 }
 
-void ARelicRunnersPlayerController::StartBossCinematicWalk()
+void ARelicRunnersPlayerController::Client_StartCinematicWalk_Implementation(FVector TargetLocation)
 {
-	APawn* ControlledPawn = GetPawn();
-	if (!ControlledPawn) return;
+	CinematicTargetLocation = TargetLocation;
+
+	SetGameplayUIActive(false);
 
 	FInputModeUIOnly UIOnlyMode;
 	UIOnlyMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(UIOnlyMode);
 	SetIgnoreMoveInput(true);
 
-	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+	Server_ExecuteMove(TargetLocation);
 
+	GetWorldTimerManager().SetTimer(CinematicTimerHandle, this, &ARelicRunnersPlayerController::CheckCinematicArrival, 0.1f, true);
+}
+
+void ARelicRunnersPlayerController::Server_ExecuteMove_Implementation(FVector Target)
+{
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	if (NavSys)
 	{
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, TargetLocation);
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Target);
+	}
+}
+
+void ARelicRunnersPlayerController::RestoreGameAndUI()
+{
+	if (FSlateApplication::IsInitialized())
+	{
+		FSlateApplication::Get().ReleaseAllPointerCapture();
+		FSlateApplication::Get().ClearUserFocus(0);
 	}
 
-	GetWorldTimerManager().SetTimer(CinematicTimerHandle, this, &ARelicRunnersPlayerController::CheckCinematicArrival, 0.1f, true);
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture);
+	InputMode.SetHideCursorDuringCapture(false);
+
+	SetInputMode(InputMode);
+
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+
+	SetIgnoreMoveInput(false);
+	SetIgnoreLookInput(false);
+
+	FSlateApplication::Get().SetAllUserFocusToGameViewport();
 }
 
 void ARelicRunnersPlayerController::CheckCinematicArrival()
 {
 	APawn* ControlledPawn = GetPawn();
-	FVector TargetLocation(1258.0f, -3283.0f, 90.0f);
+	if (!ControlledPawn) return;
 
-	PlayerHUD->SetVisibility(ESlateVisibility::Visible);
-	MinimapWidget->SetVisibility(ESlateVisibility::Visible);
+	float Distance = FVector::Dist2D(ControlledPawn->GetActorLocation(), CinematicTargetLocation);
 
-	if (ControlledPawn && FVector::Dist(ControlledPawn->GetActorLocation(), TargetLocation) < 100.0f)
+	if (Distance < 150.0f)
 	{
-		FInputModeGameAndUI GameAndUIMode;
-		SetInputMode(GameAndUIMode);
-
-		SetIgnoreMoveInput(false);
 		GetWorldTimerManager().ClearTimer(CinematicTimerHandle);
 
-		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Control Restored."));
+		SetGameplayUIActive(true);
+		RestoreGameAndUI();
+
+		UE_LOG(LogTemp, Log, TEXT("Cinematic Walk Complete - Local Control Restored."));
 	}
 }
 

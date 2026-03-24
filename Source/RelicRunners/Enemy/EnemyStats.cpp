@@ -5,6 +5,8 @@
 #include <Net/UnrealNetwork.h>
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
+#include "RelicRunners/Director System/Director.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 // Sets default values for this component's properties
 UEnemyStats::UEnemyStats()
@@ -19,7 +21,7 @@ UEnemyStats::UEnemyStats()
 	MaxHealth = 100;
 	CurrentHealth = 100;
 	RemainingStunTime = 0;
-	ChanceToDropItem = 5;
+	ChanceToDropItem = 30;
 	AttackDamage = 3;
 	SetIsReplicatedByDefault(true);
 }
@@ -27,19 +29,59 @@ UEnemyStats::UEnemyStats()
 void UEnemyStats::BeginPlay()
 {
 	Super::BeginPlay();
+	ResetStats();
+	
+}
 
-	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
-	if (!GI)
+void UEnemyStats::ResetStats()
+{
+	if(!GetOwner()->HasAuthority())
 	{
 		return;
 	}
 
-	if (ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>())
+	URelicRunnersGameInstance* gameInst = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	ADirector* director = ADirector::GetInstance(this);
+
+	if (!gameInst || !director || director->GetPlayers().Num() == 0)
 	{
-		FDifficultyInfo DifficultyInfo = GS->GetDifficultyInfo(GI->CurrentDifficulty);
-		MaxHealth *= DifficultyInfo.HealthPercent;
-		CurrentHealth = MaxHealth;
-		AttackDamage *= DifficultyInfo.DamagePercent;
+		return;
+	}
+
+	if (ARelicRunnersGameState* gameState = GetWorld()->GetGameState<ARelicRunnersGameState>())
+	{
+		int newLevel = 0;
+
+		for (APawn* playerCharacter : director->GetPlayers())
+		{
+			if (playerCharacter)
+			{
+				ARelicRunnersPlayerState* PS = playerCharacter->GetPlayerState<ARelicRunnersPlayerState>();
+
+				if (PS)
+				{
+					newLevel += PS->GetPlayerLevel();
+				}
+			}
+		}
+
+		EnemyLevel = FMath::Max(1, newLevel / director->GetPlayers().Num());
+
+
+		FDifficultyInfo DifficultyInfo = gameState->GetDifficultyInfo(gameInst->CurrentDifficulty);
+		if (EnemyLevel > 1)
+		{
+			MaxHealth *= DifficultyInfo.HealthPercent * HealthMultiplier * EnemyLevel;
+			CurrentHealth = MaxHealth;
+			AttackDamage *= DifficultyInfo.DamagePercent * AttackDamageMultiplier * EnemyLevel;
+		}
+		else
+		{
+			MaxHealth *= DifficultyInfo.HealthPercent;
+			CurrentHealth = MaxHealth;
+			AttackDamage *= DifficultyInfo.DamagePercent;
+		}
+		
 	}
 }
 
@@ -54,6 +96,8 @@ void UEnemyStats::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(UEnemyStats, RemainingStunTime);
 	DOREPLIFETIME(UEnemyStats, ChanceToDropItem);
 	DOREPLIFETIME(UEnemyStats, AttackDamage);
+	DOREPLIFETIME(UEnemyStats, HealthMultiplier);
+	DOREPLIFETIME(UEnemyStats, AttackDamageMultiplier);
 }
 
 #if WITH_EDITOR

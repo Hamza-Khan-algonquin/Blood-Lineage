@@ -9,8 +9,11 @@
 class AEnemyPawn;
 class APawn;
 class UAIPerceptionComponent;
+class UFlockComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetChangeSignature, APawn*, target);
+
+
 
 UCLASS()
 class RELICRUNNERS_API ACommanderController : public AAIController
@@ -29,6 +32,14 @@ public:
 	int MaxLifeTimeNumberOfEnemies;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int EnemyToSpawnPerLoop;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TimeBetweenSpawnChecks;
+
+	FTimerHandle SpawnTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SpawnRadius;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -39,9 +50,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AEnemyPawn> PawnEnemyToSpawn;
+	//Not attached to the commander but to the possed pawn
+	TObjectPtr<UFlockComponent> PawnFlockComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	APawn* TargetPlayer;
+
+	float TargetDistance;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TMap<TObjectPtr<APawn>, float> RemainingTimeToAttack;
@@ -61,6 +76,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	//The Behavoir tree to use on being play
 	UBehaviorTree* StartingBehaviorTree;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float SpawnDelayAfterWorldStart;
+
 protected:
 	bool IsTargeting;
 public: 
@@ -94,6 +113,7 @@ public:
 	void UpdateTarget(APawn* newTarget);
 protected:
 	virtual void BeginPlay() override;
+
 	virtual void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION(BlueprintCallable)
@@ -102,7 +122,7 @@ protected:
 	void AttackCheck(TArray<APawn*> players, float delta);
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerTracking(float closestDistance, APawn* ClosetPlayer);
-
-	
-
+	//This should go into the new flock component but I am leaving it here from now to save time as I would have to make a new custom tick struct
+	void UpdateBoidMovement(float delta);
 };
+

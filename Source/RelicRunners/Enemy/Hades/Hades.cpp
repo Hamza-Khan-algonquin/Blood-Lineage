@@ -12,6 +12,10 @@
 #include "HadesSweepPrediction.h"
 #include "HadesSlamPrediction.h"
 #include "HadesSlamSweepPrediction.h"
+#include <RelicRunners/PlayerController/RelicRunnersPlayerController.h>
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include <RelicRunners/RelicRunnersGameState.h>
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 
 AHades::AHades()
 {
@@ -54,15 +58,21 @@ void AHades::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage, fl
 void AHades::BeginPlay()
 {
     Super::BeginPlay();
-    if (GhostCycloneSystem)
+    if(GhostCycloneSystem)
     {
         ActiveCycloneComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), GhostCycloneSystem, FVector(0.f, 0.f, -300.f));
+
         ActiveCycloneComp->SetIsReplicated(true);
+
     }
+
     if (HasAuthority())
     {
+        FTimerHandle StartDelayHandle;
+        GetWorldTimerManager().SetTimer(StartDelayHandle, this, &AHades::TriggerAllPlayersCinematicWalk, 5.0f, false);
+
+        SpawnBridge();
         SelectRandomTarget();
-        ScheduleCinematicSlam(5.0f); 
     }
 }
 
@@ -81,6 +91,38 @@ void AHades::Tick(float DeltaTime)
     if (!bIsBusy)
     {
         UpdateIdleAnimation();
+    }
+}
+
+void AHades::TriggerAllPlayersCinematicWalk()
+{
+    if (!HasAuthority()) return;
+
+    ScheduleCinematicSlam(2.0f);
+
+    TArray<FVector> CinematicSpots;
+    CinematicSpots.Add(FVector(3000.f, -1410.f, 90));
+    CinematicSpots.Add(FVector(3650.f, -1410.f, 90));
+    CinematicSpots.Add(FVector(1410.f, -3000.f, 90));
+    CinematicSpots.Add(FVector(1410.f, -3650.f, 90));
+
+    for (int i = CinematicSpots.Num() - 1; i > 0; i--)
+    {
+        int j = FMath::RandRange(0, i);
+        CinematicSpots.Swap(i, j);
+    }
+
+    int SpotIndex = 0;
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(It->Get()))
+        {
+            if (SpotIndex < CinematicSpots.Num())
+            {
+                PC->Client_StartCinematicWalk(CinematicSpots[SpotIndex]);
+                SpotIndex++;
+            }
+        }
     }
 }
 
@@ -181,6 +223,24 @@ void AHades::ExecuteAttack()
     }
 }
 
+void AHades::SpawnBridge()
+{
+    FVector TargetLocation(4650.0f, -4620.0f, -112.0f);
+    FRotator TargetRotation = FRotator::ZeroRotator;
+
+    if (BridgeClass)
+    {
+        FActorSpawnParameters Params;
+        Params.Owner = this;
+        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+        BridgeToDestroy = GetWorld()->SpawnActor<AActor>(BridgeClass, TargetLocation, TargetRotation, Params);
+        BridgeToDestroy->SetReplicates(true);
+
+        UE_LOG(LogTemp, Log, TEXT("Hades: Bridge spawned at X=4650, Y=-4620, Z=-112"));
+    }
+}
+
 void AHades::CinematicSlam()
 {
     if (!HasAuthority()) return;
@@ -197,7 +257,7 @@ void AHades::CinematicSlam()
     FVector SlamLoc = FVector(3400, -3400, 20.0f);
     LockRotationTo(SlamLoc, true);
 
-    float Delay = 7.5f - (0.2f * (int)CurrentPhase);
+    float Delay = 8;
 
     AHadesSlamPrediction* Pred = GetWorld()->SpawnActor<AHadesSlamPrediction>(SlamPredictionClass, SlamLoc, FRotator::ZeroRotator);
     if (Pred)
@@ -210,26 +270,34 @@ void AHades::CinematicSlam()
 
     TWeakObjectPtr<AHades> WeakSelf(this);
     GetWorldTimerManager().SetTimer(AbilityLogicTimer, [WeakSelf, SlamLoc]() {
-        if (WeakSelf.IsValid())
+        AHades* StrongSelf = WeakSelf.Get();
+
+        if (StrongSelf)
         {
-            WeakSelf->ExecuteDamage(SlamLoc, 1800.0f);
+            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
             if (WeakSelf->SlamImpactSound)
             {
                 UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
             }
 
-            WeakSelf->bIsBusy = false;
-            WeakSelf->bIsLookingAtAbilityTarget = false;
-            WeakSelf->ScheduleNextAttack(2.0f);
+            StrongSelf->bIsBusy = false;
+            StrongSelf->bIsLookingAtAbilityTarget = false;
+            StrongSelf->ScheduleNextAttack(2.0f);
 
-            if (WeakSelf->BridgeToDestroy)
+            StrongSelf->MulticastOnBridgeDestroyed(StrongSelf->BridgeToDestroy->GetActorLocation());
+            if (StrongSelf->BridgeToDestroy)
             {
-                WeakSelf->BridgeToDestroy->Destroy();
-                WeakSelf->BridgeToDestroy = nullptr;
+                StrongSelf->BridgeToDestroy->Destroy();
+                StrongSelf->BridgeToDestroy = nullptr;
             }
         }
         }, Delay, false);
+}
+
+void AHades::MulticastOnBridgeDestroyed_Implementation(FVector Location)
+{
+    UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BridgeCrumbleFX, Location);
 }
 
 void AHades::PlaySlam()
@@ -259,9 +327,10 @@ void AHades::PlaySlam()
 
     TWeakObjectPtr<AHades> WeakSelf(this);
     GetWorldTimerManager().SetTimer(AbilityLogicTimer, [WeakSelf, SlamLoc]() {
-        if (WeakSelf.IsValid())
+        AHades* StrongSelf = WeakSelf.Get();
+
+        if (StrongSelf)
         {
-            WeakSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
             if (WeakSelf->SlamImpactSound)
             {
@@ -269,12 +338,12 @@ void AHades::PlaySlam()
             }
 
             //Incase boss dies
-            if (WeakSelf.IsValid())
-            {
-                WeakSelf->bIsBusy = false;
-                WeakSelf->bIsLookingAtAbilityTarget = false;
-                WeakSelf->ScheduleNextAttack(2.0f);
-            }
+            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
+
+            StrongSelf->bIsBusy = false;
+            StrongSelf->bIsLookingAtAbilityTarget = false;
+            StrongSelf->ScheduleNextAttack(2.0f);
+
         }
         }, Delay, false);
 }
@@ -555,7 +624,8 @@ void AHades::SelectRandomTarget()
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
         APlayerController* PC = It->Get();
-        if (PC && PC->GetPawn())
+
+        if (IsValid(PC) && IsValid(PC->GetPawn()))
         {
             ValidPlayers.Add(PC->GetPawn());
         }
@@ -565,6 +635,10 @@ void AHades::SelectRandomTarget()
     {
         int RandomIndex = FMath::RandRange(0, ValidPlayers.Num() - 1);
         CurrentTarget = ValidPlayers[RandomIndex];
+    }
+    else
+    {
+        CurrentTarget = nullptr;
     }
 }
 
@@ -626,6 +700,30 @@ void AHades::Die()
     if (ActiveCycloneComp)
     {
         ActiveCycloneComp->DestroyComponent();
+    }
+
+    //Meta XP
+    ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>();
+    URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+
+    if (GS && GI)
+    {
+        FDifficultyInfo DiffInfo = GS->GetDifficultyInfo(GI->CurrentDifficulty);
+
+        for (APlayerState* PS : GS->PlayerArray)
+        {
+            if (ARelicRunnersPlayerState* RRPS = Cast<ARelicRunnersPlayerState>(PS))
+            {
+                int AddedMeta = FMath::RandRange(400, 500) * DiffInfo.MetaXPIncrease;
+
+                RRPS->MetaXPGainInRun += AddedMeta;
+
+                if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(RRPS->GetOwner()))
+                {
+                    PC->Client_RegisterMetaXPGain(AddedMeta);
+                }
+            }
+        }
     }
 
     Destroy();

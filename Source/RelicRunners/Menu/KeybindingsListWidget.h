@@ -23,6 +23,7 @@ public:
 	void OnBindButtonClicked();
 	class UKeybindingsListData* GetKeybindData() const;
 	void RefreshVisual();
+
 private:
 	class UKeybindingsListData* KeybindData;
 
@@ -34,4 +35,6 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_BindButton;
+
+
 };

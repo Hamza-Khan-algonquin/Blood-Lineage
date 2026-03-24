@@ -22,7 +22,20 @@ enum class EBoidFocuseMode : uint8
 	Disabled
 };
 
+USTRUCT()
+struct FMoveDataWithTimeStamp
+{
+	GENERATED_BODY()
+	UPROPERTY()
+	FVector Location = FVector::ZeroVector;
+	UPROPERTY()
+	FRotator Rotation = FRotator::ZeroRotator;
+	UPROPERTY()
+	float TimeStamp = -1;
+};
+
 class ACommanderController;
+class ARecastNavMesh;
 
 UCLASS()
 class RELICRUNNERS_API UEnemyBoidMovementComponent : public UPawnMovementComponent
@@ -35,6 +48,8 @@ public:
 	bool IsKnockedBack;
 	bool IsAffectiveByBundleOfJoy = false;
 	FVector BundleOfJoyLocation;
+	UPROPERTY(Replicated)
+	int32 ServerSideID = -1;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float VisualRange;
@@ -58,6 +73,10 @@ protected:
 	float TargetDeadZone;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float MaxTargetDistanceMultiplier;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float DistanceToStartAvoidingWalls;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float DistanceFromWallToLoseTargetWeight;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float CoherenceWeight;
@@ -68,8 +87,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float TargetWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
-	float EdgeAvoidanceWeight;
-	
+	float WallAvoidanceWeight;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float SlowDownDistance;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float MinSlowDownPercentage;
 
 	//UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	//float OrbitWeight;
@@ -83,6 +105,8 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Other")
 	FVector NavMeshClampExtent;
+	UPROPERTY(EditAnywhere, Category = "Other")
+	FVector WallAvoidanceExtent;
 	UPROPERTY(EditAnywhere, Category = "Other")
 	float FocuseOnTargetDistance;
 	UPROPERTY(EditAnywhere, Category = "Other")
@@ -98,26 +122,44 @@ protected:
 	FVector EdgeAvoidanceVector = FVector::Zero();
 	FVector LastValidPosition = FVector::Zero();
 	FVector LastEdgeVector = FVector::Zero();
+	FVector LastWallAvoidanceDirection = FVector::Zero();
 
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float BundleOfJoyWeight;
 
+	UPROPERTY()
+	ARecastNavMesh* ActiveNavMesh;
 
+	UPROPERTY()
+	TArray<FMoveDataWithTimeStamp> MoveDataBuffer;
+
+	
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float InterpDelay;
+	//The max distance the client is allowed to be from the server location before it snaps to it. 
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float MaxClientLocationDeviation;
+	UPROPERTY()
+	float AvgReplicationDelta;
+	UPROPERTY()
+	float TargetInterpDelay;
+
+	
 public:
 	UEnemyBoidMovementComponent();
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+
+	void UpdateMovement(float delta);
+	void UpdateMovementInfo(float delta);
+
 	//calculate the direction the boid should be move in and update the velocity
 	void CalculateBoidDirection(float delta);
 	//calculate the direction the actor should move in to get to the target and update the velocity
 	void CalculateMoveToDirection(float delta);
-	//clamp the direction to move onto the navmesh
-	bool ClampToNavMesh(const FVector& DesiredMovement, FVector& out);
 	//UFUNCTION(NetMulticast, Reliable)
 	//move in a given direction
 	void MoveInDirection(float DeltaTime);
-	//move the enemy onto the ground
-	void GroundSnap();
 	void UpdateRotation();
 	//check to see if another boid is in range and feild of view
 	bool CanSeeOtherBoid(APawn* otherBoid, FVector& directionToBoid, float& distanceToBoid);
@@ -128,4 +170,10 @@ public:
 	void SetMovementMode(EBoidMovementMode newMode) { MovementMode = newMode; }
 	EBoidMovementMode GetMovementMode() { return MovementMode; }
 	bool IsAtTarget();
+	void InitializeNavMeshPointer();
+	void AddToMoveDataBuffer(FVector newLocation, FRotator newRotation);
+
+	UFUNCTION()
+	void ClientSideEntityInterpolation(float delta);
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

@@ -14,8 +14,10 @@ AIslandBridge::AIslandBridge():
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+
 	Bridge = CreateDefaultSubobject<UStaticMeshComponent>("Bridge Mesh");
-	Bridge->SetupAttachment(RootComponent);
+	RootComponent = Bridge;
+	Bridge->SetIsReplicated(true);
 
 	Barrier = CreateDefaultSubobject<UStaticMeshComponent>("Barrier Mesh");
 	Barrier->SetupAttachment(Bridge);
@@ -48,8 +50,28 @@ void AIslandBridge::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Barrier->SetVisibility(true);
+	Barrier->SetVisibility(false);
 	Barrier->SetCollisionProfileName("BlockAll");
+	BackBarrier->SetVisibility(false);
+}
+
+void AIslandBridge::Create()
+{
+	if (HasAuthority())
+	{
+		Barrier->SetVisibility(true);
+
+		if (IsFinalBridge)
+		{
+			BackBarrier->SetVisibility(true);
+			BackBarrier->SetCollisionProfileName("BlockAll");
+		}
+		else
+		{
+			BackBarrier->SetVisibility(false);
+			BackBarrier->SetCollisionProfileName("NoCollision");
+		}
+	}
 }
 
 void AIslandBridge::Activate()
@@ -67,16 +89,6 @@ void AIslandBridge::SetFinalBridge(bool isFinal)
 	if (HasAuthority())
 	{
 		IsFinalBridge = isFinal;
-		if (IsFinalBridge)
-		{
-			BackBarrier->SetVisibility(true);
-			BackBarrier->SetCollisionProfileName("BlockAll");
-		}
-		else
-		{
-			BackBarrier->SetVisibility(false);
-			BackBarrier->SetCollisionProfileName("NoCollision");
-		}
 	}
 }
 

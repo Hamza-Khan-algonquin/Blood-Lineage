@@ -12,6 +12,9 @@
 #include "RelicRunners/Enemy/EnemyBoidMovementComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include "RelicRunners/ObjectPool/ObjectPoolManager.h"
+#include "RelicRunners/Enemy/FlockComponent.h"
+#include <Net/UnrealNetwork.h>
 
 ACommanderController::ACommanderController()
 {
@@ -25,7 +28,8 @@ ACommanderController::ACommanderController()
 	EnemiesSetToLowestLOD = false;
 	TimeToAttack = 1;
 	bReplicates = true;
-	SetReplicateMovement(true);
+	PrimaryActorTick.TickGroup = TG_PrePhysics;
+	SpawnDelayAfterWorldStart = 20;
 }
 
 ACommanderController::~ACommanderController()
@@ -42,17 +46,14 @@ void ACommanderController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		director->OnPlayerAdd.RemoveDynamic(this, &ACommanderController::AddPlayerToTimeToAttack);
 		director->OnPlayerRemoved.RemoveDynamic(this, &ACommanderController::RemovePlayerFromTimeToAttack);
 	}
+
+	GetWorldTimerManager().ClearTimer(SpawnTimer);
 	Super::EndPlay(EndPlayReason);
 }
 
 void ACommanderController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (!HasAuthority())
-	{
-		return;
-	}
 
 	APawn* pawn = GetPawn();
 	TArray<APawn*> players;
@@ -63,12 +64,12 @@ void ACommanderController::Tick(float DeltaTime)
 		players = dir->GetPlayers();
 	}
 
-	if (players.Num() <= 0 || !pawn)
+	if (!pawn)
 	{
 		return;
 	}
 
-	if (players[0])
+	if (players.Num() > 0 && players[0])
 	{
 		
 		float distance; 
@@ -81,7 +82,7 @@ void ACommanderController::Tick(float DeltaTime)
 			for (int i = 1; i < players.Num(); i++)
 			{
 				float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
-				if (newDistance > distance)
+				if (newDistance < distance)
 				{
 					closestPlayer = players[i];
 					distance = newDistance;
@@ -121,36 +122,58 @@ void ACommanderController::Tick(float DeltaTime)
 	}
 
 	UpdateLODs(players, pawn->GetActorLocation());
+	UpdateBoidMovement(DeltaTime);
 	AttackCheck(players, DeltaTime);
-	SpawmLoop();
+	
 
-	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0 && !Cast<AEnemyCharacter>(GetPawn()))
+	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0)
 	{
-		Destroy();
-		//GetPawn()->Destroy();
+		if (!IsValid(BTComp) || !BTComp->IsRunning())
+		{
+			Destroy();
+		}	
 	}
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 {
-	if (!enemy) return;
+	if (!IsValid(enemy) || !IsValid(this))
+	{
+		return;
+	}
 
-	ControlledEnemies.Add(enemy);
+	ControlledEnemies.AddUnique(enemy);
 	enemy->MovementComponent->Commander = this;
-	if (enemy) enemy->OnDied.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->OnDestroyed.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->OnDeactivated.AddDynamic(this, &ACommanderController::RemovePawnEnemy);
-	if (enemy) enemy->LODComponent->SetIsUpdatingLOD(false);
+	enemy->OnDied.AddUniqueDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDestroyed.AddUniqueDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->OnDeactivated.AddUniqueDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemy->LODComponent->SetIsUpdatingLOD(false);
+
+	if (PawnFlockComponent)
+	{
+		PawnFlockComponent->AddBoid(enemy->MovementComponent);
+	}
 }
 
 void ACommanderController::RemovePawnEnemy(AActor* enemy)
 {
 	AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
-	if (!enemyPawn)
+
+	if (!enemyPawn || !IsValid(enemyPawn) || !ControlledEnemies.Contains(enemyPawn))
 	{
 		return;
 	}
+
+
+	enemyPawn->OnDestroyed.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
+	enemyPawn->OnDeactivated.RemoveDynamic(this, &ACommanderController::RemovePawnEnemy);
+	
 	ControlledEnemies.Remove(enemyPawn);
+
+	if (PawnFlockComponent)
+	{
+		PawnFlockComponent->RemoveBoid(enemyPawn->MovementComponent);
+	}
 }
 
 TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
@@ -161,8 +184,9 @@ TArray<AEnemyPawn*> ACommanderController::GetPawnEnemies()
 void ACommanderController::SpawnPawnEnemy()
 {
 	APawn* pawn = GetPawn();
+	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (!pawn)
+	if (!pawn || !pool)
 	{
 		return;
 	}
@@ -182,12 +206,16 @@ void ACommanderController::SpawnPawnEnemy()
 	}
 
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	/*FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;*/
 
-	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
-	//AEnemyPawn* newEnemy = Cast<AEnemyPawn>(PawnEnemyToSpawn);
-	
+	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(pool->GetActor(PawnEnemyToSpawn));//Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
+	FVector origin;
+	FVector bounds;
+
+	newEnemy->GetActorBounds(true, origin, bounds);
+
+	newEnemy->SetActorLocation(spawnPosition + FVector(0, 0, bounds.Z));
 
 	//giving time for the enemy to set
 	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
@@ -199,7 +227,12 @@ void ACommanderController::SpawnPawnEnemy()
 
 void ACommanderController::SpawmLoop()
 {
-	for (int i = 0; i < MaxNumberOfEnemies; i++)
+	if (!GetWorld() || GetWorld()->GetTimeSeconds() <= SpawnDelayAfterWorldStart)
+	{
+		return;
+	}
+
+	for (int i = 0; i < EnemyToSpawnPerLoop && ControlledEnemies.Num() < MaxNumberOfEnemies; i++)
 	{
 		if (CurrentLifeTimeNumberOfEnemies < MaxLifeTimeNumberOfEnemies)
 		{
@@ -265,6 +298,7 @@ void ACommanderController::BeginPlay()
 				UE_LOG(LogTemp, Error, TEXT("Commander Controller: Missing Director in World!"));
 			}
 		});
+	
 }
 
 void ACommanderController::OnPossess(APawn* InPawn)
@@ -275,10 +309,25 @@ void ACommanderController::OnPossess(APawn* InPawn)
 	{
 		RunBehaviorTree(StartingBehaviorTree);
 	}
+
+	PawnFlockComponent = InPawn->FindComponentByClass<UFlockComponent>();
+
+	if(!PawnFlockComponent)
+	{
+		PawnFlockComponent = NewObject<UFlockComponent>(InPawn, UFlockComponent::StaticClass(), TEXT("RuntimeMesh"));
+		PawnFlockComponent->RegisterComponent();
+	}
+
+	GetWorldTimerManager().SetTimer(SpawnTimer, this, &ACommanderController::SpawmLoop, TimeBetweenSpawnChecks, true);
 }
 
 void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLocation)
 {
+	if (players.IsEmpty() || !IsValid(players[0]))
+	{
+		return;
+	}
+
 	float closestDistance = FVector::Dist(players[0]->GetActorLocation(), refernceLocation);
 
 	for (int i = 1; i < players.Num(); i++)
@@ -334,7 +383,11 @@ void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 	for (int i = 0; i < players.Num(); i++)
 	{
 		APawn* CurrentPlayer = players[i];
-		if (!IsValid(CurrentPlayer)) continue;
+
+		if (!IsValid(CurrentPlayer))
+		{
+			continue;
+		}
 
 		AEnemyPawn* closestEnemy = nullptr;
 		float closestDistance = TNumericLimits<float>::Max();
@@ -343,7 +396,10 @@ void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 		{
 			AEnemyPawn* CurrentEnemy = ControlledEnemies[j];
 
-			if (!IsValid(CurrentEnemy) || !IsValid(CurrentEnemy->MovementComponent)) continue;
+			if (!IsValid(CurrentEnemy) || !IsValid(CurrentEnemy->MovementComponent))
+			{
+				continue;
+			}
 
 			float newDistance = FVector::DistSquared(CurrentPlayer->GetActorLocation(), CurrentEnemy->GetActorLocation());
 			if (newDistance < closestDistance && !CurrentEnemy->IsAttacking)
@@ -364,7 +420,7 @@ void ACommanderController::AttackCheck(TArray<APawn*> players, float delta)
 				}
 				else
 				{
-					UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
+					//UE_LOG(LogTemp, Log, TEXT("Enemy goes in for the kill"));
 					closestEnemy->StartAttack();
 					RemainingTimeToAttack.FindOrAdd(CurrentPlayer) = TimeToAttack;
 				}
@@ -391,3 +447,15 @@ void ACommanderController::UpdatePlayerTracking(float closestDistance, APawn* Cl
 		StopMovement();
 	}
 }
+
+void ACommanderController::UpdateBoidMovement(float delta)
+{
+	for (AEnemyPawn* enemy : ControlledEnemies)
+	{
+		if (IsValid(enemy) && IsValid(enemy->MovementComponent))
+		{
+			enemy->MovementComponent->UpdateMovementInfo(delta);
+		}
+	}
+}
+

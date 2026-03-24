@@ -128,9 +128,9 @@ void ARelicRunnersGameMode::TriggerPostGameForAll()
             {
                 FPlayerPostGameData Stats;
                 Stats.Username = PS->GetPlayerName();
-                Stats.LevelsEarned = 0;
-                Stats.EnemiesKilled = 0;
-                Stats.Deaths = 1;
+                Stats.LevelsEarned = PS->GetLevelsEarned();
+                Stats.EnemiesKilled = PS->GetEnemiesKilled();
+                Stats.Deaths = PS->GetDeaths();
                 Stats.MetaLevel = PS->MetaLevel;
                 Stats.MetaXP = PS->MetaXP;
                 Stats.MetaXPToNextLevel = PS->MetaXPToNextLevel;
@@ -147,5 +147,17 @@ void ARelicRunnersGameMode::TriggerPostGameForAll()
         {
             RPC->Client_ShowPostGame(AllPlayersStats);
         }
+    }
+}
+
+void ARelicRunnersGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+
+    if (GI && GI->bIsMatchLocked)
+    {
+        ErrorMessage = TEXT("Match_Already_In_Progress");
     }
 }

@@ -12,11 +12,10 @@ UEarthquakeAbility::UEarthquakeAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Duration = 3.0f;
+    Duration = 0.25f;
     ConeAngle = 90.f;
     LastUseTime = -100.f;
-    CooldownTimer = 10.f;
-    Cost = 40;
+    CooldownTimer = 5.0f;
 	Damage = 100.f;
 }
 
@@ -50,26 +49,6 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-
-    // Get PlayerState safely
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
-    {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
-
-    // Must have PlayerState and enough resource
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 
     LastUseTime = World->GetTimeSeconds();
 
@@ -133,7 +112,7 @@ void UEarthquakeAbility::ApplyDamageAndStun()
             }*/
         }
     }
-    DrawDebugCone(World, Origin, Forward, Radius, FMath::DegreesToRadians(ConeAngle / 2.f), FMath::DegreesToRadians(ConeAngle / 2.f), 32, FColor::Orange, false, StunDuration + 0.1f);
+    DrawDebugCone(World, Origin, Forward, Radius, FMath::DegreesToRadians(ConeAngle / 2.f), FMath::DegreesToRadians(ConeAngle / 2.f), 32, FColor::Orange, false, Duration + 0.1f);
 }
 
 void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -151,8 +130,7 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
                 if (ActorInfo->IsLocallyControlled())
                 {
-                    if (ARelicRunnersPlayerController* RPC =
-                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
                     {
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
                     }

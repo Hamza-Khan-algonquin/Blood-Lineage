@@ -7,7 +7,6 @@ UKeybinds::UKeybinds()
     KeyBinds.Add({ TEXT("Walk Left"),          EKeys::A });
     KeyBinds.Add({ TEXT("Walk Backward"),      EKeys::S });
     KeyBinds.Add({ TEXT("Walk Right"),         EKeys::D });
-    KeyBinds.Add({ TEXT("Jump"),               EKeys::SpaceBar });
     KeyBinds.Add({ TEXT("Inventory"),          EKeys::Tab });
     KeyBinds.Add({ TEXT("Ability Selection"),  EKeys::U });
     KeyBinds.Add({ TEXT("Interact"),           EKeys::E });
@@ -22,7 +21,6 @@ UKeybinds::UKeybinds()
     KeyBinds.Add({ TEXT("Ultimate Ability"),   EKeys::Four });
     KeyBinds.Add({ TEXT("Health Potion"),      EKeys::H });
     KeyBinds.Add({ TEXT("Zoom"),               EKeys::MouseWheelAxis });
-    KeyBinds.Add({ TEXT("Drag Map"),           EKeys::LeftMouseButton });
 }
 
 FKey UKeybinds::GetKeyForAction(const FString& ActionName) const
@@ -35,4 +33,18 @@ FKey UKeybinds::GetKeyForAction(const FString& ActionName) const
         }
     }
     return EKeys::Invalid;
+}
+
+int UKeybinds::GetBindIndex(const FString& ActionName)
+{
+    int index = 0;
+    for (const FKeybinding& Bind : KeyBinds)
+    {
+        if (Bind.Name.Equals(ActionName, ESearchCase::IgnoreCase))
+        {
+            return index;
+        }
+        index++;
+    }
+    return 0;
 }

@@ -30,8 +30,6 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BundleOfJoy")
     float AttractionStrength = 800.f;
 
-
-
 private:
     FTimerHandle ExplosionTimer;
     FTimerHandle AttractTimer;
@@ -43,7 +41,7 @@ private:
     UPROPERTY()
     FVector AttractionCenter;
 
-    TArray<AEnemyPawn*> EffectedEnemies;
+    TArray<TWeakObjectPtr<AEnemyPawn>> EffectedEnemies;
 
     void Explode();
     void Attract();

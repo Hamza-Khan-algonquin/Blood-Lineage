@@ -7,6 +7,7 @@
 #include "RelicRunners/ObjectPool/PoolActorInterface.h"
 #include "RelicRunners/Enemy/EnemyData.h"
 #include "Components/TimelineComponent.h"
+#include "RootPawn.h"
 #include "EnemyPawn.generated.h"
 
 class UCapsuleComponent;
@@ -63,6 +64,8 @@ public:
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
+	
+
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
@@ -99,6 +102,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
 	FTimerHandle AttackHandle;
+
+
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
@@ -140,7 +145,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
-	virtual void SpawnItem();
+	virtual void SpawnItem(int KillersLuck);
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyForceToEnemy(FVector forces);

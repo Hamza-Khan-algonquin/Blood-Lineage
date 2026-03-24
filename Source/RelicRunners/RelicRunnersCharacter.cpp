@@ -58,6 +58,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "TimerManager.h"
 #include "RelicRunnersGameMode.h"
+#include "Engine/OverlapResult.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -175,8 +176,6 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	PlayerHUDWorld->SetVisibility(true);
 	PlayerHUDWorld->CastShadow = false;
 
-
-
 	bAlwaysRelevant = true;
 	SetReplicates(true);
 	SetReplicateMovement(true);
@@ -250,7 +249,7 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	if (RelicPlayerState) RelicPlayerState->DeathState = true;
+	if (RelicPlayerState) RelicPlayerState->DeathState = true; RelicPlayerState->PlayerDeaths++;
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
@@ -371,26 +370,60 @@ void ARelicRunnersCharacter::TraceForInteractables()
 {
 	if (!IsLocallyControlled()) return;
 
-	const FVector PlayerLocation = GetActorLocation();
-	const FVector PlayerForward = FollowCamera->GetForwardVector();
-
+	const FVector TraceStart = FollowCamera->GetComponentLocation();
+	const FVector LookDir = FollowCamera->GetForwardVector();
 	const float MaxDistance = 800.f;
-	const float MinFacingDot = 0.f; // 1 = perfectly facing, 0 = 90 degrees off
 
-	for (TActorIterator<AItemActor> It(GetWorld()); It; ++It)
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionShape SelectionSphere = FCollisionShape::MakeSphere(MaxDistance);
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->OverlapMultiByChannel(
+		OverlapResults,
+		GetActorLocation(),
+		FQuat::Identity,
+		ECC_Visibility,
+		SelectionSphere,
+		Params
+	);
+
+	AActor* BestTarget = nullptr;
+	float BestDot = 0.6f;
+
+	if (bHit)
 	{
-		AItemActor* Item = *It;
+		for (const FOverlapResult& Result : OverlapResults)
+		{
+			AActor* FoundActor = Result.GetActor();
 
-		if (!Item || !Item->Implements<UInteractInterface>()) continue;
+			if (FoundActor && FoundActor->Implements<UInteractInterface>())
+			{
+				FVector ToActor = (FoundActor->GetActorLocation() - TraceStart).GetSafeNormal();
+				float DotProduct = FVector::DotProduct(LookDir, ToActor);
 
-		FVector ToItem = Item->GetActorLocation() - PlayerLocation;
-		float Distance = ToItem.Size();
+				if (DotProduct > BestDot)
+				{
+					BestDot = DotProduct;
+					BestTarget = FoundActor;
+				}
+			}
+		}
+	}
 
-		bool bWithinDistance = Distance <= MaxDistance;
-		bool bFacingItem = FVector::DotProduct(PlayerForward, ToItem.GetSafeNormal()) > MinFacingDot;
+	if (BestTarget != CurrentFocusedActor)
+	{
+		if (CurrentFocusedActor)
+		{
+			IInteractInterface::Execute_ShowTooltip(CurrentFocusedActor, false);
+		}
 
-		bool bShouldShow = bWithinDistance && bFacingItem;
-		IInteractInterface::Execute_ShowTooltip(Item, bShouldShow);
+		CurrentFocusedActor = BestTarget;
+
+		if (CurrentFocusedActor)
+		{
+			IInteractInterface::Execute_ShowTooltip(CurrentFocusedActor, true);
+		}
 	}
 }
 
@@ -546,7 +579,10 @@ void ARelicRunnersCharacter::Look(const FInputActionValue& Value)
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	//Lock look input on boss level
-	if (GetWorld()->GetMapName().Contains("BossLevel")) return;
+	UWorld* const World = GetWorld();
+	if (!World) return;
+
+	if (World->GetMapName().Contains("BossLevel")) return;
 	else if (Controller != nullptr)
 	{
 		float XSens = 1.0f;
@@ -584,9 +620,12 @@ void ARelicRunnersCharacter::Interact()
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	if (GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
+	UWorld* const World = GetWorld();
+	if (!World) return;
+
+	if (World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
 	{
-		DrawDebugSphere(GetWorld(), Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
+		DrawDebugSphere(World, Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && HitActor->Implements<UInteractInterface>())
 		{
@@ -622,6 +661,41 @@ void ARelicRunnersCharacter::Interact()
 			}
 		}
 	}
+}
+
+void ARelicRunnersCharacter::InitializeAbilityCosts()
+{
+	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(GetController());
+	if (!RPC) return;
+
+	RPC->BaseCostAbility1 = GetAbilityCost(AbilityClass_1);
+	RPC->BaseCostAbility2 = GetAbilityCost(AbilityClass_2);
+	RPC->BaseCostAbility3 = GetAbilityCost(AbilityClass_3);
+	RPC->BaseCostAbility4 = GetAbilityCost(AbilityClass_4);
+
+	RPC->UpdateAllAbilityManaUI();
+}
+
+int ARelicRunnersCharacter::GetAbilityCost(TSubclassOf<UAbilityBase> AbilityClass)
+{
+	if (!AbilityClass)
+	{
+		return 0;
+	}
+
+	UObject* CDO = AbilityClass->GetDefaultObject();
+	if (!CDO)
+	{
+		return 0;
+	}
+
+	UAbilityBase* DefaultAbility = Cast<UAbilityBase>(CDO);
+	if (DefaultAbility)
+	{
+		return DefaultAbility->Cost;
+	}
+
+	return 0;
 }
 
 void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const FItemData& Data)
@@ -807,12 +881,28 @@ void ARelicRunnersCharacter::UpdateItemVisuals(UObject* MeshAsset, const FString
 	OnRep_VisualsChanged();
 }
 
-
-
 FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 {
-	return FString::Printf(TEXT("/Game/ThirdPerson/Meshes/Items/%s/%s.%s"),
-		*ItemType, *ItemType, *ItemType);
+	FString Suffix = "";
+
+	bool IsWeapon = ItemType.Equals("Sword", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Bow", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Greatsword", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Staff", ESearchCase::IgnoreCase);
+
+	if (!IsWeapon)
+	{
+		if (ARelicRunnersPlayerState* RPS = GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			if (!RPS->SelectedClass.IsNone())
+			{
+				Suffix = RPS->SelectedClass.ToString();
+			}
+		}
+	}
+
+	return FString::Printf(TEXT("/Game/ThirdPerson/Meshes/Items/%s/%s%s.%s%s"),
+		*ItemType, *ItemType, *Suffix, *ItemType, *Suffix);
 }
 
 USkeletalMeshComponent* ARelicRunnersCharacter::GetSkeletalMeshComponentByItemType(const FString& ItemType)
@@ -879,6 +969,4 @@ void ARelicRunnersCharacter::UltimateAbility()
 	ActivateUltimateAbilities();
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
-
-
 

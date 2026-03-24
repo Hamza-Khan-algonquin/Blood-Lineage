@@ -26,6 +26,7 @@
 #include "NiagaraComponent.h"
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 
 // Sets default values
@@ -62,7 +63,7 @@ AEnemyPawn::AEnemyPawn()
 	EnemyStatsComponent->SetCurrentHealth(100.f);
 
 	bReplicates = true;
-	SetReplicateMovement(true);
+	SetReplicateMovement(false);
 
 	//times per second it replicates
 	SetNetUpdateFrequency(5.f);
@@ -70,7 +71,9 @@ AEnemyPawn::AEnemyPawn()
 	bAlwaysRelevant = false;
 	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 
-	KnockBackStrength = 1000;
+	CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
+
+	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
 }
@@ -93,14 +96,6 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	if (!HasAuthority() || DamageAmount <= 0)
 	{
 		return 0;
-	}
-
-	if (HasAuthority())
-	{
-		HitFlash();
-
-		FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-		ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
 	}
 	
 	//call the super for important stuff
@@ -125,6 +120,14 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 				//RemainingStunTime = AttackDamageEvent->StunDuration;
 			}
 		}
+
+		if (HasAuthority())
+		{
+			HitFlash();
+
+			FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+			ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
+		}
 	}
 
 	return DamageAmount;
@@ -139,27 +142,6 @@ void AEnemyPawn::HitFlash_Implementation()
 
 	HitFlashTimeline.PlayFromStart();
 	SetActorTickEnabled(true);
-	//HitFlashTimeline.SetPlaybackPosition(0.0f, false);
-	//HitFlashTimeline.Play();
-/*	for (UMaterialInstanceDynamic* element : DynamicMaterials)
-	{
-		if (element)
-		{
-			element->SetScalarParameterValue("HitFlashValue", 10.0f);
-		}
-	}
-	//DynamicMaterial->SetScalarParameterValue("HitFlashValue", 10.0f);
-
-	FTimerHandle temp;
-	GetWorldTimerManager().SetTimer(temp, [this]() {
-		for (UMaterialInstanceDynamic* element : this->DynamicMaterials)
-		{
-			if (element)
-			{
-				element->SetScalarParameterValue("HitFlashValue", 0.0f);
-			}
-		}
-	}, 0.5f, false);*/
 }
 
 void AEnemyPawn::UpdateHitFlash(float strength)
@@ -176,6 +158,7 @@ void AEnemyPawn::UpdateHitFlash(float strength)
 void AEnemyPawn::EndHitFlash()
 {
 	HitFlashTimeline.Stop();
+	UpdateHitFlash(0);
 	if (!IsAttacking)
 	{
 		SetActorTickEnabled(false);
@@ -195,9 +178,9 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 			if (PS)
 			{
 				PS->AddExperience(CalculateXP());
-				
+				PS->EnemiesKilled++;
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
-				SpawnItem();
+				SpawnItem(PlayerLuck);
 			}
 		}
 
@@ -214,27 +197,46 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
-		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
+		Destroy();
+
+		/*if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
 		}
 		else
 		{
 			Destroy();
-		}
+		}*/
 	}
 }
 
 void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
 {
-	if (!DeathEffect)
+	EndHitFlash();
+
+	if (IsValid(DeathEffect))
 	{
-		return;
+		if (GetActorLocation().ContainsNaN() ||
+			GetActorRotation().ContainsNaN() ||
+			GetActorScale().ContainsNaN())
+		{
+			UE_LOG(LogTemp, Error, TEXT("Invalid transform for Niagara spawn"));
+			return;
+		}
+
+		UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			DeathEffect,
+			GetActorLocation(),
+			GetActorRotation(),
+			GetActorScale()
+		);
+
+		//if (deathEffect)
+		//{
+		//	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
+		//}
 	}
-
-	UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
-
-	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
 }
 
 inline bool AEnemyPawn::IsDead()
@@ -245,6 +247,7 @@ inline bool AEnemyPawn::IsDead()
 void AEnemyPawn::ResetEnemy()
 {
 	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
+	SetActorLocation(FVector::Zero());
 }
 
 void AEnemyPawn::AddEnemyToDirector()
@@ -289,9 +292,7 @@ void AEnemyPawn::AttackTick()
 
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
-			
 
-			
 			FTimerDelegate attackCallBack;
 			attackCallBack.BindLambda([this]()
 				{
@@ -348,21 +349,27 @@ float AEnemyPawn::CalculateXP() const
 	return FMath::RandRange(10, 25);
 }
 
-void AEnemyPawn::SpawnItem()
+void AEnemyPawn::SpawnItem(int Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
 	float chance = FMath::FRandRange(0.f, 100.f);
 
-	if (chance <= EnemyStatsComponent->GetChanceToDropItem())
+	if (chance <= EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(Luck))
 	{
 		if (ItemMeshDataClass)
 		{
 			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
 		}
 
+		UIconLibrary* Lib = nullptr;
+		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+		{
+			Lib = GI->GlobalIconLibrary;
+		}
+
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemMeshData),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData, Lib),
 			this
 		);
 
@@ -374,32 +381,25 @@ void AEnemyPawn::SpawnItem()
 		FActorSpawnParameters Params;
 		Params.Owner = this;
 		Params.Instigator = this;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
+		//Use Deferred Spawning
+		AItemActor* Dropped = GetWorld()->SpawnActorDeferred<AItemActor>(
+			ItemActorClass,
+			FTransform(FRotator::ZeroRotator, FinalLoc),
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+		);
 
 		if (Dropped)
 		{
+			//This ensures Auto-Loot can't trigger until the data is valid!
+			Dropped->ItemData = DroppedItem->ItemData;
 			Dropped->Initialize(DroppedItem->ItemData);
+			Dropped->FinishSpawning(FTransform(FRotator::ZeroRotator, FinalLoc));
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
-
-		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
-		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-		Params.Instigator = this;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
-		if (Dropped)
-		{
-			Dropped->Initialize(Data);
-			Dropped->SetReplicates(true);
-			Dropped->SetReplicateMovement(true);
-		}*/
 	}
 }
 
@@ -408,30 +408,8 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 	CapsuleComponent->SetSimulatePhysics(true);
 	CapsuleComponent->AddImpulse(forces, NAME_None, true);
 	CapsuleComponent->SetNotifyRigidBodyCollision(true);
-	if (!CapsuleComponent->OnComponentHit.Contains(this, FName(TEXT("GroundCheck"))))
-	{
-		CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
-	}
-	
 
-	//this->MovementComponent->IsKnockedBack = true;
 	MovementComponent->IsKnockedBack = true;
-
-	/*FTimerHandle temp;
-	GetWorldTimerManager().SetTimer(temp, [this]() {
-		if (this)
-		{
-			if (!this)
-				return;
-			if (MovementComponent)
-				MovementComponent->IsKnockedBack = false;
-			if (CapsuleComponent)
-			{
-				CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-				CapsuleComponent->SetSimulatePhysics(false);
-			}
-		}
-		}, HitFlashTimeline.GetTimelineLength(), false);*/
 }
 
 void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -448,12 +426,11 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	ECollisionChannel otherChannel = OtherComp->GetCollisionObjectType();
 
-	if (MovementComponent->IsKnockedBack && (otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic))
+	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
 		MovementComponent->IsKnockedBack = false;
 		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 		CapsuleComponent->SetSimulatePhysics(false);
-		CapsuleComponent->OnComponentHit.RemoveDynamic(this, &AEnemyPawn::GroundCheck);
 		CapsuleComponent->SetNotifyRigidBodyCollision(false);
 	}
 }
@@ -523,19 +500,6 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-
-	if (HitFlashCurve)
-	{
-		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-		FOnTimelineFloat inProgressFunc;
-		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
-
-		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
-
-		//putting this here for a future note of what do if I want to call something at the end
-		//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
-	}
 	
 	if (HasAuthority())
 	{
@@ -548,6 +512,21 @@ void AEnemyPawn::BeginPlay()
 
 		IsAttacking = false;
 		SetActorTickEnabled(false);
+
+		if (HitFlashCurve)
+		{
+			HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+			FOnTimelineFloat inProgressFunc;
+			inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
+
+			HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
+
+			//putting this here for a future note of what do if I want to call something at the end
+			//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
+		}
+
+		MovementComponent->InitializeNavMeshPointer();
 	}
 }
 
@@ -606,12 +585,12 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		ResetEnemy();
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	if (IsValid(pool) && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()

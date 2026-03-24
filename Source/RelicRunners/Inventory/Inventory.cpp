@@ -52,6 +52,8 @@
 #include "Components/AudioComponent.h"
 #include "Animation/WidgetAnimation.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
+#include <ClassData.h>
+#include "ClassInfo.h"
 
 
 void UInventory::NativeConstruct()
@@ -344,7 +346,7 @@ void UInventory::SetInventoryComponent(UInventoryComponent* NewComponent)
         OwningCharacter = Cast<ARelicRunnersCharacter>(Pawn);
     }
 
-    InventoryComponent->SetSortingMethod(EInventorySorting::SortByRarity);
+    InventoryComponent->SetSortingMethod(EInventorySorting::SortByLevel);
     OnEquippedStatsUpdated(InventoryComponent->GetCachedEquippedStats());
 }
 
@@ -519,7 +521,13 @@ FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
         B_Mana,           
         B_PlayerLevel,    
         B_Purity,
-        B_MetaLevel
+        B_MetaLevel,
+        B_Ability1,
+        B_Ability2,
+        B_Ability3,
+        B_Ability4,
+        B_AbilityUpgrade,
+        B_HealthPotion
     };
 
     UBorder* HoveredBorder = nullptr;
@@ -552,7 +560,8 @@ FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
         ShowTooltipForBorder(CurrentHoveredBorder, CursorPos, InGeometry);
     }
 
-    return FReply::Handled();
+    if(CurrentHoveredBorder) return FReply::Handled();
+    else return FReply::Unhandled();
 }
 
 void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
@@ -561,8 +570,17 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     if (!HoveredBorder) return;
 
+    if (!StandardTooltipClass || !ClassDataAsset || !HoveredBorder) return;
+
     APlayerController* PC = GetOwningPlayer();
     if (!PC) return;
+    ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
+    if (!RPC) return;
+    ARelicRunnersPlayerState* RPS = Cast<ARelicRunnersPlayerState>(RPC->PlayerState);
+    if (!RPS) return;
+
+    FClassData* Info = nullptr;
+    if (RPS->SelectedClass != "None") Info = &ClassDataAsset->Classes[RPS->SelectedClass];
 
     if (!StandardTooltip)
     {
@@ -574,6 +592,8 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     FString StatKey = "";
     int RawValue = 0;
+    FString AbilityName;
+    FString AbilityDesc;
 
     URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
 
@@ -586,8 +606,16 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_Mana)           { StatKey = "Mana";         RawValue = Stats.TotalResource; }
     else if (HoveredBorder == B_PlayerLevel)    { StatKey = "Level";        RawValue = Stats.PlayerLevel; }
     else if (HoveredBorder == B_Purity)         { StatKey = "Purity";       RawValue = Stats.TotalPotionEfficiency; }
-    else if (HoveredBorder == B_MetaLevel && GI->SelectedSaveSlot)      { StatKey = "MetaLevel";    RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
+    else if (HoveredBorder == B_MetaLevel)      { StatKey = "MetaLevel";    if(GI->SelectedSaveSlot) RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
+    else if (HoveredBorder == B_AbilityUpgrade) { StatKey = "AbilityUpgrade"; }
+    else if (HoveredBorder == B_HealthPotion) { StatKey = "HealthPotion"; }
+    else if (HoveredBorder == B_Ability1) { StatKey = "Ability1"; if (Info) AbilityName = Info->Ability1; if (Info) AbilityDesc = Info->Ability1Description1; }
+    else if (HoveredBorder == B_Ability2) { StatKey = "Ability2"; if (Info) AbilityName = Info->Ability2; if (Info) AbilityDesc = Info->Ability2Description1; }
+    else if (HoveredBorder == B_Ability3) { StatKey = "Ability3"; if (Info) AbilityName = Info->Ability3; if (Info) AbilityDesc = Info->Ability3Description1; }
+    else if (HoveredBorder == B_Ability4) { StatKey = "Ability4"; if (Info) AbilityName = Info->Ability4; if (Info) AbilityDesc = Info->Ability4Description1; }
 
+    FVector2D Offset(-5.0f, 5.0f);
+    FVector2D Anchor(1.f, 0.f);
     FTooltipData TD;
     if (HoveredBorder == B_Mana)
     {
@@ -599,6 +627,27 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
         {
             TD = ItemStats::GetStatTooltipData(StatKey, RawValue, GI->SelectedSaveSlot->SaveData.MetaStartingLevel, 0, "", "");
         }
+        else
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, "", "");
+        }
+    }
+    else if (HoveredBorder == B_MetaLevel)
+    {
+        if (GI->SelectedSaveSlot)
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, "", "");
+        }
+        else
+        {
+            TD = ItemStats::GetStatTooltipData(StatKey, 0, 0, 0, "", "");
+        }
+    }
+    else if (HoveredBorder == B_Ability1 || HoveredBorder == B_Ability2 || HoveredBorder == B_Ability3 || HoveredBorder == B_Ability4 || HoveredBorder == B_AbilityUpgrade || HoveredBorder == B_HealthPotion)
+    {
+        Offset = FVector2D(0, -50.0f);
+        Anchor = FVector2D(0.5f, 1);
+        TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
     }
     else
     {
@@ -607,11 +656,8 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
 
     FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
 
-    const FVector2D Offset(-5.0f, 5.0f);
-    const FVector2D Anchor(1.f, 0.f);
-
     StandardTooltip->SetAnchor(Anchor);
-    StandardTooltip->SetIcon(TD.Icon, TD.IconColor);
+    StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
     StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }

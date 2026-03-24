@@ -20,7 +20,12 @@ public:
 	ANewCapturableFlag();
 
 	virtual void Interact_Implementation(class ARelicRunnersCharacter* Char) override;
+	virtual void ShowTooltip_Implementation(bool bShow) override;
 
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* TooltipWidgetComponent;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> TooltipWidgetClass;
 	UFUNCTION(Server, Reliable)
 	void Server_HandleInteracted(class ARelicRunnersCharacter* Character);
 
@@ -37,9 +42,10 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayFlagAnimation();
-
+	virtual void BeginPlay() override;
+	void InitializeTooltipWidget();
 private:
-
+	virtual void Tick(float DeltaTime) override;
 	UPROPERTY(ReplicatedUsing = OnActiveChange)
 	bool isActive = false;
 };
