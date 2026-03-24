@@ -636,11 +636,17 @@ void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags)
 
 void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 {
+	int TotalFlags = ObjectiveAmount;
+	int CapturedCount = TotalFlags - CurrentObjectives;
+
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Server_DecrementFlagObjective();
+			//Update the Server's local UI for this PC
+			TargetPC->Internal_SetFlagUI(CapturedCount);
+
+			TargetPC->Client_UpdateFlagUI(CapturedCount);
 		}
 	}
 }
@@ -1818,7 +1824,6 @@ void AIslandGenerationTest::IncrementObjective()
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
 		objectiveName = "Flags";
-		AddFlagObjectiveToAll(CurrentObjectives);
 		break;
 	case EIslandObjectiveType::MoveThePayload:
 		objectiveName = "Payload";

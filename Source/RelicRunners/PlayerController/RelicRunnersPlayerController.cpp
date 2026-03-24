@@ -976,7 +976,7 @@ void ARelicRunnersPlayerController::SetupObjectives()
 
 void ARelicRunnersPlayerController::Server_RequestCurrentObjective_Implementation()
 {
-	// Find the Spawner in the world
+	//Find the Spawner in the world
 	for (TActorIterator<AIslandSpawner> It(GetWorld()); It; ++It)
 	{
 		It->SyncObjectiveToSinglePlayer(this);
@@ -986,10 +986,43 @@ void ARelicRunnersPlayerController::Server_RequestCurrentObjective_Implementatio
 
 void ARelicRunnersPlayerController::UpdatePayloadObjective(float NewProgress)
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) {
-		UE_LOG(LogTemp, Warning, TEXT("Update failed: Missing Title or Log Widget!"));
-		return;
+	Internal_SetPayloadUI(NewProgress);
+
+	if (HasAuthority())
+	{
+		Client_UpdatePayloadUI(NewProgress);
 	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdatePayloadUI_Implementation(float NewProgress)
+{
+	Internal_SetPayloadUI(NewProgress);
+}
+
+void ARelicRunnersPlayerController::Client_UpdatePandoraUI_Implementation(float NewPercent, const FString& NewTimeText)
+{
+	Internal_SetPandoraUI(NewPercent, NewTimeText);
+}
+
+void ARelicRunnersPlayerController::Internal_SetPandoraUI(float NewPercent, const FString& NewTimeText)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UPandoraData* PandoraGoal = Cast<UPandoraData>(SubObj))
+		{
+			PandoraGoal->Percent = NewPercent;
+			PandoraGoal->TimeRemainingText = NewTimeText;
+			ObjectiveLog->UpdateObjective(PandoraGoal);
+			return;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Internal_SetPayloadUI(float NewProgress)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
 	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
 	{
@@ -1000,7 +1033,6 @@ void ARelicRunnersPlayerController::UpdatePayloadObjective(float NewProgress)
 			return;
 		}
 	}
-	UE_LOG(LogTemp, Error, TEXT("Could not find PayloadData in SubObjectives!"));
 }
 
 void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
@@ -1113,16 +1145,45 @@ void ARelicRunnersPlayerController::AddObjectiveToBuffer(FPendingObjective NewOb
 
 		MARK_PROPERTY_DIRTY_FROM_NAME(ARelicRunnersPlayerController, ObjectiveBuffer, this);
 
-		UE_LOG(LogTemp, Warning, TEXT("SERVER: Added objective to PC: %s. Buffer Count: %d"), *GetName(), ObjectiveBuffer.Num());
-	}
-
-	if (IsLocalController())
-	{
-		OnRep_ObjectiveBuffer();
+		if (IsLocalController())
+		{
+			FlushObjectiveBuffer();
+		}
 	}
 }
 
 void ARelicRunnersPlayerController::Server_DecrementFlagObjective_Implementation()
+{
+	if (!ObjectiveStageTitle) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
+		{
+			int NewCapturedCount = 0;
+
+			if (!FlagGoal->Flag1Active) { FlagGoal->Flag1Active = true; NewCapturedCount = 1; }
+			else if (!FlagGoal->Flag2Active) { FlagGoal->Flag2Active = true; NewCapturedCount = 2; }
+			else if (!FlagGoal->Flag3Active) { FlagGoal->Flag3Active = true; NewCapturedCount = 3; }
+			else { NewCapturedCount = 3; } 
+
+			Internal_SetFlagUI(NewCapturedCount);
+
+			Client_UpdateFlagUI(NewCapturedCount);
+			return;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdateFlagUI_Implementation(int CapturedCount)
+{
+	FString RoleAuth = HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT");
+	UE_LOG(LogTemp, Warning, TEXT("[%s] RPC RECEIVED: Flags = %d"), *RoleAuth, CapturedCount);
+
+	Internal_SetFlagUI(CapturedCount);
+}
+
+void ARelicRunnersPlayerController::Internal_SetFlagUI(int CapturedCount)
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
@@ -1130,9 +1191,9 @@ void ARelicRunnersPlayerController::Server_DecrementFlagObjective_Implementation
 	{
 		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
 		{
-			if (!FlagGoal->Flag1Active) FlagGoal->Flag1Active = true;
-			else if (!FlagGoal->Flag2Active) FlagGoal->Flag2Active = true;
-			else if (!FlagGoal->Flag3Active) FlagGoal->Flag3Active = true;
+			FlagGoal->Flag1Active = (CapturedCount >= 1);
+			FlagGoal->Flag2Active = (CapturedCount >= 2);
+			FlagGoal->Flag3Active = (CapturedCount >= 3);
 
 			ObjectiveLog->UpdateObjective(FlagGoal);
 			return;

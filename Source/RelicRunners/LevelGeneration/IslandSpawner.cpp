@@ -147,9 +147,6 @@ void AIslandSpawner::BeginPlay()
 			}
 		}
 	}
-	
-	UpdateControllerStageUI(gameInstance->StageNumber);
-	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::OnRep_IslandArrayChange()
@@ -190,6 +187,13 @@ void AIslandSpawner::SyncObjectiveToSinglePlayer(ARelicRunnersPlayerController* 
 	}
 
 	TargetPC->AddObjectiveToBuffer(NewObjective);
+
+	URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (gameInstance)
+	{
+		UpdateControllerStageUI(gameInstance->StageNumber);
+		UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
+	}
 }
 
 void AIslandSpawner::GenerateNewIsland()

@@ -38,10 +38,10 @@ struct FPendingObjective {
 	GENERATED_BODY()
 
 		UPROPERTY()
-	int32 FlagCount = 0;
+	int FlagCount = 0;
 
 	UPROPERTY()
-	int32 EnemyCount = 0;
+	int EnemyCount = 0;
 
 	UPROPERTY()
 	float PandoraTime = 0.0f;
@@ -77,8 +77,8 @@ public:
 
 	enum class EObjectiveType { None, Flag, Payload, Enemies, Pandora };
 	struct FPendingObjective {
-		int32 FlagCount = 0;
-		int32 EnemyCount = 0;
+		int FlagCount = 0;
+		int EnemyCount = 0;
 		float PandoraTime = 0.0f;
 		EObjectiveType Type = EObjectiveType::None;
 	};
@@ -89,6 +89,8 @@ public:
 	TArray<FPendingObjective> ObjectiveBuffer;
 
 	void AddObjectiveToBuffer(FPendingObjective NewObjective);
+
+	void Internal_SetFlagUI(int CapturedCount);
 
 	UFUNCTION()
 	void OnRep_ObjectiveBuffer();
@@ -124,8 +126,26 @@ public:
 	void OnRep_LobbyPreview();
 	UFUNCTION(Client, Reliable)
 	void Client_RequestSaveStats();
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePayloadUI(float NewProgress);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateFlagUI(int FlagsCaptured);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePandoraUI(float NewPercent, const FString& NewTimeText);
+
+	//UFUNCTION(Client, Reliable)
+	//void Client_UpdateEnemiesUI(int EnemiesLeft);
+
+	void Internal_SetPandoraUI(float NewPercent, const FString& NewTimeText);
+
+	void Internal_SetPayloadUI(float NewProgress);
+
 	UFUNCTION()
 	void OnRep_PlayerPreview();
+
 	UFUNCTION(Server, Reliable)
 	void Server_SetSelectedClass(FName NewClass);
 	UFUNCTION(Server, Reliable)
