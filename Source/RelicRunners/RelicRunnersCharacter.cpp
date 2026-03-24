@@ -59,6 +59,7 @@
 #include "TimerManager.h"
 #include "RelicRunnersGameMode.h"
 #include "Engine/OverlapResult.h"
+#include "CustomDamageEvents.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -534,7 +535,10 @@ void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor,
 		FinalDamage *= CritDamageMultiplier;
 	}
 
-	UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this, nullptr);
+	FAttackDamageEvent DamageEvent(EAttackType::LIGHT_ATTACK, 500.f, 3000.f);
+
+	TargetActor->TakeDamage(FinalDamage, DamageEvent, InstigatorController, this);
+	//UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this);
 }
 
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const

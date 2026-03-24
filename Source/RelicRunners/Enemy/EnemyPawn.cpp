@@ -112,21 +112,16 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//if we are not dead check the damage events for stun
 	else
 	{
+		HitFlash();
+
 		if (DamageEvent.IsOfType(FAttackDamageEvent::ClassID))
 		{
-			FAttackDamageEvent* AttackDamageEvent = (FAttackDamageEvent*)&DamageEvent;
+			const FAttackDamageEvent* AttackDamageEvent = static_cast<const FAttackDamageEvent*>(&DamageEvent);
 			if (AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT))
 			{
-				//RemainingStunTime = AttackDamageEvent->StunDuration;
+				FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+				ApplyForceToEnemy(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
 			}
-		}
-
-		if (HasAuthority())
-		{
-			HitFlash();
-
-			FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-			ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
 		}
 	}
 
