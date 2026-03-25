@@ -6,6 +6,20 @@
 #include "ObjectiveBase.h"
 #include "NewPayloadObjective.generated.h"
 
+USTRUCT()
+struct FPayloadMoveData
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FVector Location;
+	UPROPERTY()
+	FRotator Rotation;
+
+	UPROPERTY()
+	float TimeStamp;
+};
+
 /**
  * 
  */
@@ -13,7 +27,7 @@ UCLASS()
 class RELICRUNNERS_API ANewPayloadObjective : public AObjectiveBase
 {
 	GENERATED_BODY()
-	
+
 public:
 	// Sets default values for this actor's properties
 	ANewPayloadObjective();
@@ -45,11 +59,11 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	
+
 	void Initialize(float maxSpeed, float acceleration, float deceleration, class USplineComponent* splinePath);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_Initialize(float newSpeed);
+	void Multicast_Initialize(float newSpeed, class USplineComponent* newSplinePath);
 
 	UFUNCTION()
 	void OnTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -60,8 +74,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_OnTriggerChange(AActor* OtherActor, bool OnOverlapBegin);
 
-	UFUNCTION()
-	void OnRep_HasReachedDestination();
+	void ClientMovementInterpolation(float delta);
 
 	UPROPERTY(Replicated)
 	float Distance;
@@ -87,9 +100,33 @@ public:
 	UPROPERTY(Replicated)
 	float CompletionPercentage;
 
+	UFUNCTION()
+	void OnRep_HasReachedDestination();
+
 	UPROPERTY(ReplicatedUsing = OnRep_HasReachedDestination)
 	bool HasReachedDestination;
 
 	UPROPERTY(Replicated)
 	TArray<AActor*> CollidingActors;
+
+	UFUNCTION()
+	void OnRep_ServerPayloadMoveData();
+
+	UPROPERTY(ReplicatedUsing = OnRep_ServerPayloadMoveData)
+	FPayloadMoveData ServerMoveData;
+
+	UPROPERTY()
+	TArray<FPayloadMoveData> MoveDataBuffer;
+
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float InterpDelay;
+	//The max distance the client is allowed to be from the server location before it snaps to it. 
+	UPROPERTY(EditAnywhere, Category = "NetWorking Movement")
+	float MaxClientLocationDeviation;
+	UPROPERTY()
+	float AvgReplicationDelta;
+	UPROPERTY()
+	float TargetInterpDelay;
+
+
 };

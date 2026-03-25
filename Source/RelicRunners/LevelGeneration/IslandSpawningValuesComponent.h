@@ -99,11 +99,15 @@ struct FObstacleTypeValues
 	UPROPERTY(EditAnywhere)
 	uint8 BuildingObstacleMaxAmount;
 
+	uint8 RemainingBuildingObstacleAmount;
+
 	UPROPERTY(EditAnywhere)
 	FNormalObstacleValues BuildingObstacles;
 
 	UPROPERTY(EditAnywhere)
 	uint8 EnvironmentObstacleMaxAmount;
+
+	uint8 RemainingEnvironmentObstacleAmount;
 
 	UPROPERTY(EditAnywhere)
 	FNormalObstacleValues EnvironmentObstacles;

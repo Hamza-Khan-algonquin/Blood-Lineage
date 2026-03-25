@@ -42,6 +42,12 @@ enum class EIslandFloorObstacle : uint8
 	End,
 };
 
+UENUM(BlueprintType)
+enum class EObstacleType : uint8
+{
+	Building,
+	Environment
+};
 
 USTRUCT()
 struct FSIslandFloorValues
@@ -64,7 +70,16 @@ public:
 	uint8 randomFloorToSpawn = 0;
 
 	UPROPERTY()
+	uint8 randomBuildingObstacleToSpawn = 0;
+
+	UPROPERTY()
+	uint8 randomEnvironmentObstacleToSpawn = 0;
+
+	UPROPERTY()
 	int obstacleYaw = 0;
+
+	UPROPERTY()
+	EObstacleType ObstacleType = EObstacleType::Building;
 };
 
 UCLASS()

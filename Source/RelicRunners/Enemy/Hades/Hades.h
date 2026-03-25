@@ -112,6 +112,13 @@ public:
     float ReplicatedVortexForce;
     UFUNCTION()
     void OnRep_VortexForce();
+
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<class UCameraShakeBase> SlamCameraShake;
+
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<class UCameraShakeBase> SpinCameraShake;
+
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;

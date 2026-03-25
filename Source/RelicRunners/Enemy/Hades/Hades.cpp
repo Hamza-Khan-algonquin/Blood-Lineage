@@ -328,6 +328,10 @@ void AHades::PlaySlam()
             StrongSelf->bIsBusy = false;
             StrongSelf->bIsLookingAtAbilityTarget = false;
             StrongSelf->ScheduleNextAttack(2.0f);
+
+            if (StrongSelf->SlamCameraShake)
+                StrongSelf->GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(StrongSelf->GetWorld(), StrongSelf->SlamCameraShake, StrongSelf->GetActorLocation(), 10000.0f, 10000.0f, 1.0f);
+
         }
         }, Delay, false);
 }
@@ -427,6 +431,9 @@ void AHades::PlaySweep()
         SweepElapsedTime = 0.0f;
         SweepRotationCount = FMath::RandRange(1, (int)CurrentPhase + 2);
         SweepTotalTime = SweepDuration + ((SweepDuration / 1.5f) * (SweepRotationCount - 1));
+
+        if (SpinCameraShake)
+            GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(GetWorld(), SpinCameraShake, GetActorLocation(), 10000.0f, 10000.0f, 1.0f);
 
         if (SweepPredictionClass)
         {
