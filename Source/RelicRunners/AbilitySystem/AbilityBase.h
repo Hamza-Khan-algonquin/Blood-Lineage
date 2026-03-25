@@ -42,6 +42,7 @@ public:
 
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
+    virtual void OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 
     void PlayAbilityCastSound(const FGameplayAbilityActorInfo* ActorInfo) const;
 
@@ -88,8 +89,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Cooldown")
     float CooldownDuration = 0;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Cost")
-    int Cost = 0;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
+    float Cost = 0;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
     TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;

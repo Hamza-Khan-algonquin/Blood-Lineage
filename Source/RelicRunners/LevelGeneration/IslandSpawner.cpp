@@ -59,7 +59,7 @@ void AIslandSpawner::BeginPlay()
 			if (gameInstance)
 			{
 				gameInstance->StageNumber += 1;
-				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Server Stage Number: %i"), gameInstance->StageNumber));
+				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Server Stage Number: %i"), gameInstance->StageNumber));
 			}
 
 			for (int i = 0; i < NumIslands; i++)

@@ -28,7 +28,18 @@ public:
 	void AddStock(const struct FItemData& ItemData);
 
 	void RemoveStock(const struct FItemData& ItemData);
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* TooltipWidgetComponent;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> TooltipWidgetClass;
 
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* NameWidgetComponent;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> NameWidgetClass;
+
+	void InitializeTooltipWidget();
 	// IInteractInterface
 	virtual void Interact_Implementation(ARelicRunnersCharacter* Char) override;
 	virtual FItemData GetItemData_Implementation() override;
@@ -40,7 +51,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	void GenerateStock();
-
+	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// Generated stock

@@ -2,6 +2,7 @@
 #include "Net/UnrealNetwork.h"
 #include <Kismet/GameplayStatics.h>
 #include "Engine/OverlapResult.h"
+#include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 
 AHadesSweepPrediction::AHadesSweepPrediction()
 {
@@ -34,7 +35,7 @@ void AHadesSweepPrediction::Tick(float DeltaTime)
 
         if (AActor* Boss = GetOwner())
         {
-            FVector BossLoc = FVector(0,0,0);
+            FVector BossLoc = FVector(0, 0, 0);
             FVector Offset = NewRotation.Vector() * 3450.0f;
             FVector FinalPos = BossLoc + Offset;
             FinalPos.Z = BossLoc.Z + 20.0f;
@@ -52,17 +53,42 @@ void AHadesSweepPrediction::Tick(float DeltaTime)
 
                 if (GetWorld()->OverlapMultiByChannel(Overlaps, GetActorLocation(), GetActorRotation().Quaternion(), ECC_Pawn, Box, Params))
                 {
+                    float CurrentTime = GetWorld()->GetTimeSeconds();
+
                     for (auto& Overlap : Overlaps)
                     {
                         if (AActor* HitActor = Overlap.GetActor())
                         {
-                            UGameplayStatics::ApplyDamage(HitActor, 5.0f, nullptr, Boss, UDamageType::StaticClass());
+                            if (!HitCooldownMap.Contains(HitActor) || CurrentTime >= HitCooldownMap[HitActor])
+                            {
+                                float FinalDamage = 25.0f; //Fallback of flat dmg
+
+                                if (APawn* PlayerPawn = Cast<APawn>(HitActor))
+                                {
+                                    if (ARelicRunnersPlayerState* PS = PlayerPawn->GetPlayerState<ARelicRunnersPlayerState>())
+                                    {
+                                        //Calculate 20% of Max Health + 1% per elapsed second
+                                        float BasePercent = PS->PlayerMaxHealth * 0.20f;
+                                        float ScalingPercent = PS->PlayerMaxHealth * (ElapsedTime * 0.01f);
+
+                                        FinalDamage = BasePercent + ScalingPercent;
+                                    }
+                                }
+
+                                UGameplayStatics::ApplyDamage(HitActor, FinalDamage, nullptr, Boss, UDamageType::StaticClass());
+
+                                HitCooldownMap.Emplace(HitActor, CurrentTime + 1.0f);
+                            }
                         }
                     }
                 }
             }
         }
 
-        if (Alpha >= 1.0f) bIsRotating = false;
+        if (Alpha >= 1.0f)
+        {
+            bIsRotating = false;
+            HitCooldownMap.Empty();
+        }
     }
 }

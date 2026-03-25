@@ -522,6 +522,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     RPC->CleanUI();
 
     bIsMatchLocked = true;
+    StageNumber = 0;
 
     World->ServerTravel(TravelURL, true);
 }

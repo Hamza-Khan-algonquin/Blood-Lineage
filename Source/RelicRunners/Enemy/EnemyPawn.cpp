@@ -71,6 +71,8 @@ AEnemyPawn::AEnemyPawn()
 	bAlwaysRelevant = false;
 	SetNetCullDistanceSquared(FMath::Square(LODComponent->GetDistanceLOD(LODComponent->GetNumberOfLODs() - 1)));
 
+	CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
+
 	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
@@ -95,8 +97,6 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	{
 		return 0;
 	}
-
-	
 	
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -214,17 +214,28 @@ void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
 {
 	EndHitFlash();
 
-	if (IsValid(DeathEffect) && IsValid(this))
+	if (IsValid(DeathEffect))
 	{
-		if (GetActorLocation().ContainsNaN() || GetActorRotation().ContainsNaN() || !GetActorScale().ContainsNaN())
+		if (GetActorLocation().ContainsNaN() ||
+			GetActorRotation().ContainsNaN() ||
+			GetActorScale().ContainsNaN())
 		{
 			UE_LOG(LogTemp, Error, TEXT("Invalid transform for Niagara spawn"));
 			return;
 		}
 
-		UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathEffect, GetActorLocation(), GetActorRotation(), GetActorScale());
+		UNiagaraComponent* deathEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			DeathEffect,
+			GetActorLocation(),
+			GetActorRotation(),
+			GetActorScale()
+		);
 
-		deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
+		//if (deathEffect)
+		//{
+		//	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
+		//}
 	}
 }
 
@@ -370,32 +381,25 @@ void AEnemyPawn::SpawnItem(int Luck)
 		FActorSpawnParameters Params;
 		Params.Owner = this;
 		Params.Instigator = this;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
+		//Use Deferred Spawning
+		AItemActor* Dropped = GetWorld()->SpawnActorDeferred<AItemActor>(
+			ItemActorClass,
+			FTransform(FRotator::ZeroRotator, FinalLoc),
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+		);
 
 		if (Dropped)
 		{
+			//This ensures Auto-Loot can't trigger until the data is valid!
+			Dropped->ItemData = DroppedItem->ItemData;
 			Dropped->Initialize(DroppedItem->ItemData);
+			Dropped->FinishSpawning(FTransform(FRotator::ZeroRotator, FinalLoc));
 			Dropped->SetReplicates(true);
 			Dropped->SetReplicateMovement(true);
 		}
-
-		/*FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
-		FVector FinalLoc = CalculateValidDropLocation(SpawnLoc);
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-		Params.Instigator = this;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-		AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLoc, FRotator::ZeroRotator, Params);
-		if (Dropped)
-		{
-			Dropped->Initialize(Data);
-			Dropped->SetReplicates(true);
-			Dropped->SetReplicateMovement(true);
-		}*/
 	}
 }
 
@@ -404,11 +408,7 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 	CapsuleComponent->SetSimulatePhysics(true);
 	CapsuleComponent->AddImpulse(forces, NAME_None, true);
 	CapsuleComponent->SetNotifyRigidBodyCollision(true);
-	if (!CapsuleComponent->OnComponentHit.Contains(this, FName(TEXT("GroundCheck"))))
-	{
-		CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
-	}
-	
+
 	MovementComponent->IsKnockedBack = true;
 }
 
@@ -431,7 +431,6 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 		MovementComponent->IsKnockedBack = false;
 		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 		CapsuleComponent->SetSimulatePhysics(false);
-		CapsuleComponent->OnComponentHit.RemoveDynamic(this, &AEnemyPawn::GroundCheck);
 		CapsuleComponent->SetNotifyRigidBodyCollision(false);
 	}
 }

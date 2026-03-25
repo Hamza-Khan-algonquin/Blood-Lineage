@@ -25,7 +25,6 @@ AAresCharacter::AAresCharacter()
 void AAresCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called when player takes control of this character
@@ -54,7 +53,12 @@ void AAresCharacter::PossessedBy(AController* NewController)
 		GiveRageofTheGods();
 	}
 
+	AbilityClass_1 = BP_EarthquakeClass;
+	AbilityClass_2 = BP_GuardClass;
+	AbilityClass_3 = BP_WarBannerClass;
+	AbilityClass_4 = BP_RageOfTheGodsClass;
 
+	InitializeAbilityCosts();
 }
 
 // Called when PlayerState is replicated on clients
@@ -199,6 +203,7 @@ void AAresCharacter::PerformSwingTrace()
 			}
 		}
 	}
+	DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
 }
 
 void AAresCharacter::BasicAttack()

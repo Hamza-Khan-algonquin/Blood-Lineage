@@ -20,7 +20,6 @@ UPiercingArrow::UPiercingArrow()
 
     Duration = 10.f;    
     CooldownTimer = 10.f;
-    Cost = 30;
     LastUseTime = -100.f;
     AreaRadius = 600.f;
 
@@ -62,26 +61,6 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
-    {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
-
-    if (!PS || PS->GetPlayerResource() < Cost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
-
-
 
     // Initial projectile setup
     ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
