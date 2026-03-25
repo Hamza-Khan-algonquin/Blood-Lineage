@@ -20,6 +20,7 @@ To do:
 
 class ARelicRunnersCharacter;
 class ARecastNavMesh;
+class AEnemyCharacter;
 
 
 
@@ -34,6 +35,9 @@ class RELICRUNNERS_API ADirector : public AActor
 public:
 	FOnPlayerAdd OnPlayerAdd;
 	FOnPlayerRemoved OnPlayerRemoved;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy In Scene", meta = (AllowPrivateAccess = "true", ToolTip = "The enemy characters currently in the scene"))
+	TArray<TObjectPtr<AEnemyCharacter>> EnemyCharactersInWorld;
 
 protected:
 	static TWeakObjectPtr<ADirector> Instance;
@@ -61,6 +65,7 @@ protected:
 	//The enemies currently in the scene
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy In Scene", meta = (AllowPrivateAccess = "true", ToolTip = "The enemies currently in the scene"))
 	TArray<APawn*> EnemiesInWorld;
+	
 	
 	//NavNodeRef is just a uint64 so I use that instead of a FNavNodeRef to avoid a include
 	TMap<uint64, FVector> FlowField;

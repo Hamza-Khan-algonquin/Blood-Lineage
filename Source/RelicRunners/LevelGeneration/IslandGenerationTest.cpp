@@ -253,7 +253,7 @@ void AIslandGenerationTest::ActivateIsland()
 	float tileScale = GenerationValuesComponent->IslandValues.TileScale;
 	FVector enemyZoneOffset = FVector((tileScale * IslandWidth * 4) / 2, (tileScale * (IslandDepth) * 4) / 2, 0.0f);
 
-	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset + GetActorLocation() + FVector(0,0,10000), GetActorRotation());
+	ASpawnZone* spawnZone = GetWorld()->SpawnActor<ASpawnZone>(SpawnZoneTemplate, enemyZoneOffset + GetActorLocation(), GetActorRotation());
 }
 
 void AIslandGenerationTest::SetIslandVisibility(bool visible)
