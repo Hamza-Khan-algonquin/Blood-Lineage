@@ -120,6 +120,7 @@ protected:
 
     void ExecuteAttack();
     void SpawnBridge();
+    void SpawnBlocking();
     void CinematicSlam();
     void ScheduleNextAttack(float Delay);
     void ScheduleCinematicSlam(float Delay);
@@ -148,6 +149,12 @@ protected:
 
     UPROPERTY(BlueprintReadOnly, Category = "Boss Mechanics")
     AActor* BridgeToDestroy;
+
+    UPROPERTY(EditAnywhere, Category = "Boss Mechanics")
+    TSubclassOf<AActor> BlockingClass;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Boss Mechanics")
+    AActor* BlockingToSpawn;
 
     UPROPERTY(Replicated)
     FVector AbilityLookAtTarget;

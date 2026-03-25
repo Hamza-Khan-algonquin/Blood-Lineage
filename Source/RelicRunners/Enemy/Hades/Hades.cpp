@@ -241,6 +241,24 @@ void AHades::SpawnBridge()
     }
 }
 
+void AHades::SpawnBlocking()
+{
+    FVector TargetLocation(-105.332073, 289.663201, 0);
+    FRotator TargetRotation = FRotator::ZeroRotator;
+
+    if (BlockingClass)
+    {
+        FActorSpawnParameters Params;
+        Params.Owner = this;
+        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+        BlockingToSpawn = GetWorld()->SpawnActor<AActor>(BlockingClass, TargetLocation, TargetRotation, Params);
+        BlockingToSpawn->SetReplicates(true);
+
+        UE_LOG(LogTemp, Log, TEXT("Hades: Blocking spawned"));
+    }
+}
+
 void AHades::CinematicSlam()
 {
     if (!HasAuthority()) return;
@@ -286,6 +304,7 @@ void AHades::CinematicSlam()
                 StrongSelf->BridgeToDestroy->Destroy();
                 StrongSelf->BridgeToDestroy = nullptr;
             }
+            StrongSelf->SpawnBlocking();
         }
         }, Delay, false);
 }
