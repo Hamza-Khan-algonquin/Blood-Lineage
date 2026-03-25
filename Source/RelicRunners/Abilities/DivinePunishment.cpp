@@ -15,19 +15,13 @@ UDivinePunishment::UDivinePunishment()
 	Duration = 5.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 10.f;
-	Damage = 100.f;
+	Damage = 300.f;
     AreaRadius = 500.f;
 }
 
 void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
 
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
@@ -36,16 +30,11 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
 
     }
+
     UWorld* World = GetWorld();
     if (!World) return;
 
     if (World->GetTimeSeconds() - LastUseTime < CooldownTimer)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
@@ -85,12 +74,9 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         }
     }
 
-    if (ACharacter* Char = Cast<ACharacter>(ActorInfo->AvatarActor.Get()))
+    if (APlayerController* PC = Cast<APlayerController>(AvatarActor->GetInstigatorController()))
     {
-        if (UCharacterMovementComponent* MoveComp = Char->GetCharacterMovement())
-        {
-            MoveComp->DisableMovement();
-        }
+        PC->DisableInput(PC);
     }
 
     LastUseTime = World->GetTimeSeconds();
@@ -184,12 +170,9 @@ void UDivinePunishment::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
-        if (ACharacter* Char = Cast<ACharacter>(ActorInfo->AvatarActor.Get()))
+        if (APlayerController* PC = Cast<APlayerController>(ActorInfo->AvatarActor->GetInstigatorController()))
         {
-            if (UCharacterMovementComponent* MoveComp = Char->GetCharacterMovement())
-            {
-                MoveComp->SetMovementMode(MOVE_Walking);
-            }
+            PC->EnableInput(PC);
         }
 
         ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());

@@ -184,7 +184,7 @@ void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 
 	if (MapName.Contains("Lobby"))
 	{
-		SetupLobbyView();
+		
 	}
 }
 

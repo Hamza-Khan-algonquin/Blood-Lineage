@@ -196,6 +196,41 @@ void ARelicRunnersPlayerState::Multicast_SpawnVFX_Implementation(FVector Locatio
 	}
 }
 
+void ARelicRunnersPlayerState::Multicast_SpawnStaticMesh_Implementation(FVector Location,FRotator Rotation,FVector Scale,UStaticMesh* Mesh)
+{
+	if (!Mesh) return;
+
+	AActor* OwnerActor = GetPawn();
+	if (!OwnerActor) return;
+
+	UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>(OwnerActor);
+	if (!MeshComp) return;
+
+	MeshComp->SetStaticMesh(Mesh);
+	MeshComp->SetWorldLocation(Location);
+	MeshComp->SetWorldRotation(Rotation);
+	MeshComp->SetWorldScale3D(Scale);
+
+	MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	MeshComp->RegisterComponent();
+
+	SpawnedStaticMeshes.Add(MeshComp);
+}
+
+void ARelicRunnersPlayerState::Multicast_DestroyAllStaticMeshes_Implementation()
+{
+	for (UStaticMeshComponent* MeshComp : SpawnedStaticMeshes)
+	{
+		if (MeshComp)
+		{
+			MeshComp->DestroyComponent();
+		}
+	}
+
+	SpawnedStaticMeshes.Empty();
+}
+
 bool ARelicRunnersPlayerState::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
