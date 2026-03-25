@@ -16,6 +16,7 @@
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include <RelicRunners/RelicRunnersGameState.h>
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include <RelicRunners/RelicRunnersGameMode.h>
 
 AHades::AHades()
 {
@@ -265,8 +266,6 @@ void AHades::CinematicSlam()
 
     if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
 
-    MulticastPlayAttackMontage(SlamMontage, 0.25f, 0);
-
     LastAttack = "Slam";
     bIsBusy = true;
 
@@ -276,6 +275,14 @@ void AHades::CinematicSlam()
     LockRotationTo(SlamLoc, true);
 
     float Delay = 8;
+    float DelayForCharge = Delay - 1.0f;
+    float PlayRate = 1.0f / FMath::Max(DelayForCharge, 0.01f);
+    MulticastPlayAttackMontage(SlamChargeMontage, PlayRate, 0);
+    FTimerHandle NextPhaseTimer;
+    GetWorld()->GetTimerManager().SetTimer(NextPhaseTimer, this, &AHades::OnChargeFinished,
+        DelayForCharge - 0.3f,
+        false
+    );
 
     AHadesSlamPrediction* Pred = GetWorld()->SpawnActor<AHadesSlamPrediction>(SlamPredictionClass, SlamLoc, FRotator::ZeroRotator);
     if (Pred)
@@ -314,13 +321,16 @@ void AHades::MulticastOnBridgeDestroyed_Implementation(FVector Location)
     UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BridgeCrumbleFX, Location);
 }
 
+void AHades::OnChargeFinished()
+{
+    MulticastPlayAttackMontage(SlamMontage, 0.3f, 0);
+}
+
 void AHades::PlaySlam()
 {
     if (!HasAuthority()) return;
 
     if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
-
-    MulticastPlayAttackMontage(SlamMontage, 0.25f, 0);
 
     FVector Origin = FVector::ZeroVector;
     FVector Dir = (CurrentTarget->GetActorLocation() - Origin).GetSafeNormal2D();
@@ -328,6 +338,15 @@ void AHades::PlaySlam()
     SlamLoc.Z = 20.0f;
 
     float Delay = 5.0f - (0.2f * (int)CurrentPhase);
+    float DelayForCharge = Delay - 1.0f;
+    float PlayRate = 1.0f / FMath::Max(DelayForCharge, 0.01f);
+    MulticastPlayAttackMontage(SlamChargeMontage, PlayRate, 0);
+    FTimerHandle NextPhaseTimer;
+    GetWorld()->GetTimerManager().SetTimer(NextPhaseTimer, this, &AHades::OnChargeFinished,
+        DelayForCharge - 0.3f,
+        false                               
+    );
+
     LockRotationTo(SlamLoc, true);
 
     AHadesSlamPrediction* Pred = GetWorld()->SpawnActor<AHadesSlamPrediction>(SlamPredictionClass, SlamLoc, FRotator::ZeroRotator);
@@ -717,6 +736,23 @@ void AHades::Die()
     }
 
     Destroy();
+
+    //Send players to mainmenu after win
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(It->Get());
+
+        if (IsValid(RPC) && IsValid(RPC->GetPawn()))
+        {
+            RPC->CleanUI();
+            RPC->ChangeState(NAME_Spectating);
+            RPC->Client_RequestSaveStats();
+        }
+    }
+    if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+    {
+        GM->TriggerPostGameForAll();
+    }
 }
 
 void AHades::CheckPhaseTransition()

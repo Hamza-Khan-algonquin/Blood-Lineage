@@ -37,6 +37,9 @@ public:
     class UAnimMontage* IdleMontage;
 
     UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* SlamChargeMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animations")
     class UAnimMontage* SlamMontage;
 
     UPROPERTY(EditAnywhere, Category = "Animations")
@@ -127,6 +130,7 @@ protected:
     void ResetAllStates(); 
     void CheckPhaseTransition();
     void SelectRandomTarget();
+    void OnChargeFinished();
     void PlaySlam();
     void PlayFireball();
     void PlaySweep();
