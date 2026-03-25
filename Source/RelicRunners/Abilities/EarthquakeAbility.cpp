@@ -16,7 +16,7 @@ UEarthquakeAbility::UEarthquakeAbility()
     ConeAngle = 90.f;
     LastUseTime = -100.f;
     CooldownTimer = 5.0f;
-	Damage = 100.f;
+	Damage = 250.f;
 }
 
 void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -44,15 +44,47 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    if (ActorInfo->IsLocallyControlled())
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
 
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+            if (PC)
+            {
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [this, PC]()
+                    {
+                        if (PC)
+                        {
+                            PC->EnableInput(PC);
+                        }
+
+                        ApplyDamageAndStun();
+
+                    },
+                    AnimDuration,
+                    false
+                );
+
+                
+            }
+        }
+
+    }
     LastUseTime = World->GetTimeSeconds();
 
-    ApplyDamageAndStun();
 
     World->GetTimerManager().SetTimer(CooldownTimerHandle,[this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, true, false);}, Duration, false );
 }

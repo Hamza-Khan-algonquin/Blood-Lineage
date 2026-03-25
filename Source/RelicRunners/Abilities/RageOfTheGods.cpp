@@ -12,7 +12,7 @@ URageOfTheGods::URageOfTheGods()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Damage = 100.f;
+    Damage = 300.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -59,15 +59,42 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
-    if (AbilityAnim)
+    if (ActorInfo->IsLocallyControlled())
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
+
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+            if (PC)
+            {
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [PC]()
+                    {
+                        PC->EnableInput(PC);
+                    },
+                    AnimDuration,
+                    false
+                );
+            }
+        }
     }
 
     if (ActorInfo->AvatarActor->HasAuthority())
     {
         PS->Multicast_SpawnVFX(FVector(0, 0, 0), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
     }
+
 
     ACharacter* Character = Cast<ACharacter>(AvatarActor);
     if (Character)

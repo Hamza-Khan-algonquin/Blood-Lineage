@@ -35,11 +35,6 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
 
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
@@ -52,12 +47,6 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
     if (!World) return;
 
     if (World->GetTimeSeconds() - LastUseTime < CooldownTimer)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;

@@ -310,6 +310,14 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SpawnVFX(FVector Location, FRotator Rotation, FVector Scale, UNiagaraSystem* NiagaraAsset, bool IsAttached);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnStaticMesh(FVector Location, FRotator Rotation, FVector Scale, UStaticMesh* Mesh);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_DestroyAllStaticMeshes();
+
+	UPROPERTY()
+	TArray<UStaticMeshComponent*> SpawnedStaticMeshes;
 protected:
 
 
@@ -319,6 +327,7 @@ protected:
 	virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void CopyProperties(APlayerState* PlayerState) override;
+
 	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, struct FReplicationFlags* RepFlags) override;
 
     //Properties
