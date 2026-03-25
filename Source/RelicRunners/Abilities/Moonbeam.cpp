@@ -124,6 +124,9 @@ void UMoonbeam::BeamTick()
 
 void UMoonbeam::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,bool bReplicateEndAbility,bool bWasCancelled)
 {
+    if (!ActorInfo->AvatarActor.IsValid())
+        return;
+
     UWorld* World = ActorInfo->AvatarActor->GetWorld();
     if (World && !bWasCancelled)
     {       
