@@ -63,7 +63,7 @@ void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 		return;
 	}
 
-	if (MovementMode != EBoidMovementMode::Disabled)
+	if (!IsKnockedBack && MovementMode != EBoidMovementMode::Disabled)
 	{
 		MoveInDirection(delta);
 		UpdateRotation();

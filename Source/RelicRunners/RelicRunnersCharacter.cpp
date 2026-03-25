@@ -535,7 +535,7 @@ void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor,
 		FinalDamage *= CritDamageMultiplier;
 	}
 
-	FAttackDamageEvent DamageEvent(EAttackType::LIGHT_ATTACK, 500.f, 3000.f);
+	FAttackDamageEvent DamageEvent(EAttackType::LIGHT_ATTACK, 500.f, 500.f);
 
 	TargetActor->TakeDamage(FinalDamage, DamageEvent, InstigatorController, this);
 	//UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this);
