@@ -25,8 +25,6 @@ AAphroditeCharacter::AAphroditeCharacter()
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
     ProjectileDamage = 40.0f;
-
-
 }
 
 void AAphroditeCharacter::BeginPlay()

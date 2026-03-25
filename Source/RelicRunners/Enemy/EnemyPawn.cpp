@@ -62,6 +62,8 @@ AEnemyPawn::AEnemyPawn()
 	EnemyStatsComponent->SetMaxHealth(100.f);
 	EnemyStatsComponent->SetCurrentHealth(100.f);
 
+	HitFlashTimeline.SetLooping(false);
+
 	bReplicates = true;
 	SetReplicateMovement(false);
 
@@ -112,21 +114,16 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//if we are not dead check the damage events for stun
 	else
 	{
+		HitFlash();
+
 		if (DamageEvent.IsOfType(FAttackDamageEvent::ClassID))
 		{
-			FAttackDamageEvent* AttackDamageEvent = (FAttackDamageEvent*)&DamageEvent;
+			const FAttackDamageEvent* AttackDamageEvent = static_cast<const FAttackDamageEvent*>(&DamageEvent);
 			if (AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT))
 			{
-				//RemainingStunTime = AttackDamageEvent->StunDuration;
+				FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+				KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
 			}
-		}
-
-		if (HasAuthority())
-		{
-			HitFlash();
-
-			FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-			ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
 		}
 	}
 
@@ -316,7 +313,6 @@ void AEnemyPawn::AttackTick()
 		{
 			SetActorTickEnabled(false);
 		}
-		
 	}
 }
 
@@ -412,6 +408,11 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 	MovementComponent->IsKnockedBack = true;
 }
 
+void AEnemyPawn::KnockBack_Implementation(FVector forces)
+{
+	ApplyForceToEnemy(forces);
+}
+
 void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!MovementComponent || !CapsuleComponent || !OtherComp)
@@ -428,11 +429,21 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
-		MovementComponent->IsKnockedBack = false;
-		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-		CapsuleComponent->SetSimulatePhysics(false);
-		CapsuleComponent->SetNotifyRigidBodyCollision(false);
+		ResetKnockBackStuff();
 	}
+}
+
+void AEnemyPawn::ResetKnockBackStuff_Implementation()
+{
+	if (!MovementComponent || !CapsuleComponent)
+	{
+		return;
+	}
+
+	MovementComponent->IsKnockedBack = false;
+	CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	CapsuleComponent->SetSimulatePhysics(false);
+	CapsuleComponent->SetNotifyRigidBodyCollision(false);
 }
 
 
@@ -501,31 +512,34 @@ void AEnemyPawn::BeginPlay()
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
 	
+	
+	//get refernce to objects that we need to get the director
+	UWorld* World = GetWorld();
+	APawn* enemy = static_cast<APawn*>(this);
+
+	//call it next tick so their no problem with stuff not loaded in yet
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
+
+	IsAttacking = false;
+	SetActorTickEnabled(false);
+
+	if (HitFlashCurve)
+	{
+		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+		FOnTimelineFloat inProgressFunc;
+		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
+		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
+
+		//FOnTimelineEvent endFunc;
+		//endFunc.BindUFunction(this, FName("EndHitFlash"));
+		//HitFlashTimeline.SetTimelineFinishedFunc(endFunc);
+	}
+
+	
+
 	if (HasAuthority())
 	{
-		//get refernce to objects that we need to get the director
-		UWorld* World = GetWorld();
-		APawn* enemy = static_cast<APawn*>(this);
-
-		//call it next tick so their no problem with stuff not loaded in yet
-		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
-
-		IsAttacking = false;
-		SetActorTickEnabled(false);
-
-		if (HitFlashCurve)
-		{
-			HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-			FOnTimelineFloat inProgressFunc;
-			inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
-
-			HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
-
-			//putting this here for a future note of what do if I want to call something at the end
-			//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
-		}
-
 		MovementComponent->InitializeNavMeshPointer();
 	}
 }
