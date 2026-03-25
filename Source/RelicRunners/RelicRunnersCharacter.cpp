@@ -759,13 +759,23 @@ void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const F
 	Params.Instigator = this;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
-	if (Dropped)
-	{
-		Dropped->Initialize(Data);
-		Dropped->SetReplicates(true);
-		Dropped->SetReplicateMovement(true);
-	}
+	AItemActor* Dropped = GetWorld()->SpawnActorDeferred<AItemActor>(
+			ItemActorClass,
+			FTransform(FRotator::ZeroRotator, FinalLoc),
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+		);
+
+		if (Dropped)
+		{
+			//This ensures Auto-Loot can't trigger until the data is valid!
+			Dropped->ItemData = Data;
+			Dropped->Initialize(Data);
+			Dropped->FinishSpawning(FTransform(FRotator::ZeroRotator, FinalLoc));
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{

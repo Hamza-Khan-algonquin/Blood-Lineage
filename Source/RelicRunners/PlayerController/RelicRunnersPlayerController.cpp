@@ -1531,11 +1531,18 @@ void ARelicRunnersPlayerController::BeginPlay()
 	}
 	else
 	{
-		if (URelicRunnersGameInstance* GI = World->GetGameInstance<URelicRunnersGameInstance>())
+		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
 		{
 			if (GI->SelectedSaveSlot)
 			{
 				Server_InitializePlayerData(GI->SelectedSaveSlot->SaveData);
+			}
+			else
+			{
+				//Testing path: Send a default/empty struct
+				UE_LOG(LogTemp, Warning, TEXT("SelectedSaveSlot is NULL. Starting with default testing stats."));
+				FSaveData DefaultData;
+				Server_InitializePlayerData(DefaultData);
 			}
 		}
 	}

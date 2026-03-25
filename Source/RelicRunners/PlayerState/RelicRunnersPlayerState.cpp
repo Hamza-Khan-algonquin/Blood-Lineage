@@ -113,6 +113,7 @@ void ARelicRunnersPlayerState::BeginPlay()
 
 	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, PassiveResourceTime, true);
 }
+
 void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 {
 	Super::CopyProperties(PlayerState);
@@ -228,8 +229,8 @@ void ARelicRunnersPlayerState::InitializeMetaStats(FSaveData MetaData)
 	PlayerStartingDexterity = MetaData.MetaAgility * 3;
 	PlayerStartingIntelligence = MetaData.MetaIntelligence * 3;
 	PlayerStartingPotionEfficiency = MetaData.MetaPotionEfficiency * 5;
-	PlayerStartingResourceRegen = MetaData.MetaResourceRegen;
-	PlayerStartingLevel = FMath::Max(1, MetaData.MetaStartingLevel);
+	PlayerStartingResourceRegen = 5 + MetaData.MetaResourceRegen;
+	PlayerStartingLevel = 1 + MetaData.MetaStartingLevel;
 	PlayerLevel = PlayerStartingLevel;
 }
 
@@ -356,7 +357,6 @@ void ARelicRunnersPlayerState::PassiveResourceRegen()
 		UpdateRemoteHUDResource();
 	}
 }
-
 
 void ARelicRunnersPlayerState::Client_UpdateEquippedStats_Implementation(const FEquippedStatsSummary& NewStats)
 {
