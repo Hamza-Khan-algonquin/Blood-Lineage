@@ -134,6 +134,10 @@ void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeP
 	DOREPLIFETIME(ARelicRunnersPlayerController, PlayerPreviewInstance);
 	DOREPLIFETIME(ARelicRunnersPlayerController, LobbyPreviewInstance);
 	DOREPLIFETIME(ARelicRunnersPlayerController, ObjectiveBuffer);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility1);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility2);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility3);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility4);
 }
 
 void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
@@ -156,10 +160,9 @@ void ARelicRunnersPlayerController::Server_InitializePlayerData_Implementation(F
 {
 	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
 	{
-		PS->InitializeMetaStats(ClientMeta);
-
 		if (!PS->HasReceivedStarterItems)
 		{
+			PS->InitializeMetaStats(ClientMeta);
 			PS->GiveStarterItems();
 		}
 	}
@@ -328,14 +331,14 @@ void ARelicRunnersPlayerController::SyncUI()
 			UpdatePreviewWithEquippedItems();
 			UpdateCharacterVisuals();
 
-			Inventory->RefreshEquippedUI();
-			RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
-			RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
-			UpdateHUDAll();
-
 			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
 			UE_LOG(LogTemp, Warning, TEXT("Local Client Sync Complete: Actor spawned and Gear equipped."));
 		}
+
+		Inventory->RefreshEquippedUI();
+		RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
+		RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
+		UpdateHUDAll();
 	}
 }
 
@@ -530,6 +533,11 @@ void ARelicRunnersPlayerController::UpdateAllAbilityManaUI()
 	int Cost4 = GetCalculatedManaCost(BaseCostAbility4);
 
 	PlayerHUD->UpdateAbilityManaCosts(Cost1, Cost2, Cost3, Cost4);
+}
+
+void ARelicRunnersPlayerController::OnRep_AbilityCosts()
+{
+	UpdateAllAbilityManaUI();
 }
 
 int ARelicRunnersPlayerController::GetCalculatedManaCost(float BaseMana)

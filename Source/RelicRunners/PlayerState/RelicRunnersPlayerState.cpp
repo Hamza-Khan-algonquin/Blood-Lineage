@@ -311,8 +311,8 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	if (InventoryComponent->ClassInfo)
 	{
 		FClassData Stats = InventoryComponent->ClassInfo->GetStats(SelectedClass.ToString());
-
-		PlayerStartingMaxHealth += (Stats.Health - 100);
+		float BaseHealth = 100;
+		PlayerStartingMaxHealth += (Stats.Health - BaseHealth);
 		PlayerStartingArmor += Stats.Armor;
 		PlayerStartingDexterity += Stats.Dexterity;
 		PlayerStartingStrength += Stats.Strength;
@@ -988,6 +988,8 @@ void ARelicRunnersPlayerState::OnRep_StatsChanged()
 {
 	UpdateRemoteHUDHealth();
 	UpdateRemoteHUDResource();
+
+	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
 }
 
 void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

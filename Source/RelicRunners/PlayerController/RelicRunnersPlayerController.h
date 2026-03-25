@@ -116,6 +116,8 @@ public:
 	void UpdateCharacterVisuals();
 	void UpdateAllAbilityManaUI();
 	UFUNCTION()
+	void OnRep_AbilityCosts();
+	UFUNCTION()
 	void DisableInventoryUIFromTimer();
 	UFUNCTION()
 	void SyncUI();
@@ -278,9 +280,13 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_StartCinematicWalk(FVector TargetLocation);
 
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility1 = 0.f;
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility2 = 0.f;
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility3 = 0.f;
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility4 = 0.f;
 
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
