@@ -584,33 +584,6 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
         }
     }
 
-    if (const UWorld* World = GetWorld())
-    {
-        if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(World->GetGameInstance()))
-        {
-            //Meta
-            if (GI->SelectedSaveSlot) {
-                Summary.TotalLuck += GI->SelectedSaveSlot->SaveData.MetaLuck;
-                Summary.TotalHealth += GI->SelectedSaveSlot->SaveData.MetaHealth * 10;
-                Summary.TotalArmor += GI->SelectedSaveSlot->SaveData.MetaDefence * 3;
-                Summary.TotalStrength += GI->SelectedSaveSlot->SaveData.MetaStrength * 3;
-                Summary.TotalDexterity += GI->SelectedSaveSlot->SaveData.MetaAgility * 3;
-                Summary.TotalIntelligence += GI->SelectedSaveSlot->SaveData.MetaIntelligence * 3;
-                Summary.PlayerLevel += GI->SelectedSaveSlot->SaveData.MetaStartingLevel;
-                Summary.TotalPotionEfficiency += GI->SelectedSaveSlot->SaveData.MetaPotionEfficiency * 5;
-                Summary.TotalResourceRegen += GI->SelectedSaveSlot->SaveData.MetaResourceRegen;
-            }
-
-            //Difficulty
-            AGameStateBase* GameState = World->GetGameState();
-            if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
-            {
-                FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
-                Summary.TotalLuck += diffInfo.LuckAmount;
-            }
-        }
-    }
-
     //Mana increase by intelligence
     Summary.TotalResource += ItemStats::GetManaPoolIncrease(Summary.TotalIntelligence);
 

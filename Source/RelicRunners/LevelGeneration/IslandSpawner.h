@@ -21,7 +21,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GenerationValues")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
-
+	void SyncObjectiveToSinglePlayer(class ARelicRunnersPlayerController* TargetPC);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -31,6 +31,8 @@ protected:
 
 	UFUNCTION()
 	void OnRep_IslandArrayChange();
+
+
 
 	UPROPERTY(ReplicatedUsing = OnRep_IslandArrayChange)
 	TArray<class AIslandGenerationTest*> Islands;

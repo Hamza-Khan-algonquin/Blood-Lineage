@@ -626,18 +626,28 @@ void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddFlagObjective(NumFlags);
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Flag;
+			NewObjective.FlagCount = NumFlags;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
 
 void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 {
+	int TotalFlags = ObjectiveAmount;
+	int CapturedCount = TotalFlags - CurrentObjectives;
+
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_DecrementFlagObjective();
+			//Update the Server's local UI for this PC
+			TargetPC->Internal_SetFlagUI(CapturedCount);
+
+			TargetPC->Client_UpdateFlagUI(CapturedCount);
 		}
 	}
 }
@@ -648,7 +658,11 @@ void AIslandGenerationTest::AddEnemiesObjectiveToAll(int TotalEnemies)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddEnemiesObjective(TotalEnemies);
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Enemies;
+			NewObjective.EnemyCount = TotalEnemies;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
@@ -659,7 +673,11 @@ void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddPandoraObjective(Time);
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Pandora;
+			NewObjective.PandoraTime = Time;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
@@ -670,7 +688,10 @@ void AIslandGenerationTest::AddPayloadObjectiveToAll()
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddPayloadObjective();
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Payload;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
@@ -1878,7 +1899,6 @@ void AIslandGenerationTest::IncrementObjective()
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
 		objectiveName = "Flags";
-		AddFlagObjectiveToAll(CurrentObjectives);
 		break;
 	case EIslandObjectiveType::MoveThePayload:
 		objectiveName = "Payload";

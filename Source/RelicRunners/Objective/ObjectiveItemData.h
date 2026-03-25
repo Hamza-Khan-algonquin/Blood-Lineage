@@ -17,4 +17,10 @@ public:
     //This array is how the TreeView knows when a Title element has children
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
     TArray<UObjectiveItemData*> SubObjectives;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool Completed = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
+    class UTexture2D* CompletedImage;
 };

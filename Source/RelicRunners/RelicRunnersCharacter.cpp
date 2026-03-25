@@ -60,8 +60,8 @@
 #include "RelicRunnersGameMode.h"
 #include "Engine/OverlapResult.h"
 #include "CustomDamageEvents.h"
-
 #include "Camera/CameraShakeBase.h"
+#include "RelicRunners/RelicRunnersGameState.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -256,21 +256,37 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
-	if (RelicPlayerState) RelicPlayerState->DeathState = true; RelicPlayerState->PlayerDeaths++;
+	if (!HasAuthority()) return;
 
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC)
+	if (RelicPlayerState)
 	{
-		ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC);
-		if (RPC)
+		RelicPlayerState->DeathState = true;
+		RelicPlayerState->PlayerDeaths++;
+	}
+
+	ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(GetController());
+	if (RPC)
+	{
+		RPC->ChangeState(NAME_Spectating);
+		RPC->Client_RequestSaveStats();
+
+		if (RPC->IsLocalController())
 		{
 			RPC->CleanUI();
-			RPC->ChangeState(NAME_Spectating);
 			RPC->SpectatingUI();
-			RPC->Client_RequestSaveStats();
 		}
+	}
 
-		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+	if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+	{
+		ARelicRunnersGameState* GS = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
+
+		if (GS && GS->PlayerArray.Num() > 1)
+		{
+			FTimerHandle TimerHandle_GameOver;
+			GetWorldTimerManager().SetTimer(TimerHandle_GameOver, GM, &ARelicRunnersGameMode::CheckGameOver, 1.5f, false);
+		}
+		else
 		{
 			GM->CheckGameOver();
 		}
@@ -752,13 +768,23 @@ void ARelicRunnersCharacter::Server_SpawnDroppedItemWorld_Implementation(const F
 	Params.Instigator = this;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	AItemActor* Dropped = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, FinalLoc, FRotator::ZeroRotator, Params);
-	if (Dropped)
-	{
-		Dropped->Initialize(Data);
-		Dropped->SetReplicates(true);
-		Dropped->SetReplicateMovement(true);
-	}
+	AItemActor* Dropped = GetWorld()->SpawnActorDeferred<AItemActor>(
+			ItemActorClass,
+			FTransform(FRotator::ZeroRotator, FinalLoc),
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+		);
+
+		if (Dropped)
+		{
+			//This ensures Auto-Loot can't trigger until the data is valid!
+			Dropped->ItemData = Data;
+			Dropped->Initialize(Data);
+			Dropped->FinishSpawning(FTransform(FRotator::ZeroRotator, FinalLoc));
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -898,7 +924,8 @@ FString ARelicRunnersCharacter::GetMeshPathByItemType(const FString& ItemType)
 	bool IsWeapon = ItemType.Equals("Sword", ESearchCase::IgnoreCase) ||
 		ItemType.Equals("Bow", ESearchCase::IgnoreCase) ||
 		ItemType.Equals("Greatsword", ESearchCase::IgnoreCase) ||
-		ItemType.Equals("Staff", ESearchCase::IgnoreCase);
+		ItemType.Equals("Staff", ESearchCase::IgnoreCase) ||
+		ItemType.Equals("Shield", ESearchCase::IgnoreCase);
 
 	if (!IsWeapon)
 	{
