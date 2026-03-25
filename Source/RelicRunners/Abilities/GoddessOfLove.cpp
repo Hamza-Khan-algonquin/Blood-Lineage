@@ -28,11 +28,7 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+
 
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
@@ -50,15 +46,35 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    if (ActorInfo->IsLocallyControlled())
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
 
-    if (AbilityAnim)
-    {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+            if (PC)
+            {
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [PC]()
+                    {
+                        PC->EnableInput(PC);
+                    },
+                    AnimDuration,
+                    false
+                );
+            }
+        }
     }
 
     LastUseTime = World->GetTimeSeconds();

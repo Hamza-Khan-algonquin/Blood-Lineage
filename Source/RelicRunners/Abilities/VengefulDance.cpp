@@ -28,13 +28,6 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-
-    }
-
     float CurrentTime = GetWorld()->GetTimeSeconds();
     if (CurrentTime - LastUseTime < CooldownTimer)
     {
@@ -57,13 +50,6 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[VengefulDance] CommitAbility failed"));
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
     // Get PlayerState safely
     ARelicRunnersPlayerState* PS = nullptr;
     if (ActorInfo->PlayerController.IsValid())
@@ -71,10 +57,35 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
-    if (AbilityAnim)
+    if (ActorInfo->IsLocallyControlled())
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
 
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+            if (PC)
+            {
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [PC]()
+                    {
+                        PC->EnableInput(PC);
+                    },
+                    AnimDuration,
+                    false
+                );
+            }
+        }
     }
 
     AvatarActor->GetWorldTimerManager().SetTimer(DamageTickTimer, [this]() { ApplyRingDamage(); }, DamageInterval, true);

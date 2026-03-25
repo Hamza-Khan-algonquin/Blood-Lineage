@@ -18,13 +18,6 @@
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "CullingToggleInterface.h"
 
-/*TODO
-
-Make packed level actors with props ian made
-
-Add randomized props to modules 
-*/
-
 /* Maybe TODO
 
 Handle different difficulty
@@ -178,6 +171,7 @@ void AIslandGenerationTest::Generate()
 
 			Bridge = GetWorld()->SpawnActor<AIslandBridge>(GenerationValuesComponent->IslandStartEnd.BridgePackedActor, posOffset, FRotator::ZeroRotator);
 
+			Bridge->SetActorHiddenInGame(true);
 			Bridge->SetFinalBridge(isFinalIsland);
 			Bridge->OnFrontTrigger.AddDynamic(this, &AIslandGenerationTest::UpdateCameraPos);
 			Bridge->OnBackTrigger.AddDynamic(this, &AIslandGenerationTest::SetNextCameraPos);
@@ -244,6 +238,7 @@ void AIslandGenerationTest::ActivateIsland()
 	if (Bridge)
 	{
 		Bridge->Create();
+		Bridge->SetActorHiddenInGame(false);
 	}
 
 	CreateFloor();
@@ -481,6 +476,12 @@ void AIslandGenerationTest::InitializeModularObstacle(FSIslandFloorValues& floor
 		floorValue.randomFloorToSpawn = FMath::RandRange(0, GenerationValuesComponent->ObstacleValues.ObstacleActor.Num() - 1);
 
 		floorValue.obstacleYaw = FMath::RandRange(0, 3) * 90;
+
+		floorValue.ObstacleType = EObstacleType(FMath::RandRange(int(EObstacleType::Building), int(EObstacleType::Environment)));
+
+		floorValue.randomBuildingObstacleToSpawn = FMath::RandRange(0, GenerationValuesComponent->ObstacleTypeValues.BuildingObstacles.ObstacleActor.Num() - 1);
+		floorValue.randomEnvironmentObstacleToSpawn = FMath::RandRange(0, GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleActor.Num() - 1);
+
 	}
 	else
 	{
@@ -625,18 +626,28 @@ void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddFlagObjective(NumFlags);
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Flag;
+			NewObjective.FlagCount = NumFlags;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
 
 void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 {
+	int TotalFlags = ObjectiveAmount;
+	int CapturedCount = TotalFlags - CurrentObjectives;
+
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_DecrementFlagObjective();
+			//Update the Server's local UI for this PC
+			TargetPC->Internal_SetFlagUI(CapturedCount);
+
+			TargetPC->Client_UpdateFlagUI(CapturedCount);
 		}
 	}
 }
@@ -647,7 +658,11 @@ void AIslandGenerationTest::AddEnemiesObjectiveToAll(int TotalEnemies)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddEnemiesObjective(TotalEnemies);
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Enemies;
+			NewObjective.EnemyCount = TotalEnemies;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
@@ -658,7 +673,11 @@ void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddPandoraObjective(Time);
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Pandora;
+			NewObjective.PandoraTime = Time;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
@@ -669,7 +688,10 @@ void AIslandGenerationTest::AddPayloadObjectiveToAll()
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			TargetPC->Client_AddPayloadObjective();
+			ARelicRunnersPlayerController::FPendingObjective NewObjective;
+			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Payload;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
@@ -736,6 +758,7 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 					FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
 
 					payload->Initialize(val.PayloadSpeed, val.Acceleration, val.Deceleration, SplinePath);
+					payload->Multicast_Initialize(val.PayloadSpeed, SplinePath);
 					payload->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 					payload->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
 					payload->SetActorHiddenInGame(true);
@@ -1454,6 +1477,16 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	TArray<TSubclassOf<APackedLevelActor>> actorArray = GenerationValuesComponent->ObstacleValues.ObstacleActor;
 	TArray<TSubclassOf<APackedLevelActor>> vantageArray = GenerationValuesComponent->VantageValues.VantageActor;
 
+	TArray<TSubclassOf<APackedLevelActor>> buildingArray = GenerationValuesComponent->ObstacleTypeValues.BuildingObstacles.ObstacleActor;
+	TArray<TSubclassOf<APackedLevelActor>> environmentArray = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleActor;
+	TSubclassOf<class APackedLevelActor> buildingWallTemplate = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleWall;
+	TSubclassOf<class APackedLevelActor> environmentWallTemplate = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleWall;
+
+	uint8 max = 0;
+	uint8 remaining = 0;
+	TSubclassOf<APackedLevelActor> packedActorTemp = nullptr;
+	TSubclassOf<APackedLevelActor> packedWallTemp = nullptr;
+
 	TSubclassOf<class APackedLevelActor> obstacleWallTemplate = GenerationValuesComponent->ObstacleValues.ObstacleWall;
 	TSubclassOf<class APackedLevelActor> basicWallTemplate = GenerationValuesComponent->IslandValues.BasicWall;
 	TSubclassOf<class APackedLevelActor> cornerWallTemplate = GenerationValuesComponent->IslandValues.CornerWall;
@@ -1462,22 +1495,85 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	switch (FloorValuesArray[index].IslandFloorObstacle)
 	{
 	case EIslandFloorObstacle::Basic:
-		if (actorArray.IsValidIndex(FloorValuesArray[index].randomFloorToSpawn))
+
+		switch (FloorValuesArray[index].ObstacleType)
 		{
-			APackedLevelActor* packed = GetWorld()->SpawnActor<APackedLevelActor>(actorArray[FloorValuesArray[index].randomFloorToSpawn], posOffset, FRotator(0.0f, yaw, 0.0f));
-			if (packed->Implements<UCullingToggleInterface>())
+		case EObstacleType::Building:
+			max = GenerationValuesComponent->ObstacleTypeValues.BuildingObstacleMaxAmount;
+			remaining = GenerationValuesComponent->ObstacleTypeValues.RemainingBuildingObstacleAmount;
+			if (remaining >= max)
 			{
-				ICullingToggleInterface::Execute_ToggleVisibility(packed, false);
+				if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
+				{
+					if (FloorValuesArray[index].IsFullTile)
+					{
+						SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
+					}
+				}
+
+				return;
 			}
-			ObstacleArrays.Add(packed);
+
+			GenerationValuesComponent->ObstacleTypeValues.RemainingBuildingObstacleAmount += 1;
+
+			if (buildingArray.IsValidIndex(FloorValuesArray[index].randomBuildingObstacleToSpawn))
+			{
+				packedActorTemp = buildingArray[FloorValuesArray[index].randomBuildingObstacleToSpawn];
+			}
+
+			if (buildingWallTemplate)
+			{
+				packedWallTemp = buildingWallTemplate;
+			}
+			break;
+		case EObstacleType::Environment:
+			max = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacleMaxAmount;
+			remaining = GenerationValuesComponent->ObstacleTypeValues.RemainingEnvironmentObstacleAmount;
+			if (remaining >= max)
+			{
+				if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
+				{
+					if (FloorValuesArray[index].IsFullTile)
+					{
+						SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
+					}
+				}
+
+				return;
+			}
+
+			GenerationValuesComponent->ObstacleTypeValues.RemainingEnvironmentObstacleAmount += 1;
+
+			if (environmentArray.IsValidIndex(FloorValuesArray[index].randomEnvironmentObstacleToSpawn))
+			{
+				packedActorTemp = environmentArray[FloorValuesArray[index].randomEnvironmentObstacleToSpawn];
+
+			}
+
+			if (buildingWallTemplate)
+			{
+				packedWallTemp = environmentWallTemplate;
+			}
+			break;
 		}
 
-		if (obstacleWallTemplate != nullptr)
+		if (packedActorTemp)
+		{
+			APackedLevelActor* packedActor = GetWorld()->SpawnActor<APackedLevelActor>(packedActorTemp, posOffset, FRotator(0.0f, yaw, 0.0f));
+			if (packedActor->Implements<UCullingToggleInterface>())
+			{
+				ICullingToggleInterface::Execute_ToggleVisibility(packedActor, false);
+			}
+			ObstacleArrays.Add(packedActor);
+
+		}
+
+		if (packedWallTemp)
 		{
 			APackedLevelActor* wall = nullptr;
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleLeft))
 			{
-				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 0.0f, 0.0f));
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(packedWallTemp, posOffset, FRotator(0.0f, 0.0f, 0.0f));
 				if (wall->Implements<UCullingToggleInterface>())
 				{
 					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
@@ -1486,7 +1582,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::TopMiddle))
 			{
-				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 90.0f, 0.0f));
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(packedWallTemp, posOffset, FRotator(0.0f, 90.0f, 0.0f));
 				if (wall->Implements<UCullingToggleInterface>())
 				{
 					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
@@ -1495,7 +1591,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::MiddleRight))
 			{
-				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 180.0f, 0.0f));
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(packedWallTemp, posOffset, FRotator(0.0f, 180.0f, 0.0f));
 				if (wall->Implements<UCullingToggleInterface>())
 				{
 					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
@@ -1504,7 +1600,7 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 			}
 			if (!EnumHasAnyFlags(FloorValuesArray[index].ObstacleNeighbours, EIslandFloorNeighbours::BottomMiddle))
 			{
-				wall = GetWorld()->SpawnActor<APackedLevelActor>(obstacleWallTemplate, posOffset, FRotator(0.0f, 270.0f, 0.0f));
+				wall = GetWorld()->SpawnActor<APackedLevelActor>(packedWallTemp, posOffset, FRotator(0.0f, 270.0f, 0.0f));
 				if (wall->Implements<UCullingToggleInterface>())
 				{
 					ICullingToggleInterface::Execute_ToggleVisibility(wall, false);
@@ -1803,7 +1899,6 @@ void AIslandGenerationTest::IncrementObjective()
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
 		objectiveName = "Flags";
-		AddFlagObjectiveToAll(CurrentObjectives);
 		break;
 	case EIslandObjectiveType::MoveThePayload:
 		objectiveName = "Payload";

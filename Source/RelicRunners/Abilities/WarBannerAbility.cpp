@@ -45,33 +45,49 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo)) // Try to commit the ability
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // If commit fails, end the ability 
-        return; // Exit early
-    }
 
-    // Get PlayerState safely
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
+    if (ActorInfo->IsLocallyControlled())
     {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-        PS->BuffedStrength += 50;
-        PS->GetInventoryComponent()->UpdateTotalEquippedStats(ActorInfo->PlayerController->GetPawn());
-    }
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
 
-    if (AbilityAnim)
-    {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+            if (PC)
+            {
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [PC]()
+                    {
+                        PC->EnableInput(PC);
+
+                    },
+                    AnimDuration,
+                    false
+                );
+
+                SpawnBanner();
+            }
+        }
     }
 
     FVector BannerLocation = GetBannerLocation();
 
-    SpawnBanner();
+    
 
-    ApplyAllyBuffs(BannerLocation);
-
-
+    if (World)
+    {
+        World->GetTimerManager().SetTimer(BuffTickHandle, this, &UWarBannerAbility::UpdateBuffs,0.2f,true);
+    }
 
 }
 
@@ -89,77 +105,108 @@ void UWarBannerAbility::SpawnBanner()
     const FVector PawnLocation = OwnerPawn->GetActorLocation();
     const FVector ForwardVector = OwnerPawn->GetActorForwardVector();
 
-    // Final spawn location
-    const FVector BannerLocation = PawnLocation + ForwardVector * SpawnDistance + FVector(0.f, 0.f, 20.f);
+    const FVector BannerLocation = PawnLocation + ForwardVector * SpawnDistance + FVector(0.f, 0.f, -100.f);
 
     if (AvatarActor->HasAuthority())
     {
-        AController* Controller = nullptr;
-
         if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
         {
-            Controller = CurrentActorInfo->PlayerController.Get();
-        }
-
-        if (Controller)
-        {
-            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
-
-            if (PS)
+            if (ARelicRunnersPlayerState* PS = CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>())
             {
-                PS->Multicast_SpawnVFX(BannerLocation + FVector(0, 0, -100), FRotator(0, 0, 0), FVector(1.2f), AbilityVFX, false);
+                PS->Multicast_SpawnVFX( BannerLocation, FRotator::ZeroRotator, FVector(1.2f),AbilityVFX,false);
+				PS->Multicast_SpawnStaticMesh(BannerLocation, FRotator::ZeroRotator, FVector(1.0f), BannerMesh);
             }
         }
     }
-
 }
 
-void UWarBannerAbility::ApplyAllyBuffs(const FVector& BannerLocation)
+
+void UWarBannerAbility::UpdateBuffs()
 {
-    UWorld* World = GetWorld();
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!AvatarActor) return;
+
+    UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
 
+    const FVector Center = GetBannerLocation();
 
-    if (AActor* Owner = GetAvatarActorFromActorInfo())
+    TArray<AActor*> FoundActors;
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+    TArray<AActor*> ActorsToIgnore;
+    // Only ignore yourself
+    ActorsToIgnore.Add(AvatarActor);
+
+    UKismetSystemLibrary::SphereOverlapActors(World,Center, AreaRadius,ObjectTypes,APawn::StaticClass(), ActorsToIgnore, FoundActors);
+
+    APawn* MyPawn = Cast<APawn>(AvatarActor);
+    if (!MyPawn) return;
+
+    bool bInRadius = false;
+    for (AActor* Actor : FoundActors)
     {
-        if (Owner->Tags.Contains("Player"))
+        if (Actor == MyPawn)
         {
-            UE_LOG(LogTemp, Log, TEXT("Buff applied to SELF: %s"), *Owner->GetName());
-            // Apply self buff here
+            bInRadius = true;
+            break;
         }
     }
 
-    TArray<AActor*> OverlappingActors;
+    // Track if we already buffed ourselves
+    bool bAlreadyBuffed = BuffedActors.Contains(MyPawn);
 
-    // Object types to consider
-    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_EngineTraceChannel1));
-
-    // Actors to ignore
-    TArray<AActor*> ActorsToIgnore;
-    ActorsToIgnore.Add(GetAvatarActorFromActorInfo());
-
-    // Perform the sphere overlap
-    bool bHit = UKismetSystemLibrary::SphereOverlapActors(World,BannerLocation,AreaRadius,ObjectTypes,APawn::StaticClass(),ActorsToIgnore,OverlappingActors);
-
-    for (AActor* Actor : OverlappingActors)
+    if (bInRadius && !bAlreadyBuffed)
     {
-        ACharacter* Character = Cast<ACharacter>(Actor);
-        if (!Character) continue; // skip if not a character
+        ApplyBuffToActor(MyPawn);
+        BuffedActors.Add(MyPawn);
+    }
+    else if (!bInRadius && bAlreadyBuffed)
+    {
+        RemoveBuffFromActor(MyPawn);
+        BuffedActors.Remove(MyPawn);
+    }
+}
 
-        if (!Actor->Tags.Contains("Player")) continue;
+void UWarBannerAbility::ApplyBuffToActor(AActor* Actor)
+{
+    if (!Actor) return;
 
+    ARelicRunnersPlayerState* PS = nullptr;
 
-        UE_LOG(LogTemp, Log, TEXT("Buff applied to %s"), *Character->GetName());
-
+    if (AController* Controller = Actor->GetInstigatorController())
+    {
+        PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
-    if (World)
+    if (PS)
     {
-        World->GetTimerManager().SetTimer(DurationTimerHandle,[this](){EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);},Duration,false );
+        PS->BuffedStrength += BuffAmount;
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(
+            Actor->GetInstigatorController()->GetPawn()
+        );
+    }
+}
+
+void UWarBannerAbility::RemoveBuffFromActor(AActor* Actor)
+{
+    if (!Actor) return;
+
+    ARelicRunnersPlayerState* PS = nullptr;
+
+    if (AController* Controller = Actor->GetInstigatorController())
+    {
+        PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
+    if (PS)
+    {
+        PS->BuffedStrength -= BuffAmount;
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(
+            Actor->GetInstigatorController()->GetPawn()
+        );
+    }
 }
 
 FVector UWarBannerAbility::GetBannerLocation() const
@@ -185,27 +232,30 @@ void UWarBannerAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
         if (World)
         {
             World->GetTimerManager().ClearTimer(DurationTimerHandle);
+            World->GetTimerManager().ClearTimer(BuffTickHandle);
+
+            // Remove buffs from all remaining actors
+            for (auto& WeakActor : BuffedActors)
+            {
+                if (WeakActor.IsValid())
+                {
+                    RemoveBuffFromActor(WeakActor.Get());
+                }
+            }
+
+            BuffedActors.Empty();
+
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();
 
-                if (ActorInfo->IsLocallyControlled())
+                if (ActorInfo->IsLocallyControlled() && RPC && RPC->PlayerHUD)
                 {
-                    if (RPC)
-                    {
-                        RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
-
-                    }
+                    RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
                 }
             }
         }
-        // Get PlayerState safely
-        ARelicRunnersPlayerState* PS = nullptr;
-        if (ActorInfo->PlayerController.IsValid())
-        {
-            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-            PS->BuffedStrength -= 50;
-            PS->GetInventoryComponent()->UpdateTotalEquippedStats(ActorInfo->PlayerController->GetPawn());
-        }
+
+        
     }
 }

@@ -85,6 +85,9 @@ void AHadesFireball::Tick(float DeltaTime)
 
         Multicast_PlayExplosionEffects(TargetLocation);
 
+        if (FireBallCameraShake)
+            GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(GetWorld(), FireBallCameraShake, GetActorLocation(), 10000.0f, 10000.0f, 1.0f);
+
         if (InternalPrediction) InternalPrediction->Destroy();
         Destroy();
     }

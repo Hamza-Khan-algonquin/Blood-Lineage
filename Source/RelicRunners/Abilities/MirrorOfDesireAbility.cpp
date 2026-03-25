@@ -33,8 +33,29 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
         return;
     }
 
-    // Debug: show sphere
-    DrawDebugSphere(OwnerChar->GetWorld(), OwnerChar->GetActorLocation(), 300.f, 32, FColor::Purple, false, Duration, 0, 2.f);
+    ARelicRunnersPlayerState* PS = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
+
+    if (!PS)
+    {
+        return;
+    }
+
+    AController* Controller = nullptr;
+
+    if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+    {
+        Controller = CurrentActorInfo->PlayerController.Get();
+    }
+
+    if (Controller)
+    {
+
+        if (PS)
+        {
+            PS->Multicast_SpawnVFX(FVector(0), FRotator::ZeroRotator, FVector(2.f), AbilityVFX, true);
+        }
+
+    }
 
     // Set timer to end ability automatically after Duration
     OwnerChar->GetWorldTimerManager().SetTimer(AbilityTimerHandle, [this, Handle, ActorInfo, ActivationInfo]()

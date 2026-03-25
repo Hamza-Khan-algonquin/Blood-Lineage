@@ -47,11 +47,6 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo)) // Try to commit the ability
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // If commit fails, end the ability 
-        return; // Exit early
-    }
 
     PlayAbilityCastSound(ActorInfo);
 

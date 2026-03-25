@@ -46,9 +46,35 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         return;
     }
 
-    if (AbilityAnim)
+    if (ActorInfo->IsLocallyControlled())
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
+
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+
+            if (PC)
+            {
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [PC]()
+                    {
+                        PC->EnableInput(PC);
+                    },
+                    AnimDuration,
+                    false
+                );
+            }
+        }
     }
 
     APawn* OwnerPawn = Cast<APawn>(AvatarActor);

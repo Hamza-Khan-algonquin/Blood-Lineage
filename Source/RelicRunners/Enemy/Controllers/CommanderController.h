@@ -54,7 +54,7 @@ public:
 	TObjectPtr<UFlockComponent> PawnFlockComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	APawn* TargetPlayer;
+	TObjectPtr<APawn> TargetPlayer;
 
 	float TargetDistance;
 

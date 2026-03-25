@@ -72,6 +72,7 @@ void AIslandSpawner::BeginPlay()
 				newIsland->GenerationValuesComponent->SetIslandStartAndEndValues(GenerationValuesComponent->IslandStartEnd);
 				newIsland->GenerationValuesComponent->SetFloorMeshes(GenerationValuesComponent->FloorMeshes);
 				newIsland->GenerationValuesComponent->SetObstacleValues(GenerationValuesComponent->ObstacleValues);
+				newIsland->GenerationValuesComponent->SetObstacleTypeValues(GenerationValuesComponent->ObstacleTypeValues);
 				newIsland->GenerationValuesComponent->SetVantagePointValues(GenerationValuesComponent->VantageValues);
 				newIsland->GenerationValuesComponent->SetSafeSpotValues(GenerationValuesComponent->SafeSpotValues);
 				newIsland->GenerationValuesComponent->SetFlagObjectiveValues(GenerationValuesComponent->FlagObjectiveValues);
@@ -88,6 +89,7 @@ void AIslandSpawner::BeginPlay()
 
 				EIslandObjectiveType islandObjective = EIslandObjectiveType::None;
 				TArray<EIslandObjectiveType> ActiveFlags;
+
 				for (int32 j = 0; j < 8; ++j)
 				{
 					uint8 FlagValue = 1 << j;
@@ -99,8 +101,16 @@ void AIslandSpawner::BeginPlay()
 
 				if (ActiveFlags.Num() > 0)
 				{
-					int32 RandomIndex = FMath::RandRange(0, ActiveFlags.Num() - 1);
-					islandObjective = ActiveFlags[RandomIndex];
+					int32 RandomIndex = IsObjectivesRandom ? 
+						//True
+						FMath::RandRange(0, ActiveFlags.Num() - 1) : 
+						//False
+						(i+ FMath::RandRange(0, ActiveFlags.Num())) % (ActiveFlags.Num() - 1);
+				
+					if (ActiveFlags.IsValidIndex(RandomIndex))
+					{
+						islandObjective = ActiveFlags[RandomIndex];
+					}
 				}
 
 				newIsland->InitializeValues(islandObjective);
@@ -147,9 +157,6 @@ void AIslandSpawner::BeginPlay()
 			}
 		}
 	}
-	
-	UpdateControllerStageUI(gameInstance->StageNumber);
-	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::OnRep_IslandArrayChange()
@@ -163,6 +170,39 @@ void AIslandSpawner::OnRep_IslandArrayChange()
 		isl->OnSetCameraChange.AddDynamic(this, &AIslandSpawner::ChangeIslandCamera);
 		isl->OnSetCameraChangeBack.AddDynamic(this, &AIslandSpawner::ChangeIslandVisibility);
 
+	}
+}
+
+void AIslandSpawner::SyncObjectiveToSinglePlayer(ARelicRunnersPlayerController* TargetPC)
+{
+	if (!TargetPC || !Islands.IsValidIndex(CurrentSpawnedIsland)) return;
+
+	AIslandGenerationTest* ActiveIsland = Islands[CurrentSpawnedIsland];
+
+	ARelicRunnersPlayerController::FPendingObjective NewObjective;
+
+	switch (ActiveIsland->IslandObjective)
+	{
+	case EIslandObjectiveType::CaptureTheFlag:
+		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Flag;
+		NewObjective.FlagCount = ActiveIsland->ObjectiveAmount;
+		break;
+	case EIslandObjectiveType::MoveThePayload:
+		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Payload;
+		break;
+	case EIslandObjectiveType::Survival:
+		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Pandora;
+		NewObjective.PandoraTime = ActiveIsland->GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
+		break;
+	}
+
+	TargetPC->AddObjectiveToBuffer(NewObjective);
+
+	URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (gameInstance)
+	{
+		UpdateControllerStageUI(gameInstance->StageNumber);
+		UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 	}
 }
 

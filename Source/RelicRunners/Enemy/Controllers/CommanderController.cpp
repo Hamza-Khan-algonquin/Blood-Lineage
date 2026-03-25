@@ -14,6 +14,7 @@
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/Enemy/FlockComponent.h"
+#include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <Net/UnrealNetwork.h>
 
 ACommanderController::ACommanderController()
@@ -69,37 +70,41 @@ void ACommanderController::Tick(float DeltaTime)
 		return;
 	}
 
-	if (players.Num() > 0 && players[0])
+	if (players.Num() > 0)
 	{
 		
 		float distance; 
 
-		if (!TargetPlayer)
-		{
-			APawn* closestPlayer = players[0];
-			distance = FVector::DistSquared(pawn->GetActorLocation(), players[0]->GetActorLocation());
+		APawn* closestPlayer = nullptr;
+		distance = TNumericLimits<float>::Max();
 
-			for (int i = 1; i < players.Num(); i++)
+		for (int i = 0; i < players.Num(); i++)
+		{
+			if (!players[i])
 			{
-				float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
-				if (newDistance < distance)
-				{
-					closestPlayer = players[i];
-					distance = newDistance;
-				}
+				continue;
 			}
 
-			UpdateTarget(closestPlayer);
-			TargetChange.Broadcast(TargetPlayer);
-			distance = FMath::Sqrt(distance);
-			BoidShouldFocusePlayer = false;
-		}
-		else
-		{
-			distance = FVector::Distance(pawn->GetActorLocation(), TargetPlayer->GetActorLocation());
-			BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
+			ARelicRunnersPlayerState* pState = players[i]->GetPlayerState<ARelicRunnersPlayerState>();
+
+			if(!pState || pState->DeathState)
+			{
+				continue;
+			}
+
+			float newDistance = FVector::DistSquared(pawn->GetActorLocation(), players[i]->GetActorLocation());
+			if (newDistance < distance)
+			{
+				closestPlayer = players[i];
+				distance = newDistance;
+			}
 		}
 
+		UpdateTarget(closestPlayer);
+		TargetChange.Broadcast(TargetPlayer);
+		distance = FMath::Sqrt(distance);
+		BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
+		
 		IsTargeting = distance <= DistanceToTargetPlayer;
 
 		if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)

@@ -9,7 +9,7 @@
 
 // Sets default values
 AIslandBridge::AIslandBridge():
-	IsBlocked(true)
+	IsBlocked(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
@@ -50,7 +50,7 @@ void AIslandBridge::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Barrier->SetVisibility(false);
+	Barrier->SetVisibility(true);
 	Barrier->SetCollisionProfileName("BlockAll");
 	BackBarrier->SetVisibility(false);
 }
@@ -59,18 +59,13 @@ void AIslandBridge::Create()
 {
 	if (HasAuthority())
 	{
+		IsBlocked = true;
 		Barrier->SetVisibility(true);
 
-		if (IsFinalBridge)
-		{
-			BackBarrier->SetVisibility(true);
-			BackBarrier->SetCollisionProfileName("BlockAll");
-		}
-		else
-		{
-			BackBarrier->SetVisibility(false);
-			BackBarrier->SetCollisionProfileName("NoCollision");
-		}
+		BackBarrier->SetVisibility(IsFinalBridge);
+
+		FName collisionName = IsFinalBridge ? "BlockAll" : "NoCollision";
+		BackBarrier->SetCollisionProfileName(collisionName);
 	}
 }
 
@@ -94,8 +89,10 @@ void AIslandBridge::SetFinalBridge(bool isFinal)
 
 void AIslandBridge::OnRep_OnBlockedChange()
 {
-	Barrier->SetVisibility(false);
-	Barrier->SetCollisionProfileName("NoCollision");
+	Barrier->SetVisibility(IsBlocked);
+	
+	FName collisionName = IsBlocked ? "BlockAll" : "NoCollision";
+	Barrier->SetCollisionProfileName(collisionName);
 }
 
 void AIslandBridge::OnRep_OnFinalBridgeChange()

@@ -25,8 +25,6 @@ AAphroditeCharacter::AAphroditeCharacter()
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
     ProjectileDamage = 40.0f;
-
-
 }
 
 void AAphroditeCharacter::BeginPlay()
@@ -426,12 +424,12 @@ void AAphroditeCharacter::BasicAttack()
             if (Self->ProjectileMeshAsset)
             {
                 UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(Self);
-                ProjectileMesh->RegisterComponent();
                 ProjectileMesh->SetStaticMesh(Self->ProjectileMeshAsset);
                 ProjectileMesh->SetWorldLocation(NewProj.Location);
                 ProjectileMesh->SetWorldScale3D(FVector(0.2f));
                 ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
                 ProjectileMesh->SetWorldRotation(NewProj.Velocity.Rotation());
+                ProjectileMesh->RegisterComponent();
 
                 NewProj.Mesh = ProjectileMesh;
             }
