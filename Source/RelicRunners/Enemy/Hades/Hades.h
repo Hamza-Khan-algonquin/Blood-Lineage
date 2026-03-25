@@ -37,6 +37,9 @@ public:
     class UAnimMontage* IdleMontage;
 
     UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* SlamChargeMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animations")
     class UAnimMontage* SlamMontage;
 
     UPROPERTY(EditAnywhere, Category = "Animations")
@@ -127,12 +130,14 @@ protected:
 
     void ExecuteAttack();
     void SpawnBridge();
+    void SpawnBlocking();
     void CinematicSlam();
     void ScheduleNextAttack(float Delay);
     void ScheduleCinematicSlam(float Delay);
     void ResetAllStates(); 
     void CheckPhaseTransition();
     void SelectRandomTarget();
+    void OnChargeFinished();
     void PlaySlam();
     void PlayFireball();
     void PlaySweep();
@@ -155,6 +160,12 @@ protected:
 
     UPROPERTY(BlueprintReadOnly, Category = "Boss Mechanics")
     AActor* BridgeToDestroy;
+
+    UPROPERTY(EditAnywhere, Category = "Boss Mechanics")
+    TSubclassOf<AActor> BlockingClass;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Boss Mechanics")
+    AActor* BlockingToSpawn;
 
     UPROPERTY(Replicated)
     FVector AbilityLookAtTarget;
