@@ -37,6 +37,7 @@ public:
     //Functions
     ARelicRunnersPlayerState();
     ~ARelicRunnersPlayerState();
+	void InitializeMetaStats(struct FSaveData MetaData);
 	void GiveStarterItems();
     UFUNCTION()
     void OnRep_SelectedClass();
@@ -120,6 +121,8 @@ public:
 	UFUNCTION()
 	void OnRep_Ability();
 	UFUNCTION()
+	void OnRep_StatsChanged();
+	UFUNCTION()
 	void OnRep_PlayerGold();
 	UFUNCTION()
 	void OnRep_IsHost();
@@ -157,54 +160,54 @@ public:
 	int PlayerStrength;
 	UPROPERTY()
 	int PlayerIntelligence;
-	UPROPERTY()
-	int PlayerStartingLevel = 1;
-	UPROPERTY()
-	int PlayerStartingMaxHealth;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingMaxResource;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
+	int PlayerStartingMaxHealth;
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingArmor;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingDexterity;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingStrength;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingIntelligence;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
+	int PlayerStartingLevel;
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingGold;
 	UPROPERTY()
 	float HealthGranted;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingLuck;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingResourceRegen;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingPotionEfficiency;
 
 	UPROPERTY()
 	int PassiveResourceTime;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedHealth;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedArmor;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedDexterity;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedStrength;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedIntelligence;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedHealth;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedArmor;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedDexterity;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedStrength;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedIntelligence;
 
 	UPROPERTY(Replicated)

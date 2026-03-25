@@ -92,6 +92,9 @@ public:
 
 	void Internal_SetFlagUI(int CapturedCount);
 
+	UFUNCTION(Server, Reliable)
+	void Server_InitializePlayerData(FSaveData ClientMeta);
+
 	UFUNCTION()
 	void OnRep_ObjectiveBuffer();
 

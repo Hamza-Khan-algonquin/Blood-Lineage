@@ -219,110 +219,110 @@ ARelicRunnersPlayerState::~ARelicRunnersPlayerState()
 
 }
 
+void ARelicRunnersPlayerState::InitializeMetaStats(FSaveData MetaData)
+{
+	PlayerStartingLuck = MetaData.MetaLuck;
+	PlayerStartingMaxHealth = 100 + (MetaData.MetaHealth * 10);
+	PlayerStartingArmor = MetaData.MetaDefence * 3;
+	PlayerStartingStrength = MetaData.MetaStrength * 3;
+	PlayerStartingDexterity = MetaData.MetaAgility * 3;
+	PlayerStartingIntelligence = MetaData.MetaIntelligence * 3;
+	PlayerStartingPotionEfficiency = MetaData.MetaPotionEfficiency * 5;
+	PlayerStartingResourceRegen = MetaData.MetaResourceRegen;
+	PlayerStartingLevel = FMath::Max(1, MetaData.MetaStartingLevel);
+	PlayerLevel = PlayerStartingLevel;
+}
+
 void ARelicRunnersPlayerState::GiveStarterItems()
 {
 	if (!HasAuthority() || HasReceivedStarterItems) return;
 
-	if (!ItemMeshData)
+	if (!ItemMeshData || !InventoryComponent)
 	{
-		UE_LOG(LogTemp, Error, TEXT("GiveStarterItems: ItemMeshData is missing on PlayerState!"));
+		UE_LOG(LogTemp, Error, TEXT("GiveStarterItems: Missing Dependencies!"));
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("SERVER: Generating items using PlayerState MeshData."));
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	UIconLibrary* Lib = GI ? GI->GlobalIconLibrary : nullptr;
 
-	UIconLibrary* Lib = nullptr;
-	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
-	{
-		Lib = GI->GlobalIconLibrary;
-	}
+	FString StartingWeapon = "Greatsword";
+	FName ClassName = SelectedClass;
 
-	FString StartingWeapon = "";
-	if (SelectedClass == "Ares")
+	if (ClassName == "Artemis") StartingWeapon = "Bow";
+	else if (ClassName == "Aphrodite") StartingWeapon = "Staff";
+	else if (ClassName == "Nemesis") StartingWeapon = "Sword";
+	else SelectedClass = "Ares";
+
+	FItemData WeaponData = ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData, Lib);
+	UItemObject* Weapon = ItemStats::CreateItemFromData(WeaponData, InventoryComponent);
+	if (Weapon)
 	{
-		StartingWeapon = "Greatsword";
-	}
-	else if (SelectedClass == "Artemis")
-	{
-		StartingWeapon = "Bow";
-	}
-	else if (SelectedClass == "Aphrodite")
-	{
-		StartingWeapon = "Staff";
-	}
-	else if (SelectedClass == "Nemesis")
-	{
-		StartingWeapon = "Sword";
-	}
-	else
-	{
-		//Fallback for testing
-		SelectedClass = "Ares";
-		StartingWeapon = "Greatsword";
+		InventoryComponent->AddItem(Weapon);
+		Server_EquipItemByID(Weapon->ItemData.UniqueID);
 	}
 
-	UItemObject* Weapon = ItemStats::CreateItemFromData(ItemStats::CreateSpecificItemData(1, StartingWeapon, "Common", ItemMeshData, Lib), InventoryComponent);
-	InventoryComponent->AddItem(Weapon);
-	Server_EquipItemByID(Weapon->ItemData.UniqueID);
+	//Start with a few random items
+	for (int i = 0; i < 3; i++)
+	{
+		FString RandomType = ItemStats::GetRandomItemType();
+		FItemData RandData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), RandomType, "Common", ItemMeshData, Lib);
+		InventoryComponent->AddItem(ItemStats::CreateItemFromData(RandData, InventoryComponent));
+	}
 
-	//Level up for meta starting level
+	//For Meta levels
 	while (PlayerLevel != InventoryComponent->CachedEquippedStats.PlayerLevel)
 	{
 		OnStartingLevelUp();
 	}
 
-	for (int i = 0; i < 3; i++)
-	{
-		FString RandomType = ItemStats::GetRandomItemType();
-		FItemData ItemData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), RandomType, "Common", ItemMeshData, Lib);
-		UItemObject* Item = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
-		if (!Item) continue;
-
-		InventoryComponent->AddItem(Item);
-	}
-
-	//Give some equipped items to make up for missing early levels
+	//Give Randomized Armor based on Meta Level
 	if (PlayerLevel > 1)
 	{
-		//Itemtype pool
 		TArray<FString> ItemTypes = { TEXT("Arms"), TEXT("Helmet"), TEXT("Necklace"), TEXT("Lower"), TEXT("Upper") };
 
-		for (int i = ItemTypes.Num() - 1; i > 0; i--)
-		{
-			int j = FMath::RandRange(0, i);
-			ItemTypes.Swap(i, j);
+		for (int i = ItemTypes.Num() - 1; i > 0; i--) {
+			ItemTypes.Swap(i, FMath::RandRange(0, i));
 		}
 
-		//Loop for each level gained (Max 5 items if PlayerLevel is 6)
 		int ItemsToGive = FMath::Min(PlayerLevel - 1, 5);
-
 		for (int i = 0; i < ItemsToGive; i++)
 		{
-			FString SelectedType = ItemTypes[i];
-
-			int RandomItemLevel = FMath::RandRange(1, PlayerLevel);
-
-			FItemData ItemData = ItemStats::CreateSpecificItemData(RandomItemLevel, SelectedType, ItemStats::GetRandomRarity(), ItemMeshData, Lib);
-			UItemObject* ItemToEquip = ItemStats::CreateItemFromData(ItemData, InventoryComponent);
-
-			if (ItemToEquip)
+			FItemData ArmorData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), ItemTypes[i], ItemStats::GetRandomRarity(), ItemMeshData, Lib);
+			UItemObject* Armor = ItemStats::CreateItemFromData(ArmorData, InventoryComponent);
+			if (Armor)
 			{
-				InventoryComponent->AddItem(ItemToEquip);
-				Server_EquipItemByID(ItemToEquip->ItemData.UniqueID);
+				InventoryComponent->AddItem(Armor);
+				Server_EquipItemByID(Armor->ItemData.UniqueID);
 			}
 		}
 	}
 
-	//Initialize class specific starting stats
+	//Difficulty
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+	{
+		FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+		PlayerStartingLuck += diffInfo.LuckAmount;
+	}
+
+	//Stats from ClassInfo
 	if (InventoryComponent->ClassInfo)
 	{
 		FClassData Stats = InventoryComponent->ClassInfo->GetStats(SelectedClass.ToString());
+
 		PlayerStartingMaxHealth += (Stats.Health - 100);
 		PlayerStartingArmor += Stats.Armor;
 		PlayerStartingDexterity += Stats.Dexterity;
 		PlayerStartingStrength += Stats.Strength;
 		PlayerStartingIntelligence += Stats.Intelligence;
 	}
+
+	//Force an update of the Cached Stats
+	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
+
+	//Ensures the player starts the match at 100% health
+	PlayerHealth = InventoryComponent->CachedEquippedStats.TotalHealth;
 
 	HasReceivedStarterItems = true;
 }
@@ -984,6 +984,12 @@ void ARelicRunnersPlayerState::OnRep_Ability()
 	UpdateRemoteHUDAbility();
 }
 
+void ARelicRunnersPlayerState::OnRep_StatsChanged()
+{
+	UpdateRemoteHUDHealth();
+	UpdateRemoteHUDResource();
+}
+
 void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -998,6 +1004,22 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerXPToLevel);
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerAbilityPoints);
 	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerGold);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerStartingLevel);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerStartingMaxHealth);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerStartingArmor);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerStartingDexterity);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerStartingStrength);
+	DOREPLIFETIME(ARelicRunnersPlayerState, PlayerStartingIntelligence);
+	DOREPLIFETIME(ARelicRunnersPlayerState, BuffedHealth);
+	DOREPLIFETIME(ARelicRunnersPlayerState, BuffedArmor);
+	DOREPLIFETIME(ARelicRunnersPlayerState, BuffedDexterity);
+	DOREPLIFETIME(ARelicRunnersPlayerState, BuffedStrength);
+	DOREPLIFETIME(ARelicRunnersPlayerState, BuffedIntelligence);
+	DOREPLIFETIME(ARelicRunnersPlayerState, UpgradedHealth);
+	DOREPLIFETIME(ARelicRunnersPlayerState, UpgradedArmor);
+	DOREPLIFETIME(ARelicRunnersPlayerState, UpgradedDexterity);
+	DOREPLIFETIME(ARelicRunnersPlayerState, UpgradedStrength);
+	DOREPLIFETIME(ARelicRunnersPlayerState, UpgradedIntelligence);
 	DOREPLIFETIME(ARelicRunnersPlayerState, HasReceivedStarterItems);
 	DOREPLIFETIME(ARelicRunnersPlayerState, IsHost);
 	DOREPLIFETIME(ARelicRunnersPlayerState, DeathState);

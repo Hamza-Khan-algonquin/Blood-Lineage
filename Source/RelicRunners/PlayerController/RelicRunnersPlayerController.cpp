@@ -143,20 +143,25 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 
 	PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 
-	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
-	{
-		if (!PS->HasReceivedStarterItems)
-		{
-			PS->GiveStarterItems();
-		}
-
-		UpdateCharacterVisuals();
-	}
+	UpdateCharacterVisuals();
 
 	if (PlayerCameraManager)
 	{
 		PlayerCameraManager->ViewPitchMin = -60.f;
 		PlayerCameraManager->ViewPitchMax = 10.f;
+	}
+}
+
+void ARelicRunnersPlayerController::Server_InitializePlayerData_Implementation(FSaveData ClientMeta)
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->InitializeMetaStats(ClientMeta);
+
+		if (!PS->HasReceivedStarterItems)
+		{
+			PS->GiveStarterItems();
+		}
 	}
 }
 
@@ -1523,6 +1528,16 @@ void ARelicRunnersPlayerController::BeginPlay()
 	else if (MapName.Contains(TEXT("MainMenu")))
 	{
 		SetupMainMenuView();
+	}
+	else
+	{
+		if (URelicRunnersGameInstance* GI = World->GetGameInstance<URelicRunnersGameInstance>())
+		{
+			if (GI->SelectedSaveSlot)
+			{
+				Server_InitializePlayerData(GI->SelectedSaveSlot->SaveData);
+			}
+		}
 	}
 }
 
