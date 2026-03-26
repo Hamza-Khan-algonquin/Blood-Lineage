@@ -14,6 +14,7 @@
  *   � 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
+
 #include "RelicRunnersPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
@@ -149,11 +150,6 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 
 	UpdateCharacterVisuals();
 
-	if (PlayerCameraManager)
-	{
-		PlayerCameraManager->ViewPitchMin = -60.f;
-		PlayerCameraManager->ViewPitchMax = 10.f;
-	}
 }
 
 void ARelicRunnersPlayerController::Server_InitializePlayerData_Implementation(FSaveData ClientMeta)
@@ -1553,6 +1549,12 @@ void ARelicRunnersPlayerController::BeginPlay()
 				Server_InitializePlayerData(DefaultData);
 			}
 		}
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ViewPitchMin = -60.f;
+		PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 
