@@ -119,6 +119,8 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
 
 void UKissOfLife::ApplyHealTick()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor)
     {

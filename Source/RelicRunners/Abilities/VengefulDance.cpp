@@ -115,6 +115,8 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UVengefulDance::ApplyRingDamage()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor that owns this ability
     if (!AvatarActor) return; // Exit if invalid
 

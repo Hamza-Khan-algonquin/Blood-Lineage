@@ -69,6 +69,8 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 void UBundleOfJoy::TickThrown()
 {
     if (!bIsFlying) return;
+    
+    if (!CurrentActorInfo) return;
 
     AActor* Avatar = GetAvatarActorFromActorInfo();
     UWorld* World = Avatar->GetWorld();
@@ -102,6 +104,8 @@ void UBundleOfJoy::TickThrown()
 void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
 {
     AttractionCenter = LandLocation;
+
+    if (!CurrentActorInfo) return;
 
     AActor* Avatar = GetAvatarActorFromActorInfo();
     UWorld* World = Avatar->GetWorld();

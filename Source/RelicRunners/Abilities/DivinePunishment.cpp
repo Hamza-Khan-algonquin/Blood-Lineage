@@ -115,8 +115,6 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
     CachedCenter = Center;
     DamageTicksElapsed = 0;
 
-
-
     UWorld* World = GetWorld();
     if (!World) return;
 
@@ -126,8 +124,14 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
 
 void UDivinePunishment::DivineDamageTick()
 {
-    UWorld* World = GetWorld();
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!IsValid(AvatarActor)) return;
+
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World) return;
+
     AController* InstigatorController = CachedInstigatorController.Get();
 
     if (!World || !AvatarActor || !InstigatorController)

@@ -155,6 +155,8 @@ void URageOfTheGods::StartPulse()
 
 void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 {
+    if (!CurrentActorInfo) return;
+
     UWorld* World = GetWorld();
     if (!World || !AvatarActor)
     {

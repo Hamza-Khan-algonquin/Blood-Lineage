@@ -104,8 +104,10 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
 void UWarBannerAbility::SpawnBanner()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    if (!IsValid(AvatarActor)) return;
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;

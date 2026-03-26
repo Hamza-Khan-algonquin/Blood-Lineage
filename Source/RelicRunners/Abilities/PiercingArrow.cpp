@@ -79,7 +79,7 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UPiercingArrow::TickArrow()
 {
-    UE_LOG(LogTemp, Warning, TEXT("TickArrow firing"));
+    if (!CurrentActorInfo) return;
 
     if (!SpawnedProjectile)
         return;
@@ -130,6 +130,7 @@ void UPiercingArrow::TickArrow()
 
 void UPiercingArrow::Explode(FVector ImpactPoint)
 {
+    if (!CurrentActorInfo) return;
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return;
 
@@ -153,8 +154,10 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
 
 void UPiercingArrow::ApplyDotTick()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    if (!IsValid(AvatarActor)) return;
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
