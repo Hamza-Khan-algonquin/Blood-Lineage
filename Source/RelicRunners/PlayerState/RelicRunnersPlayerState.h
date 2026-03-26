@@ -223,19 +223,20 @@ public:
 	UFUNCTION()
 	void OnRep_DeathState();
 
+	UPROPERTY(Replicated)
 	int MetaLevel;
+	UPROPERTY(Replicated)
 	int MetaXP;
+	UPROPERTY(Replicated)
 	int MetaXPToNextLevel;
+	UPROPERTY(Replicated)
 	int MetaXPGainInRun;
-
 	UPROPERTY(Replicated)
 	int PlayerDeaths = 0;
-
-	int GetDeaths() { return PlayerDeaths; }
-
 	UPROPERTY(Replicated)
 	int EnemiesKilled = 0;
 
+	int GetDeaths() { return PlayerDeaths; }
 	int GetEnemiesKilled() { return EnemiesKilled; }
 
 	UPROPERTY(Replicated)
