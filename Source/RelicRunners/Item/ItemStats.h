@@ -466,14 +466,21 @@ public:
         float Min = BaseMin * ItemData.Level * RarityMult;
         float Max = BaseMax * ItemData.Level * RarityMult;
 
+        float LevelBaseValue = ItemData.Level * 0.8f;
+        float RarityFloor = RarityMult * 1.3f;
+
+        //Gold
+        int CalculatedGold = FMath::RoundToInt((LevelBaseValue + RarityFloor) * FMath::FRandRange(0.9f, 1.1f));
+        ItemData.Gold = FMath::Max(1, CalculatedGold);
+
         TSet<FString> ArmorTypes = { "Helmet", "Upper", "Lower", "Arms" };
         TSet<FString> MixedTypes = { "Necklace" };
 
         //Size of armor multiplier
         float SizeMult = 1.0f;
         if (ItemType == "Upper" || ItemType == "Lower") SizeMult = 1.5f;
-        else if (ItemType == "Helmet") SizeMult = 1.25f;
-        else if (ItemType == "Arms") SizeMult = 1.0f;
+        else if (ItemType == "Helmet") SizeMult = 1.3f;
+        else if (ItemType == "Arms") SizeMult = 1.1f;
 
         auto AssignTripleStats = [&](int& Primary, int& Secondary, int& Tertiary)
             {
@@ -500,14 +507,10 @@ public:
             ItemData.Armor = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max))));
 
             AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
-
-            ItemData.Gold = FMath::Max(1, FMath::RoundToInt(FMath::FRandRange(Min * 0.5f, Max * 0.5f)));
         }
         else if (MixedTypes.Contains(ItemData.ItemType))
         {
             AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
-
-            ItemData.Gold = FMath::Max(1, FMath::RoundToInt(FMath::FRandRange(Min, Max)));
         }
 
         if (MeshData) { SetItemMeshes(ItemData, MeshData); }
@@ -618,7 +621,7 @@ public:
 
     static float GetSpeedPerc(int Value)
     {
-        float Percent = Value / 3.8;
+        float Percent = Value / 3.0;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -646,7 +649,7 @@ public:
 
     static float GetAbilityCostPerc(int Value)
     {
-        float Percent = Value / 2.7;
+        float Percent = Value / 5.1;
 
         return RoundToDecimal(Percent, 1);
     }
