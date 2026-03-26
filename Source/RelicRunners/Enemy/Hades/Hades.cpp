@@ -742,24 +742,13 @@ void AHades::Die()
         }
     }
 
-    Destroy();
-
-    //Send players to mainmenu after win
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(It->Get());
-
-        if (IsValid(RPC) && IsValid(RPC->GetPawn()))
-        {
-            RPC->CleanUI();
-            RPC->ChangeState(NAME_Spectating);
-            RPC->Client_RequestSaveStats();
-        }
-    }
     if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
     {
-        GM->TriggerPostGameForAll();
+        FTimerHandle PostGameHandle;
+        GetWorldTimerManager().SetTimer(PostGameHandle, GM, &ARelicRunnersGameMode::TriggerPostGameForAll, 0.5f, false);
     }
+
+    Destroy();
 }
 
 void AHades::CheckPhaseTransition()

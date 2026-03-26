@@ -358,6 +358,7 @@ protected:
 	virtual void ClientRestart_Implementation(APawn* NewPawn) override;
 	virtual void SetupInputComponent() override;
 	virtual void PostSeamlessTravel() override;
+	void OnTravelRefreshDelay();
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
 	virtual void Tick(float DeltaTime) override;
 

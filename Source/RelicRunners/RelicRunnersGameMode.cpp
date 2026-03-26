@@ -112,7 +112,8 @@ void ARelicRunnersGameMode::CheckGameOver()
 
     if (AllPlayersDead)
     {
-        TriggerPostGameForAll();
+        FTimerHandle PostGameHandle;
+        GetWorldTimerManager().SetTimer(PostGameHandle, this, &ARelicRunnersGameMode::TriggerPostGameForAll, 0.5f, false);
     }
 }
 
@@ -135,7 +136,6 @@ void ARelicRunnersGameMode::TriggerPostGameForAll()
                 Stats.MetaXP = PS->MetaXP;
                 Stats.MetaXPToNextLevel = PS->MetaXPToNextLevel;
                 Stats.MetaXPGainInRun = PS->MetaXPGainInRun;
-
                 AllPlayersStats.Add(Stats);
             }
         }
