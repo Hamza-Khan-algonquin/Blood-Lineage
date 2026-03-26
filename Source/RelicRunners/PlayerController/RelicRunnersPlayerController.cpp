@@ -801,6 +801,7 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 	if (!UIWidget) return;
 
 	bool IsOpening = !UIWidget->IsVisible();
+	if (UIWidget == Inventory && Inventory->GetVisibility() == ESlateVisibility::HitTestInvisible) IsOpening = true;
 
 	if (IsOpening)
 	{
@@ -871,8 +872,8 @@ void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
 {
 	if (Inventory)
 	{
-		Inventory->SetVisibility(ESlateVisibility::Hidden);
-		Inventory->SetIsEnabled(false);
+		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Inventory->SetIsEnabled(true);
 
 		GetWorld()->GetTimerManager().ClearTimer(DisableUITimer);
 	}
@@ -1400,8 +1401,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (Inventory)
 		{
 			Inventory->AddToViewport();
-			Inventory->SetVisibility(ESlateVisibility::Hidden);
-			Inventory->SetIsEnabled(false);
+			HideUI(Inventory);
 		}
 	}
 

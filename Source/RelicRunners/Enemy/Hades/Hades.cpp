@@ -17,6 +17,7 @@
 #include <RelicRunners/RelicRunnersGameState.h>
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/RelicRunnersGameMode.h>
+#include "HadesObelisk.h"
 
 AHades::AHades()
 {
@@ -636,8 +637,6 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 {
     if (!HasAuthority()) return;
 
-    DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
-
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 
@@ -646,38 +645,42 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
     ActorsToIgnore.Add(this);
 
     UKismetSystemLibrary::SphereOverlapActors(
-        GetWorld(),
-        ImpactLocation,
-        ImpactRadius,
-        ObjectTypes,
-        nullptr,
-        ActorsToIgnore,
-        OutActors
+        GetWorld(), ImpactLocation, ImpactRadius,
+        ObjectTypes, nullptr, ActorsToIgnore, OutActors
     );
 
-    //Loop through them and apply the flat % damage
+    //Loop through players, apply % damage, and add them to ignore list
     for (AActor* OverlappedActor : OutActors)
     {
-        APawn* HitPawn = Cast<APawn>(OverlappedActor);
-        if (HitPawn)
+        if (APawn* HitPawn = Cast<APawn>(OverlappedActor))
         {
-            ARelicRunnersPlayerState* RRPlayerState = HitPawn->GetPlayerState<ARelicRunnersPlayerState>();
-
-            if (RRPlayerState)
+            if (ARelicRunnersPlayerState* RRPS = HitPawn->GetPlayerState<ARelicRunnersPlayerState>())
             {
-                float MaxHP = RRPlayerState->PlayerMaxHealth;
-                float DamageToApply = MaxHP * (BaseDamageFromDifficulty / 100.0f);
+                float DamageToApply = RRPS->PlayerMaxHealth * (BaseDamageFromDifficulty / 100.0f);
 
-                UGameplayStatics::ApplyDamage(
-                    OverlappedActor,
-                    DamageToApply,
-                    nullptr,
-                    this,
-                    nullptr
-                );
+                UGameplayStatics::ApplyDamage(OverlappedActor, DamageToApply, nullptr, this, nullptr);
+
+                //So radial for obelisk doesn't hit player
+                ActorsToIgnore.Add(OverlappedActor);
             }
         }
     }
+
+    float ObeliskDamage = 50.0f;
+
+    UGameplayStatics::ApplyRadialDamage(
+        GetWorld(),
+        ObeliskDamage,
+        ImpactLocation,
+        ImpactRadius,
+        nullptr,
+        ActorsToIgnore,
+        this,
+        nullptr,
+        true
+    );
+
+    DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
 }
 
 void AHades::SelectRandomTarget()
