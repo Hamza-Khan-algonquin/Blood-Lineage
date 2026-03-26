@@ -75,6 +75,15 @@ void AHades::BeginPlay()
         SpawnBridge();
         SelectRandomTarget();
     }
+
+    //Difficulty
+    URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+    AGameStateBase* GameState = GetWorld()->GetGameState();
+    if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+    {
+        FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+        BaseDamageFromDifficulty = diffInfo.BossBaseDamagePercent;
+    }
 }
 
 void AHades::Tick(float DeltaTime)
@@ -628,7 +637,47 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
     if (!HasAuthority()) return;
 
     DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
-    UGameplayStatics::ApplyRadialDamage(GetWorld(), 40.0f * (1 + (int)CurrentPhase), ImpactLocation, ImpactRadius, nullptr, { this }, this, nullptr, true);
+
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+    TArray<AActor*> OutActors;
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(this);
+
+    UKismetSystemLibrary::SphereOverlapActors(
+        GetWorld(),
+        ImpactLocation,
+        ImpactRadius,
+        ObjectTypes,
+        nullptr,
+        ActorsToIgnore,
+        OutActors
+    );
+
+    //Loop through them and apply the flat % damage
+    for (AActor* OverlappedActor : OutActors)
+    {
+        APawn* HitPawn = Cast<APawn>(OverlappedActor);
+        if (HitPawn)
+        {
+            ARelicRunnersPlayerState* RRPlayerState = HitPawn->GetPlayerState<ARelicRunnersPlayerState>();
+
+            if (RRPlayerState)
+            {
+                float MaxHP = RRPlayerState->PlayerMaxHealth;
+                float DamageToApply = MaxHP * (BaseDamageFromDifficulty / 100.0f);
+
+                UGameplayStatics::ApplyDamage(
+                    OverlappedActor,
+                    DamageToApply,
+                    nullptr,
+                    this,
+                    nullptr
+                );
+            }
+        }
+    }
 }
 
 void AHades::SelectRandomTarget()

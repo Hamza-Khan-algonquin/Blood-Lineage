@@ -3,6 +3,7 @@
 #include <Kismet/GameplayStatics.h>
 #include "Engine/OverlapResult.h"
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
+#include "Hades.h"
 
 AHadesSweepPrediction::AHadesSweepPrediction()
 {
@@ -61,14 +62,13 @@ void AHadesSweepPrediction::Tick(float DeltaTime)
                         {
                             if (!HitCooldownMap.Contains(HitActor) || CurrentTime >= HitCooldownMap[HitActor])
                             {
-                                float FinalDamage = 25.0f; //Fallback of flat dmg
+                                float FinalDamage = 25.0f;
 
                                 if (APawn* PlayerPawn = Cast<APawn>(HitActor))
                                 {
                                     if (ARelicRunnersPlayerState* PS = PlayerPawn->GetPlayerState<ARelicRunnersPlayerState>())
                                     {
-                                        //Calculate 20% of Max Health + 1% per elapsed second
-                                        float BasePercent = PS->PlayerMaxHealth * 0.20f;
+                                        float BasePercent = PS->PlayerMaxHealth * (Cast<AHades>(Boss)->BaseDamageFromDifficulty/100.0f);
                                         float ScalingPercent = PS->PlayerMaxHealth * (ElapsedTime * 0.01f);
 
                                         FinalDamage = BasePercent + ScalingPercent;

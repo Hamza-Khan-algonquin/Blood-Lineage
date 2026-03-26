@@ -586,7 +586,7 @@ public:
     }
     static float GetLootChance(int Value)
     {
-        float Percent = Value * 1.75;
+        float Percent = Value * 1.45;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -607,28 +607,53 @@ public:
 
     static float GetDefencePerc(int Value)
     {
-        float Percent = Value / 4.0;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 60.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (Value / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetStrengthPerc(int Value)
     {
-        float Percent = Value * 1.17;
+        if (Value <= 0) return 0.0f;
+
+        //Base of 1.5 with a 0.9 exponent.
+        //This grows infinitely but slows down over time.
+        float Percent = 1.5f * pow(static_cast<float>(Value), 0.9f);
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetSpeedPerc(int Value)
     {
-        float Percent = Value / 3.0;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 75.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (Value / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritPerc(int Value)
     {
-        float Percent = Value / 2.1;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 80.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (Value / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -649,7 +674,14 @@ public:
 
     static float GetAbilityCostPerc(int Value)
     {
-        float Percent = Value / 5.1;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 70.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (static_cast<float>(Value) / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }

@@ -7,11 +7,11 @@
 ARelicRunnersGameState::ARelicRunnersGameState()
 {
     bReplicates = true;
-	DifficultyModifiers.Add("Boar", {1, 1, 0, 1});
-    DifficultyModifiers.Add("Bull", { 1.25f, 1.25f, 1, 2 });
-    DifficultyModifiers.Add("Lion", { 1.5f, 1.5f, 2, 3 });
-    DifficultyModifiers.Add("Hydra", { 1.75f, 1.75f, 3, 5 });
-    DifficultyModifiers.Add("Cerberus", { 2.5f, 2.5f, 5, 10 });
+	DifficultyModifiers.Add("Boar", {1, 1, 0, 1, 0, 10});
+    DifficultyModifiers.Add("Bull", { 1.25f, 1.25f, 1, 2, 2, 15 });
+    DifficultyModifiers.Add("Lion", { 1.5f, 1.5f, 2, 3, 3, 25 });
+    DifficultyModifiers.Add("Hydra", { 1.75f, 1.75f, 3, 5, 5, 40 });
+    DifficultyModifiers.Add("Cerberus", { 2.5f, 2.5f, 5, 10, 8, 60 });
 }
 
 FDifficultyInfo ARelicRunnersGameState::GetDifficultyInfo(FName DifficultyName) const

@@ -555,13 +555,17 @@ void ARelicRunnersPlayerState::OnStartingLevelUp()
 	Item->ItemData.Intelligence += FMath::RandRange(0, 1 + IntelligenceIncrease);
 }
 
+int CalculateXPForNextLevel(int CurrentLevel) {
+	return pow(CurrentLevel, 2) * 100;
+}
+
 void ARelicRunnersPlayerState::OnLevelUp()
 {
 	PlayerXP -= PlayerXPToLevel;
 	PlayerLevel++;
 	LevelsEarned++;
 	PlayerStartingLevel++;
-	PlayerXPToLevel = PlayerLevel * 100;
+	PlayerXPToLevel = CalculateXPForNextLevel(PlayerLevel);
 
 	if (HealthPotionCount < 3)
 	{

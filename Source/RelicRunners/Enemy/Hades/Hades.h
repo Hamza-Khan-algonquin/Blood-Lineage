@@ -80,6 +80,8 @@ public:
     UPROPERTY(Replicated)
     bool bIsInitialSlamming = false; 
 
+    float BaseDamageFromDifficulty = 50;
+
     float MaxHealth = 10000.0f;
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
     float CurrentHealth = MaxHealth;
