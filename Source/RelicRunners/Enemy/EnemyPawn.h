@@ -107,6 +107,10 @@ protected:
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* EnemyDynamicMaterial;
+	void UpdateEmissiveHealth();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
