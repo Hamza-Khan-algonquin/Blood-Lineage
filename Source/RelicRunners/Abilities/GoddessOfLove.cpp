@@ -17,7 +17,7 @@ UGoddessOfLove::UGoddessOfLove()
 	Damage = 400.f;
 	AreaRadius = 1000.f;
 	LastUseTime = -100.f;
-	CooldownTimer = 10.f;
+	CooldownTimer = 15.f;
     ElapsedDOTTime = 0.f;
     DOTTickInterval = 0.5f;
     DOTDuration = 0.7f;
@@ -58,17 +58,29 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         {
             float AnimDuration = AbilityAnim->GetPlayLength();
 
-            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
 
             if (PC)
             {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
                 FTimerHandle InputTimerHandle;
 
                 GetWorld()->GetTimerManager().SetTimer(
                     InputTimerHandle,
-                    [PC]()
+                    [WeakPC, WeakWorld]()
                     {
-                        PC->EnableInput(PC);
+                        if (!WeakWorld.IsValid())
+                            return;
+
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
                     },
                     AnimDuration,
                     false

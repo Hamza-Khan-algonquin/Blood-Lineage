@@ -20,7 +20,7 @@ UBackStab::UBackStab()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Damage = 200.f;
+    Damage = 300.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -154,7 +154,7 @@ void UBackStab::ExecuteBackStabSequence()
 
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.0f);
     }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);

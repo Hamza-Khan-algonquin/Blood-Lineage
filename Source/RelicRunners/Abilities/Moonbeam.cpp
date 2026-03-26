@@ -15,11 +15,11 @@ UMoonbeam::UMoonbeam()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
              
-    CooldownDuration = 10.f;   
+    CooldownDuration = 15.f;   
     LastUseTime = -100.f;   
     Duration = 5.f;
     AreaRadius = 100.f;
-	Damage = 20.f;
+	Damage = 40.f;
 }
 
 void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
@@ -44,7 +44,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
     
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
     }
 
     if (OwnerChar->HasAuthority())

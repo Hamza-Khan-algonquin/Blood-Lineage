@@ -147,7 +147,7 @@ float UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana
     return BaseMana;
 }
 
-UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)
+UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage, float AnimSpeed)
 {
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid() || !Montage)
         return nullptr;
@@ -161,7 +161,7 @@ UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo
     UAnimInstance* AnimInstance = Mesh->GetAnimInstance();
     if (!AnimInstance) return nullptr;
 
-    AnimInstance->Montage_Play(Montage, 1.f);
+    AnimInstance->Montage_Play(Montage, AnimSpeed);
     return Montage;
 }
 

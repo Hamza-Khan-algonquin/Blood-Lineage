@@ -58,18 +58,29 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         {
             float AnimDuration = AbilityAnim->GetPlayLength();
 
-            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
 
             if (PC)
             {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
                 FTimerHandle InputTimerHandle;
 
                 GetWorld()->GetTimerManager().SetTimer(
                     InputTimerHandle,
-                    [PC]()
+                    [WeakPC, WeakWorld]()
                     {
-                        PC->EnableInput(PC);
+                        if (!WeakWorld.IsValid())
+                            return;
 
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
                     },
                     AnimDuration,
                     false

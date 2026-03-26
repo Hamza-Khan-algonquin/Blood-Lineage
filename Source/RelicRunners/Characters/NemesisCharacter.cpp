@@ -204,11 +204,11 @@ void ANemesisCharacter::PerformSwingTrace()
 
     GetWorld()->SweepMultiByChannel(Hits,Start,End,FQuat::Identity, ECC_GameTraceChannel1,FCollisionShape::MakeSphere(100.f),Params);
 
-    float AppliedDamage = 120.0f;
+    Damage = 150.0f;
 
     if (CurrentComboIndex == 2)
     {
-        AppliedDamage = 150.0f;
+        Damage = 180.0f;
     }
 
     for (const FHitResult& Hit : Hits)
@@ -218,11 +218,11 @@ void ANemesisCharacter::PerformSwingTrace()
             if (!AlreadyHitActors.Contains(HitActor))
             {
                 if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                    Server_HitEnemy(Enemy, AppliedDamage);
+                    Server_HitEnemy(Enemy, Damage);
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                    Server_HitEnemy(TEnemy, AppliedDamage);
+                    Server_HitEnemy(TEnemy, Damage);
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                    Server_HitEnemy(TPEnemy, AppliedDamage);
+                    Server_HitEnemy(TPEnemy, Damage);
 
                 AlreadyHitActors.Add(HitActor);
             }

@@ -9,7 +9,7 @@ UImpunityAbility::UImpunityAbility()
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
     Duration = 5.0f;
-    CooldownDuration = 8.0f;
+    CooldownDuration = 12.0f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 

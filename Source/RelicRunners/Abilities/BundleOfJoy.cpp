@@ -15,10 +15,10 @@ UBundleOfJoy::UBundleOfJoy()
     AttractionRadius = 600.f;
     ExplosionRadius = 400.f;
     AttractionStrength = 1500.f;
-    Damage = 100.f;
+    Damage = 200.f;
     Duration = 5.f;
     LastUseTime = -100.f;
-    CooldownTimer = 10.f;
+    CooldownTimer = 12.f;
 }
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -59,7 +59,7 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.0f);
     }
 
     AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);

@@ -17,7 +17,7 @@ UVengefulDance::UVengefulDance()
     DamageInterval = 0.5f;
     KnockbackStrength = 3000.f;
     Duration = 1.f;
-    Damage = 25.f;
+    Damage = 150.f;
     AreaRadius = 300.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -69,17 +69,29 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         {
             float AnimDuration = AbilityAnim->GetPlayLength();
 
-            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
 
             if (PC)
             {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
                 FTimerHandle InputTimerHandle;
 
                 GetWorld()->GetTimerManager().SetTimer(
                     InputTimerHandle,
-                    [PC]()
+                    [WeakPC, WeakWorld]()
                     {
-                        PC->EnableInput(PC);
+                        if (!WeakWorld.IsValid())
+                            return;
+
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
                     },
                     AnimDuration,
                     false

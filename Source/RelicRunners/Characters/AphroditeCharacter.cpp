@@ -24,7 +24,7 @@ AAphroditeCharacter::AAphroditeCharacter()
     PrimaryActorTick.bCanEverTick = true;
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
-    ProjectileDamage = 40.0f;
+    ProjectileDamage = 50.0f;
 }
 
 void AAphroditeCharacter::BeginPlay()

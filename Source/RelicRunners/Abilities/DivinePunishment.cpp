@@ -14,7 +14,7 @@ UDivinePunishment::UDivinePunishment()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	Duration = 5.f;
 	LastUseTime = -100.f;
-	CooldownTimer = 10.f;
+	CooldownTimer = 15.f;
 	Damage = 300.f;
     AreaRadius = 500.f;
 }
@@ -51,7 +51,7 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
     if (AbilityAnim)
     {
-        UAnimMontage* Montage = PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        UAnimMontage* Montage = PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
 
         if (Montage)
         {

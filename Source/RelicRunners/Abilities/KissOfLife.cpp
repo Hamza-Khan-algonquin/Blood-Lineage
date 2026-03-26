@@ -14,7 +14,7 @@ UKissOfLife::UKissOfLife()
     AbilityName = FName("KissOfLife");
 
     Duration = 10.f;
-    CooldownTimer = 12.f;
+    CooldownTimer = 15.f;
     LastUseTime = -100.f;
     AreaRadius = 600.f;
 
@@ -29,6 +29,14 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    if (CurrentTime - LastUseTime < CooldownTimer)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
 
     AActor* AvatarActor = ActorInfo->AvatarActor.Get();
     UWorld* World = AvatarActor->GetWorld();
@@ -58,19 +66,31 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         {
             float AnimDuration = AbilityAnim->GetPlayLength();
 
-            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 2.0f);
 
             if (PC)
             {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
                 FTimerHandle InputTimerHandle;
 
                 GetWorld()->GetTimerManager().SetTimer(
                     InputTimerHandle,
-                    [PC]()
+                    [WeakPC, WeakWorld]()
                     {
-                        PC->EnableInput(PC);
+                        if (!WeakWorld.IsValid())
+                            return;
+
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
                     },
-                    AnimDuration,
+                    AnimDuration * 0.5,
                     false
                 );
             }
@@ -167,12 +187,6 @@ void UKissOfLife::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGame
         }
     }
 
-    // This deletes the debug sphere when the ability ends
-    if (DebugHealSphere)
-    {
-        DebugHealSphere->DestroyComponent();
-        DebugHealSphere = nullptr;
-    }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

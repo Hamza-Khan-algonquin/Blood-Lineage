@@ -25,7 +25,7 @@ AArtemisCharacter::AArtemisCharacter()
 	bProjectileActive = false;
 	ProjectileSpeed = 5000.f;
 	ProjectileLifetime = 2.f;
-	ProjectileDamage = 70.0f;
+	ProjectileDamage = 120.0f;
 }
 
 void AArtemisCharacter::BeginPlay()

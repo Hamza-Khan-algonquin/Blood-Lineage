@@ -13,7 +13,7 @@ UGuardAbility::UGuardAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    CooldownDuration = 10.f;
+    CooldownDuration = 12.f;
     LastUseTime = -100.f;
     Duration = 0.f;
     Damage = 25.f;
@@ -47,7 +47,7 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
 
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
     }
 
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;

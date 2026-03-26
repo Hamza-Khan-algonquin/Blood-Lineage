@@ -50,7 +50,7 @@ public:
 
     float CalculateAbilityMana(AActor* InstigatorActor, float BaseMana);
 
-    UAnimMontage* PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage);
+    UAnimMontage* PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage, float AnimSpeed);
 
     virtual FName GetAbilityName() const { return FName(TEXT("AbilityBase")); }
 
