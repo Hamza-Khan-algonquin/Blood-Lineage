@@ -208,8 +208,7 @@ void UPiercingArrow::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
 
                 if (ActorInfo->IsLocallyControlled())
                 {
-                    if (ARelicRunnersPlayerController* RPC =
-                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
                     {
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
                     }
