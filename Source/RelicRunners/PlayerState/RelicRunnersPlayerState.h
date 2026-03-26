@@ -39,6 +39,7 @@ public:
     ~ARelicRunnersPlayerState();
 	void InitializeMetaStats(struct FSaveData MetaData);
 	void GiveStarterItems();
+	void RefreshStatsForNewLevel();
     UFUNCTION()
     void OnRep_SelectedClass();
 	UFUNCTION()

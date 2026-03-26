@@ -183,6 +183,14 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
 	}
+
+	if (HasAuthority())
+	{
+		if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			PS->RefreshStatsForNewLevel();
+		}
+	}
 }
 
 void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
@@ -236,7 +244,21 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
+	if (HasAuthority())
+	{
+		FTimerHandle RefreshTimer;
+		GetWorldTimerManager().SetTimer(RefreshTimer, this, &ARelicRunnersPlayerController::OnTravelRefreshDelay, 0.2f, false);
+	}
+
 	EnableInput(this);
+}
+
+void ARelicRunnersPlayerController::OnTravelRefreshDelay()
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->RefreshStatsForNewLevel();
+	}
 }
 
 void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
@@ -331,14 +353,12 @@ void ARelicRunnersPlayerController::SyncUI()
 			UpdatePreviewWithEquippedItems();
 			UpdateCharacterVisuals();
 
+			Inventory->RefreshEquippedUI();
+			UpdateHUDAll();
+
 			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
 			UE_LOG(LogTemp, Warning, TEXT("Local Client Sync Complete: Actor spawned and Gear equipped."));
 		}
-
-		Inventory->RefreshEquippedUI();
-		RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
-		RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
-		UpdateHUDAll();
 	}
 }
 
