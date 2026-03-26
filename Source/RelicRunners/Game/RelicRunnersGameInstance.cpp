@@ -16,7 +16,7 @@
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
-#include "InputMappingContext.h"
+#include "Camera/CameraComponent.h"
 #include <RelicRunners/PlayerHUD/PlayerHUD.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
@@ -48,6 +48,9 @@ void URelicRunnersGameInstance::Init()
     //Keybinds
     Keys = NewObject<UKeybinds>(this);
     DefaultKeys = NewObject<UKeybinds>(this);
+
+    //to load previous cam settings
+    FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &URelicRunnersGameInstance::OnPostLoadMapSettings);
 
     //Savefiles
     InitializeSaveSlots();
@@ -476,6 +479,58 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
             PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
         }
     }
+}
+
+void URelicRunnersGameInstance::OnPostLoadMapSettings(UWorld* World)
+{
+    if (!Keys) return;
+
+    //brightness
+    for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
+    {
+        if (CamItr->GetWorld() != World) continue;
+
+        FPostProcessSettings& PPS = CamItr->PostProcessSettings;
+        PPS.bOverride_AutoExposureBias = true;
+        PPS.AutoExposureBias = Keys->Brightness;
+        CamItr->PostProcessBlendWeight = 1.0f;
+    }
+
+    //fov
+    if (APlayerController* PC = World->GetFirstPlayerController())
+    {
+        if (PC->PlayerCameraManager)
+            PC->PlayerCameraManager->SetFOV(Keys->FOV);
+    }
+
+    //motion blur and LUTs
+    if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(
+        UGameplayStatics::GetPlayerCharacter(World->GetFirstPlayerController(), 0)))
+    {
+        if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
+        {
+            FPostProcessSettings& PPS = Camera->PostProcessSettings;
+
+            PPS.bOverride_MotionBlurAmount = true;
+            PPS.MotionBlurAmount = Keys->motionBlurEnabled ? 0.9f : 0.0f;
+
+     
+            PPS.bOverride_ColorGradingLUT = true;
+            PPS.ColorGradingLUT = GetLUTForMode(Keys->ColorBlindMode);
+            PPS.bOverride_ColorGradingIntensity = true;
+            PPS.ColorGradingIntensity = 0.3f;
+
+            Camera->PostProcessBlendWeight = 1.0f;
+        }
+    }
+}
+
+UTexture* URelicRunnersGameInstance::GetLUTForMode(const FString& Mode)
+{
+    if (Mode == "Protanopia")  return LUT_Protanopia;
+    if (Mode == "Deutranopia") return LUT_Deuteranopia;
+    if (Mode == "Tritanopia")  return LUT_Tritanopia;
+    return LUT_Normal;
 }
 
 void URelicRunnersGameInstance::StartSessionGame()

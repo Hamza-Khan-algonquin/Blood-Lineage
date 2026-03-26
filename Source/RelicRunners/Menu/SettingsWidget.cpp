@@ -82,12 +82,10 @@ void USettingsWidget::NativeConstruct()
 
 	if (XSlider)
 	{
-		XSlider->SetValue(0.5f);
 		XSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensXChanged);
 	}
 	if (YSlider)
 	{
-		YSlider->SetValue(0.5f);
 		YSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensYChanged);
 	}
 
@@ -99,13 +97,13 @@ void USettingsWidget::NativeConstruct()
 			const float XSens = GI->Keys->HorizSens;
 			const float YSens = GI->Keys->VertSens;
 
-			const float XNorm = FMath::Clamp((XSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
+			const float XNorm = FMath::Clamp((XSens - MinSens) / (MaxSens- MinSens), 0.f, 1.f);
 			const float YNorm = FMath::Clamp((YSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
 
 			if (XSlider) XSlider->SetValue(XNorm);
 			if (YSlider) YSlider->SetValue(YNorm);
 
-			UpdateSensText(TB_XSensValue, XSens);
+			UpdateSensText(TB_XSensValue, XNorm);
 			UpdateSensText(TB_YSensValue, YSens);
 		}
 	}
@@ -554,6 +552,13 @@ void USettingsWidget::OnFOVSliderChanged(float Value)
 {
 
 	const float NewFOV = FMath::Lerp(MinFOV, MaxFOV, Value);
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+			GI->Keys->FOV = NewFOV;
+		
+	}
 	ApplyFOV(NewFOV);
 	UpdateFOVText(NewFOV);
 }
@@ -596,7 +601,7 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 			FPostProcessSettings& PPS = Camera->PostProcessSettings;
 
 			PPS.bOverride_MotionBlurAmount = true;
-			PPS.MotionBlurAmount = bEnabled ? 0.9f : 0.0f;
+			PPS.MotionBlurAmount = bEnabled ? 2.f : 0.0f;
 
 			Camera->PostProcessBlendWeight = 1.0f;
 		}
@@ -604,6 +609,13 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 }
 void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType)
 {
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+			GI->Keys->ColorBlindMode = Item;
+
+	}
 	if (Item == "Normal")
 	{
 		ApplyColorLUT(LUT_Normal);

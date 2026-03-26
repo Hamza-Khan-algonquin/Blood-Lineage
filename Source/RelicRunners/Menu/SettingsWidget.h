@@ -71,10 +71,10 @@ public:
 	UTextBlock* TB_YSensValue = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
-	float MinSens = 0.1f;
+	float MinSens = 1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
-	float MaxSens = 1.0f;
+	float MaxSens = 3.f;
 
 	UFUNCTION()
 	void OnSensXChanged(float Value);

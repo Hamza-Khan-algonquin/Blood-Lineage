@@ -56,6 +56,23 @@ public:
     void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
     void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
+    UFUNCTION(BlueprintCallable)
+    void OnPostLoadMapSettings(UWorld* World);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Normal;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Protanopia;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Deuteranopia;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Tritanopia;
+
+    UTexture* GetLUTForMode(const FString& Mode);
+
     //Getters and Setters
     UFUNCTION(BlueprintCallable)
     void SetCharacterName(const FString& NewName) { PlayerName = NewName; }
