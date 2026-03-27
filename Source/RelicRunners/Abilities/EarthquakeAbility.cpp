@@ -185,6 +185,12 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            //SPC->EnableInput(PC);
+        }
+
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
@@ -196,6 +202,7 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
                 {
                     if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
                     {
+
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
                     }
                 }
