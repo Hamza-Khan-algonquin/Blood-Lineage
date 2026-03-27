@@ -81,6 +81,20 @@ AEnemyPawn::AEnemyPawn()
 	Tags.Add("Enemy");
 }
 
+void AEnemyPawn::UpdateEmissiveHealth()
+{
+	float HealthPercent = EnemyStatsComponent->GetCurrentHealth() / EnemyStatsComponent->GetMaxHealth();
+
+	float NewIntensity = HealthPercent * 10.0f - 1.0f;
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("GlowIntensity", NewIntensity);
+		}
+	}
+}
+
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
@@ -126,6 +140,8 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 				KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
 			}
 		}
+
+		UpdateEmissiveHealth();
 	}
 
 	return DamageAmount;
@@ -519,7 +535,7 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-	
+
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();

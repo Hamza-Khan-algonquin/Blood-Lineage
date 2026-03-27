@@ -126,7 +126,7 @@ void AForgeActor::Interact_Implementation(ARelicRunnersCharacter* Char)
 
 	if (LinkedInventoryWidget)
 	{
-		if (!LinkedInventoryWidget->IsVisible())
+		if (LinkedInventoryWidget->GetVisibility() != ESlateVisibility::Visible)
 		{
 			PC->InventoryUI();
 		}
