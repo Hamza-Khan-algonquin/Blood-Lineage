@@ -536,6 +536,14 @@ void AEnemyPawn::BeginPlay()
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
 
+	float hueOffset = FMath::FRand();
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("HueOffset", hueOffset);
+		}
+	}
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();
