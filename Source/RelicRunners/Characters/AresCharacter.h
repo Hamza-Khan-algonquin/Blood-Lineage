@@ -41,6 +41,7 @@ protected:
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
+	void OnBasicAttackAnimationEnded(UAnimMontage* Montage, bool bInterrupted);
 	void HandleAttack();
 	virtual void UpdateCamera(float DeltaTime) override;
 	void DetectEnemies(bool& bEnemiesNearby, AActor*& NearestEnemy, float& NearestDistSq);
@@ -70,4 +71,6 @@ protected:
 
 	TSet<AActor*> EnemiesHitThisSwing;
 	bool bIsSwinging = false;
+
+	bool bCanBasicAttack = true;
 };

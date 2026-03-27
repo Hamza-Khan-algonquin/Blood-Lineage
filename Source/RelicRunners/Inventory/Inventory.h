@@ -198,6 +198,8 @@ public:
 	void PlayUISound(USoundBase* Sound);
 
 	UFUNCTION()
+	void OnAutoEquip();
+	UFUNCTION()
 	void UpdateForgeUI();
 	UFUNCTION()
 	void RefreshInventoryUI();
@@ -267,6 +269,8 @@ public:
 	class UBorder* B_PlayerLevel = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UBorder* B_MetaLevel = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UButton* B_AutoEquip = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTileView* VendorSlots;
 

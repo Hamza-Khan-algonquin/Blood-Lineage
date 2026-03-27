@@ -53,6 +53,24 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
         return;
     }
 
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
     LastUseTime = World->GetTimeSeconds();
 
     OriginalLocation = AvatarActor->GetActorLocation();
@@ -64,6 +82,8 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 
 AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
 {
+    if (!CurrentActorInfo) return nullptr;
+
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return nullptr;
 
@@ -123,6 +143,8 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor, AActor* TargetEnemy)
 
 void UBackStab::ExecuteBackStabSequence()
 {
+
+    if (!CurrentActorInfo) return;
     UWorld* World = GetWorld();
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
 
@@ -214,6 +236,8 @@ void UBackStab::ExecuteBackStabSequence()
 
 void UBackStab::ReturnPlayerToOriginalPosition()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return;
 

@@ -30,7 +30,7 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
-
+    if (!CurrentActorInfo) return;
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
     {
@@ -44,6 +44,24 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
 
 
     if (ActorInfo->IsLocallyControlled())
@@ -136,6 +154,8 @@ void UWarBannerAbility::SpawnBanner()
 
 void UWarBannerAbility::UpdateBuffs()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return;
 
@@ -224,6 +244,8 @@ void UWarBannerAbility::RemoveBuffFromActor(AActor* Actor)
 
 FVector UWarBannerAbility::GetBannerLocation() const
 {
+    if (!CurrentActorInfo) return FVector::ZeroVector;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return FVector::ZeroVector;
 

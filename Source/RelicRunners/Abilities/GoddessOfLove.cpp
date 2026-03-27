@@ -28,6 +28,8 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
     {
@@ -43,6 +45,24 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
 
     if (ActorInfo->IsLocallyControlled())
     {
@@ -107,6 +127,8 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
         return;
     }
 
+    if (!CurrentActorInfo) return;
+
     AActor* OwnerActor = ActorInfo->AvatarActor.Get();
     DamageOrigin = OwnerActor->GetActorLocation(); // initialize origin at player
 
@@ -145,6 +167,8 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
 
 void UGoddessOfLove::ApplyPassiveHealthRegen()
 {
+    if (!CurrentActorInfo) return;
+
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -185,6 +209,7 @@ void UGoddessOfLove::TickDamage()
 
     const float DeltaTime = World->GetDeltaSeconds();
     ElapsedDOTTime += DeltaTime;
+
 
     for (int32 i = AffectedEnemies.Num() - 1; i >= 0; --i)
     {

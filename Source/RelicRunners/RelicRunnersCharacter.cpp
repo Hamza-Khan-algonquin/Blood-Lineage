@@ -88,7 +88,9 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	CameraBoom->TargetArmLength = 500.0f;
 
 	CameraBoom->bUsePawnControlRotation = true;
+	bUseControllerRotationYaw = true; 
 
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->CameraLagSpeed = 10.f;
 
@@ -206,6 +208,9 @@ void ARelicRunnersCharacter::BeginPlay()
 	{
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+
 	}
 
 	
@@ -587,15 +592,46 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
+		float SpeedMultiplier = 1.0f;
+
+		if (Axis == EAxis::X) // forward/backward
+		{
+			if (Value < 0.0f)
+			{
+				// moving backward
+				SpeedMultiplier = 0.6f; 
+			}
+		}
+		else if (Axis == EAxis::Y)
+		{
+			// strafing
+			SpeedMultiplier = 0.7f; 
+		}
+
 		if (Axis == EAxis::X)
 		{
 			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-			AddMovementInput(Direction, Value);
+			AddMovementInput(Direction, Value * SpeedMultiplier);
 		}
 		else if (Axis == EAxis::Y)
 		{
 			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-			AddMovementInput(Direction, Value);
+			AddMovementInput(Direction, Value * SpeedMultiplier);
+		}
+
+		const FString MapName = GetWorld()->GetMapName();
+		if (MapName.Contains(TEXT("BossLevel")))
+		{
+			if (Axis == EAxis::X)
+			{
+				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+				AddMovementInput(Direction, Value);
+			}
+			else if (Axis == EAxis::Y)
+			{
+				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+				AddMovementInput(Direction, Value);
+			}
 		}
 	}
 }
@@ -651,7 +687,7 @@ void ARelicRunnersCharacter::Interact()
 
 	if (World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
 	{
-		DrawDebugSphere(World, Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
+		//DrawDebugSphere(World, Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && HitActor->Implements<UInteractInterface>())
 		{
