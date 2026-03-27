@@ -530,6 +530,8 @@ public:
             }
         }
 
+        ItemData.PowerLevel = ItemData.Health + ItemData.Armor + ItemData.Dexterity + ItemData.Intelligence + ItemData.Strength;
+
         return ItemData;
     }
 
