@@ -74,6 +74,11 @@ void UEnemyLODComponent::UpdateLOD()
 	SetLOD(newLOD);
 }
 
+void UEnemyLODComponent::MultiCastUpdateLOD_Implementation()
+{
+	UpdateLOD();
+}
+
 void UEnemyLODComponent::SetLOD(int newLOD)
 {
 	if (newLOD != CurrentLOD)
@@ -101,6 +106,11 @@ void UEnemyLODComponent::SetLOD(int newLOD)
 			break;
 		}
 	}
+}
+
+void UEnemyLODComponent::MultiCastSetLOD_Implementation(int newLOD)
+{
+	SetLOD(newLOD);
 }
 
 void UEnemyLODComponent::SetIsUpdatingLOD(bool isUpdating)
