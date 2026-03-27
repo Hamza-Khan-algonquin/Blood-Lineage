@@ -43,35 +43,11 @@ void UAbilityBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
         return;
     }
 
-    // Get PlayerState safely
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
-    {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
-
-    // Must have PlayerState and enough resource
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    if (!PS || PS->GetPlayerResource() < FinalManaCost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
 }
 
 void UAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-}
-
-void UAbilityBase::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
-{
 
 }
 

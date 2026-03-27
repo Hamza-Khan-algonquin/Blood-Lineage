@@ -45,10 +45,30 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         return;
     }
 
+
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarChar, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
     }
+
 
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.5f;

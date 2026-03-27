@@ -27,12 +27,23 @@ void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		return;
 	}
 
-	ARelicRunnersPlayerState* PS =ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
-
-	if (!PS)
+	ARelicRunnersPlayerState* PS = nullptr;
+	if (ActorInfo->PlayerController.IsValid())
 	{
+		PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+	}
+
+	float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+	if (!PS || PS->GetPlayerResource() < FinalManaCost)
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
+
+	// Spend resource
+	PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+	PS->UpdateRemoteHUDResource();
 
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{

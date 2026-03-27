@@ -42,10 +42,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         return;
     }
     
-    if (AbilityAnim)
-    {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
-    }
+
 
     if (OwnerChar->HasAuthority())
     {
@@ -62,8 +59,25 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
 
             if (PS)
             {
+                float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+                if (!PS || PS->GetPlayerResource() < FinalManaCost)
+                {
+                    EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+                    return;
+                }
+
                 PS->Multicast_SpawnVFX(FVector(0), FRotator(0, 0, 0), FVector(1.f), AbilityVFX, true);
+
+                // Spend resource
+                PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+                PS->UpdateRemoteHUDResource();
             }
+        }
+
+        if (AbilityAnim)
+        {
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
         }
 
         // Disable movement
