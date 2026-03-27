@@ -76,13 +76,6 @@ AEnemyPawn::AEnemyPawn()
 
 	CapsuleComponent->OnComponentHit.AddDynamic(this, &AEnemyPawn::GroundCheck);
 
-	//For emissive eyes health scaling
-	UMeshComponent* MeshComp = FindComponentByClass<UMeshComponent>();
-	if (MeshComp)
-	{
-		EnemyDynamicMaterial = MeshComp->CreateDynamicMaterialInstance(0);
-	}
-
 	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
@@ -94,8 +87,14 @@ void AEnemyPawn::UpdateEmissiveHealth()
 
 	float HealthPercent = EnemyStatsComponent->GetCurrentHealth() / EnemyStatsComponent->GetMaxHealth();
 
-	float NewIntensity = FMath::Lerp(20.0f, 0.0f, HealthPercent);
-	EnemyDynamicMaterial->SetScalarParameterValue(FName("GlowIntensity"), NewIntensity);
+	float NewIntensity = HealthPercent * 10.0f - 1.0f;
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("GlowIntensity", NewIntensity);
+		}
+	}
 }
 
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -538,7 +537,7 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-	
+
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();

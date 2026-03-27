@@ -83,12 +83,16 @@ AEnemyPawn::AEnemyPawn()
 
 void AEnemyPawn::UpdateEmissiveHealth()
 {
-	if (!EnemyDynamicMaterial) return;
-
 	float HealthPercent = EnemyStatsComponent->GetCurrentHealth() / EnemyStatsComponent->GetMaxHealth();
 
 	float NewIntensity = HealthPercent * 10.0f - 1.0f;
-	EnemyDynamicMaterial->SetScalarParameterValue(FName("GlowIntensity"), NewIntensity);
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("GlowIntensity", NewIntensity);
+		}
+	}
 }
 
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -527,20 +531,11 @@ void AEnemyPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//for(int i = 0; i < SkeletalMesh->GetNumMaterials(); i++)
-	//{
-	//	DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
-	//}
-	//For emissive eyes health scaling
-	if (SkeletalMesh)
+	for(int i = 0; i < SkeletalMesh->GetNumMaterials(); i++)
 	{
-		EnemyDynamicMaterial = SkeletalMesh->CreateDynamicMaterialInstance(0);
-
-		if (!EnemyDynamicMaterial)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to create Dynamic Material on %s"), *GetName());
-		}
+		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
+
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();
