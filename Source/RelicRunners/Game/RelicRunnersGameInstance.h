@@ -145,6 +145,70 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Session")
     bool bIsMatchLocked = false;
 
+
+
+    UPROPERTY(BlueprintReadWrite)
+    float MasterVolume = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float MusicVolume = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SFXVolume = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float Brightness = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float FOV = 90.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float MouseSensitivityX = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float MouseSensitivityY = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bMotionBlurEnabled = true;
+
+    UPROPERTY(BlueprintReadWrite)
+    FIntPoint Resolution = FIntPoint(1920, 1080);
+
+    UPROPERTY(BlueprintReadWrite)
+    TEnumAsByte<EWindowMode::Type> WindowMode = EWindowMode::WindowedFullscreen;
+
+    UFUNCTION()
+    void ApplyAllSettings();
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedFOV;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedBrightness;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bSavedMotionBlur;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedSensX;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedSensY;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bInvertX;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bInvertY;
+
+    UPROPERTY(BlueprintReadWrite)
+    FString SavedColorMode;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bAutoLoot;
+
+
+
 private:
 
 

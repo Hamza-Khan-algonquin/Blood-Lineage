@@ -13,6 +13,7 @@
 #include "Engine/Engine.h"
 #include "RelicRunners/Menu/Keybinds.h"
 #include <RelicRunners/Menu/LobbyGameMode.h>
+#include <RelicRunners/Menu/SettingsWidget.h>
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
@@ -20,6 +21,9 @@
 #include <RelicRunners/PlayerHUD/PlayerHUD.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
+#include "GameFramework/GameUserSettings.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/GameUserSettings.h"
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
@@ -137,8 +141,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
 
     if (!Keys) return;
     if (PC->PlayerCameraManager)
-        PC->PlayerCameraManager->SetFOV(Keys->FOV);
-
+        PC->PlayerCameraManager->SetFOV(SavedFOV > 0.f ? SavedFOV : Keys->FOV);
 }
 
 
@@ -166,6 +169,51 @@ void URelicRunnersGameInstance::InitializeSaveSlots()
     FirstSlot->IsEmptySlot = true;
     SaveSlots.Add(FirstSlot);
 }
+
+void URelicRunnersGameInstance::ApplyAllSettings()
+{
+    if (UGameUserSettings* Settings = UGameUserSettings::GetGameUserSettings())
+    {
+        Settings->SetScreenResolution(Resolution);
+        Settings->SetFullscreenMode(WindowMode);
+        Settings->ApplySettings(false);
+    }
+
+    APlayerController* PC = GetFirstLocalPlayerController();
+    if (!PC) return;
+
+    // FOV
+    if (PC->PlayerCameraManager)
+    {
+        PC->PlayerCameraManager->SetFOV(SavedFOV > 0.f ? SavedFOV : Keys->FOV);
+    }
+
+    // Brightness / motion blur / LUT
+    for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
+    {
+        if (CamItr->GetWorld() != GetWorld()) continue;
+
+        FPostProcessSettings& PPS = CamItr->PostProcessSettings;
+
+        PPS.bOverride_AutoExposureBias = true;
+        PPS.AutoExposureBias = SavedBrightness;
+
+        PPS.bOverride_MotionBlurAmount = true;
+        PPS.MotionBlurAmount = bSavedMotionBlur ? 2.f : 0.0f;
+
+        PPS.bOverride_ColorGradingLUT = true;
+        PPS.ColorGradingLUT = GetLUTForMode(SavedColorMode);
+
+        PPS.bOverride_ColorGradingIntensity = true;
+        PPS.ColorGradingIntensity = 0.3f;
+
+        CamItr->PostProcessBlendWeight = 1.0f;
+    }
+
+    ApplyKeybindings();
+}
+
+
 
 void URelicRunnersGameInstance::Shutdown()
 {
@@ -486,9 +534,9 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
 
 UTexture* URelicRunnersGameInstance::GetLUTForMode(const FString& Mode)
 {
-    if (Mode == "Protanopia")  return LUT_Protanopia;
+    if (Mode == "Protanopia") return LUT_Protanopia;
     if (Mode == "Deutranopia") return LUT_Deuteranopia;
-    if (Mode == "Tritanopia")  return LUT_Tritanopia;
+    if (Mode == "Tritanopia") return LUT_Tritanopia;
     return LUT_Normal;
 }
 

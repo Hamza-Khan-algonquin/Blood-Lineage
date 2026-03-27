@@ -26,7 +26,6 @@ void USettingsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-
 	if (BackButton)
 	{
 		BackButton->OnClicked.AddDynamic(this, &USettingsWidget::BackButtonClicked);
@@ -116,7 +115,7 @@ void USettingsWidget::NativeConstruct()
 		{
 			if (GI->Keys)
 			{
-				const float B = GI->Keys->Brightness;
+				const float B = GI->SavedBrightness;
 				const float T = FMath::Clamp((B - MinBrightness) / (MaxBrightnes - MinBrightness), 0.f, 1.f);
 				BrightnessSlider->SetValue(T);
 				ApplyBrightness(B);
@@ -249,6 +248,7 @@ void USettingsWidget::NativeConstruct()
 			if (GI->Keys)
 			{
 				AutoLoot->SetIsChecked(GI->Keys->bAutoLoot);
+				AutoLoot->SetIsChecked(GI->bAutoLoot);
 			}
 		}
 
@@ -258,15 +258,14 @@ void USettingsWidget::NativeConstruct()
 	{
 		if (GI->Keys)
 		{
-			ApplyBrightness(GI->Keys->Brightness);
-			ApplyMotionBlur(GI->Keys->motionBlurEnabled);
-			ApplyFOV(GI->Keys->FOV);
+			ApplyBrightness(GI->SavedBrightness);
+			ApplyMotionBlur(GI->bSavedMotionBlur);
+			ApplyFOV(GI->SavedFOV);
 
-			// LUT
-			if (GI->Keys->ColorBlindMode == "Protanopia")       ApplyColorLUT(LUT_Protanopia);
-			else if (GI->Keys->ColorBlindMode == "Deutranopia") ApplyColorLUT(LUT_Deuternopia);
-			else if (GI->Keys->ColorBlindMode == "Tritanopia")  ApplyColorLUT(LUT_Tritanopia);
-			else                                                 ApplyColorLUT(LUT_Normal);
+			if (GI->SavedColorMode == "Protanopia")       ApplyColorLUT(LUT_Protanopia);
+			else if (GI->SavedColorMode == "Deutranopia") ApplyColorLUT(LUT_Deuternopia);
+			else if (GI->SavedColorMode == "Tritanopia")  ApplyColorLUT(LUT_Tritanopia);
+			else                                                     ApplyColorLUT(LUT_Normal);
 		}
 		InitializeDefaultKeybindings();
 	}
@@ -292,6 +291,7 @@ void USettingsWidget::OnSensXChanged(float Value)
 		if (GI->Keys)
 		{
 			GI->Keys->HorizSens = NewSens;
+			GI->SavedSensX = NewSens;
 		}
 	}
 
@@ -307,6 +307,7 @@ void USettingsWidget::OnSensYChanged(float Value)
 		if (GI->Keys)
 		{
 			GI->Keys->VertSens = NewSens;
+			GI->SavedSensY = NewSens;
 		}
 	}
 
@@ -328,8 +329,9 @@ void USettingsWidget::OnBrightnessChanged(float Value)
 		if (GI->Keys)
 		{
 			GI->Keys->Brightness = NewExposure;
+			
 		}
-
+		GI->SavedBrightness = NewExposure;
 	}
 
 	ApplyBrightness(NewExposure);
@@ -487,7 +489,7 @@ void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 void USettingsWidget::HandleResolutionSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
 	if (SelectionType == ESelectInfo::Direct) return;
-	
+
 	if (!ResMap.Contains(SelectedItem)) return;
 
 	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
@@ -498,6 +500,10 @@ void USettingsWidget::HandleResolutionSelectionChanged(FString SelectedItem, ESe
 		GS->SetScreenResolution(NewRes);
 		GS->ApplyResolutionSettings(false);
 		GS->SaveSettings();
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			GI->Resolution = NewRes;
+		}
 	}
 }
 
@@ -521,10 +527,13 @@ void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESe
 			{
 				GS->SetFullscreenMode(EWindowMode::Windowed);
 			}
-
+			
 			GS->ApplySettings(false);
 			GS->SaveSettings();
-
+			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+			{
+				GI->WindowMode = GS->GetFullscreenMode();
+			}
 		}
 }
 
@@ -573,6 +582,9 @@ void USettingsWidget::OnFOVSliderChanged(float Value)
 	{
 		if (GI->Keys)
 			GI->Keys->FOV = NewFOV;
+
+		GI->SavedFOV = NewFOV;
+
 		
 	}
 	ApplyFOV(NewFOV);
@@ -581,6 +593,7 @@ void USettingsWidget::OnFOVSliderChanged(float Value)
 
 void USettingsWidget::ApplyFOV(float NewFOV)
 {
+
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 	{
 		if (PC->PlayerCameraManager)
@@ -604,6 +617,8 @@ void USettingsWidget::OnMotionBlurClicked(bool isChecked)
 		if (GI->Keys)
 		{
 			GI->Keys->motionBlurEnabled = isChecked;
+			GI->bSavedMotionBlur = isChecked;
+
 		}
 	}
 	ApplyMotionBlur(isChecked);
@@ -626,12 +641,7 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType)
 {
 
-	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
-	{
-		if (GI->Keys)
-			GI->Keys->ColorBlindMode = Item;
-
-	}
+	
 	if (Item == "Normal")
 	{
 		ApplyColorLUT(LUT_Normal);
@@ -648,6 +658,14 @@ void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type Sel
 	else if (Item == "Tritanopia")
 	{
 		ApplyColorLUT(LUT_Tritanopia);
+
+	}
+	
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+			GI->Keys->ColorBlindMode = Item;
+		GI->SavedColorMode = Item;
 
 	}
 }
@@ -771,6 +789,7 @@ void USettingsWidget::OnAutoLootChanged(bool bIsChecked)
 		if (GI->Keys)
 		{
 			GI->Keys->bAutoLoot = bIsChecked;
+			GI->bAutoLoot = bIsChecked;
 
 		}
 	}
@@ -826,6 +845,7 @@ void USettingsWidget::ToggleInvertedXMouse(bool isChecked)
 	{
 		GI->Keys->InvertedXMouse = isChecked;
 		GI->ApplyKeybindings();
+		GI->bInvertX = isChecked;
 	}
 }
 
@@ -836,5 +856,6 @@ void USettingsWidget::ToggleInvertedYMouse(bool isChecked)
 	{
 		GI->Keys->InvertedYMouse = isChecked;
 		GI->ApplyKeybindings();
+		GI->bInvertY = isChecked;
 	}
 }

@@ -1187,8 +1187,6 @@ void ARelicRunnersPlayerController::Client_RequestSaveStats_Implementation()
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
-	UE_LOG(LogTemp, Warning, TEXT("=== InitLocalUI CALLED ==="));
-
 	if (!IsLocalController()) return;
 
 	UWorld* World = GetWorld();
@@ -1316,7 +1314,10 @@ void ARelicRunnersPlayerController::InitLocalUI()
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
-
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GI->ApplyAllSettings();
+	}
 	TryBindUI();
 
 }
