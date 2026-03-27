@@ -423,6 +423,7 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
 
     CachedEquippedStats = CalculateEquippedStats();
 
+    float AbilityMovementSpeed = 1;
     //Player
     if (ARelicRunnersPlayerState* PS = PawnOwner->GetPlayerState<ARelicRunnersPlayerState>())
     {
@@ -432,13 +433,14 @@ void UInventoryComponent::UpdateTotalEquippedStats(APawn* PawnOwner)
             PS->SetPlayerMaxResource(CachedEquippedStats.TotalResource);
             PS->SetHealthGrantedFromPotion(ItemStats::GetHealPercent(CachedEquippedStats.TotalPotionEfficiency));
             PS->Client_UpdateEquippedStats(CachedEquippedStats);
+            AbilityMovementSpeed = PS->IncreasedMovementSpeedFromAbility;
         }
     }
     if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(PawnOwner))
     {
         float PercentMovementSpeedIncrease = ItemStats::GetSpeedPerc(CachedEquippedStats.TotalDexterity);
         float BaseMovementSpeed = 700.0f;
-        float NewMovementSpeed = BaseMovementSpeed * (1 + (PercentMovementSpeedIncrease / 100.0f));
+        float NewMovementSpeed = ( BaseMovementSpeed * (1 + (PercentMovementSpeedIncrease / 100.0f)) ) * AbilityMovementSpeed;
         Character->SetMovementSpeed(NewMovementSpeed);
     }
 

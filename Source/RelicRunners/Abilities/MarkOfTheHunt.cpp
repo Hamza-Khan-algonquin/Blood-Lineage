@@ -120,7 +120,7 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UMarkOfTheHunt::ProjectileTick()
 {
-    if (!CurrentActorInfo) return;
+    //if (!CurrentActorInfo) return;
 
     UWorld* World = GetWorld();
     if (!World) return;

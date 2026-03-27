@@ -211,6 +211,9 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedIntelligence;
 
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
+	float IncreasedMovementSpeedFromAbility = 1;
+
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
 
