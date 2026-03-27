@@ -3,13 +3,14 @@
 #include "GameFramework/Character.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "TimerManager.h"
+#include "RelicRunners/Inventory/InventoryComponent.h"
 
 UImpunityAbility::UImpunityAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
     Duration = 5.0f;
-    CooldownDuration = 8.0f;
+    CooldownDuration = 12.0f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 
@@ -20,6 +21,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 
+    if (!CurrentActorInfo) return;
 
     float CurrentTime = GetWorld()->GetTimeSeconds();
     if (CurrentTime - LastUseTime < CooldownTimer)
@@ -50,6 +52,8 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
     bIsActive = true;
 
     if (ActorInfo->AvatarActor->HasAuthority())
@@ -59,13 +63,30 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         {
             PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
         }
+
+        float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+        if (!PS || PS->GetPlayerResource() < FinalManaCost)
+        {
+            EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+            return;
+        }
+
+        // Spend resource
+        PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+        PS->UpdateRemoteHUDResource();
+
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
         PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
         PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, true);
+
+        PS->IncreasedMovementSpeedFromAbility = 1.75f;
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(AvatarChar);
     }
     
-
-    OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
-    AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.75f;
     AvatarChar->GetWorldTimerManager().SetTimer(SpeedResetTimer, FTimerDelegate::CreateUObject(this, &UImpunityAbility::EndAbility, Handle, ActorInfo, ActivationInfo, true, false), Duration, false);
 
 
@@ -74,11 +95,6 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 void UImpunityAbility::ResetSpeed()
 {
 
-    ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
-    if (AvatarChar)
-    {
-        AvatarChar->GetCharacterMovement()->MaxWalkSpeed = OriginalSpeed;
-    }
 }
 
 void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -86,6 +102,8 @@ void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
+        ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
+
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
@@ -104,7 +122,13 @@ void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
             }
         }
 
-        ResetSpeed();
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+        PS->IncreasedMovementSpeedFromAbility = 1;
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(AvatarChar);
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

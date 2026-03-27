@@ -14,7 +14,7 @@ UDivinePunishment::UDivinePunishment()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	Duration = 5.f;
 	LastUseTime = -100.f;
-	CooldownTimer = 10.f;
+	CooldownTimer = 15.f;
 	Damage = 300.f;
     AreaRadius = 500.f;
 }
@@ -22,6 +22,8 @@ UDivinePunishment::UDivinePunishment()
 void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    if (!CurrentActorInfo) return;
 
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
@@ -40,18 +42,34 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+
+    PlayAbilityCastSound(ActorInfo);
+
     // Get PlayerState safely
+
     ARelicRunnersPlayerState* PS = nullptr;
     if (ActorInfo->PlayerController.IsValid())
     {
         PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
     CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
 
     if (AbilityAnim)
     {
-        UAnimMontage* Montage = PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        UAnimMontage* Montage = PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
 
         if (Montage)
         {
@@ -96,6 +114,7 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                     if (PS)
                     {
                         PS->Multicast_SpawnVFX(Center + FVector(0.f, 0.f, -100.f),FRotator::ZeroRotator,FVector(2.f),AbilityVFX,false);
+						PS->SetInvincible(true);
                     }
                 }),1.5f, false );
     }
@@ -115,7 +134,7 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
     CachedCenter = Center;
     DamageTicksElapsed = 0;
 
-
+    if (!CurrentActorInfo) return;
 
     UWorld* World = GetWorld();
     if (!World) return;
@@ -126,8 +145,14 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
 
 void UDivinePunishment::DivineDamageTick()
 {
-    UWorld* World = GetWorld();
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!IsValid(AvatarActor)) return;
+
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World) return;
+
     AController* InstigatorController = CachedInstigatorController.Get();
 
     if (!World || !AvatarActor || !InstigatorController)
@@ -170,6 +195,17 @@ void UDivinePunishment::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+
+		if (PS)
+		{
+			PS->SetInvincible(false);
+		}
+
         if (APlayerController* PC = Cast<APlayerController>(ActorInfo->AvatarActor->GetInstigatorController()))
         {
             PC->EnableInput(PC);

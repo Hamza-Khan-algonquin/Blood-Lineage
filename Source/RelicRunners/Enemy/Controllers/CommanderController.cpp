@@ -364,6 +364,7 @@ void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLo
 
 	for (int i = 1; i < players.Num(); i++)
 	{
+		if (!players[i]) continue;
 		float newDistance = FVector::Dist(players[i]->GetActorLocation(), refernceLocation);
 
 		if (closestDistance > newDistance)

@@ -27,6 +27,7 @@
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include <RelicRunners/RelicRunnersGameState.h>
 
 
 // Sets default values
@@ -80,6 +81,20 @@ AEnemyPawn::AEnemyPawn()
 	Tags.Add("Enemy");
 }
 
+void AEnemyPawn::UpdateEmissiveHealth()
+{
+	float HealthPercent = EnemyStatsComponent->GetCurrentHealth() / EnemyStatsComponent->GetMaxHealth();
+
+	float NewIntensity = HealthPercent * 10.0f - 1.0f;
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("GlowIntensity", NewIntensity);
+		}
+	}
+}
+
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
@@ -125,6 +140,8 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 				KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
 			}
 		}
+
+		UpdateEmissiveHealth();
 	}
 
 	return DamageAmount;
@@ -174,7 +191,7 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 			if (PS)
 			{
-				PS->AddExperience(CalculateXP());
+				PS->AddExperience(CalculateXP() * (EnemyStatsComponent->GetLevel()));
 				PS->EnemiesKilled++;
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
 				SpawnItem(PlayerLuck);
@@ -342,27 +359,34 @@ void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* O
 
 float AEnemyPawn::CalculateXP() const
 {
-	return FMath::RandRange(10, 25);
+	return FMath::RandRange(5, 20);
 }
 
 void AEnemyPawn::SpawnItem(int Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = FMath::FRandRange(0.f, 100.f);
+	//Difficulty
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	FDifficultyInfo diffInfo;
+	if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+	{
+		diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+	}
 
-	if (chance <= EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(Luck))
+	float chance = FMath::FRandRange(0.f, 100.f);
+	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
+	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
+
+	if (chance <= chanceToDropOverall)
 	{
 		if (ItemMeshDataClass)
 		{
 			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
 		}
 
-		UIconLibrary* Lib = nullptr;
-		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
-		{
-			Lib = GI->GlobalIconLibrary;
-		}
+		UIconLibrary* Lib = GI->GlobalIconLibrary;
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
 			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData, Lib),
@@ -511,7 +535,7 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-	
+
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();

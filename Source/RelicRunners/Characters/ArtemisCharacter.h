@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "RelicRunners/RelicRunnersCharacter.h" 
+#include "Sound/SoundBase.h"
 #include "ArtemisCharacter.generated.h"
 
 USTRUCT()
@@ -85,6 +86,9 @@ protected:
 
 	UPROPERTY()
 	float ProjectileDamage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> BasicAttackSound = nullptr;
 
 	bool bCanBasicAttack = true;
 

@@ -14,6 +14,7 @@
  *   � 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
+
 #include "RelicRunnersPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
@@ -149,11 +150,6 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 
 	UpdateCharacterVisuals();
 
-	if (PlayerCameraManager)
-	{
-		PlayerCameraManager->ViewPitchMin = -60.f;
-		PlayerCameraManager->ViewPitchMax = 10.f;
-	}
 }
 
 void ARelicRunnersPlayerController::Server_InitializePlayerData_Implementation(FSaveData ClientMeta)
@@ -182,6 +178,14 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
+	}
+
+	if (HasAuthority())
+	{
+		if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			PS->RefreshStatsForNewLevel();
+		}
 	}
 }
 
@@ -236,7 +240,21 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
+	if (HasAuthority())
+	{
+		FTimerHandle RefreshTimer;
+		GetWorldTimerManager().SetTimer(RefreshTimer, this, &ARelicRunnersPlayerController::OnTravelRefreshDelay, 0.2f, false);
+	}
+
 	EnableInput(this);
+}
+
+void ARelicRunnersPlayerController::OnTravelRefreshDelay()
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->RefreshStatsForNewLevel();
+	}
 }
 
 void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
@@ -331,14 +349,12 @@ void ARelicRunnersPlayerController::SyncUI()
 			UpdatePreviewWithEquippedItems();
 			UpdateCharacterVisuals();
 
+			Inventory->RefreshEquippedUI();
+			UpdateHUDAll();
+
 			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
 			UE_LOG(LogTemp, Warning, TEXT("Local Client Sync Complete: Actor spawned and Gear equipped."));
 		}
-
-		Inventory->RefreshEquippedUI();
-		RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
-		RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
-		UpdateHUDAll();
 	}
 }
 
@@ -785,6 +801,7 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 	if (!UIWidget) return;
 
 	bool IsOpening = !UIWidget->IsVisible();
+	if (UIWidget == Inventory && Inventory->GetVisibility() == ESlateVisibility::HitTestInvisible) IsOpening = true;
 
 	if (IsOpening)
 	{
@@ -806,6 +823,13 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 			if (InventoryOpenSound)
 			{
 				UGameplayStatics::PlaySound2D(this, InventoryOpenSound);
+			}
+		}
+		else if (UIWidget == AbilitySelection)
+		{
+			if (AbilitySelectionOpenSound)
+			{
+				UGameplayStatics::PlaySound2D(this, AbilitySelectionOpenSound);
 			}
 		}
 		UIWidget->SetVisibility(ESlateVisibility::Visible);
@@ -846,6 +870,11 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 	}
 	else
 	{
+		if (UIWidget == AbilitySelection && AbilitySelectionCloseSound)
+		{
+			UGameplayStatics::PlaySound2D(this, AbilitySelectionCloseSound);
+		}
+
 		UIWidget->SetVisibility(ESlateVisibility::Hidden);
 		UIWidget->SetIsEnabled(false);
 	}
@@ -855,8 +884,8 @@ void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
 {
 	if (Inventory)
 	{
-		Inventory->SetVisibility(ESlateVisibility::Hidden);
-		Inventory->SetIsEnabled(false);
+		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Inventory->SetIsEnabled(true);
 
 		GetWorld()->GetTimerManager().ClearTimer(DisableUITimer);
 	}
@@ -1384,8 +1413,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (Inventory)
 		{
 			Inventory->AddToViewport();
-			Inventory->SetVisibility(ESlateVisibility::Hidden);
-			Inventory->SetIsEnabled(false);
+			HideUI(Inventory);
 		}
 	}
 
@@ -1553,6 +1581,12 @@ void ARelicRunnersPlayerController::BeginPlay()
 				Server_InitializePlayerData(DefaultData);
 			}
 		}
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ViewPitchMin = -60.f;
+		PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Sound/SoundBase.h"
 #include "HadesObelisk.generated.h"
 
 UCLASS()
@@ -52,6 +53,9 @@ protected:
 
 	UPROPERTY(Replicated)
 	float CurrentRotationMultiplier = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> ExplosionSound = nullptr;
 
 	float InitialZ;
 	float RunningTime;

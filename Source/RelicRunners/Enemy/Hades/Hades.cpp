@@ -17,6 +17,7 @@
 #include <RelicRunners/RelicRunnersGameState.h>
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/RelicRunnersGameMode.h>
+#include "HadesObelisk.h"
 
 AHades::AHades()
 {
@@ -74,6 +75,15 @@ void AHades::BeginPlay()
 
         SpawnBridge();
         SelectRandomTarget();
+    }
+
+    //Difficulty
+    URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+    AGameStateBase* GameState = GetWorld()->GetGameState();
+    if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+    {
+        FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+        BaseDamageFromDifficulty = diffInfo.BossBaseDamagePercent;
     }
 }
 
@@ -301,6 +311,11 @@ void AHades::CinematicSlam()
         {
             StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
+            if (WeakSelf->SlamImpactSound)
+            {
+                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+            }
+
             StrongSelf->bIsBusy = false;
             StrongSelf->bIsLookingAtAbilityTarget = false;
             StrongSelf->ScheduleNextAttack(2.0f);
@@ -364,6 +379,13 @@ void AHades::PlaySlam()
 
         if (StrongSelf)
         {
+
+            if (WeakSelf->SlamImpactSound)
+            {
+                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+            }
+
+            //Incase boss dies
             StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
             StrongSelf->bIsBusy = false;
@@ -414,6 +436,12 @@ void AHades::PlayFireball()
                 FB->SetOwner(WeakSelf.Get());
 
                 UGameplayStatics::FinishSpawningActor(FB, FTransform(WeakSelf->SkeletalMesh->GetSocketLocation(SocketName)));
+
+                if (FB->SpawnSound)
+                {
+                    UGameplayStatics::SpawnSoundAttached(FB->SpawnSound, WeakSelf->SkeletalMesh, SocketName);
+                }
+
                 FB->AttachToComponent(WeakSelf->SkeletalMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);
 
                 FTimerHandle DetachHandle;
@@ -466,6 +494,16 @@ void AHades::PlaySweep()
 
     GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this, SlamLoc]() {
         ExecuteDamage(SlamLoc, 800.0f);
+
+        if (SlamImpactSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, SlamImpactSound, SlamLoc);
+        }
+
+        if (SweepAttackSound && SkeletalMesh)
+        {
+            UGameplayStatics::SpawnSoundAttached(SweepAttackSound, SkeletalMesh);
+        }
 
         bIsInitialSlamming = false;
         bIsSweeping = true;
@@ -627,8 +665,50 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 {
     if (!HasAuthority()) return;
 
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+    TArray<AActor*> OutActors;
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(this);
+
+    UKismetSystemLibrary::SphereOverlapActors(
+        GetWorld(), ImpactLocation, ImpactRadius,
+        ObjectTypes, nullptr, ActorsToIgnore, OutActors
+    );
+
+    //Loop through players, apply % damage, and add them to ignore list
+    for (AActor* OverlappedActor : OutActors)
+    {
+        if (APawn* HitPawn = Cast<APawn>(OverlappedActor))
+        {
+            if (ARelicRunnersPlayerState* RRPS = HitPawn->GetPlayerState<ARelicRunnersPlayerState>())
+            {
+                float DamageToApply = RRPS->PlayerMaxHealth * (BaseDamageFromDifficulty / 100.0f);
+
+                UGameplayStatics::ApplyDamage(OverlappedActor, DamageToApply, nullptr, this, nullptr);
+
+                //So radial for obelisk doesn't hit player
+                ActorsToIgnore.Add(OverlappedActor);
+            }
+        }
+    }
+
+    float ObeliskDamage = 50.0f;
+
+    UGameplayStatics::ApplyRadialDamage(
+        GetWorld(),
+        ObeliskDamage,
+        ImpactLocation,
+        ImpactRadius,
+        nullptr,
+        ActorsToIgnore,
+        this,
+        nullptr,
+        true
+    );
+
     DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
-    UGameplayStatics::ApplyRadialDamage(GetWorld(), 40.0f * (1 + (int)CurrentPhase), ImpactLocation, ImpactRadius, nullptr, { this }, this, nullptr, true);
 }
 
 void AHades::SelectRandomTarget()
@@ -742,24 +822,13 @@ void AHades::Die()
         }
     }
 
-    Destroy();
-
-    //Send players to mainmenu after win
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(It->Get());
-
-        if (IsValid(RPC) && IsValid(RPC->GetPawn()))
-        {
-            RPC->CleanUI();
-            RPC->ChangeState(NAME_Spectating);
-            RPC->Client_RequestSaveStats();
-        }
-    }
     if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
     {
-        GM->TriggerPostGameForAll();
+        FTimerHandle PostGameHandle;
+        GetWorldTimerManager().SetTimer(PostGameHandle, GM, &ARelicRunnersGameMode::TriggerPostGameForAll, 0.5f, false);
     }
+
+    Destroy();
 }
 
 void AHades::CheckPhaseTransition()

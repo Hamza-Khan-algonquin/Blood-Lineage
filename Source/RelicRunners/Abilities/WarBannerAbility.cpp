@@ -30,7 +30,7 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
-
+    if (!CurrentActorInfo) return;
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
     {
@@ -45,6 +45,28 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
+    // Get PlayerState safely
+
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
 
     if (ActorInfo->IsLocallyControlled())
     {
@@ -58,18 +80,29 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         {
             float AnimDuration = AbilityAnim->GetPlayLength();
 
-            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
 
             if (PC)
             {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
                 FTimerHandle InputTimerHandle;
 
                 GetWorld()->GetTimerManager().SetTimer(
                     InputTimerHandle,
-                    [PC]()
+                    [WeakPC, WeakWorld]()
                     {
-                        PC->EnableInput(PC);
+                        if (!WeakWorld.IsValid())
+                            return;
 
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
                     },
                     AnimDuration,
                     false
@@ -93,8 +126,10 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
 void UWarBannerAbility::SpawnBanner()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    if (!IsValid(AvatarActor)) return;
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
@@ -123,6 +158,8 @@ void UWarBannerAbility::SpawnBanner()
 
 void UWarBannerAbility::UpdateBuffs()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return;
 
@@ -211,6 +248,8 @@ void UWarBannerAbility::RemoveBuffFromActor(AActor* Actor)
 
 FVector UWarBannerAbility::GetBannerLocation() const
 {
+    if (!CurrentActorInfo) return FVector::ZeroVector;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return FVector::ZeroVector;
 

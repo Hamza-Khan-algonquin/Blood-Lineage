@@ -7,6 +7,8 @@
 #include "HadesFireballPrediction.h"
 #include <Kismet/GameplayStatics.h>
 #include <NiagaraFunctionLibrary.h>
+#include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
+#include "Hades.h"
 
 AHadesFireball::AHadesFireball()
 {
@@ -80,13 +82,58 @@ void AHadesFireball::Tick(float DeltaTime)
 
     if (Alpha >= 1.0f && HasAuthority())
     {
-        //DrawDebugSphere(GetWorld(), TargetLocation, 400.0f, 32, FColor::Orange, false, 2.0f);
-        UGameplayStatics::ApplyRadialDamage(GetWorld(), 80.0f, TargetLocation, 400.0f, nullptr, { GetOwner() }, this);
+        TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+        TArray<AActor*> ActorsToIgnore;
+        ActorsToIgnore.Add(this);
+        if (GetOwner()) ActorsToIgnore.Add(GetOwner());
+
+        TArray<AActor*> OverlappedActors;
+        float ExplosionRadius = 400.0f;
+
+        UKismetSystemLibrary::SphereOverlapActors(
+            GetWorld(),
+            TargetLocation,
+            ExplosionRadius,
+            ObjectTypes,
+            nullptr,
+            ActorsToIgnore,
+            OverlappedActors
+        );
+
+        for (AActor* Actor : OverlappedActors)
+        {
+            if (APawn* VictimPawn = Cast<APawn>(Actor))
+            {
+                if (ARelicRunnersPlayerState* RRPS = VictimPawn->GetPlayerState<ARelicRunnersPlayerState>())
+                {
+                    float DamageAmount = RRPS->PlayerMaxHealth * (Cast<AHades>(GetOwner())->BaseDamageFromDifficulty / 200.0f);
+
+                    UGameplayStatics::ApplyDamage(
+                        Actor,
+                        DamageAmount,
+                        GetInstigatorController(),
+                        this,
+                        nullptr
+                    );
+                }
+            }
+        }
+
+        if (ImpactSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, TargetLocation);
+        }
 
         Multicast_PlayExplosionEffects(TargetLocation);
 
-        if (FireBallCameraShake)
-            GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(GetWorld(), FireBallCameraShake, GetActorLocation(), 10000.0f, 10000.0f, 1.0f);
+        if (FireBallCameraShake && GetWorld()->GetFirstPlayerController())
+        {
+            GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(
+                GetWorld(), FireBallCameraShake, TargetLocation, 0.0f, 10000.0f, 1.0f
+            );
+        }
 
         if (InternalPrediction) InternalPrediction->Destroy();
         Destroy();

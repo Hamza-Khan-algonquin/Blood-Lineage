@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Sound/SoundBase.h"
 #include "Hades.generated.h"
 
 UENUM(BlueprintType)
@@ -66,6 +67,12 @@ public:
     UPROPERTY(EditAnywhere, Category = "Classes")
     TSubclassOf<AActor> FireballClass;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> SlamImpactSound = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> SweepAttackSound = nullptr;
+
     UPROPERTY(Replicated)
     EBossPhase CurrentPhase = EBossPhase::Phase1;
 
@@ -79,6 +86,8 @@ public:
 
     UPROPERTY(Replicated)
     bool bIsInitialSlamming = false; 
+
+    float BaseDamageFromDifficulty = 50;
 
     float MaxHealth = 10000.0f;
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)

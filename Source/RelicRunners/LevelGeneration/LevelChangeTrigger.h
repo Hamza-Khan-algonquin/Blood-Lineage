@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Sound/SoundBase.h"
 #include "LevelChangeTrigger.generated.h"
 
 UCLASS()
@@ -37,6 +38,11 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Default Values")
 	FString TargetLevel; //Level name players will be sent to. Recieved from the level generator.
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> PortalEnterSound = nullptr;
+
+	FTimerHandle LevelTravelHandle;
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetTargetLevel(FName newTargetLevel);

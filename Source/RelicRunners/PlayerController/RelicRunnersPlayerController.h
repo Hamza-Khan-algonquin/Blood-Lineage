@@ -270,6 +270,12 @@ public:
 	TObjectPtr<USoundBase> CountdownTickSound = nullptr;
 	class AHades* CachedHades;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> AbilitySelectionOpenSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> AbilitySelectionCloseSound = nullptr;
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)
@@ -358,6 +364,7 @@ protected:
 	virtual void ClientRestart_Implementation(APawn* NewPawn) override;
 	virtual void SetupInputComponent() override;
 	virtual void PostSeamlessTravel() override;
+	void OnTravelRefreshDelay();
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
 	virtual void Tick(float DeltaTime) override;
 

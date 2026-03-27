@@ -1474,7 +1474,6 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 	float yaw = FloorValuesArray[index].obstacleYaw;
 	FVector posOffset = FVector((tileScale * x * 4) + tileScale, (tileScale * y * 4) + tileScale, 0.0f) + GetActorLocation();
 
-	TArray<TSubclassOf<APackedLevelActor>> actorArray = GenerationValuesComponent->ObstacleValues.ObstacleActor;
 	TArray<TSubclassOf<APackedLevelActor>> vantageArray = GenerationValuesComponent->VantageValues.VantageActor;
 
 	TArray<TSubclassOf<APackedLevelActor>> buildingArray = GenerationValuesComponent->ObstacleTypeValues.BuildingObstacles.ObstacleActor;

@@ -73,6 +73,8 @@ void UInventory::NativeConstruct()
     if (B_Necklace) B_Necklace->OnClicked.AddDynamic(this, &UInventory::NecklaceSlotClicked);
     if (B_SortingType) B_SortingType->OnClicked.AddDynamic(this, &UInventory::SortingTypeClicked);
     
+    if (B_AutoEquip) B_AutoEquip->OnClicked.AddDynamic(this, &UInventory::OnAutoEquip);
+
     //Vendor
     if (ShopCanvas) ShopCanvas->SetVisibility(ESlateVisibility::Collapsed);
     if (ForgeCanvas) ForgeCanvas->SetVisibility(ESlateVisibility::Collapsed);
@@ -85,6 +87,11 @@ void UInventory::NativeConstruct()
     if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void UInventory::OnAutoEquip()
+{
+    InventoryComponent->RequestAutoEquip();
 }
 
 FEventReply UInventory::OnForgeItem1Clicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent)

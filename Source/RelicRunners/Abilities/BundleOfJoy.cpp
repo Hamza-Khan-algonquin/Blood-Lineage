@@ -15,15 +15,17 @@ UBundleOfJoy::UBundleOfJoy()
     AttractionRadius = 600.f;
     ExplosionRadius = 400.f;
     AttractionStrength = 1500.f;
-    Damage = 100.f;
+    Damage = 200.f;
     Duration = 5.f;
     LastUseTime = -100.f;
-    CooldownTimer = 10.f;
+    CooldownTimer = 12.f;
 }
 
 void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    if (!CurrentActorInfo) return;
 
     float CurrentTime = ActorInfo->AvatarActor->GetWorld()->GetTimeSeconds();
 
@@ -48,6 +50,24 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
     }
 
 
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
     PlayAbilityCastSound(ActorInfo);
 
     AttractionCenter = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 300.f; // Set spawn point 300 units in front of the actor
@@ -59,7 +79,7 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.0f);
     }
 
     AvatarActor->GetWorldTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::TickThrown, 0.016f, true);
@@ -69,6 +89,8 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 void UBundleOfJoy::TickThrown()
 {
     if (!bIsFlying) return;
+    
+    if (!CurrentActorInfo) return;
 
     AActor* Avatar = GetAvatarActorFromActorInfo();
     UWorld* World = Avatar->GetWorld();
@@ -102,6 +124,8 @@ void UBundleOfJoy::TickThrown()
 void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
 {
     AttractionCenter = LandLocation;
+
+    if (!CurrentActorInfo) return;
 
     AActor* Avatar = GetAvatarActorFromActorInfo();
     UWorld* World = Avatar->GetWorld();
@@ -137,6 +161,8 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
 
 void UBundleOfJoy::Attract()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) return; // Exit if no valid actor
 
@@ -186,6 +212,7 @@ void UBundleOfJoy::Attract()
 
 void UBundleOfJoy::Explode()
 {
+    if (!CurrentActorInfo) return;
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) return; // Exit if no actor
 

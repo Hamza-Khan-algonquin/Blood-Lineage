@@ -101,6 +101,10 @@ public:
 
     //Functions
     UFUNCTION(BlueprintCallable, Category = "Inventory")
+    void RequestAutoEquip();
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_AutoEquip();
+    UFUNCTION(BlueprintCallable, Category = "Inventory")
     void RemoveItemByID(FGuid ItemID);
     UFUNCTION(BlueprintCallable)
     void AddItem(UItemObject* Item);

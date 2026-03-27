@@ -62,6 +62,8 @@ void AIslandSpawner::BeginPlay()
 				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Server Stage Number: %i"), gameInstance->StageNumber));
 			}
 
+			int objectiveIndexOffset = FMath::RandRange(0, 100);
+
 			for (int i = 0; i < NumIslands; i++)
 			{
 				AIslandGenerationTest* newIsland = GetWorld()->SpawnActor<AIslandGenerationTest>(IslandGenerationTestTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
@@ -101,11 +103,11 @@ void AIslandSpawner::BeginPlay()
 
 				if (ActiveFlags.Num() > 0)
 				{
-					int32 RandomIndex = IsObjectivesRandom ? 
+					int32 RandomIndex = IsObjectivesRandom ?
 						//True
-						FMath::RandRange(0, ActiveFlags.Num() - 1) : 
+						FMath::RandRange(0, ActiveFlags.Num() - 1) :
 						//False
-						(i+ FMath::RandRange(0, ActiveFlags.Num())) % (ActiveFlags.Num() - 1);
+						(i + objectiveIndexOffset) % (ActiveFlags.Num() - 1);
 				
 					if (ActiveFlags.IsValidIndex(RandomIndex))
 					{
@@ -242,7 +244,6 @@ void AIslandSpawner::ChangeIslandVisibility(int islandIndex)
 		{
 			Islands[i]->SetIslandVisibility(false);
 		}
-
 	}
 }
 

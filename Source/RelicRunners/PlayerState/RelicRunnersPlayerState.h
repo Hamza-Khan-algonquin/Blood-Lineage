@@ -39,6 +39,7 @@ public:
     ~ARelicRunnersPlayerState();
 	void InitializeMetaStats(struct FSaveData MetaData);
 	void GiveStarterItems();
+	void RefreshStatsForNewLevel();
     UFUNCTION()
     void OnRep_SelectedClass();
 	UFUNCTION()
@@ -210,6 +211,9 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedIntelligence;
 
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
+	float IncreasedMovementSpeedFromAbility = 1;
+
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
 
@@ -222,19 +226,20 @@ public:
 	UFUNCTION()
 	void OnRep_DeathState();
 
+	UPROPERTY(Replicated)
 	int MetaLevel;
+	UPROPERTY(Replicated)
 	int MetaXP;
+	UPROPERTY(Replicated)
 	int MetaXPToNextLevel;
+	UPROPERTY(Replicated)
 	int MetaXPGainInRun;
-
 	UPROPERTY(Replicated)
 	int PlayerDeaths = 0;
-
-	int GetDeaths() { return PlayerDeaths; }
-
 	UPROPERTY(Replicated)
 	int EnemiesKilled = 0;
 
+	int GetDeaths() { return PlayerDeaths; }
 	int GetEnemiesKilled() { return EnemiesKilled; }
 
 	UPROPERTY(Replicated)
