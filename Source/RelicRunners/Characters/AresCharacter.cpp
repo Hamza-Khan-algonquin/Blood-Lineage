@@ -208,6 +208,8 @@ void AAresCharacter::PerformSwingTrace()
 
 void AAresCharacter::BasicAttack()
 {
+	if (!bCanBasicAttack) return;
+
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
 	if (!HasAuthority())
@@ -224,6 +226,14 @@ void AAresCharacter::Server_PlayAttack_Implementation()
 	HandleAttack();
 }
 
+void AAresCharacter::OnBasicAttackAnimationEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == BasicAnim)
+	{
+		bCanBasicAttack = true;
+	}
+}
+
 void AAresCharacter::HandleAttack()
 {
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
@@ -231,18 +241,26 @@ void AAresCharacter::HandleAttack()
 	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 		return;
 
-	Damage = 100.0f;
+	Damage = 180.0f;
 	AlreadyHitActors.Empty();
 
+	// Block further attacks
+	bCanBasicAttack = false;
+
+	// Play animation on everyone
 	Multicast_PlayAttack();
 
-	GetWorldTimerManager().SetTimer(
-		TimerHandle_AttackCooldown,
-		this,
-		&AAresCharacter::ResetBasicAttack,
-		BasicAttackCooldown,
-		false
-	);
+	// Bind to animation end event
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (BasicAnim)
+		{
+			float Duration = AnimInstance->Montage_Play(BasicAnim, 1.2f);
+			FOnMontageEnded MontageEndedDelegate;
+			MontageEndedDelegate.BindUObject(this, &AAresCharacter::OnBasicAttackAnimationEnded);
+			AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, BasicAnim);
+		}
+	}
 }
 
 void AAresCharacter::Multicast_PlayAttack_Implementation()

@@ -192,6 +192,7 @@ void ANemesisCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
     ResetCombo();
     CanBasicAttack = true;
 }
+
 void ANemesisCharacter::PerformSwingTrace()
 {
     FVector Start = GetMesh()->GetSocketLocation("MainhandSocket");
@@ -260,7 +261,7 @@ void ANemesisCharacter::StartAttack(int32 ComboIndex)
     UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
     if (!AnimInstance) return;
 
-    AnimInstance->Montage_Play(BasicAnim);
+    AnimInstance->Montage_Play(BasicAnim, 1.5f);
 
     if (ComboIndex == 0)
         AnimInstance->Montage_JumpToSection(FName("Attack1"), BasicAnim);
