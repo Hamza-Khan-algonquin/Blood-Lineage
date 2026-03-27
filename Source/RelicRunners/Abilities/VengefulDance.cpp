@@ -64,6 +64,8 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
     // Get PlayerState safely
     ARelicRunnersPlayerState* PS = nullptr;
     if (ActorInfo->PlayerController.IsValid())

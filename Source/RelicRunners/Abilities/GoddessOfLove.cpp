@@ -56,6 +56,8 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);

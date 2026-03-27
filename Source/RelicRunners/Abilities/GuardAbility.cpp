@@ -53,6 +53,8 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
     OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
     AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.5f;
 
+    PlayAbilityCastSound(ActorInfo);
+
     OwnerChar->GetWorldTimerManager().SetTimer(ChargeTickHandle,FTimerDelegate::CreateUObject(this,&UGuardAbility::HandleChargeTick,Handle,ActorInfo,ActivationInfo),0.05f,true);
 
     // End ability after duration

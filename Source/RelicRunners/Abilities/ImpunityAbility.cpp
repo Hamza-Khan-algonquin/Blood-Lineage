@@ -60,6 +60,8 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
     bIsActive = true;
 
     if (ActorInfo->AvatarActor->HasAuthority())

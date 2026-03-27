@@ -44,6 +44,8 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     ACharacter* OwnerChar = Cast<ACharacter>(AvatarActor);
     if (!OwnerChar)

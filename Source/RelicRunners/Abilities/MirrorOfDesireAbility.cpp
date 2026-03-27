@@ -36,6 +36,8 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
     // Debug: show sphere
     DrawDebugSphere(OwnerChar->GetWorld(), OwnerChar->GetActorLocation(), 300.f, 32, FColor::Purple, false, Duration, 0, 2.f);
 
+    PlayAbilityCastSound(ActorInfo);
+
     // Set timer to end ability automatically after Duration
     OwnerChar->GetWorldTimerManager().SetTimer(AbilityTimerHandle, [this, Handle, ActorInfo, ActivationInfo]()
         {

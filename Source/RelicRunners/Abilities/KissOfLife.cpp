@@ -59,6 +59,8 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
 
     //DrawDebugCircle(World, Center, AreaRadius, 64, FColor::Green, false, Duration, 0, 2.f, OwnerPawn->GetActorRightVector(), OwnerPawn->GetActorForwardVector(), false);
 
+    PlayAbilityCastSound(ActorInfo);
+
     // This is where is starts healing the players
     World->GetTimerManager().SetTimer(HealTickTimer, this, &UKissOfLife::ApplyHealTick, HealInterval, true);
 

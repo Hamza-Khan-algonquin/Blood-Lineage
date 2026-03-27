@@ -50,6 +50,8 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
     LastUseTime = World->GetTimeSeconds();
 
     ApplyDamageAndStun();

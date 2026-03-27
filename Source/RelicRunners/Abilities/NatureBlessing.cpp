@@ -40,6 +40,8 @@ void UNaturesBlessing::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		return;
 	}
 
+	PlayAbilityCastSound(ActorInfo);
+
     // it turns on the invincibility for the character 
 	PS->SetInvincible(true);
 
