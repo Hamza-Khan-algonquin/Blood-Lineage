@@ -311,7 +311,7 @@ void AHades::CinematicSlam()
         {
             StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
-            if (WeakSelf->SlamImpactSound)
+            if (StrongSelf->SlamImpactSound)
             {
                 UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
             }
