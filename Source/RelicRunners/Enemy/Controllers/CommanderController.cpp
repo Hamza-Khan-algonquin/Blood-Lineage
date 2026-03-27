@@ -31,6 +31,7 @@ ACommanderController::ACommanderController()
 	bReplicates = true;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 	SpawnDelayAfterWorldStart = 20;
+	MinDistanceFromPlayer = 500;
 }
 
 ACommanderController::~ACommanderController()
@@ -197,17 +198,43 @@ void ACommanderController::SpawnPawnEnemy()
 	}
 
 	FVector spawnPosition = pawn->GetActorLocation();
+	FVector finalPoint = FVector::ZeroVector;
+	bool foundPoint = false;
 
 	FNavLocation randomPoint;
 	UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
 
-	if (NavSys->GetRandomPointInNavigableRadius(spawnPosition, SpawnRadius, randomPoint))
+	//20 checks and if we don't find a point near player then we will spawn at zero zero
+	for (int i = 0; i < 20; i++)
 	{
-		spawnPosition = randomPoint.Location;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("could not find random spawn point on navmesh"));
+		//get a random point on the navmesh
+		if (NavSys->GetRandomPointInNavigableRadius(spawnPosition, SpawnRadius, randomPoint))
+		{
+			finalPoint = randomPoint.Location;
+			foundPoint = true;
+		}
+		else if (NavSys->ProjectPointToNavigation(spawnPosition, randomPoint, FVector(SpawnRadius)))
+		{
+			FVector newPosition = randomPoint.Location;
+			if (NavSys->GetRandomPointInNavigableRadius(newPosition, SpawnRadius - FVector::Dist(newPosition, spawnPosition), randomPoint))
+			{
+				finalPoint = randomPoint.Location;
+				foundPoint = true;
+			}
+		}
+
+		if (foundPoint)
+		{
+			//check to make sure it in the budget for spawning
+			if (FVector::Dist(finalPoint, spawnPosition) >= MinDistanceFromPlayer)
+			{
+				break;
+			}
+			else
+			{
+				foundPoint = false;
+			}
+		}
 	}
 
 
@@ -220,7 +247,7 @@ void ACommanderController::SpawnPawnEnemy()
 
 	newEnemy->GetActorBounds(true, origin, bounds);
 
-	newEnemy->SetActorLocation(spawnPosition + FVector(0, 0, bounds.Z));
+	newEnemy->SetActorLocation(finalPoint + FVector(0, 0, bounds.Z));
 
 	//giving time for the enemy to set
 	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
@@ -373,7 +400,7 @@ void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLo
 		{
 			if (enemy && enemy->LODComponent)
 			{
-				enemy->LODComponent->UpdateLOD();
+				enemy->LODComponent->MultiCastUpdateLOD();
 			}
 		}
 	}

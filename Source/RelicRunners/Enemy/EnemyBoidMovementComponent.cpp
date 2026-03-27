@@ -416,6 +416,11 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 
 void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
+	if (!IsValid(GetOwner()))
+	{
+		return;
+	}
+
 	if (Velocity.ContainsNaN())
 	{
 		Velocity = FVector::ZeroVector;
@@ -453,10 +458,18 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 					return;
 				}
 			}
-			finalMovement = navOutLocation.Location + offset - startLocation;
+			finalMovement = (navOutLocation.Location + offset) - startLocation;
+		}
+		else
+		{
+			finalMovement = FVector::Zero();
 		}
 	}
 	
+	if (finalMovement.Size() > MaxSpeed)
+	{
+		finalMovement = finalMovement.GetSafeNormal() * MaxSpeed;
+	}
 
 	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
