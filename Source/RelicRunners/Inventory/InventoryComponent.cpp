@@ -292,6 +292,65 @@ void UInventoryComponent::EquipItem(UItemObject* Item, ARelicRunnersPlayerContro
     if (RPC) RPC->UpdatePreviewWithEquippedItems();
 }
 
+void UInventoryComponent::RequestAutoEquip()
+{
+    Server_AutoEquip();
+}
+
+bool UInventoryComponent::Server_AutoEquip_Validate() { return true; }
+
+void UInventoryComponent::Server_AutoEquip_Implementation()
+{
+    TArray<UItemObject*> Candidates = InventoryItems;
+    for (const FEquippedItemEntry& Entry : EquippedItems)
+    {
+        if (Entry.Item) Candidates.Add(Entry.Item);
+    }
+
+    if (Candidates.Num() == 0) return;
+
+    TMap<FString, UItemObject*> BestItemsBySlot;
+
+    for (UItemObject* Item : Candidates)
+    {
+        if (!Item) continue;
+
+        const FString& Slot = Item->ItemData.ItemType;
+
+        float CurrentPower = Item->ItemData.PowerLevel;
+
+        if (!BestItemsBySlot.Contains(Slot) || CurrentPower > BestItemsBySlot[Slot]->ItemData.PowerLevel)
+        {
+            BestItemsBySlot.Add(Slot, Item);
+        }
+    }
+
+    AActor* ComponentOwner = GetOwner();
+    if (!ComponentOwner) return;
+    ARelicRunnersCharacter* Char = nullptr;
+    ARelicRunnersPlayerController* RPC = nullptr;
+    if (ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(ComponentOwner))
+    {
+        Char = Cast<ARelicRunnersCharacter>(PS->GetPawn());
+        RPC = Cast<ARelicRunnersPlayerController>(PS->GetPlayerController());
+    }
+
+    for (auto& It : BestItemsBySlot)
+    {
+        UItemObject* BestItem = It.Value;
+
+        bool bIsAlreadyEquipped = EquippedItems.ContainsByPredicate([&](const FEquippedItemEntry& Entry) {
+            return Entry.Item && Entry.Item->ItemData.UniqueID == BestItem->ItemData.UniqueID;
+            });
+
+        if (!bIsAlreadyEquipped)
+        {
+            EquipItem(BestItem, RPC);
+        }
+    }
+    UpdateTotalEquippedStats(Char);
+}
+
 void UInventoryComponent::UnequipItem(UItemObject* Item, ARelicRunnersPlayerController* RPC)
 {
     if (!Item) return;
