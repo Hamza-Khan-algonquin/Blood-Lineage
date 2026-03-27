@@ -599,13 +599,13 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 			if (Value < 0.0f)
 			{
 				// moving backward
-				SpeedMultiplier = 0.7f; 
+				SpeedMultiplier = 0.6f; 
 			}
 		}
 		else if (Axis == EAxis::Y)
 		{
 			// strafing
-			SpeedMultiplier = 0.8f; 
+			SpeedMultiplier = 0.7f; 
 		}
 
 		if (Axis == EAxis::X)
