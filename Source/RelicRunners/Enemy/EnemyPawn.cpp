@@ -27,6 +27,7 @@
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include <RelicRunners/RelicRunnersGameState.h>
 
 
 // Sets default values
@@ -62,6 +63,8 @@ AEnemyPawn::AEnemyPawn()
 	EnemyStatsComponent->SetMaxHealth(100.f);
 	EnemyStatsComponent->SetCurrentHealth(100.f);
 
+	HitFlashTimeline.SetLooping(false);
+
 	bReplicates = true;
 	SetReplicateMovement(false);
 
@@ -76,6 +79,20 @@ AEnemyPawn::AEnemyPawn()
 	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
 	Tags.Add("Enemy");
+}
+
+void AEnemyPawn::UpdateEmissiveHealth()
+{
+	float HealthPercent = EnemyStatsComponent->GetCurrentHealth() / EnemyStatsComponent->GetMaxHealth();
+
+	float NewIntensity = HealthPercent * 10.0f - 1.0f;
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("GlowIntensity", NewIntensity);
+		}
+	}
 }
 
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -112,22 +129,19 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//if we are not dead check the damage events for stun
 	else
 	{
+		HitFlash();
+
 		if (DamageEvent.IsOfType(FAttackDamageEvent::ClassID))
 		{
-			FAttackDamageEvent* AttackDamageEvent = (FAttackDamageEvent*)&DamageEvent;
+			const FAttackDamageEvent* AttackDamageEvent = static_cast<const FAttackDamageEvent*>(&DamageEvent);
 			if (AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT))
 			{
-				//RemainingStunTime = AttackDamageEvent->StunDuration;
+				FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+				KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
 			}
 		}
 
-		if (HasAuthority())
-		{
-			HitFlash();
-
-			FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-			ApplyForceToEnemy(Direction * KnockBackStrength + FVector(0, 0, AdditionalUpwardsKnockBackForces));
-		}
+		UpdateEmissiveHealth();
 	}
 
 	return DamageAmount;
@@ -177,7 +191,7 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 			if (PS)
 			{
-				PS->AddExperience(CalculateXP());
+				PS->AddExperience(CalculateXP() * (EnemyStatsComponent->GetLevel()));
 				PS->EnemiesKilled++;
 				int PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
 				SpawnItem(PlayerLuck);
@@ -316,7 +330,6 @@ void AEnemyPawn::AttackTick()
 		{
 			SetActorTickEnabled(false);
 		}
-		
 	}
 }
 
@@ -346,27 +359,34 @@ void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* O
 
 float AEnemyPawn::CalculateXP() const
 {
-	return FMath::RandRange(10, 25);
+	return FMath::RandRange(5, 20);
 }
 
 void AEnemyPawn::SpawnItem(int Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
-	float chance = FMath::FRandRange(0.f, 100.f);
+	//Difficulty
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	FDifficultyInfo diffInfo;
+	if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+	{
+		diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+	}
 
-	if (chance <= EnemyStatsComponent->GetChanceToDropItem() + ItemStats::GetLootChance(Luck))
+	float chance = FMath::FRandRange(0.f, 100.f);
+	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
+	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
+
+	if (chance <= chanceToDropOverall)
 	{
 		if (ItemMeshDataClass)
 		{
 			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
 		}
 
-		UIconLibrary* Lib = nullptr;
-		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
-		{
-			Lib = GI->GlobalIconLibrary;
-		}
+		UIconLibrary* Lib = GI->GlobalIconLibrary;
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
 			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData, Lib),
@@ -412,6 +432,11 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 	MovementComponent->IsKnockedBack = true;
 }
 
+void AEnemyPawn::KnockBack_Implementation(FVector forces)
+{
+	ApplyForceToEnemy(forces);
+}
+
 void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!MovementComponent || !CapsuleComponent || !OtherComp)
@@ -428,11 +453,21 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
-		MovementComponent->IsKnockedBack = false;
-		CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-		CapsuleComponent->SetSimulatePhysics(false);
-		CapsuleComponent->SetNotifyRigidBodyCollision(false);
+		ResetKnockBackStuff();
 	}
+}
+
+void AEnemyPawn::ResetKnockBackStuff_Implementation()
+{
+	if (!MovementComponent || !CapsuleComponent)
+	{
+		return;
+	}
+
+	MovementComponent->IsKnockedBack = false;
+	CapsuleComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	CapsuleComponent->SetSimulatePhysics(false);
+	CapsuleComponent->SetNotifyRigidBodyCollision(false);
 }
 
 
@@ -500,32 +535,35 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
+
 	
+	//get refernce to objects that we need to get the director
+	UWorld* World = GetWorld();
+	APawn* enemy = static_cast<APawn*>(this);
+
+	//call it next tick so their no problem with stuff not loaded in yet
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
+
+	IsAttacking = false;
+	SetActorTickEnabled(false);
+
+	if (HitFlashCurve)
+	{
+		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+		FOnTimelineFloat inProgressFunc;
+		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
+		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
+
+		//FOnTimelineEvent endFunc;
+		//endFunc.BindUFunction(this, FName("EndHitFlash"));
+		//HitFlashTimeline.SetTimelineFinishedFunc(endFunc);
+	}
+
+	
+
 	if (HasAuthority())
 	{
-		//get refernce to objects that we need to get the director
-		UWorld* World = GetWorld();
-		APawn* enemy = static_cast<APawn*>(this);
-
-		//call it next tick so their no problem with stuff not loaded in yet
-		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
-
-		IsAttacking = false;
-		SetActorTickEnabled(false);
-
-		if (HitFlashCurve)
-		{
-			HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-			FOnTimelineFloat inProgressFunc;
-			inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
-
-			HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
-
-			//putting this here for a future note of what do if I want to call something at the end
-			//HitFlashTimeline.SetTimelineFinishedFunc(FinishedFunction);
-		}
-
 		MovementComponent->InitializeNavMeshPointer();
 	}
 }

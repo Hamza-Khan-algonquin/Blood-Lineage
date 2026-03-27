@@ -192,6 +192,7 @@ void ANemesisCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
     ResetCombo();
     CanBasicAttack = true;
 }
+
 void ANemesisCharacter::PerformSwingTrace()
 {
     FVector Start = GetMesh()->GetSocketLocation("MainhandSocket");
@@ -204,11 +205,11 @@ void ANemesisCharacter::PerformSwingTrace()
 
     GetWorld()->SweepMultiByChannel(Hits,Start,End,FQuat::Identity, ECC_GameTraceChannel1,FCollisionShape::MakeSphere(100.f),Params);
 
-    float AppliedDamage = 120.0f;
+    Damage = 150.0f;
 
     if (CurrentComboIndex == 2)
     {
-        AppliedDamage = 150.0f;
+        Damage = 180.0f;
     }
 
     for (const FHitResult& Hit : Hits)
@@ -218,11 +219,11 @@ void ANemesisCharacter::PerformSwingTrace()
             if (!AlreadyHitActors.Contains(HitActor))
             {
                 if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
-                    Server_HitEnemy(Enemy, AppliedDamage);
+                    Server_HitEnemy(Enemy, Damage);
                 else if (AEnemyCharacterAI* TEnemy = Cast<AEnemyCharacterAI>(HitActor))
-                    Server_HitEnemy(TEnemy, AppliedDamage);
+                    Server_HitEnemy(TEnemy, Damage);
                 else if (AEnemyPawn* TPEnemy = Cast<AEnemyPawn>(HitActor))
-                    Server_HitEnemy(TPEnemy, AppliedDamage);
+                    Server_HitEnemy(TPEnemy, Damage);
 
                 AlreadyHitActors.Add(HitActor);
             }
@@ -260,7 +261,7 @@ void ANemesisCharacter::StartAttack(int32 ComboIndex)
     UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
     if (!AnimInstance) return;
 
-    AnimInstance->Montage_Play(BasicAnim);
+    AnimInstance->Montage_Play(BasicAnim, 1.5f);
 
     if (ComboIndex == 0)
         AnimInstance->Montage_JumpToSection(FName("Attack1"), BasicAnim);
@@ -275,21 +276,10 @@ void ANemesisCharacter::ResetCombo()
     CurrentComboIndex = 0;
     bBufferedInput = false;
 }
+
 void ANemesisCharacter::HeavyAttack()
 {
-    //if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
-    //if (!CanHeavyAttack) return;
-    //CanHeavyAttack = false;
-
-    //Damage = 10.0f;
-
-    //if (HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-    //{
-    //    PlayRandomAttackAnimation();
-    //}
-
-    //GetWorldTimerManager().SetTimer(TimerHandle_HeavyAttackCooldown, this, &ARelicRunnersCharacter::ResetHeavyAttack, HeavyAttackCooldown, false);
 }
 
 void ANemesisCharacter::UpdateCamera(float DeltaTime)
@@ -380,58 +370,30 @@ void ANemesisCharacter::UpdateCameraPosition(float DeltaTime,const FVector& Velo
     CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetSocketOffset, DeltaTime,4.f);
 }
 
-void ANemesisCharacter::UpdateCameraRotation( float DeltaTime,const FVector& Velocity,float Speed)
+void ANemesisCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed)
 {
-    // moving
-    if (Speed > 10.f)
-    {
-        FRotator CurrentRot = CameraBoom->GetComponentRotation();
+    if (!Controller) return;
 
-        FRotator DesiredRot = CurrentRot;
+    FRotator ControlRot = Controller->GetControlRotation();
 
-        FRotator MovementRot = Velocity.ToOrientationRotator();
+    // Clamp pitch for camera only
+    float ClampedPitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
 
-        float MoveDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw,MovementRot.Yaw);
+    // Smooth camera rotation
+    FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
 
-        DesiredRot.Yaw = CurrentRot.Yaw + MoveDelta * 0.35f;
+    float YawDelta = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
+    float NewYaw = CurrentCamRot.Yaw + YawDelta * DeltaTime * CameraYawSmoothSpeed;
 
-        DesiredRot.Roll = 0.f;
+    float NewPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ClampedPitch, DeltaTime, CameraPitchSmoothSpeed);
 
-        float FinalDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw,DesiredRot.Yaw);
+    CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
 
-        float NewYaw = CurrentRot.Yaw + FinalDelta * DeltaTime * 30.f;
+    FRotator ActorRot = GetActorRotation();
+    float ActorYawDelta = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, ControlRot.Yaw);
 
-        float NewPitch = FMath::FInterpTo(CurrentRot.Pitch,DesiredRot.Pitch,DeltaTime, CameraPitchSmoothSpeed);
+    ActorRot.Yaw += ActorYawDelta * DeltaTime * CameraYawSmoothSpeed;
 
-        CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
-    }
-    // idle
-    else
-    {
-        if (!Controller) return;
-
-        FRotator ControlRot = Controller->GetControlRotation();
-
-        ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
-        ControlRot.Roll = 0.f;
-
-        FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
-
-        float CamDeltaYaw = FMath::FindDeltaAngleDegrees( CurrentCamRot.Yaw, ControlRot.Yaw);
-
-        float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-        float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch,ControlRot.Pitch, DeltaTime,CameraPitchSmoothSpeed);
-
-        CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
-
-        FRotator ActorRot = GetActorRotation();
-
-        float ActorDeltaYaw = FMath::FindDeltaAngleDegrees( ActorRot.Yaw, NewCamYaw);
-
-        ActorRot.Yaw += ActorDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-        SetActorRotation(ActorRot);
-    }
+    SetActorRotation(ActorRot);
 }
 

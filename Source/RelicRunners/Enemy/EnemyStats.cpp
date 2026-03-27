@@ -20,9 +20,13 @@ UEnemyStats::UEnemyStats()
 	EnemyType = EEnemyType::UNKNOWN;
 	MaxHealth = 100;
 	CurrentHealth = 100;
+	BaseMaxHealth = 100;
+	HealthPerLevel = 20;
 	RemainingStunTime = 0;
 	ChanceToDropItem = 30;
 	AttackDamage = 3;
+	BaseAttackDamage = 3;
+	AttackDamagePerLevel = 1;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -69,19 +73,10 @@ void UEnemyStats::ResetStats()
 
 
 		FDifficultyInfo DifficultyInfo = gameState->GetDifficultyInfo(gameInst->CurrentDifficulty);
-		if (EnemyLevel > 1)
-		{
-			MaxHealth *= DifficultyInfo.HealthPercent * HealthMultiplier * EnemyLevel;
-			CurrentHealth = MaxHealth;
-			AttackDamage *= DifficultyInfo.DamagePercent * AttackDamageMultiplier * EnemyLevel;
-		}
-		else
-		{
-			MaxHealth *= DifficultyInfo.HealthPercent;
-			CurrentHealth = MaxHealth;
-			AttackDamage *= DifficultyInfo.DamagePercent;
-		}
-		
+
+		MaxHealth = BaseMaxHealth * DifficultyInfo.HealthPercent + (DifficultyInfo.HealthPercent * HealthPerLevel * (EnemyLevel - 1));
+		CurrentHealth = MaxHealth;
+		AttackDamage = BaseAttackDamage * DifficultyInfo.DamagePercent + (DifficultyInfo.DamagePercent * AttackDamagePerLevel * (EnemyLevel - 1));
 	}
 }
 
@@ -96,8 +91,10 @@ void UEnemyStats::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(UEnemyStats, RemainingStunTime);
 	DOREPLIFETIME(UEnemyStats, ChanceToDropItem);
 	DOREPLIFETIME(UEnemyStats, AttackDamage);
-	DOREPLIFETIME(UEnemyStats, HealthMultiplier);
-	DOREPLIFETIME(UEnemyStats, AttackDamageMultiplier);
+	DOREPLIFETIME(UEnemyStats, BaseAttackDamage);
+	DOREPLIFETIME(UEnemyStats, HealthPerLevel);
+	DOREPLIFETIME(UEnemyStats, BaseAttackDamage);
+	DOREPLIFETIME(UEnemyStats, AttackDamagePerLevel);
 }
 
 #if WITH_EDITOR

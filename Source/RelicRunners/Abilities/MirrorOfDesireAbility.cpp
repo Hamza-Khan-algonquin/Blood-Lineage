@@ -19,6 +19,8 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr);
     if (!OwnerChar || !OwnerChar->GetWorld())
     {
@@ -33,8 +35,39 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
         return;
     }
 
-    // Debug: show sphere
-    DrawDebugSphere(OwnerChar->GetWorld(), OwnerChar->GetActorLocation(), 300.f, 32, FColor::Purple, false, Duration, 0, 2.f);
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(OwnerChar, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+    AController* Controller = nullptr;
+
+    if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+    {
+        Controller = CurrentActorInfo->PlayerController.Get();
+    }
+
+    if (Controller)
+    {
+
+        if (PS)
+        {
+            PS->Multicast_SpawnVFX(FVector(0), FRotator::ZeroRotator, FVector(2.f), AbilityVFX, true);
+        }
+
+    }
 
     PlayAbilityCastSound(ActorInfo);
 
@@ -51,6 +84,8 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 // Called when the owner takes damage
 void UMirrorOfDesireAbility::OnOwnerTakeDamage(AActor* DamagedActor, float DamageAmount, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+    if (!CurrentActorInfo) return;
+
     if (!DamagedActor) return;
 
     ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(DamagedActor);

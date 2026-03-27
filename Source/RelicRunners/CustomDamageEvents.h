@@ -24,10 +24,14 @@ struct RELICRUNNERS_API FAttackDamageEvent : public FDamageEvent
 	public: 
 		EAttackType AttackType;
 		float StunDuration;
+		float KnockBackStrength;
+		float AdditionalUpwardsKnockBackForces;
 	
-		FAttackDamageEvent() : FDamageEvent(), AttackType(EAttackType::UNKOWN), StunDuration(0.0f) { }
+		FAttackDamageEvent() : FDamageEvent(), AttackType(EAttackType::UNKOWN), StunDuration(0.0f), KnockBackStrength(0.0f), AdditionalUpwardsKnockBackForces(0.0f) { }
 
-		FAttackDamageEvent(EAttackType attackType, float stunDuration, TSubclassOf<UDamageType> inDamageTypeClass) : FDamageEvent(inDamageTypeClass), AttackType(attackType), StunDuration(stunDuration) { }
+		FAttackDamageEvent(EAttackType attackType, float knockBackStrength, float additionalUpwardsKnockBackForces) : FDamageEvent(), AttackType(attackType), StunDuration(0.0f), KnockBackStrength(knockBackStrength), AdditionalUpwardsKnockBackForces(additionalUpwardsKnockBackForces) {}
+
+		FAttackDamageEvent(EAttackType attackType, float knockBackStrength, float additionalUpwardsKnockBackForces, TSubclassOf<UDamageType> inDamageTypeClass) : FDamageEvent(inDamageTypeClass), AttackType(attackType), StunDuration(0.0f), KnockBackStrength(knockBackStrength), AdditionalUpwardsKnockBackForces(additionalUpwardsKnockBackForces) { }
 
 		virtual ~FAttackDamageEvent() { }
 

@@ -13,12 +13,12 @@ FVector ASpawnZone::GetRandomPosition()
 	float radiusToUse = Radius;
 
 	//check to if bouds for spawning was set and if so set the variable to use it information
-	if (SpawningBounds != nullptr)
+	/*if (SpawningBounds != nullptr)
 	{
 		FVector boxExtent;
 		SpawningBounds->GetActorBounds(false, zonePosition, boxExtent);
 		radiusToUse = boxExtent.GetMax();
-	}
+	}*/
 
 	//A random point of the navmesh
 	FNavLocation randomPoint;
@@ -30,6 +30,15 @@ FVector ASpawnZone::GetRandomPosition()
 	{
 		return randomPoint.Location;
 	}
+	else if (NavSys->ProjectPointToNavigation(zonePosition, randomPoint, FVector(radiusToUse)))
+	{
+		FVector newPosition = randomPoint.Location;
+		if (NavSys->GetRandomPointInNavigableRadius(newPosition, radiusToUse - FVector::Dist(newPosition, zonePosition), randomPoint))
+		{
+			return randomPoint.Location;
+		}
+	}
+
 
 	//if a point was not found log a error and try to spawn a zero zero
 	UE_LOG(LogTemp, Error, TEXT("could not find random spawn point on navmesh"));

@@ -93,7 +93,7 @@ void ALevelChangeTrigger::ChangeLevel()
 
 	RPC->CleanUI();
 
-	FString TravelURL = TargetLevel + TEXT("?listen");
+	FString TravelURL = TEXT("/Game/ThirdPerson/Maps/") + TargetLevel + TEXT("?listen?GameStarted=1");
 	World->ServerTravel(TravelURL, true);
 }
 

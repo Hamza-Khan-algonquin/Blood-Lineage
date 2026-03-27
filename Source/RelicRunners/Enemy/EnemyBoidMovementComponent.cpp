@@ -4,12 +4,14 @@
 #include "EnemyBoidMovementComponent.h"
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "NavigationSystem.h"
 #include <Net/UnrealNetwork.h>
 #include "DrawDebugHelpers.h"
 #include "NavMesh/RecastNavMesh.h"
 #include "Detour/DetourNavMeshQuery.h"
 #include "RelicRunners/Flow Field/FlowFieldComponent.h"
+#include "RelicRunners/Director System/Director.h"
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -38,6 +40,8 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxClientLocationDeviation = 200.f;
 	AvgReplicationDelta = 0.1f;
 	DistanceFromWallToLoseTargetWeight = 100;
+	EnemyCharacterAvoidanceDistance = 300;
+	EnemyCharacterAvoidanceWeight = 1.5;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -63,7 +67,7 @@ void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 		return;
 	}
 
-	if (MovementMode != EBoidMovementMode::Disabled)
+	if (!IsKnockedBack && MovementMode != EBoidMovementMode::Disabled)
 	{
 		MoveInDirection(delta);
 		UpdateRotation();
@@ -99,6 +103,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	FVector coherenceVector = { 0,0,0 };
 	//The unit vector of the average oppsite direction to all near by birds
 	FVector separationVector = { 0,0,0 };
+	FVector enemyCharacterSeparationVector = { 0,0,0 };
 	float currentSeparationDistance = DefaultSeparationRange;
 
 	//The unit vector of the average alignment of all boids
@@ -189,6 +194,25 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 				}
 			}
 		}
+	}
+
+	if (ADirector* dir = ADirector::GetInstance(this))
+	{
+		for (AEnemyCharacter* otherEnemy : dir->EnemyCharactersInWorld)
+		{
+			float distanceToEnemy = FVector::Dist(otherEnemy->GetActorLocation(), GetOwner()->GetActorLocation());
+
+			if (distanceToEnemy < EnemyCharacterAvoidanceDistance && distanceToEnemy > 0)
+			{
+				float linear = distanceToEnemy / currentSeparationDistance;
+
+				//add the oppisite of the direction vector to the other boid to the separation vector
+				enemyCharacterSeparationVector -= (otherEnemy->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal() * (1 - linear);
+				//boidsEffectingSeparation++;
+			}
+		}
+
+		finalInflunceVector += enemyCharacterSeparationVector * EnemyCharacterAvoidanceWeight;
 	}
 
 	pOtherBoids = pOtherBoidsToCheck;
@@ -417,7 +441,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	//DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
 
-	if (ActiveNavMesh)//navSys)
+	if (ActiveNavMesh)
 	{
 		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, {100,100,200}))
 		{
@@ -431,26 +455,6 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 			}
 			finalMovement = navOutLocation.Location + offset - startLocation;
 		}
-		
-		/*if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
-		{
-			FVector newPosition = navLocation.Location + offset;// + offset.Z;
-			finalMovement = newPosition - startLocation;
-			
-			//EdgeAvoidanceVector = FVector::Zero();
-			LastValidPosition = newPosition;
-		}
-		else if (navSys->ProjectPointToNavigation(startLocation, navLocation, FVector(100,100,200)))
-		{
-			FVector newPosition = navLocation.Location + offset;// + offset.Z;
-			finalMovement = newPosition - startLocation;
-			//finalMovement = ((navLocation.Location + offset) - startLocation).GetSafeNormal() * Velocity.Length();
-			//finalMovement.Z = navLocation.Location.Z + offset.Z;
-		}
-		else
-		{
-			return;
-		}*/
 	}
 	
 

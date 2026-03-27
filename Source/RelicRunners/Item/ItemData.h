@@ -58,6 +58,9 @@ public:
     int Gold = 0;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    int PowerLevel = 0;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
     UStaticMesh* ItemStaticMesh = nullptr;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)

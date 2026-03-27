@@ -42,6 +42,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayFlagAnimation();
+
+	void UpdateVisuals();
+
 	virtual void BeginPlay() override;
 	void InitializeTooltipWidget();
 private:

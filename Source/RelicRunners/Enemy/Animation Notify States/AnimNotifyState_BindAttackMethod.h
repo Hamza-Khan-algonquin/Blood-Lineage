@@ -7,6 +7,19 @@
 #include "Components/PrimitiveComponent.h"
 #include "AnimNotifyState_BindAttackMethod.generated.h"
 
+USTRUCT()
+struct FAttackNotifyStateData
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UPrimitiveComponent* ColliderComp = nullptr;
+
+	UPROPERTY()
+	TArray<AActor*> AlreadyHitActors;
+
+	FScriptDelegate onOverlapDelegate;
+};
 
 UCLASS(Blueprintable)
 class RELICRUNNERS_API UAnimNotifyState_BindAttackMethod : public UAnimNotifyState
@@ -14,10 +27,6 @@ class RELICRUNNERS_API UAnimNotifyState_BindAttackMethod : public UAnimNotifySta
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	AActor* Owner;
-	UPROPERTY(BlueprintReadOnly)
-	class UPrimitiveComponent* colliderComp;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UClass* TargetClass;
 	UPROPERTY(BlueprintReadOnly)
@@ -25,26 +34,22 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FString> PropertyOptions;
 
-	UPROPERTY(DisplayName = "Attack Method", EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "GetMethodOptions"))
+	UPROPERTY(DisplayName = "Attack Method", EditAnywhere, BlueprintReadOnly, Category = "Attack Bind", meta = (GetOptions = "GetMethodOptions"))
 	FString AttackMethodName;
-	UPROPERTY(DisplayName = "Collider Property", EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "GetPropertyOptions"))
+	UPROPERTY(DisplayName = "Collider Property", EditAnywhere, BlueprintReadOnly, Category = "Attack Bind", meta = (GetOptions = "GetPropertyOptions"))
 	FString ColliderName;
-	UPROPERTY(DisplayName = "Disable collider's on begin overlap events on notify state end", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(DisplayName = "Disable collider's on begin overlap events on notify state end", EditAnywhere, BlueprintReadOnly, Category = "Attack Bind")
 	bool DisableOverlapEvents = false;
-	UPROPERTY(DisplayName = "Should Modifiy Collision Type", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(DisplayName = "Should Modifiy Collision Type", EditAnywhere, BlueprintReadOnly, Category = "Attack Bind")
 	bool ModifiyCollider = false;
-	UPROPERTY(DisplayName = "Collision Type During Notify State", EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "ModifiyCollider", ToolTip = "In order for it to work you must have Querys enabled"))
+	UPROPERTY(DisplayName = "Collision Type During Notify State", EditAnywhere, BlueprintReadOnly, Category = "Attack Bind", meta = (EditCondition = "ModifiyCollider", ToolTip = "In order for it to work you must have Querys enabled"))
 	TEnumAsByte <ECollisionEnabled::Type> BeginCollisionType = ECollisionEnabled::QueryOnly;
-	UPROPERTY(DisplayName = "Collision Type After Notify State", EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "ModifiyCollider"))
+	UPROPERTY(DisplayName = "Collision Type After Notify State", EditAnywhere, BlueprintReadOnly, Category = "Attack Bind", meta = (EditCondition = "ModifiyCollider"))
 	TEnumAsByte <ECollisionEnabled::Type> EndCollisionType = ECollisionEnabled::NoCollision;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FScriptDelegate onOverlapDelegate;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	TArray<AActor*> AlreadyHitActors;
 
 	//unlike WITH_EDITOR, WITH_EDITORONLY_DATA will actually remove the variable from builds not just the code
 #if WITH_EDITORONLY_DATA
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack Bind")
 	bool CallEditorDebugMessages = true;
 #endif
 
@@ -64,4 +69,7 @@ protected:
 private:
 	UFUNCTION()
 	void OnComponentBeginOverlapSignature(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void CleanUpData();
+
+	TMap<TWeakObjectPtr<USkeletalMeshComponent>, FAttackNotifyStateData> ActiveData;
 };

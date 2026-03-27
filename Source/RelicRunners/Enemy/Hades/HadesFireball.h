@@ -41,6 +41,10 @@ public:
 
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_PlayExplosionEffects(FVector Location);
+
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<class UCameraShakeBase> FireBallCameraShake;
+
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;

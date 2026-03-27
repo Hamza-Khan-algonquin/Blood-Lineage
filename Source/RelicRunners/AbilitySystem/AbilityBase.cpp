@@ -14,41 +14,40 @@ UAbilityBase::UAbilityBase()
     // Set ability to be unique per actor
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
+    LastUseTime = -100.f;
+
 }
 
 void UAbilityBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    // Get PlayerState safely
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
+
+    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
     {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+
     }
 
-    // Must have PlayerState and enough resource
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
-
-    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    if (CurrentTime - LastUseTime < CooldownTimer)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
 }
 
 void UAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-}
-
-void UAbilityBase::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
-{
 
 }
 
@@ -124,7 +123,7 @@ float UAbilityBase::CalculateAbilityMana(AActor* InstigatorActor, float BaseMana
     return BaseMana;
 }
 
-UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage)
+UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo* ActorInfo, UAnimMontage* Montage, float AnimSpeed)
 {
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid() || !Montage)
         return nullptr;
@@ -138,7 +137,7 @@ UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo
     UAnimInstance* AnimInstance = Mesh->GetAnimInstance();
     if (!AnimInstance) return nullptr;
 
-    AnimInstance->Montage_Play(Montage, 1.f);
+    AnimInstance->Montage_Play(Montage, AnimSpeed);
     return Montage;
 }
 

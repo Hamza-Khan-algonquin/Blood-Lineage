@@ -9,7 +9,7 @@ UImpunityAbility::UImpunityAbility()
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
     Duration = 5.0f;
-    CooldownDuration = 8.0f;
+    CooldownDuration = 12.0f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 
@@ -19,11 +19,8 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+
+    if (!CurrentActorInfo) return;
 
     float CurrentTime = GetWorld()->GetTimeSeconds();
     if (CurrentTime - LastUseTime < CooldownTimer)
@@ -32,12 +29,6 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         return;
     }
 
-
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
 
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
@@ -71,6 +62,23 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         {
             PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
         }
+
+        float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+        if (!PS || PS->GetPlayerResource() < FinalManaCost)
+        {
+            EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+            return;
+        }
+
+        // Spend resource
+        PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+        PS->UpdateRemoteHUDResource();
+
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
         PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
         PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, true);
     }
@@ -85,7 +93,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 void UImpunityAbility::ResetSpeed()
 {
-
+    if (!CurrentActorInfo) return;
     ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
     if (AvatarChar)
     {

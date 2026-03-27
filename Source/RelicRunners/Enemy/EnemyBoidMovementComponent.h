@@ -63,6 +63,8 @@ protected:
 	float MinSeperationRange;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float DistanceForMaxSeperation;
+
+	
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float MaxTurnSpeed;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
@@ -73,6 +75,8 @@ protected:
 	float TargetDeadZone;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float MaxTargetDistanceMultiplier;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float EnemyCharacterAvoidanceDistance;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float DistanceToStartAvoidingWalls;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
@@ -86,6 +90,8 @@ protected:
 	float AlignmentWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float TargetWeight;
+	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
+	float EnemyCharacterAvoidanceWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
 	float WallAvoidanceWeight;
 	UPROPERTY(EditAnywhere, Category = "Boid Behavior")
