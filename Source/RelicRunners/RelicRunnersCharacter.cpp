@@ -687,7 +687,7 @@ void ARelicRunnersCharacter::Interact()
 
 	if (World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(60.f), Params))
 	{
-		DrawDebugSphere(World, Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
+		//DrawDebugSphere(World, Hit.Location, 60.f, 12, FColor::Orange, false, 0.1f);
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && HitActor->Implements<UInteractInterface>())
 		{

@@ -26,6 +26,8 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     // Get the character using the ability
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     ACharacter* OwnerChar = Cast<ACharacter>(AvatarActor);
@@ -59,6 +61,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
 
             if (PS)
             {
+
                 float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
 
                 if (!PS || PS->GetPlayerResource() < FinalManaCost)
@@ -66,7 +69,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
                     EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
                     return;
                 }
-
+                PS->SetInvincible(true);
                 PS->Multicast_SpawnVFX(FVector(0), FRotator(0, 0, 0), FVector(1.f), AbilityVFX, true);
 
                 // Spend resource
@@ -83,7 +86,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         // Disable movement
         OwnerChar->GetCharacterMovement()->DisableMovement();
         OwnerChar->GetCharacterMovement()->StopMovementImmediately();
-
+        
         // Start ticking beam
         OwnerChar->GetWorld()->GetTimerManager().SetTimer(BeamTickHandle,this, &UMoonbeam::BeamTick,TickInterval, true);
 
@@ -144,6 +147,17 @@ void UMoonbeam::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGamepl
     UWorld* World = ActorInfo->AvatarActor->GetWorld();
     if (World && !bWasCancelled)
     {       
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+
+        if (PS)
+        {
+            PS->SetInvincible(false);
+        }
+
         World->GetTimerManager().ClearTimer(BeamTickHandle);
         World->GetTimerManager().ClearTimer(DurationHandle);
 

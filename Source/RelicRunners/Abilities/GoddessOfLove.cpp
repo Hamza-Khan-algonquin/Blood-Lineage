@@ -28,6 +28,8 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
     {
@@ -125,6 +127,8 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
         return;
     }
 
+    if (!CurrentActorInfo) return;
+
     AActor* OwnerActor = ActorInfo->AvatarActor.Get();
     DamageOrigin = OwnerActor->GetActorLocation(); // initialize origin at player
 
@@ -163,6 +167,8 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
 
 void UGoddessOfLove::ApplyPassiveHealthRegen()
 {
+    if (!CurrentActorInfo) return;
+
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -203,6 +209,7 @@ void UGoddessOfLove::TickDamage()
 
     const float DeltaTime = World->GetDeltaSeconds();
     ElapsedDOTTime += DeltaTime;
+
 
     for (int32 i = AffectedEnemies.Num() - 1; i >= 0; --i)
     {

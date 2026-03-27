@@ -35,6 +35,7 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+    if (!CurrentActorInfo) return;
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
     {

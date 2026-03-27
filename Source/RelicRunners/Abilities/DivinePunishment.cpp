@@ -109,6 +109,7 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                     if (PS)
                     {
                         PS->Multicast_SpawnVFX(Center + FVector(0.f, 0.f, -100.f),FRotator::ZeroRotator,FVector(2.f),AbilityVFX,false);
+						PS->SetInvincible(true);
                     }
                 }),1.5f, false );
     }
@@ -127,6 +128,8 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
 {
     CachedCenter = Center;
     DamageTicksElapsed = 0;
+
+    if (!CurrentActorInfo) return;
 
     UWorld* World = GetWorld();
     if (!World) return;
@@ -187,6 +190,17 @@ void UDivinePunishment::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+
+		if (PS)
+		{
+			PS->SetInvincible(false);
+		}
+
         if (APlayerController* PC = Cast<APlayerController>(ActorInfo->AvatarActor->GetInstigatorController()))
         {
             PC->EnableInput(PC);

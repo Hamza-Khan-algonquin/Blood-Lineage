@@ -35,6 +35,8 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor)
     {

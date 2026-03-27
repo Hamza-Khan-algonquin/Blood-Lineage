@@ -19,6 +19,8 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr);
     if (!OwnerChar || !OwnerChar->GetWorld())
     {
@@ -80,6 +82,8 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 // Called when the owner takes damage
 void UMirrorOfDesireAbility::OnOwnerTakeDamage(AActor* DamagedActor, float DamageAmount, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+    if (!CurrentActorInfo) return;
+
     if (!DamagedActor) return;
 
     ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(DamagedActor);

@@ -23,6 +23,8 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
     {

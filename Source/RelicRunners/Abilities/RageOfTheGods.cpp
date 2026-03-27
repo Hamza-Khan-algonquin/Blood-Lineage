@@ -70,6 +70,8 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
+    PS->SetInvincible(true);
+
     if (ActorInfo->IsLocallyControlled())
     {
         APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
@@ -142,7 +144,8 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void URageOfTheGods::StartPulse()
 {
-   
+    if (!CurrentActorInfo) return;
+
     TWeakObjectPtr<AActor> WeakAvatar = GetAvatarActorFromActorInfo();
     if (!WeakAvatar.IsValid())
     {
@@ -151,6 +154,20 @@ void URageOfTheGods::StartPulse()
     }
 
     PulsesExecuted++;
+
+    if (PulsesExecuted == 1)
+    {
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (GetCurrentActorInfo()->PlayerController.IsValid())
+        {
+            PS = GetCurrentActorInfo()->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+
+        if (PS)
+        {
+            PS->SetInvincible(false);
+        }
+    }
     HitActorsThisPulse.Reset();
     ExpansionElapsedTime = 0.f;
 
@@ -219,6 +236,8 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 
 void URageOfTheGods::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+    if (!CurrentActorInfo) return;
+
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearAllTimersForObject(this);

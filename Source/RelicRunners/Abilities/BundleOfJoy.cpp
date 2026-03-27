@@ -25,6 +25,8 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     float CurrentTime = ActorInfo->AvatarActor->GetWorld()->GetTimeSeconds();
 
     if (CurrentTime - LastUseTime < CooldownTimer)
@@ -159,6 +161,8 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
 
 void UBundleOfJoy::Attract()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) return; // Exit if no valid actor
 
@@ -208,6 +212,7 @@ void UBundleOfJoy::Attract()
 
 void UBundleOfJoy::Explode()
 {
+    if (!CurrentActorInfo) return;
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) return; // Exit if no actor
 

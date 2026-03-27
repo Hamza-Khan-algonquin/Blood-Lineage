@@ -20,6 +20,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 
+    if (!CurrentActorInfo) return;
 
     float CurrentTime = GetWorld()->GetTimeSeconds();
     if (CurrentTime - LastUseTime < CooldownTimer)
@@ -90,7 +91,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 void UImpunityAbility::ResetSpeed()
 {
-
+    if (!CurrentActorInfo) return;
     ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
     if (AvatarChar)
     {

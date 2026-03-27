@@ -82,6 +82,8 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 
 AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
 {
+    if (!CurrentActorInfo) return nullptr;
+
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return nullptr;
 
@@ -141,6 +143,8 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor, AActor* TargetEnemy)
 
 void UBackStab::ExecuteBackStabSequence()
 {
+
+    if (!CurrentActorInfo) return;
     UWorld* World = GetWorld();
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
 
@@ -232,6 +236,8 @@ void UBackStab::ExecuteBackStabSequence()
 
 void UBackStab::ReturnPlayerToOriginalPosition()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return;
 

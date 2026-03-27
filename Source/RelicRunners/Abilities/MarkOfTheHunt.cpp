@@ -23,6 +23,7 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
 
     UWorld* World = GetWorld();
     if (!World) return;
@@ -115,6 +116,8 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UMarkOfTheHunt::ProjectileTick()
 {
+    if (!CurrentActorInfo) return;
+
     UWorld* World = GetWorld();
     if (!World) return;
 

@@ -65,7 +65,6 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
-
     if (ActorInfo->IsLocallyControlled())
     {
         APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());

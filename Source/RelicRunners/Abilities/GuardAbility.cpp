@@ -23,6 +23,8 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+    if (!CurrentActorInfo) return;
+
     ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr);
 
     if (!OwnerChar || !OwnerChar->GetWorld())
@@ -82,6 +84,8 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
 
 void UGuardAbility::ResetSpeed()
 {
+    if (!CurrentActorInfo) return;
+
     ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
     if (AvatarChar)
     {
