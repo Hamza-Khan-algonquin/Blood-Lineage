@@ -31,4 +31,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
 	class UTexture2D* FlagDownIcon;
+
+	UPROPERTY()
+	TWeakObjectPtr<UUserWidget> AssociatedWidget;
 };

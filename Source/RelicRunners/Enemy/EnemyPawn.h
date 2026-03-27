@@ -107,6 +107,8 @@ protected:
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
+
+	void UpdateEmissiveHealth();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
@@ -150,8 +152,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyForceToEnemy(FVector forces);
 
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void KnockBack(FVector forces);
+
 	UFUNCTION(BlueprintCallable)
 	void GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	//best method name ever
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void ResetKnockBackStuff();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

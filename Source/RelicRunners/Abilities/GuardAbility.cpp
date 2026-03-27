@@ -8,12 +8,13 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
+#include "RelicRunners/Inventory/InventoryComponent.h"
 
 UGuardAbility::UGuardAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    CooldownDuration = 10.f;
+    CooldownDuration = 12.f;
     LastUseTime = -100.f;
     Duration = 0.f;
     Damage = 25.f;
@@ -22,6 +23,8 @@ UGuardAbility::UGuardAbility()
 void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    if (!CurrentActorInfo) return;
 
     ARelicRunnersCharacter* OwnerChar = Cast<ARelicRunnersCharacter>(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr);
 
@@ -45,13 +48,34 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         return;
     }
 
-    if (AbilityAnim)
+
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
-    OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
-    AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.5f;
+    float FinalManaCost = CalculateAbilityMana(AvatarChar, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
+    if (AbilityAnim)
+    {
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
+    }
+
+    PS->IncreasedMovementSpeedFromAbility = 1.5f;
+    PS->GetInventoryComponent()->UpdateTotalEquippedStats(OwnerChar);
+
+    PlayAbilityCastSound(ActorInfo);
 
     OwnerChar->GetWorldTimerManager().SetTimer(ChargeTickHandle,FTimerDelegate::CreateUObject(this,&UGuardAbility::HandleChargeTick,Handle,ActorInfo,ActivationInfo),0.05f,true);
 
@@ -62,11 +86,7 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
 
 void UGuardAbility::ResetSpeed()
 {
-    ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
-    if (AvatarChar)
-    {
-        AvatarChar->GetCharacterMovement()->MaxWalkSpeed = OriginalSpeed;
-    }
+
 }
 
 void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo, FGameplayAbilityActivationInfo ActivationInfo)
@@ -163,7 +183,13 @@ void UGuardAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGa
                 }
             }
         }
-        ResetSpeed();
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+        PS->IncreasedMovementSpeedFromAbility = 1;
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(OwnerChar);
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

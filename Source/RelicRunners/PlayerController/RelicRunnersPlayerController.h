@@ -24,6 +24,32 @@
 class UInputMappingContext;
 class UInventoryComponent;
 
+UENUM(BlueprintType)
+enum class EObjectiveType : uint8 {
+	None,
+	Flag,
+	Payload,
+	Enemies,
+	Pandora
+};
+
+USTRUCT(BlueprintType)
+struct FPendingObjective {
+	GENERATED_BODY()
+
+		UPROPERTY()
+	int FlagCount = 0;
+
+	UPROPERTY()
+	int EnemyCount = 0;
+
+	UPROPERTY()
+	float PandoraTime = 0.0f;
+
+	UPROPERTY()
+	EObjectiveType Type = EObjectiveType::None;
+};
+
 UCLASS()
 class RELICRUNNERS_API ARelicRunnersPlayerController : public APlayerController
 {
@@ -49,10 +75,32 @@ public:
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
-	void AnimateOldObjectives();
+	enum class EObjectiveType { None, Flag, Payload, Enemies, Pandora };
+	struct FPendingObjective {
+		int FlagCount = 0;
+		int EnemyCount = 0;
+		float PandoraTime = 0.0f;
+		EObjectiveType Type = EObjectiveType::None;
+	};
+
+	FTimerHandle TimerHandle_UIWait;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ObjectiveBuffer)
+	TArray<FPendingObjective> ObjectiveBuffer;
+
+	void AddObjectiveToBuffer(FPendingObjective NewObjective);
+
+	void Internal_SetFlagUI(int CapturedCount);
+
+	UFUNCTION(Server, Reliable)
+	void Server_InitializePlayerData(FSaveData ClientMeta);
 
 	UFUNCTION()
-	void ClearOldObjectives();
+	void OnRep_ObjectiveBuffer();
+
+	void FlushObjectiveBuffer();
+
+	class UObjectiveItemData* Internal_AddObjectiveFromBuffer(const FPendingObjective& Data);
 
 	void SpectatingUI();
 
@@ -61,24 +109,14 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowPostGame(const TArray<FPlayerPostGameData>& FinalStats);
 
-	UFUNCTION(Client, Reliable)
-	void Client_DecrementFlagObjective();
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddFlagObjective(int NumFlags);
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddEnemiesObjective(int TotalEnemies);
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddPandoraObjective(float Time);
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddPayloadObjective();
+	UFUNCTION(Server, Reliable)
+	void Server_DecrementFlagObjective();
 
 	UFUNCTION()
 	void UpdateCharacterVisuals();
 	void UpdateAllAbilityManaUI();
+	UFUNCTION()
+	void OnRep_AbilityCosts();
 	UFUNCTION()
 	void DisableInventoryUIFromTimer();
 	UFUNCTION()
@@ -93,8 +131,26 @@ public:
 	void OnRep_LobbyPreview();
 	UFUNCTION(Client, Reliable)
 	void Client_RequestSaveStats();
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePayloadUI(float NewProgress);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateFlagUI(int FlagsCaptured);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePandoraUI(float NewPercent, const FString& NewTimeText);
+
+	//UFUNCTION(Client, Reliable)
+	//void Client_UpdateEnemiesUI(int EnemiesLeft);
+
+	void Internal_SetPandoraUI(float NewPercent, const FString& NewTimeText);
+
+	void Internal_SetPayloadUI(float NewProgress);
+
 	UFUNCTION()
 	void OnRep_PlayerPreview();
+
 	UFUNCTION(Server, Reliable)
 	void Server_SetSelectedClass(FName NewClass);
 	UFUNCTION(Server, Reliable)
@@ -201,6 +257,7 @@ public:
 	class UMainMenuWidget* MainMenuWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UInventory* Inventory;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	class UObjectiveLog* ObjectiveLog;
 	
@@ -213,6 +270,12 @@ public:
 	TObjectPtr<USoundBase> CountdownTickSound = nullptr;
 	class AHades* CachedHades;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> AbilitySelectionOpenSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Audio")
+	TObjectPtr<USoundBase> AbilitySelectionCloseSound = nullptr;
+
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerPreview)
 	class APlayerPreview* PlayerPreviewInstance;
 	UPROPERTY(ReplicatedUsing = OnRep_LobbyPreview)
@@ -223,9 +286,13 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_StartCinematicWalk(FVector TargetLocation);
 
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility1 = 0.f;
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility2 = 0.f;
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility3 = 0.f;
+	UPROPERTY(ReplicatedUsing = OnRep_AbilityCosts)
 	float BaseCostAbility4 = 0.f;
 
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
@@ -270,6 +337,8 @@ protected:
 	void LoadingScreenUI();
 	void ForceGameModeOnly();
 	void SetupObjectives();
+	UFUNCTION(Server, Reliable)
+	void Server_RequestCurrentObjective();
 	void RemoveOtherUI(UUserWidget* KeepAlive);
 	void DamageAbility();
 	void DefenceAbility();
@@ -295,6 +364,7 @@ protected:
 	virtual void ClientRestart_Implementation(APawn* NewPawn) override;
 	virtual void SetupInputComponent() override;
 	virtual void PostSeamlessTravel() override;
+	void OnTravelRefreshDelay();
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
 	virtual void Tick(float DeltaTime) override;
 
@@ -302,6 +372,8 @@ protected:
 	class ARelicRunnersCharacter* PossessedPawn;
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 	class ARelicRunnersPlayerState* RelicPlayerState;
+
+	UPROPERTY()
 	class UTitleData* ObjectiveStageTitle;
 
 	//Input

@@ -14,4 +14,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ProgressFraction;
+
+	UPROPERTY()
+	TWeakObjectPtr<UUserWidget> AssociatedWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
+	class UTexture2D* PayloadImage;
 };

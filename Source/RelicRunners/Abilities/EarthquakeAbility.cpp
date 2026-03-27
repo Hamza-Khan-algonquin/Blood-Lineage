@@ -15,13 +15,15 @@ UEarthquakeAbility::UEarthquakeAbility()
     Duration = 0.25f;
     ConeAngle = 90.f;
     LastUseTime = -100.f;
-    CooldownTimer = 5.0f;
-	Damage = 100.f;
+    CooldownTimer = 10.0f;
+	Damage = 250.f;
 }
 
 void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    if (!CurrentActorInfo) return;
 
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
@@ -44,15 +46,75 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    if (ActorInfo->IsLocallyControlled())
+    {
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
+
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
+
+            if (PC)
+            {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [WeakPC, WeakWorld]()
+                    {
+                        if (!WeakWorld.IsValid())
+                            return;
+
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
+
+                    },
+                    AnimDuration,
+                    false
+                );
+            }
+        }
+    }
+
+    ApplyDamageAndStun();
+    LastUseTime = World->GetTimeSeconds();
+
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
-    LastUseTime = World->GetTimeSeconds();
+    PlayAbilityCastSound(ActorInfo);
 
-    ApplyDamageAndStun();
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
+
 
     World->GetTimerManager().SetTimer(CooldownTimerHandle,[this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, true, false);}, Duration, false );
 }
@@ -60,16 +122,18 @@ void UEarthquakeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 void UEarthquakeAbility::ApplyDamageAndStun()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    if (!IsValid(AvatarActor)) return;
+
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World) return;
 
     FVector Origin = AvatarActor->GetActorLocation();
     FVector Forward = AvatarActor->GetActorForwardVector();
     Forward.Z = 0.f;
     Forward.Normalize();
-
-    UWorld* World = AvatarActor->GetWorld();
-    if (!World) return;
 
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -121,6 +185,12 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            //SPC->EnableInput(PC);
+        }
+
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
@@ -132,6 +202,7 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
                 {
                     if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
                     {
+
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
                     }
                 }

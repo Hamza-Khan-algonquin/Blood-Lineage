@@ -14,6 +14,7 @@
  *   � 2025 Tristan Anglin. All rights reserved.
  ************************************************************************************/
 
+
 #include "RelicRunnersPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
@@ -22,7 +23,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
-
+#include "EngineUtils.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -77,6 +78,7 @@
 #include <Blueprint/AIBlueprintHelperLibrary.h>
 #include "NavigationPath.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include <RelicRunners/LevelGeneration/IslandSpawner.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -132,6 +134,11 @@ void ARelicRunnersPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeP
 
 	DOREPLIFETIME(ARelicRunnersPlayerController, PlayerPreviewInstance);
 	DOREPLIFETIME(ARelicRunnersPlayerController, LobbyPreviewInstance);
+	DOREPLIFETIME(ARelicRunnersPlayerController, ObjectiveBuffer);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility1);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility2);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility3);
+	DOREPLIFETIME(ARelicRunnersPlayerController, BaseCostAbility4);
 }
 
 void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
@@ -141,20 +148,19 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 
 	PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 
+	UpdateCharacterVisuals();
+
+}
+
+void ARelicRunnersPlayerController::Server_InitializePlayerData_Implementation(FSaveData ClientMeta)
+{
 	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
 	{
 		if (!PS->HasReceivedStarterItems)
 		{
+			PS->InitializeMetaStats(ClientMeta);
 			PS->GiveStarterItems();
 		}
-
-		UpdateCharacterVisuals();
-	}
-
-	if (PlayerCameraManager)
-	{
-		PlayerCameraManager->ViewPitchMin = -60.f;
-		PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 
@@ -173,6 +179,14 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
 	}
+
+	if (HasAuthority())
+	{
+		if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			PS->RefreshStatsForNewLevel();
+		}
+	}
 }
 
 void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
@@ -184,7 +198,7 @@ void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 
 	if (MapName.Contains("Lobby"))
 	{
-		SetupLobbyView();
+		
 	}
 }
 
@@ -226,7 +240,21 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
+	if (HasAuthority())
+	{
+		FTimerHandle RefreshTimer;
+		GetWorldTimerManager().SetTimer(RefreshTimer, this, &ARelicRunnersPlayerController::OnTravelRefreshDelay, 0.2f, false);
+	}
+
 	EnableInput(this);
+}
+
+void ARelicRunnersPlayerController::OnTravelRefreshDelay()
+{
+	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
+	{
+		PS->RefreshStatsForNewLevel();
+	}
 }
 
 void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
@@ -322,8 +350,6 @@ void ARelicRunnersPlayerController::SyncUI()
 			UpdateCharacterVisuals();
 
 			Inventory->RefreshEquippedUI();
-			RelicPlayerState->GetInventoryComponent()->UpdateTotalEquippedStats(GetPawn());
-			RelicPlayerState->PlayerHealth = RelicPlayerState->PlayerMaxHealth;
 			UpdateHUDAll();
 
 			GetWorldTimerManager().ClearTimer(SyncDataTimerHandle);
@@ -523,6 +549,11 @@ void ARelicRunnersPlayerController::UpdateAllAbilityManaUI()
 	int Cost4 = GetCalculatedManaCost(BaseCostAbility4);
 
 	PlayerHUD->UpdateAbilityManaCosts(Cost1, Cost2, Cost3, Cost4);
+}
+
+void ARelicRunnersPlayerController::OnRep_AbilityCosts()
+{
+	UpdateAllAbilityManaUI();
 }
 
 int ARelicRunnersPlayerController::GetCalculatedManaCost(float BaseMana)
@@ -770,6 +801,7 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 	if (!UIWidget) return;
 
 	bool IsOpening = !UIWidget->IsVisible();
+	if (UIWidget == Inventory && Inventory->GetVisibility() == ESlateVisibility::HitTestInvisible) IsOpening = true;
 
 	if (IsOpening)
 	{
@@ -791,6 +823,13 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 			if (InventoryOpenSound)
 			{
 				UGameplayStatics::PlaySound2D(this, InventoryOpenSound);
+			}
+		}
+		else if (UIWidget == AbilitySelection)
+		{
+			if (AbilitySelectionOpenSound)
+			{
+				UGameplayStatics::PlaySound2D(this, AbilitySelectionOpenSound);
 			}
 		}
 		UIWidget->SetVisibility(ESlateVisibility::Visible);
@@ -831,6 +870,11 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 	}
 	else
 	{
+		if (UIWidget == AbilitySelection && AbilitySelectionCloseSound)
+		{
+			UGameplayStatics::PlaySound2D(this, AbilitySelectionCloseSound);
+		}
+
 		UIWidget->SetVisibility(ESlateVisibility::Hidden);
 		UIWidget->SetIsEnabled(false);
 	}
@@ -840,8 +884,8 @@ void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
 {
 	if (Inventory)
 	{
-		Inventory->SetVisibility(ESlateVisibility::Hidden);
-		Inventory->SetIsEnabled(false);
+		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Inventory->SetIsEnabled(true);
 
 		GetWorld()->GetTimerManager().ClearTimer(DisableUITimer);
 	}
@@ -965,25 +1009,84 @@ void ARelicRunnersPlayerController::SetupObjectives()
 			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
 		}
 	}
+
+	if (IsLocalController())
+	{
+		Server_RequestCurrentObjective();
+	}
+}
+
+void ARelicRunnersPlayerController::Server_RequestCurrentObjective_Implementation()
+{
+	//Find the Spawner in the world
+	for (TActorIterator<AIslandSpawner> It(GetWorld()); It; ++It)
+	{
+		It->SyncObjectiveToSinglePlayer(this);
+		break;
+	}
 }
 
 void ARelicRunnersPlayerController::UpdatePayloadObjective(float NewProgress)
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) {
-		UE_LOG(LogTemp, Warning, TEXT("Update failed: Missing Title or Log Widget!"));
-		return;
+	Internal_SetPayloadUI(NewProgress);
+
+	if (HasAuthority())
+	{
+		Client_UpdatePayloadUI(NewProgress);
 	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdatePayloadUI_Implementation(float NewProgress)
+{
+	Internal_SetPayloadUI(NewProgress);
+}
+
+void ARelicRunnersPlayerController::Client_UpdatePandoraUI_Implementation(float NewPercent, const FString& NewTimeText)
+{
+	Internal_SetPandoraUI(NewPercent, NewTimeText);
+}
+
+void ARelicRunnersPlayerController::Internal_SetPandoraUI(float NewPercent, const FString& NewTimeText)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UPandoraData* PandoraGoal = Cast<UPandoraData>(SubObj))
+		{
+			PandoraGoal->Percent = NewPercent;
+			PandoraGoal->TimeRemainingText = NewTimeText;
+
+			if (PandoraGoal->Percent >= 1.0f && !PandoraGoal->Completed)
+			{
+				PandoraGoal->Completed = true;
+			}
+
+			ObjectiveLog->UpdateObjective(PandoraGoal);
+			return;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Internal_SetPayloadUI(float NewProgress)
+{
+	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
 	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
 	{
 		if (UPayloadData* PayloadGoal = Cast<UPayloadData>(SubObj))
 		{
 			PayloadGoal->ProgressFraction = NewProgress;
+
+			if (PayloadGoal->ProgressFraction >= 1.0f && !PayloadGoal->Completed)
+			{
+				PayloadGoal->Completed = true;
+			}
+
 			ObjectiveLog->UpdateObjective(PayloadGoal);
 			return;
 		}
 	}
-	UE_LOG(LogTemp, Error, TEXT("Could not find PayloadData in SubObjectives!"));
 }
 
 void ARelicRunnersPlayerController::UpdateEnemiesObjective(int EnemiesLeft)
@@ -1018,36 +1121,130 @@ void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FSt
 	}
 }
 
-void ARelicRunnersPlayerController::Client_AddPayloadObjective_Implementation()
+void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+	if (!ObjectiveLog || !ObjectiveStageTitle || !ObjectiveLog->ObjectiveTreeView) return;
 
-	UPayloadData* PayloadGoal = NewObject<UPayloadData>(this);
-	PayloadGoal->ProgressFraction = 0.0f;
+	if (ObjectiveBuffer.Num() > 0)
+	{
+		GetWorldTimerManager().ClearTimer(TimerHandle_UIWait);
 
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, PayloadGoal);
+		ObjectiveLog->ObjectiveTreeView->ClearListItems();
+		ObjectiveLog->ObjectiveTreeView->AddItem(ObjectiveStageTitle);
+		ObjectiveStageTitle->SubObjectives.Empty();
 
-	ClearOldObjectives();
+		for (int i = 0; i < ObjectiveBuffer.Num(); ++i)
+		{
+			UObjectiveItemData* NewGoal = Internal_AddObjectiveFromBuffer(ObjectiveBuffer[i]);
+
+			if (NewGoal && i < ObjectiveBuffer.Num() - 1)
+			{
+				NewGoal->Completed = true;
+			}
+		}
+
+		ObjectiveLog->ObjectiveTreeView->SetItemExpansion(ObjectiveStageTitle, true);
+		ObjectiveLog->ObjectiveTreeView->RequestRefresh();
+
+		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Catch-up Successful. Buffer Flushed."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Waiting for Objective Data from Server..."));
+	}
 }
 
-void ARelicRunnersPlayerController::Client_AddFlagObjective_Implementation(int NumFlags)
+UObjectiveItemData* ARelicRunnersPlayerController::Internal_AddObjectiveFromBuffer(const FPendingObjective& Data)
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+	UObjectiveItemData* NewGoal = nullptr;
 
-	UFlagData* FlagGoal = NewObject<UFlagData>(this);
-	FlagGoal->Flag1Active = false;
-	FlagGoal->Flag2Active = false;
-	FlagGoal->Flag3Active = false;
-	FlagGoal->Flag1Enabled = (NumFlags >= 1);
-	FlagGoal->Flag2Enabled = (NumFlags >= 2);
-	FlagGoal->Flag3Enabled = (NumFlags == 3);
+	if (Data.Type == EObjectiveType::Enemies)
+	{
+		UEnemiesData* EnemiesGoal = NewObject<UEnemiesData>(this);
+		EnemiesGoal->EnemiesRemaining = Data.EnemyCount;
+		NewGoal = EnemiesGoal;
+	}
+	else if (Data.Type == EObjectiveType::Pandora)
+	{
+		UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
+		PandoraGoal->Percent = 1.0f;
+		int Seconds = FMath::CeilToInt(FMath::Fmod(Data.PandoraTime, 60.0f));
+		PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%d"), Seconds);
+		NewGoal = PandoraGoal;
+	}
+	else if (Data.Type == EObjectiveType::Payload)
+	{
+		UPayloadData* PayloadGoal = NewObject<UPayloadData>(this);
+		PayloadGoal->ProgressFraction = 0.0f;
+		NewGoal = PayloadGoal;
+	}
+	else if (Data.Type == EObjectiveType::Flag)
+	{
+		UFlagData* FlagGoal = NewObject<UFlagData>(this);
+		FlagGoal->Flag1Active = false;
+		FlagGoal->Flag2Active = false;
+		FlagGoal->Flag3Active = false;
+		FlagGoal->Flag1Enabled = (Data.FlagCount >= 1);
+		FlagGoal->Flag2Enabled = (Data.FlagCount >= 2);
+		FlagGoal->Flag3Enabled = (Data.FlagCount == 3);
+		NewGoal = FlagGoal;
+	}
 
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, FlagGoal);
+	if (NewGoal)
+	{
+		ObjectiveLog->AddObjective(ObjectiveStageTitle, NewGoal);
+	}
 
-	ClearOldObjectives();
+	return NewGoal;
 }
 
-void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation()
+void ARelicRunnersPlayerController::AddObjectiveToBuffer(FPendingObjective NewObjective)
+{
+	if (HasAuthority())
+	{
+		ObjectiveBuffer.Add(NewObjective);
+
+		MARK_PROPERTY_DIRTY_FROM_NAME(ARelicRunnersPlayerController, ObjectiveBuffer, this);
+
+		if (IsLocalController())
+		{
+			FlushObjectiveBuffer();
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Server_DecrementFlagObjective_Implementation()
+{
+	if (!ObjectiveStageTitle) return;
+
+	for (UObjectiveItemData* SubObj : ObjectiveStageTitle->SubObjectives)
+	{
+		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
+		{
+			int NewCapturedCount = 0;
+
+			if (!FlagGoal->Flag1Active) { FlagGoal->Flag1Active = true; NewCapturedCount = 1; }
+			else if (!FlagGoal->Flag2Active) { FlagGoal->Flag2Active = true; NewCapturedCount = 2; }
+			else if (!FlagGoal->Flag3Active) { FlagGoal->Flag3Active = true; NewCapturedCount = 3; }
+			else { NewCapturedCount = 3; } 
+
+			Internal_SetFlagUI(NewCapturedCount);
+
+			Client_UpdateFlagUI(NewCapturedCount);
+			return;
+		}
+	}
+}
+
+void ARelicRunnersPlayerController::Client_UpdateFlagUI_Implementation(int CapturedCount)
+{
+	FString RoleAuth = HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT");
+	UE_LOG(LogTemp, Warning, TEXT("[%s] RPC RECEIVED: Flags = %d"), *RoleAuth, CapturedCount);
+
+	Internal_SetFlagUI(CapturedCount);
+}
+
+void ARelicRunnersPlayerController::Internal_SetFlagUI(int CapturedCount)
 {
 	if (!ObjectiveStageTitle || !ObjectiveLog) return;
 
@@ -1055,61 +1252,30 @@ void ARelicRunnersPlayerController::Client_DecrementFlagObjective_Implementation
 	{
 		if (UFlagData* FlagGoal = Cast<UFlagData>(SubObj))
 		{
-			if (!FlagGoal->Flag1Active) FlagGoal->Flag1Active = true;
-			else if (!FlagGoal->Flag2Active) FlagGoal->Flag2Active = true;
-			else if (!FlagGoal->Flag3Active) FlagGoal->Flag3Active = true;
+			FlagGoal->Flag1Active = (CapturedCount >= 1);
+			FlagGoal->Flag2Active = (CapturedCount >= 2);
+			FlagGoal->Flag3Active = (CapturedCount >= 3);
 
+			bool AllClear = true;
+			if (FlagGoal->Flag1Enabled && !FlagGoal->Flag1Active) AllClear = false;
+			if (FlagGoal->Flag2Enabled && !FlagGoal->Flag2Active) AllClear = false;
+			if (FlagGoal->Flag3Enabled && !FlagGoal->Flag3Active) AllClear = false;
+
+			if (AllClear && !FlagGoal->Completed)
+			{
+				FlagGoal->Completed = true;
+			}
 			ObjectiveLog->UpdateObjective(FlagGoal);
 			return;
 		}
 	}
 }
 
-void ARelicRunnersPlayerController::Client_AddEnemiesObjective_Implementation(int TotalEnemies)
+void ARelicRunnersPlayerController::OnRep_ObjectiveBuffer()
 {
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
+	if (!ObjectiveLog || !ObjectiveStageTitle) return;
 
-	UEnemiesData* EnemiesGoal = NewObject<UEnemiesData>(this);
-	EnemiesGoal->EnemiesRemaining = TotalEnemies;
-
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, EnemiesGoal);
-
-	ClearOldObjectives();
-}
-
-void ARelicRunnersPlayerController::Client_AddPandoraObjective_Implementation(float Time)
-{
-	if (!ObjectiveStageTitle || !ObjectiveLog || !ObjectiveLog->ObjectiveTreeView) return;
-
-	UPandoraData* PandoraGoal = NewObject<UPandoraData>(this);
-	PandoraGoal->Percent = 1.0f;
-
-	int Seconds = FMath::CeilToInt(FMath::Fmod(Time, 60.0f));
-	PandoraGoal->TimeRemainingText = FString::Printf(TEXT("%d"), Seconds);
-
-	ObjectiveLog->AddObjective(ObjectiveStageTitle, PandoraGoal);
-
-	ClearOldObjectives();
-}
-
-void ARelicRunnersPlayerController::AnimateOldObjectives()
-{
-
-}
-
-void ARelicRunnersPlayerController::ClearOldObjectives()
-{
-	if (!ObjectiveStageTitle || !ObjectiveLog) return;
-
-	if (ObjectiveStageTitle->SubObjectives.Num() > 1)
-	{
-		for (int i = ObjectiveStageTitle->SubObjectives.Num() - 1; i > 0; --i)
-		{
-			ObjectiveStageTitle->SubObjectives.RemoveAt(i);
-		}
-
-		ObjectiveLog->RefreshLog(ObjectiveStageTitle);
-	}
+	FlushObjectiveBuffer();
 }
 
 void ARelicRunnersPlayerController::SpectatingUI()
@@ -1247,8 +1413,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (Inventory)
 		{
 			Inventory->AddToViewport();
-			Inventory->SetVisibility(ESlateVisibility::Hidden);
-			Inventory->SetIsEnabled(false);
+			HideUI(Inventory);
 		}
 	}
 
@@ -1399,6 +1564,29 @@ void ARelicRunnersPlayerController::BeginPlay()
 	else if (MapName.Contains(TEXT("MainMenu")))
 	{
 		SetupMainMenuView();
+	}
+	else
+	{
+		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+		{
+			if (GI->SelectedSaveSlot)
+			{
+				Server_InitializePlayerData(GI->SelectedSaveSlot->SaveData);
+			}
+			else
+			{
+				//Testing path: Send a default/empty struct
+				UE_LOG(LogTemp, Warning, TEXT("SelectedSaveSlot is NULL. Starting with default testing stats."));
+				FSaveData DefaultData;
+				Server_InitializePlayerData(DefaultData);
+			}
+		}
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ViewPitchMin = -60.f;
+		PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 }
 

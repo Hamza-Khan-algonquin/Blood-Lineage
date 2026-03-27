@@ -9,6 +9,7 @@
 #include "RelicRunners/Inventory/Inventory.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "Kismet/GameplayStatics.h"
 #include <RelicRunners/Item/ItemStats.h>
 
 
@@ -39,6 +40,11 @@ void UAbilitySelection::Upgrade1Clicked()
     ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
     if (!PS) return;
 
+    if (UpgradePickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, UpgradePickSound);
+    }
+
     PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff1);
     RefreshUpgrades();
@@ -48,6 +54,11 @@ void UAbilitySelection::Upgrade2Clicked()
 {
     ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
     if (!PS) return;
+
+    if (UpgradePickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, UpgradePickSound);
+    }
 
     PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff2);
@@ -59,6 +70,11 @@ void UAbilitySelection::Upgrade3Clicked()
     ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
     if (!PS) return;
 
+    if (UpgradePickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, UpgradePickSound);
+    }
+
     PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff3);
     RefreshUpgrades();
@@ -68,6 +84,11 @@ void UAbilitySelection::Upgrade4Clicked()
 {
     ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
     if (!PS) return;
+
+    if (UpgradePickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, UpgradePickSound);
+    }
 
     PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff4);

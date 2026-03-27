@@ -95,29 +95,33 @@ void ANewCapturableFlag::Server_HandleInteracted_Implementation(ARelicRunnersCha
 
 void ANewCapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 {
-	if (!Char)
-		return;
+	if (!HasAuthority() || !Char || isActive) return;
 
-	if (isActive)
-		return;
-
-	//Disable further interactions
 	isActive = true;
 
-	TextComponent->SetText(FText::FromString("Complete!"));
-
-	FString text = HasAuthority() ? "Server: " : "Client: ";
-	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
-
-	BeaconMesh->SetVisibility(false);
 	OnObjectiveActivated.Broadcast();
+
+	UpdateVisuals();
+}
+
+void ANewCapturableFlag::UpdateVisuals()
+{
+	if (TextComponent) TextComponent->SetText(FText::FromString("Complete!"));
+	if (BeaconMesh) BeaconMesh->SetVisibility(false);
+
+	PlayFlagAnimation();
 
 	if (TooltipWidgetComponent)
 	{
 		TooltipWidgetComponent->SetHiddenInGame(true);
+		TooltipWidgetComponent->SetVisibility(false);
+		TooltipWidgetComponent->SetComponentTickEnabled(false);
 	}
+}
 
-	PlayFlagAnimation();
+void ANewCapturableFlag::OnActiveChange()
+{
+	UpdateVisuals();
 }
 
 void ANewCapturableFlag::Tick(float DeltaTime)
@@ -139,20 +143,6 @@ void ANewCapturableFlag::Tick(float DeltaTime)
 
 		TooltipWidgetComponent->SetWorldRotation(LookAtRotation);
 	}
-}
-void ANewCapturableFlag::OnActiveChange()
-{
-	isActive = true;
-
-	TextComponent->SetText(FText::FromString("Complete!"));
-
-	FString text = HasAuthority() ? "Server: " : "Client: ";
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
-
-	BeaconMesh->SetVisibility(false);
-	OnObjectiveActivated.Broadcast();
-
-	PlayFlagAnimation();
 }
 
 void ANewCapturableFlag::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

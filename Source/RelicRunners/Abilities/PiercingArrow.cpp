@@ -27,13 +27,15 @@ UPiercingArrow::UPiercingArrow()
     ProjectileRadius = 40.f;
     DotTickRate = 0.5f;
     DotDuration = 6.f;
-    Damage = 15.f;
+    Damage = 25.f;
     DotTimeElapsed = 0.f;
 }
 
 void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    if (!CurrentActorInfo) return;
 
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor)
@@ -56,11 +58,27 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+
+
+    PlayAbilityCastSound(ActorInfo);
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
 
     // Initial projectile setup
     ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
@@ -85,7 +103,7 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UPiercingArrow::TickArrow()
 {
-    UE_LOG(LogTemp, Warning, TEXT("TickArrow firing"));
+    if (!CurrentActorInfo) return;
 
     if (!SpawnedProjectile)
         return;
@@ -136,6 +154,7 @@ void UPiercingArrow::TickArrow()
 
 void UPiercingArrow::Explode(FVector ImpactPoint)
 {
+    if (!CurrentActorInfo) return;
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return;
 
@@ -159,8 +178,10 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
 
 void UPiercingArrow::ApplyDotTick()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    if (!IsValid(AvatarActor)) return;
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
@@ -211,8 +232,7 @@ void UPiercingArrow::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
 
                 if (ActorInfo->IsLocallyControlled())
                 {
-                    if (ARelicRunnersPlayerController* RPC =
-                        Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+                    if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
                     {
                         RPC->PlayerHUD->StartDamageCooldown(CooldownTimer);
                     }

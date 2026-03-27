@@ -17,7 +17,7 @@ UGoddessOfLove::UGoddessOfLove()
 	Damage = 400.f;
 	AreaRadius = 1000.f;
 	LastUseTime = -100.f;
-	CooldownTimer = 10.f;
+	CooldownTimer = 15.f;
     ElapsedDOTTime = 0.f;
     DOTTickInterval = 0.5f;
     DOTDuration = 0.7f;
@@ -28,11 +28,7 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+    if (!CurrentActorInfo) return;
 
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     if (!AvatarActor)
@@ -50,15 +46,70 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
-    if (AbilityAnim)
+
+    PlayAbilityCastSound(ActorInfo);
+
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
+    if (ActorInfo->IsLocallyControlled())
+
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
+
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
+
+            if (PC)
+            {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [WeakPC, WeakWorld]()
+                    {
+                        if (!WeakWorld.IsValid())
+                            return;
+
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
+                    },
+                    AnimDuration,
+                    false
+                );
+            }
+        }
     }
 
     LastUseTime = World->GetTimeSeconds();
@@ -80,6 +131,8 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
     {
         return;
     }
+
+    if (!CurrentActorInfo) return;
 
     AActor* OwnerActor = ActorInfo->AvatarActor.Get();
     DamageOrigin = OwnerActor->GetActorLocation(); // initialize origin at player
@@ -119,6 +172,8 @@ void UGoddessOfLove::ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorI
 
 void UGoddessOfLove::ApplyPassiveHealthRegen()
 {
+    if (!CurrentActorInfo) return;
+
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -159,6 +214,7 @@ void UGoddessOfLove::TickDamage()
 
     const float DeltaTime = World->GetDeltaSeconds();
     ElapsedDOTTime += DeltaTime;
+
 
     for (int32 i = AffectedEnemies.Num() - 1; i >= 0; --i)
     {

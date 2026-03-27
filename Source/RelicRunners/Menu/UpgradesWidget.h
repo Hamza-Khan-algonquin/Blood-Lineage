@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "SaveFileListData.h"
 #include "Blueprint/UserWidget.h"
+#include "Sound/SoundBase.h"
 #include "UpgradesWidget.generated.h"
 
 
@@ -155,6 +156,15 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_ResetEfficiency;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> UpgradeSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> ResetSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> BackSound = nullptr;
 
 	UFUNCTION()
 	void OnResetHPClicked();
