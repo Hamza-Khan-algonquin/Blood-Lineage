@@ -42,6 +42,8 @@
 #include "RelicRunners/Inventory/Inventory.h"
 #include "RelicRunners/Vendor/Vendor.h"
 
+#include "Camera/CameraComponent.h"
+
 #include "RelicRunners/AbilitySystem/AbilitySelection.h"
 
 #include "RelicRunners/Menu/MainMenuWidget.h"
@@ -172,6 +174,7 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
+
 	}
 }
 
@@ -1184,7 +1187,9 @@ void ARelicRunnersPlayerController::Client_RequestSaveStats_Implementation()
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
-	if (!IsLocalController()) return; 
+	UE_LOG(LogTemp, Warning, TEXT("=== InitLocalUI CALLED ==="));
+
+	if (!IsLocalController()) return;
 
 	UWorld* World = GetWorld();
 	if (!World) return;

@@ -204,8 +204,6 @@ void ARelicRunnersCharacter::BeginPlay()
 		CameraBoom->TargetArmLength = 3000;
 		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 800.f));
 	}
-
-	
 }
 
 void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

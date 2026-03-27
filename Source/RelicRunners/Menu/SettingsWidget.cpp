@@ -25,7 +25,7 @@
 void USettingsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
+
 
 	if (BackButton)
 	{
@@ -76,7 +76,7 @@ void USettingsWidget::NativeConstruct()
 			{
 				B_InvertedYMouse->SetIsChecked(GI->Keys->InvertedYMouse);
 			}
-			
+
 		}
 	}
 
@@ -97,7 +97,7 @@ void USettingsWidget::NativeConstruct()
 			const float XSens = GI->Keys->HorizSens;
 			const float YSens = GI->Keys->VertSens;
 
-			const float XNorm = FMath::Clamp((XSens - MinSens) / (MaxSens- MinSens), 0.f, 1.f);
+			const float XNorm = FMath::Clamp((XSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
 			const float YNorm = FMath::Clamp((YSens - MinSens) / (MaxSens - MinSens), 0.f, 1.f);
 
 			if (XSlider) XSlider->SetValue(XNorm);
@@ -111,7 +111,7 @@ void USettingsWidget::NativeConstruct()
 	if (BrightnessSlider)
 	{
 		BrightnessSlider->OnValueChanged.RemoveDynamic(this, &USettingsWidget::OnBrightnessChanged);
-		
+
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
 			if (GI->Keys)
@@ -241,7 +241,7 @@ void USettingsWidget::NativeConstruct()
 
 	if (AutoLoot)
 	{
-		
+
 		AutoLoot->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::OnAutoLootChanged);
 
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
@@ -253,7 +253,23 @@ void USettingsWidget::NativeConstruct()
 		}
 
 	}
-	InitializeDefaultKeybindings();
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		if (GI->Keys)
+		{
+			ApplyBrightness(GI->Keys->Brightness);
+			ApplyMotionBlur(GI->Keys->motionBlurEnabled);
+			ApplyFOV(GI->Keys->FOV);
+
+			// LUT
+			if (GI->Keys->ColorBlindMode == "Protanopia")       ApplyColorLUT(LUT_Protanopia);
+			else if (GI->Keys->ColorBlindMode == "Deutranopia") ApplyColorLUT(LUT_Deuternopia);
+			else if (GI->Keys->ColorBlindMode == "Tritanopia")  ApplyColorLUT(LUT_Tritanopia);
+			else                                                 ApplyColorLUT(LUT_Normal);
+		}
+		InitializeDefaultKeybindings();
+	}
 }
 
 void USettingsWidget::OnRestoreDefaultsClicked()

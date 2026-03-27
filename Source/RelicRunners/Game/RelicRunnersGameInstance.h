@@ -34,6 +34,7 @@ public:
     //Sessions
     UFUNCTION(BlueprintCallable)
     void CreateNewSession();
+    UTexture* GetLUTForMode(const FString& Mode);
     UFUNCTION(BlueprintCallable)
     void StartSessionGame();
     UFUNCTION(BlueprintCallable)
@@ -56,8 +57,7 @@ public:
     void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
     void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
-    UFUNCTION(BlueprintCallable)
-    void OnPostLoadMapSettings(UWorld* World);
+
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
     UTexture* LUT_Normal;
@@ -71,7 +71,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
     UTexture* LUT_Tritanopia;
 
-    UTexture* GetLUTForMode(const FString& Mode);
 
     //Getters and Setters
     UFUNCTION(BlueprintCallable)

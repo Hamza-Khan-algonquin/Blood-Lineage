@@ -49,9 +49,6 @@ void URelicRunnersGameInstance::Init()
     Keys = NewObject<UKeybinds>(this);
     DefaultKeys = NewObject<UKeybinds>(this);
 
-    //to load previous cam settings
-    FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &URelicRunnersGameInstance::OnPostLoadMapSettings);
-
     //Savefiles
     InitializeSaveSlots();
 }
@@ -64,6 +61,7 @@ void URelicRunnersGameInstance::ResetToDefaults()
 
 void URelicRunnersGameInstance::ApplyKeybindings()
 {
+
     APlayerController* PC = GetFirstLocalPlayerController();
     if (!PC) return;
 
@@ -79,7 +77,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 
     if (!Subsystem) return;
-   
+
     if (ActiveMappingContext)
     {
         Subsystem->RemoveMappingContext(ActiveMappingContext);
@@ -93,11 +91,11 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, EKeys::Mouse2D);
 
-       UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
-       NegateModifier->bX = Keys->InvertedXMouse;
-       //NegateModifier->bY = Keys->InvertedYMouse;
+        UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
+        NegateModifier->bX = Keys->InvertedXMouse;
+        //NegateModifier->bY = Keys->InvertedYMouse;
 
-       Mapping.Modifiers.Add(NegateModifier);
+        Mapping.Modifiers.Add(NegateModifier);
     }
 
     for (auto& Binding : Keys->KeyBinds)
@@ -137,6 +135,10 @@ void URelicRunnersGameInstance::ApplyKeybindings()
         UE_LOG(LogTemp, Warning, TEXT("PlayerController or PlayerHUD is null"));
     }
 
+    if (!Keys) return;
+    if (PC->PlayerCameraManager)
+        PC->PlayerCameraManager->SetFOV(Keys->FOV);
+
 }
 
 
@@ -156,7 +158,7 @@ USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData
 
 void URelicRunnersGameInstance::InitializeSaveSlots()
 {
-    if (HasInitializedSlots) return; 
+    if (HasInitializedSlots) return;
     HasInitializedSlots = true;
 
     //Create starting data
@@ -481,49 +483,6 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
     }
 }
 
-void URelicRunnersGameInstance::OnPostLoadMapSettings(UWorld* World)
-{
-    if (!Keys) return;
-
-    //brightness
-    for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
-    {
-        if (CamItr->GetWorld() != World) continue;
-
-        FPostProcessSettings& PPS = CamItr->PostProcessSettings;
-        PPS.bOverride_AutoExposureBias = true;
-        PPS.AutoExposureBias = Keys->Brightness;
-        CamItr->PostProcessBlendWeight = 1.0f;
-    }
-
-    //fov
-    if (APlayerController* PC = World->GetFirstPlayerController())
-    {
-        if (PC->PlayerCameraManager)
-            PC->PlayerCameraManager->SetFOV(Keys->FOV);
-    }
-
-    //motion blur and LUTs
-    if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(
-        UGameplayStatics::GetPlayerCharacter(World->GetFirstPlayerController(), 0)))
-    {
-        if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
-        {
-            FPostProcessSettings& PPS = Camera->PostProcessSettings;
-
-            PPS.bOverride_MotionBlurAmount = true;
-            PPS.MotionBlurAmount = Keys->motionBlurEnabled ? 0.9f : 0.0f;
-
-     
-            PPS.bOverride_ColorGradingLUT = true;
-            PPS.ColorGradingLUT = GetLUTForMode(Keys->ColorBlindMode);
-            PPS.bOverride_ColorGradingIntensity = true;
-            PPS.ColorGradingIntensity = 0.3f;
-
-            Camera->PostProcessBlendWeight = 1.0f;
-        }
-    }
-}
 
 UTexture* URelicRunnersGameInstance::GetLUTForMode(const FString& Mode)
 {
