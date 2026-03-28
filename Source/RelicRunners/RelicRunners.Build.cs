@@ -22,6 +22,7 @@ public class RelicRunners : ModuleRules
 			"NavigationSystem", 
 			"OnlineSubsystem", 
 			"OnlineSubsystemUtils", 
+			"OnlineSubsystemNull",
 			"AdvancedSessions", 
 			"AdvancedSteamSessions",
 			"GameplayAbilities",    
@@ -30,8 +31,7 @@ public class RelicRunners : ModuleRules
             "Niagara",
             "Navmesh",
             "AudioMixer",
-			"NetCore"
-
+			"NetCore",
         });
     }
 }
