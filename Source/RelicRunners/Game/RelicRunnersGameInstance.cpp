@@ -220,16 +220,21 @@ void URelicRunnersGameInstance::CreateNewSession()
         //Setup parameters
         int LobbySize = 4;
         FOnlineSessionSettings SessionSettings;
+        SessionSettings.bIsLANMatch = true; 
+        SessionSettings.bShouldAdvertise = true;
         SessionSettings.NumPublicConnections = LobbySize;
+        SessionSettings.bUsesPresence = false;
+        SessionSettings.bUseLobbiesIfAvailable = false;
+       /* SessionSettings.NumPublicConnections = LobbySize;
         SessionSettings.bIsLANMatch = false;
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.bUsesPresence = true;
         SessionSettings.bAllowInvites = true;
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.bAllowJoinViaPresence = true;
-        SessionSettings.bAllowJoinInProgress = true;
+        SessionSettings.bAllowJoinInProgress = true;*/
         FString LobbyTitle = FString::Printf(TEXT("%s's Lobby"), *PlayerName);
-        SessionSettings.Set(SETTING_MAPNAME, LobbyTitle, EOnlineDataAdvertisementType::ViaOnlineService);
+        SessionSettings.Set(SETTING_MAPNAME, LobbyTitle, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
         Sess->OnCreateSessionCompleteDelegates.RemoveAll(this);
         Sess->OnCreateSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnCreateSessionComplete);
@@ -242,7 +247,7 @@ void URelicRunnersGameInstance::OnCreateSessionComplete(FName SessionName, bool 
     UE_LOG(LogTemp, Log, TEXT("OnCreateSessionComplete: %s success=%d"), *SessionName.ToString(), bWasSuccessful);
     if (bWasSuccessful)
     {
-        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, TEXT("listen?GameStarted=0"));
+        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, TEXT("listen?bIsLanMatch=1?GameStarted=0"));
     }
 
     //Unbind delegate 
@@ -254,22 +259,46 @@ void URelicRunnersGameInstance::OnCreateSessionComplete(FName SessionName, bool 
 
 void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
 {
+    //if (TSharedPtr<IOnlineSession> Session = SessionInterface.Pin())
+    //{
+    //    //Search parameters
+    //    int NumResults = 20;
+    //    SessionSearch = MakeShareable(new FOnlineSessionSearch());
+    //    SessionSearch->MaxSearchResults = NumResults;
+    //    SessionSearch->bIsLanQuery = false;
+    //    SessionSearch->QuerySettings.Set(FName("PRESENCESEARCH"), true, EOnlineComparisonOp::Equals);
+
+    //    Session->OnFindSessionsCompleteDelegates.RemoveAll(this);
+    //    Session->OnFindSessionsCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnFindSessionsComplete);
+    //    Session->FindSessions(0, SessionSearch.ToSharedRef());
+
+    //    TextRenderWidget = UserWidget;
+    //    TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
+    //}
+    
     if (TSharedPtr<IOnlineSession> Session = SessionInterface.Pin())
     {
-        //Search parameters
-        int NumResults = 20;
         SessionSearch = MakeShareable(new FOnlineSessionSearch());
-        SessionSearch->MaxSearchResults = NumResults;
-        SessionSearch->bIsLanQuery = false;
-        SessionSearch->QuerySettings.Set(FName("PRESENCESEARCH"), true, EOnlineComparisonOp::Equals);
+        SessionSearch->MaxSearchResults = 20;
 
+        SessionSearch->bIsLanQuery = true;
         Session->OnFindSessionsCompleteDelegates.RemoveAll(this);
         Session->OnFindSessionsCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnFindSessionsComplete);
+
         Session->FindSessions(0, SessionSearch.ToSharedRef());
 
         TextRenderWidget = UserWidget;
         TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
     }
+}
+
+void URelicRunnersGameInstance::JoinGameByIP(FString IPAddress)
+{
+    //APlayerController* PC = GetFirstLocalPlayerController();
+    //if (PC)
+    //{
+    //    PC->ClientTravel(IPAddress, ETravelType::TRAVEL_Absolute);
+    //}
 }
 
 void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
@@ -279,8 +308,12 @@ void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
     bool AddedAnyResults = false;
 
+    UE_LOG(LogTemp, Warning, TEXT("FindSessions Complete. Success: %d"), bWasSuccessful);
+
     if (bWasSuccessful && SessionSearch.IsValid())
     {
+        UE_LOG(LogTemp, Warning, TEXT("Found %d total sessions"), SessionSearch->SearchResults.Num());
+
         TSharedPtr<IOnlineSession> Session = SessionInterface.Pin();
         if (!Session.IsValid()) return;
 

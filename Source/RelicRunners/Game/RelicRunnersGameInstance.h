@@ -42,6 +42,9 @@ public:
     void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
     UFUNCTION(BlueprintCallable)
     void BackToMainMenu();
+
+    UFUNCTION(BlueprintCallable, Category = "Network")
+    void JoinGameByIP(FString IPAddress);
     UFUNCTION(BlueprintCallable)
     void FindGames(class UJoinUserWidget* UserWidget);
     UFUNCTION(BlueprintCallable)
