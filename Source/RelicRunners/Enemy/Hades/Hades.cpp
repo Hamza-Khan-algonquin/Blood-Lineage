@@ -329,15 +329,15 @@ void AHades::CinematicSlam()
 
         if (StrongSelf)
         {
+
+            StrongSelf->bIsBusy = false;
+            StrongSelf->bIsLookingAtAbilityTarget = false;
             StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
             if (StrongSelf->SlamImpactSound)
             {
                 UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
             }
-
-            StrongSelf->bIsBusy = false;
-            StrongSelf->bIsLookingAtAbilityTarget = false;
 
             StrongSelf->MulticastOnBridgeDestroyed(StrongSelf->BridgeToDestroy->GetActorLocation());
             if (StrongSelf->BridgeToDestroy)
@@ -404,10 +404,9 @@ void AHades::PlaySlam()
                 UGameplayStatics::PlaySoundAtLocation(StrongSelf, StrongSelf->SlamImpactSound, SlamLoc);
             }
 
-            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
-
             StrongSelf->bIsBusy = false;
             StrongSelf->bIsLookingAtAbilityTarget = false;
+            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
             if (StrongSelf->SlamCameraShake)
                 StrongSelf->GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(StrongSelf->GetWorld(), StrongSelf->SlamCameraShake, StrongSelf->GetActorLocation(), 10000.0f, 10000.0f, 1.0f);
@@ -723,7 +722,7 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 
     if (!bHitAnObelisk)
     {
-        UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack."));
+        UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack.")); 
         ScheduleNextAttack(2.0f);
     }
     else
