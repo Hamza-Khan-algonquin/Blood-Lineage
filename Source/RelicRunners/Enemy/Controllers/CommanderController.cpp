@@ -400,7 +400,7 @@ void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLo
 		{
 			if (enemy && enemy->LODComponent)
 			{
-				enemy->LODComponent->MultiCastUpdateLOD();
+				enemy->LODComponent->UpdateLOD();
 			}
 		}
 	}
