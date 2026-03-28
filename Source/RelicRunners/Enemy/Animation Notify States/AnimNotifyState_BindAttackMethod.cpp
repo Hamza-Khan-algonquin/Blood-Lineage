@@ -201,9 +201,9 @@ TArray<FString> UAnimNotifyState_BindAttackMethod::GetPropertyOptions() const
 
 void UAnimNotifyState_BindAttackMethod::OnComponentBeginOverlapSignature(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	for (TPair< TWeakObjectPtr<USkeletalMeshComponent>, FAttackNotifyStateData>& Pair : ActiveData)
+	for (auto It = ActiveData.CreateIterator(); It; ++It)
 	{
-		FAttackNotifyStateData& data = Pair.Value;
+		FAttackNotifyStateData& data = It.Value();
 
 		if (OverlappedComponent == data.ColliderComp && OverlappedComponent->GetOwner() && OtherActor != OverlappedComponent->GetOwner() && !data.AlreadyHitActors.Contains(OtherActor))
 		{

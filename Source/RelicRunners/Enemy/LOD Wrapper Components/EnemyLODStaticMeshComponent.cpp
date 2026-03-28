@@ -12,12 +12,12 @@ UEnemyLODStaticMeshComponent::UEnemyLODStaticMeshComponent()
 
 void UEnemyLODStaticMeshComponent::LODUpdate(int newLOD, int oldLOD)
 {
-	if ((newLOD == 0 || newLOD == 1) && !(oldLOD == 0 || oldLOD == 1))
+	if ((newLOD == 0 || newLOD == 1 || newLOD == 2) && !(oldLOD == 0 || oldLOD == 1 || newLOD == 2))
 	{
 		Deactivate();
 		SetVisibility(false);
 	}
-	else if ((newLOD == 2 || newLOD == 3) && !(oldLOD == 2 || oldLOD == 3))
+	else if (newLOD == 3 && oldLOD != 3)
 	{
 		Activate();
 		SetVisibility(true);

@@ -642,6 +642,8 @@ void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 				UpdatedComponent->SetWorldLocationAndRotation(interpLocation, interpRotation);
 			}
 
+			//this is just so it will animate client side
+			Velocity = (MoveDataBuffer[i + 1].Location - MoveDataBuffer[i].Location).GetSafeNormal() * 100;
 			return;
 		}
 	}
