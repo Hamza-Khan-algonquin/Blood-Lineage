@@ -224,7 +224,11 @@ void URelicRunnersGameInstance::CreateNewSession()
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.NumPublicConnections = LobbySize;
         SessionSettings.bUsesPresence = false;
+        SessionSettings.bAllowJoinInProgress = true;
+        SessionSettings.bAllowJoinViaPresence = true;
         SessionSettings.bUseLobbiesIfAvailable = false;
+        SessionSettings.bIsDedicated = false;
+        SessionSettings.bUsesStats = false;
        /* SessionSettings.NumPublicConnections = LobbySize;
         SessionSettings.bIsLANMatch = false;
         SessionSettings.bShouldAdvertise = true;

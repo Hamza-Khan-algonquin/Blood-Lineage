@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "AdvancedFriendsGameInstance.h"
+//#include "AdvancedFriendsGameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSubsystem.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
