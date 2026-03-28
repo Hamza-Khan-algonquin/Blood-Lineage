@@ -20,6 +20,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void InitializeUpgradeData(class USaveFileListData* InSaveData);
 
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorblindStyle();
+
 protected:
 
 	int MaxValue = 5;

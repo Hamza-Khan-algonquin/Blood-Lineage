@@ -114,6 +114,7 @@ void UJoinUserWidget::NativeConstruct()
 
 	PlayAnimation(LeftPanelOpen);
 	PlayAnimation(RightPanelOpen);
+	ApplyColorblindStyle();
 }
 
 FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -744,5 +745,144 @@ void UJoinUserWidget::EnableRefresh()
 	if (RefreshProgress)
 	{
 		RefreshProgress->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void UJoinUserWidget::ApplyColorblindStyle()
+{
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	FLinearColor PrimaryAccent;
+	FLinearColor SecondaryAccent;
+	FLinearColor Highlight;
+	FLinearColor TextColor = FLinearColor::White;
+	FLinearColor PanelColor;
+	FLinearColor OutlineColor;
+
+	switch (GI->ColorblindMode)
+	{
+	case EColorblindMode::Protanopia:
+		PrimaryAccent = FLinearColor(1.0f, 0.55f, 0.0f, 1.0f);
+		SecondaryAccent = FLinearColor(0.0f, 0.75f, 1.0f, 1.0f);
+		Highlight = FLinearColor(1.0f, 1.0f, 0.35f, 1.0f);
+		PanelColor = FLinearColor(0.18f, 0.18f, 0.18f, 1.0f);
+		OutlineColor = FLinearColor(1.0f, 0.55f, 0.0f, 1.0f);
+		break;
+
+	case EColorblindMode::Deuteranopia:
+		PrimaryAccent = FLinearColor(1.0f, 0.6f, 0.0f, 1.0f);
+		SecondaryAccent = FLinearColor(0.15f, 0.8f, 1.0f, 1.0f);
+		Highlight = FLinearColor(1.0f, 0.95f, 0.45f, 1.0f); 
+		PanelColor = FLinearColor(0.18f, 0.18f, 0.18f, 1.0f);
+		OutlineColor = FLinearColor(1.0f, 0.6f, 0.0f, 1.0f);
+		break;
+
+	case EColorblindMode::Tritanopia:
+		PrimaryAccent = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f); 
+		SecondaryAccent = FLinearColor(1.0f, 0.35f, 0.35f, 1.0f);
+		Highlight = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f); 
+		PanelColor = FLinearColor(0.16f, 0.16f, 0.16f, 1.0f);
+		OutlineColor = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
+		break;
+	case EColorblindMode::Normal:
+	default:
+		PrimaryAccent = FLinearColor(0.38f, 0.24f, 0.12f, 1.0f);
+		SecondaryAccent = FLinearColor(0.28f, 0.18f, 0.10f, 1.0f);
+		Highlight = FLinearColor(0.85f, 0.65f, 0.25f, 1.0f);
+		PanelColor = FLinearColor(0.16f, 0.12f, 0.08f, 1.0f);
+		OutlineColor = FLinearColor(0.55f, 0.38f, 0.18f, 1.0f);
+		break;
+	}
+
+
+	SetButtonColor(StartButton, PrimaryAccent);
+	SetButtonColor(JoinButton, PrimaryAccent);
+	SetButtonColor(FindGames, SecondaryAccent);
+	SetButtonColor(LeaveGameButton, SecondaryAccent);
+	SetButtonColor(BackButton, SecondaryAccent);
+
+
+	SetButtonColor(AresButton, SecondaryAccent);
+	SetButtonColor(ArtemisButton, SecondaryAccent);
+	SetButtonColor(AphroditeButton, SecondaryAccent);
+	SetButtonColor(NemesisButton, SecondaryAccent);
+
+	SetButtonTint(B_Boar, SecondaryAccent);
+	SetButtonTint(B_Bull, SecondaryAccent);
+	SetButtonTint(B_Lion, SecondaryAccent);
+	SetButtonTint(B_Hydra, SecondaryAccent);
+	SetButtonTint(B_Cerberus, SecondaryAccent);
+
+	SetButtonOutlineColor(B_Boar, OutlineColor);
+	SetButtonOutlineColor(B_Bull, OutlineColor);
+	SetButtonOutlineColor(B_Lion, OutlineColor);
+	SetButtonOutlineColor(B_Hydra, OutlineColor);
+	SetButtonOutlineColor(B_Cerberus, OutlineColor);
+
+	SetBorderColor(BoarBorder, PanelColor);
+	SetBorderColor(BullBorder, PanelColor);
+	SetBorderColor(LionBorder, PanelColor);
+	SetBorderColor(HydraBorder, PanelColor);
+	SetBorderColor(CerberusBorder, PanelColor);
+
+	SetBorderColor(B_BoarSection, PanelColor);
+	SetBorderColor(B_BullSection, PanelColor);
+	SetBorderColor(B_LionSection, PanelColor);
+	SetBorderColor(B_HydraSection, PanelColor);
+	SetBorderColor(B_CerberusSection, PanelColor);
+	SetBorderColor(B_CurrentSection, PanelColor);
+
+	SetImageColor(I_Ares, Highlight);
+	SetImageColor(I_Artemis, Highlight);
+	SetImageColor(I_Aphrodite, Highlight);
+	SetImageColor(I_Nemesis, Highlight);
+
+	SetImageColor(I_Boar, Highlight);
+	SetImageColor(I_Bull, Highlight);
+	SetImageColor(I_Lion, Highlight);
+	SetImageColor(I_Hydra, Highlight);
+	SetImageColor(I_Cerberus, Highlight);
+	SetImageColor(I_CurrentDifficulty, Highlight);
+
+	if (TB_ClassName) TB_ClassName->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_ClassRole) TB_ClassRole->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Ability1) TB_Ability1->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Ability2) TB_Ability2->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Ability3) TB_Ability3->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Ability4) TB_Ability4->SetColorAndOpacity(FSlateColor(TextColor));
+
+	if (TB_BoarHealth) TB_BoarHealth->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_BoarDamage) TB_BoarDamage->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_BoarLuck) TB_BoarLuck->SetColorAndOpacity(FSlateColor(TextColor));
+
+	if (TB_BullHealth) TB_BullHealth->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_BullDamage) TB_BullDamage->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_BullLuck) TB_BullLuck->SetColorAndOpacity(FSlateColor(TextColor));
+
+	if (TB_LionHealth) TB_LionHealth->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_LionDamage) TB_LionDamage->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_LionLuck) TB_LionLuck->SetColorAndOpacity(FSlateColor(TextColor));
+
+	if (TB_HydraHealth) TB_HydraHealth->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_HydraDamage) TB_HydraDamage->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_HydraLuck) TB_HydraLuck->SetColorAndOpacity(FSlateColor(TextColor));
+
+	if (TB_CerberusHealth) TB_CerberusHealth->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_CerberusDamage) TB_CerberusDamage->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_CerberusLuck) TB_CerberusLuck->SetColorAndOpacity(FSlateColor(TextColor));
+
+	if (TB_CurrentDifficulty) TB_CurrentDifficulty->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_CurrentEnemyDamage) TB_CurrentEnemyDamage->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_CurrentEnemyHealth) TB_CurrentEnemyHealth->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_CurrentLuck) TB_CurrentLuck->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Countdown) TB_Countdown->SetColorAndOpacity(FSlateColor(Highlight));
+
+	SetSelectedClass(CurrentClass);
+
+	ARelicRunnersGameState* RunnersGameState = GetWorld() ? GetWorld()->GetGameState<ARelicRunnersGameState>() : nullptr;
+	if (RunnersGameState)
+	{
+		SetSelectedDifficulty(RunnersGameState->CurrentDifficulty.IsNone() ? FName("Boar") : RunnersGameState->CurrentDifficulty);
 	}
 }

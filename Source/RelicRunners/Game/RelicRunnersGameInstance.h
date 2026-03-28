@@ -9,7 +9,9 @@
 #include "OnlineSubsystem.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "OnlineSubsystemUtils.h"
+#include <RelicRunners/Menu/SettingsWidget.h>
 #include "RelicRunnersGameInstance.generated.h"
+
 
 USTRUCT()
 struct FPendingClientTravel
@@ -34,7 +36,7 @@ public:
     //Sessions
     UFUNCTION(BlueprintCallable)
     void CreateNewSession();
-    UTexture* GetLUTForMode(const FString& Mode);
+    UTexture* GetLUTForMode(EColorblindMode Colorblind);
     UFUNCTION(BlueprintCallable)
     void StartSessionGame();
     UFUNCTION(BlueprintCallable)
@@ -178,7 +180,7 @@ public:
     TEnumAsByte<EWindowMode::Type> WindowMode = EWindowMode::WindowedFullscreen;
 
     UFUNCTION()
-    void ApplyAllSettings();
+    void ApplyAllSettings(APlayerController* PC);
 
     UPROPERTY(BlueprintReadWrite)
     float SavedFOV;
@@ -202,10 +204,25 @@ public:
     bool bInvertY;
 
     UPROPERTY(BlueprintReadWrite)
-    FString SavedColorMode;
+    EColorblindMode ColorblindMode = EColorblindMode::Normal;
 
     UPROPERTY(BlueprintReadWrite)
     bool bAutoLoot;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle NormalUIStyle;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle ProtanopiaUIStyle;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle DeuteranopiaUIStyle;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle TritanopiaUIStyle;
+
+    UFUNCTION(BlueprintCallable)
+    FUIColorblindStyle GetCurrentUIStyle() const;
 
 
 

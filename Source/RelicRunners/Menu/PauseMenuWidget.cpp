@@ -39,21 +39,6 @@ void UPauseMenuWidget::ShowSettingsMenu()
 {
     if (WidgetSwitcher)
     {
-        if (SettingsMenu)
-        {
-            URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-            if (GI && GI->Keys)
-            {
-                SettingsMenu->ApplyBrightness(GI->Keys->Brightness);
-                SettingsMenu->ApplyMotionBlur(GI->Keys->motionBlurEnabled);
-                SettingsMenu->ApplyFOV(GI->Keys->FOV);
-
-                if (GI->Keys->ColorBlindMode == "Protanopia")       SettingsMenu->ApplyColorLUT(SettingsMenu->LUT_Protanopia);
-                else if (GI->Keys->ColorBlindMode == "Deutranopia") SettingsMenu->ApplyColorLUT(SettingsMenu->LUT_Deuternopia);
-                else if (GI->Keys->ColorBlindMode == "Tritanopia")  SettingsMenu->ApplyColorLUT(SettingsMenu->LUT_Tritanopia);
-                else                                                 SettingsMenu->ApplyColorLUT(SettingsMenu->LUT_Normal);
-            }
-        }
         WidgetSwitcher->SetActiveWidget(SettingsMenu);
     }
 }

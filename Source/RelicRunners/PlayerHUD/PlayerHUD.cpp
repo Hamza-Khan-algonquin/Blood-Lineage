@@ -23,6 +23,8 @@
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include <Kismet/GameplayStatics.h>
 #include <RelicRunners/Menu/Keybinds.h>
+#include "Components/RetainerBox.h"
+#include "Materials/MaterialInterface.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include <Kismet/KismetMaterialLibrary.h>
 
@@ -35,6 +37,8 @@ void UPlayerHUD::NativeConstruct()
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
 	UpdateBindText();
+	ApplyHUDColorblindStyle();
+
 }
 
 void UPlayerHUD::ToggleExpBar(bool value)
@@ -305,4 +309,52 @@ void UPlayerHUD::StartUtilityCooldown(float CooldownTime)
 void UPlayerHUD::StartUltimateCooldown(float CooldownTime)
 {
 	RunCooldown(TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
+}
+
+
+void UPlayerHUD::ApplyHUDColorblindStyle()
+{
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	FLinearColor HealthColor = FLinearColor::Red;
+	FLinearColor ResourceColor = FLinearColor(0.0f, 0.723055f, 1.0f);
+	FLinearColor XPColor = FLinearColor::Yellow;
+	FLinearColor TextColor = FLinearColor::White;
+
+	switch (GI->ColorblindMode)
+	{
+	case EColorblindMode::Protanopia:
+		HealthColor = FLinearColor(1.0f, 0.55f, 0.0f, 1.0f);
+		ResourceColor = FLinearColor(0.0f, 0.75f, 1.0f, 1.0f);
+		XPColor = FLinearColor(1.0f, 1.0f, 0.35f, 1.0f);  
+		break;
+
+	case EColorblindMode::Deuteranopia:
+		HealthColor = FLinearColor(1.0f, 0.6f, 0.0f, 1.0f);
+		ResourceColor = FLinearColor(0.15f, 0.8f, 1.0f, 1.0f);
+		XPColor = FLinearColor(1.0f, 0.95f, 0.45f, 1.0f); 
+		break;
+
+	case EColorblindMode::Tritanopia:
+		HealthColor = FLinearColor(1.0f, 0.35f, 0.35f, 1.0f);
+		ResourceColor = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
+		XPColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		break;
+
+	case EColorblindMode::Normal:
+	default:
+		break;
+	}
+
+	if (HealthBar) HealthBar->SetFillColorAndOpacity(HealthColor);
+	if (HealthBar_1) HealthBar_1->SetFillColorAndOpacity(HealthColor);
+	if (ResourceBar) ResourceBar->SetFillColorAndOpacity(ResourceColor);
+	if (ResourceBar_1) ResourceBar_1->SetFillColorAndOpacity(ResourceColor);
+	if (ExperienceBar) ExperienceBar->SetFillColorAndOpacity(XPColor);
+
+	if (TB_Health) TB_Health->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Resource) TB_Resource->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Experience) TB_Experience->SetColorAndOpacity(FSlateColor(TextColor));
+	if (TB_Level) TB_Level->SetColorAndOpacity(FSlateColor(TextColor));
 }

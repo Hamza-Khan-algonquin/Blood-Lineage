@@ -174,10 +174,31 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
+		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::ApplySavedFOV);
 
 	}
-}
 
+}
+void ARelicRunnersPlayerController::ApplySavedFOV()
+{
+	URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	const float FinalFOV = (GI->SavedFOV > 0.f) ? GI->SavedFOV : 90.f;
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetFOV(FinalFOV);
+	}
+
+	if (ARelicRunnersCharacter* RCharacter = Cast<ARelicRunnersCharacter>(GetPawn()))
+	{
+		if (RCharacter->GetFollowCamera())
+		{
+			RCharacter->GetFollowCamera()->SetFieldOfView(FinalFOV);
+		}
+	}
+}
 void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 {
 	Super::ClientRestart_Implementation(NewPawn);
@@ -229,6 +250,11 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
 
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::ApplySavedFOV);
+		GI->ApplyAllSettings(this);
+	}
 	EnableInput(this);
 }
 
@@ -1316,7 +1342,15 @@ void ARelicRunnersPlayerController::InitLocalUI()
 	}
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
-		GI->ApplyAllSettings();
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimerForNextTick([this, GI]()
+			{
+				GI->ApplyAllSettings(this);
+				if (PlayerHUD)
+				{
+					PlayerHUD->ApplyHUDColorblindStyle();
+				}
+			});
 	}
 	TryBindUI();
 
@@ -1406,6 +1440,7 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		SetupMainMenuView();
 	}
+
 }
 
 void ARelicRunnersPlayerController::Client_StartCinematicWalk_Implementation(FVector TargetLocation)

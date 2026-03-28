@@ -416,6 +416,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_Intelligence = nullptr;
 
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorblindStyle();
+
 protected:
 	UFUNCTION()
 	void BackButtonClicked();

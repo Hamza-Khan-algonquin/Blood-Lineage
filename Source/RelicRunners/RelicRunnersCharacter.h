@@ -201,8 +201,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
 
-	
-
 protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")

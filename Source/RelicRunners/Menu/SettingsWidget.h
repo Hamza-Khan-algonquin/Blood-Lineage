@@ -15,6 +15,37 @@
 /**
  * 
  */
+UENUM(BlueprintType)
+enum class EColorblindMode : uint8
+{
+	Normal,
+	Protanopia,
+	Deuteranopia,
+	Tritanopia
+};
+USTRUCT(BlueprintType)
+struct FUIColorblindStyle
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor PrimaryTextColor = FLinearColor::White;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor SecondaryTextColor = FLinearColor::Gray;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor PositiveColor = FLinearColor::Green;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor DangerColor = FLinearColor::Red;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor AccentColor = FLinearColor::Yellow;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor BackgroundTint = FLinearColor::Black;
+};
 UCLASS()
 class RELICRUNNERS_API USettingsWidget : public UUserWidget
 {
@@ -29,6 +60,9 @@ public:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 	void SetParentMenu(class UPauseMenuWidget* InParentMenu);
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorblindStyle();
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_BackButton = nullptr;
@@ -187,6 +221,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
 	UTexture2D* LUT_Tritanopia = nullptr;
 
+	
+
 	UFUNCTION()
 	void HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType);
 	
@@ -242,6 +278,12 @@ public:
 
 	UFUNCTION()
 	void OnAutoLootChanged(bool bIsChecked);
+
+	UFUNCTION(BlueprintCallable)
+	void RefreshFOVUI();
+
+	UFUNCTION(BlueprintCallable)
+	void RefreshBrightnessUI();
 
 protected:
 	UFUNCTION()

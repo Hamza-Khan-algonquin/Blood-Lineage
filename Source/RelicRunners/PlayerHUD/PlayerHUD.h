@@ -181,4 +181,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartUltimateCooldown(float CooldownTime);
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyHUDColorblindStyle();
 };

@@ -20,6 +20,9 @@ public:
 	class UButton* BackButton = nullptr;
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorblindStyle();
 protected:
 	UFUNCTION()
 	void BackButtonClicked();

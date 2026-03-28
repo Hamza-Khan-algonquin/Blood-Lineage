@@ -304,6 +304,8 @@ protected:
 	class ARelicRunnersPlayerState* RelicPlayerState;
 	class UTitleData* ObjectiveStageTitle;
 
+	UFUNCTION(BlueprintCallable)
+	void ApplySavedFOV();
 	//Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputMappingContext* InputMappingContext;

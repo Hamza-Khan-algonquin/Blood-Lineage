@@ -170,47 +170,82 @@ void URelicRunnersGameInstance::InitializeSaveSlots()
     SaveSlots.Add(FirstSlot);
 }
 
-void URelicRunnersGameInstance::ApplyAllSettings()
+void URelicRunnersGameInstance::ApplyAllSettings(APlayerController* PC)
 {
+    if (!PC) return;
+
+    //screen settings
     if (UGameUserSettings* Settings = UGameUserSettings::GetGameUserSettings())
     {
         Settings->SetScreenResolution(Resolution);
         Settings->SetFullscreenMode(WindowMode);
         Settings->ApplySettings(false);
+        Settings->SaveSettings();
     }
 
-    APlayerController* PC = GetFirstLocalPlayerController();
-    if (!PC) return;
-
-    // FOV
+    //FOV
     if (PC->PlayerCameraManager)
     {
-        PC->PlayerCameraManager->SetFOV(SavedFOV > 0.f ? SavedFOV : Keys->FOV);
+        float FinalFOV = SavedFOV;
+
+        if (FinalFOV <= 0.f)
+        {
+            FinalFOV = (Keys ? Keys->FOV : 90.f);
+        }
+
+        PC->PlayerCameraManager->SetFOV(FinalFOV);
     }
 
-    // Brightness / motion blur / LUT
-    for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
+    if (APawn* Pawn = PC->GetPawn())
     {
-        if (CamItr->GetWorld() != GetWorld()) continue;
+        TArray<UCameraComponent*> CameraComponents;
+        Pawn->GetComponents<UCameraComponent>(CameraComponents);
 
-        FPostProcessSettings& PPS = CamItr->PostProcessSettings;
+        for (UCameraComponent* Cam : CameraComponents)
+        {
+            if (!Cam) continue;
 
-        PPS.bOverride_AutoExposureBias = true;
-        PPS.AutoExposureBias = SavedBrightness;
+            FPostProcessSettings& PPS = Cam->PostProcessSettings;
 
-        PPS.bOverride_MotionBlurAmount = true;
-        PPS.MotionBlurAmount = bSavedMotionBlur ? 2.f : 0.0f;
+            // Brightness
+            PPS.bOverride_AutoExposureBias = true;
+            PPS.AutoExposureBias = SavedBrightness;
 
-        PPS.bOverride_ColorGradingLUT = true;
-        PPS.ColorGradingLUT = GetLUTForMode(SavedColorMode);
+            // Motion blur
+            PPS.bOverride_MotionBlurAmount = true;
+            PPS.MotionBlurAmount = bSavedMotionBlur ? 2.0f : 0.0f;
 
-        PPS.bOverride_ColorGradingIntensity = true;
-        PPS.ColorGradingIntensity = 0.3f;
+            // Colorblind LUT
+            PPS.bOverride_ColorGradingLUT = true;
+            PPS.ColorGradingLUT = GetLUTForMode(ColorblindMode);
 
-        CamItr->PostProcessBlendWeight = 1.0f;
+            PPS.bOverride_ColorGradingIntensity = true;
+            PPS.ColorGradingIntensity = (ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.4f;
+
+            Cam->PostProcessBlendWeight = 1.0f;
+        }
     }
 
     ApplyKeybindings();
+}
+
+FUIColorblindStyle URelicRunnersGameInstance::GetCurrentUIStyle() const
+{
+    switch (ColorblindMode)
+    {
+    case EColorblindMode::Protanopia:
+        return ProtanopiaUIStyle;
+
+    case EColorblindMode::Deuteranopia:
+        return DeuteranopiaUIStyle;
+
+    case EColorblindMode::Tritanopia:
+        return TritanopiaUIStyle;
+
+    case EColorblindMode::Normal:
+    default:
+        return NormalUIStyle;
+    }
 }
 
 
@@ -532,11 +567,13 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
 }
 
 
-UTexture* URelicRunnersGameInstance::GetLUTForMode(const FString& Mode)
+UTexture* URelicRunnersGameInstance::GetLUTForMode(EColorblindMode ColorBlind)
 {
-    if (Mode == "Protanopia") return LUT_Protanopia;
-    if (Mode == "Deutranopia") return LUT_Deuteranopia;
-    if (Mode == "Tritanopia") return LUT_Tritanopia;
+    if (ColorBlind == EColorblindMode::Protanopia ) return LUT_Protanopia;
+    if (ColorBlind == EColorblindMode::Deuteranopia) return LUT_Deuteranopia;
+    if (ColorBlind == EColorblindMode::Tritanopia) return LUT_Tritanopia;
+    if (ColorBlind == EColorblindMode::Normal) return LUT_Normal;
+
     return LUT_Normal;
 }
 
