@@ -242,7 +242,7 @@ void URelicRunnersGameInstance::OnCreateSessionComplete(FName SessionName, bool 
     UE_LOG(LogTemp, Log, TEXT("OnCreateSessionComplete: %s success=%d"), *SessionName.ToString(), bWasSuccessful);
     if (bWasSuccessful)
     {
-        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, TEXT("listen"));
+        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, TEXT("listen?GameStarted=0"));
     }
 
     //Unbind delegate 
@@ -487,6 +487,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     UE_LOG(LogTemp, Warning, TEXT("NetDriver: %s"), NetDriver ? *NetDriver->GetName() : TEXT("NULL"));
     UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
 
+    //?GameStarted=1 Makes it so you can't join mid game
     FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen?GameStarted=1");
     UE_LOG(LogTemp, Warning, TEXT("[GameInstance] Host starting travel to %s"), *TravelURL);
 
