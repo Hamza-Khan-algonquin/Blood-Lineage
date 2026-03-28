@@ -60,10 +60,11 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	UCurveFloat* HitFlashCurve;
-
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
+	UPROPERTY(Replicated)
 	bool GoldEnemy = false;
 
 	FTimeline HitFlashTimeline;
@@ -111,7 +112,6 @@ public:
 	void UpdateEmissiveHealth();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Override of AActor's TakeDamage function to handle damage to the enemy."))
 	//Override of AActor's TakeDamage function to handle damage to the enemy
@@ -127,7 +127,7 @@ public:
 	//A method to handle dieing and what happens when the enemy dies
 	virtual void Die(AController* EventInstigator, FVector hitDirection = FVector(0,0,0));
 	UFUNCTION(NetMulticast, Reliable)
-	void PlayDeathEffet(FVector impactDirection);
+	void Multicast_PlayDeathEffect(FVector impactDirection);
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Check if the enemy is dead.", ShortToolTip = "Check if the enemy is dead."))
 	//Check if the enemy is dead
