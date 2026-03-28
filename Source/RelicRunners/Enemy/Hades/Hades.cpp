@@ -723,6 +723,7 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
     if (!bHitAnObelisk)
     {
         UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack.")); 
+        bIsBusy = false;
         ScheduleNextAttack(2.0f);
     }
     else
