@@ -25,6 +25,8 @@ struct FDifficultyInfo
 	float ItemDropReduction;
 
 	float BossBaseDamagePercent;
+
+	int Index;
 };
 
 

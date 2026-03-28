@@ -95,7 +95,7 @@ public:
 
     //Properties
     UPROPERTY(BlueprintReadOnly)
-    FName CurrentDifficulty;
+    FName CurrentDifficulty = "Boar";
     UPROPERTY()
     TArray<FUniqueNetIdRepl> SavedPlayers;
     UPROPERTY(BlueprintReadOnly)

@@ -97,6 +97,7 @@ public:
     int ObelisksHit = 0;
 
     bool InCinematic = true;
+    int DifficultyStrength = 1;
 
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "AI")
     AActor* CurrentTarget;
@@ -118,6 +119,12 @@ public:
 
     TWeakObjectPtr<AActor> ActiveSweepBeam;
 
+    FTimerHandle ShockwaveTimerHandle;
+    int ShockwavesSpawned = 0;
+    bool bIsSpawningShockwaves = false;
+
+    void ExecuteRepeatedShockwave();
+
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastPlayAttackMontage(UAnimMontage* Montage, float Speed, float StartPosition);
     UPROPERTY(ReplicatedUsing = OnRep_VortexForce)
@@ -130,12 +137,15 @@ public:
 
     UPROPERTY(EditAnywhere)
     TSubclassOf<class UCameraShakeBase> SpinCameraShake;
-
+    UPROPERTY(EditAnywhere, Category = "Combat")
+    TSubclassOf<class AShockwaveRing> ShockwaveBP;
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
     void TriggerAllPlayersCinematicWalk();
+
+    void SpawnShockwave();
 
     void ExecuteAttack();
     void SpawnBridge();
