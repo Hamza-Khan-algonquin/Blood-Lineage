@@ -378,6 +378,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 	float chance = FMath::FRandRange(0.f, 100.f);
 	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
 	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
+	if (GoldEnemy) chance = 0;
 
 	if (chance <= chanceToDropOverall)
 	{
@@ -388,8 +389,12 @@ void AEnemyPawn::SpawnItem(int Luck)
 
 		UIconLibrary* Lib = GI->GlobalIconLibrary;
 
+		float GoldLuck = 0;
+		float UsedLuck = Luck;
+		if (GoldEnemy) GoldLuck = 95; UsedLuck = GoldLuck;
+
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
-			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(Luck), ItemMeshData, Lib),
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(UsedLuck), ItemMeshData, Lib),
 			this
 		);
 
@@ -537,11 +542,17 @@ void AEnemyPawn::BeginPlay()
 	}
 
 	float hueOffset = FMath::FRand();
+	float goldChance = FMath::FRandRange(0.f, 100.0f);
+	if (goldChance <= 1.f) GoldEnemy = true; EnemyStatsComponent->SetMaxHealth(EnemyStatsComponent->GetMaxHealth() * 4);
+
+	if (GoldEnemy) SetActorScale3D(GetActorScale3D() * 1.25);
+
 	for (UMaterialInstanceDynamic* element : DynamicMaterials)
 	{
 		if (element)
 		{
-			element->SetScalarParameterValue("HueOffset", hueOffset);
+			//element->SetScalarParameterValue("HueOffset", hueOffset);
+			element->SetScalarParameterValue("IsGold", GoldEnemy);
 		}
 	}
 	

@@ -64,7 +64,7 @@ public:
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
-	
+	bool GoldEnemy = false;
 
 	FTimeline HitFlashTimeline;
 
