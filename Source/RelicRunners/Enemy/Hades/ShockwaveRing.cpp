@@ -14,9 +14,10 @@ AShockwaveRing::AShockwaveRing()
     SetReplicateMovement(true);
 }
 
-void AShockwaveRing::InitializeRing(int Difficulty, float Speed)
+void AShockwaveRing::InitializeRing(int Diff, float Speed)
 {
     MoveSpeed = Speed;
+    Difficulty = Diff;
     int TotalSteps = 12;
     float SliceWidth = 30.0f;
 
@@ -46,10 +47,7 @@ void AShockwaveRing::InitializeRing(int Difficulty, float Speed)
             float Radians = FMath::DegreesToRadians(Degrees);
 
             Slice->SetRelativeLocation(FVector(0));
-
-            // Fix the rotation (-90 for your mesh orientation)
             Slice->SetRelativeRotation(FRotator(0.f, Degrees - 90.f, 0.f));
-
             Slice->SetRelativeScale3D(FVector(5.0f));
             Slice->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
             Slice->OnComponentBeginOverlap.AddDynamic(this, &AShockwaveRing::OnSliceOverlap);

@@ -4,20 +4,25 @@
 #include "ShockwaveRing.h"
 #include <Kismet/GameplayStatics.h>
 #include "RelicRunners/RelicRunnersCharacter.h"
+#include "Net/UnrealNetwork.h"
 
 AShockwaveRing::AShockwaveRing()
 {
     PrimaryActorTick.bCanEverTick = true;
     RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+    bReplicates = true;
+    SetReplicateMovement(true);
 }
 
-void AShockwaveRing::InitializeRing(int Difficulty, float Speed)
+void AShockwaveRing::InitializeRing(int Diff, float Speed)
 {
     MoveSpeed = Speed;
+    Difficulty = Diff;
     int TotalSteps = 12;
     float SliceWidth = 30.0f;
 
-    float GapChance = 0.5f - (Difficulty * 0.08f);
+
+    float GapChance = 0.8f - (Difficulty * 0.08f);
     bool bAtLeastOneGap = false;
 
     for (int i = 0; i < TotalSteps; i++)
@@ -34,7 +39,10 @@ void AShockwaveRing::InitializeRing(int Difficulty, float Speed)
             Slice->RegisterComponent();
             Slice->SetStaticMesh(SliceMesh);
             Slice->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
-
+            Slice->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+            Slice->SetCollisionResponseToAllChannels(ECR_Overlap);
+            Slice->CanCharacterStepUpOn = ECB_No;
+            Slice->SetIsReplicated(true);
             float Degrees = i * SliceWidth;
             float Radians = FMath::DegreesToRadians(Degrees);
 
@@ -54,7 +62,7 @@ void AShockwaveRing::OnSliceOverlap(UPrimitiveComponent* OverlappedComp, AActor*
 {
     if (OtherActor && OtherActor != GetOwner() && OtherActor->IsA(ARelicRunnersCharacter::StaticClass()))
     {
-        UGameplayStatics::ApplyDamage(OtherActor, 20.0f, GetInstigatorController(), this, UDamageType::StaticClass());
+        UGameplayStatics::ApplyDamage(OtherActor, 20.0f * Difficulty, GetInstigatorController(), this, UDamageType::StaticClass());
     }
 }
 
@@ -67,7 +75,7 @@ void AShockwaveRing::Tick(float DeltaTime)
     FVector NewScale = GetActorScale3D() + FVector(MoveSpeed * DeltaTime);
     SetActorScale3D(NewScale);
 
-    if (GetActorScale3D().X > 125.0f)
+    if (GetActorScale3D().X > 40.0f)
     {
         Destroy();
     }
