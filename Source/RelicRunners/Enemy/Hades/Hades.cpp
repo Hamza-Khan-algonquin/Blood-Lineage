@@ -698,6 +698,8 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 
     for (AActor* OverlappedActor : OutActors)
     {
+        if (!OverlappedActor || OverlappedActor->IsPendingKillPending()) continue;
+
         if (APawn* HitPawn = Cast<APawn>(OverlappedActor))
         {
             if (ARelicRunnersPlayerState* RRPS = HitPawn->GetPlayerState<ARelicRunnersPlayerState>())
@@ -705,15 +707,23 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
                 float DamageToApply = RRPS->PlayerMaxHealth * (BaseDamageFromDifficulty / 100.0f);
                 UGameplayStatics::ApplyDamage(OverlappedActor, DamageToApply, nullptr, this, nullptr);
                 ActorsToIgnore.Add(OverlappedActor);
-                continue; 
+                continue;
             }
         }
 
-        if (OverlappedActor && OverlappedActor->IsA(AHadesObelisk::StaticClass()))
+        if (!bHitAnObelisk && OverlappedActor->IsA(AHadesObelisk::StaticClass()))
         {
-            bHitAnObelisk = true;
+            float ActualDistance = FVector::Dist(ImpactLocation, OverlappedActor->GetActorLocation());
+
+            if (ActualDistance <= ImpactRadius)
+            {
+                bHitAnObelisk = true;
+            }
         }
     }
+
+    //Slam right before sweep
+    if (bIsInitialSlamming) return;
 
     UGameplayStatics::ApplyRadialDamage(
         GetWorld(), 50.0f, ImpactLocation, ImpactRadius,
@@ -722,7 +732,7 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 
     if (!bHitAnObelisk)
     {
-        UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack.")); 
+        UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack."));
         bIsBusy = false;
         ScheduleNextAttack(2.0f);
     }
