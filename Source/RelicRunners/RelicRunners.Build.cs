@@ -32,6 +32,8 @@ public class RelicRunners : ModuleRules
             "Navmesh",
             "AudioMixer",
 			"NetCore",
+            "Sockets",
+			"Networking"
         });
     }
 }

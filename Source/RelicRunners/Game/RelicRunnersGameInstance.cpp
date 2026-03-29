@@ -16,7 +16,6 @@
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
-#include "InputMappingContext.h"
 #include <RelicRunners/PlayerHUD/PlayerHUD.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
@@ -251,7 +250,8 @@ void URelicRunnersGameInstance::OnCreateSessionComplete(FName SessionName, bool 
     UE_LOG(LogTemp, Log, TEXT("OnCreateSessionComplete: %s success=%d"), *SessionName.ToString(), bWasSuccessful);
     if (bWasSuccessful)
     {
-        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, TEXT("listen?bIsLanMatch=1?GameStarted=0"));
+        FString Options = TEXT("listen?lan?bIsLanMatch=1?GameStarted=0");
+        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, Options);
     }
 
     //Unbind delegate 
@@ -489,28 +489,31 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
 {
     if (Result != EOnJoinSessionCompleteResult::Success)
     {
-        UE_LOG(LogTemp, Error, TEXT("Join failed at the network level. Result: %d"), (int32)Result);
+        UE_LOG(LogTemp, Error, TEXT("Join failed. Result: %d"), (int32)Result);
         return;
     }
 
     if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
     {
-        Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
-
         FString ConnectInfo;
-        if (!Sess->GetResolvedConnectString(SessionName, ConnectInfo, NAME_GamePort) || ConnectInfo.IsEmpty())
-        {
-            if (!Sess->GetResolvedConnectString(SessionName, ConnectInfo) || ConnectInfo.IsEmpty())
-            {
-                FString NoConnect = FString::Printf(TEXT("Failed to resolve connect string for session %s"), *SessionName.ToString());
-                UE_LOG(LogTemp, Error, TEXT("%s"), *NoConnect);
-                return;
-            }
-        }
 
-        if (APlayerController* PC = GetFirstLocalPlayerController())
+        if (Sess->GetResolvedConnectString(SessionName, ConnectInfo))
         {
-            PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+            UE_LOG(LogTemp, Log, TEXT("Resolved Connect String: %s"), *ConnectInfo);
+        }
+        FNamedOnlineSession* NamedSession = Sess->GetNamedSession(SessionName);
+        if (NamedSession && NamedSession->SessionInfo.IsValid())
+        {
+            ConnectInfo = NamedSession->SessionInfo->ToString();
+
+            UE_LOG(LogTemp, Warning, TEXT("Manual Fallback Resolution: %s"), *ConnectInfo);
+        }
+        if (!ConnectInfo.IsEmpty())
+        {
+            if (APlayerController* PC = GetFirstLocalPlayerController())
+            {
+                PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+            }
         }
     }
 }
@@ -525,7 +528,7 @@ void URelicRunnersGameInstance::StartSessionGame()
     UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
 
     //?GameStarted=1 Makes it so you can't join mid game
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen?GameStarted=1");
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen?lan?GameStarted=1");
     UE_LOG(LogTemp, Warning, TEXT("[GameInstance] Host starting travel to %s"), *TravelURL);
 
     TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin();
