@@ -44,7 +44,7 @@ void USettingsWidget::NativeConstruct()
 
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
-			const float CurrentFOV = GI->SavedFOV > 0.f ? GI->SavedFOV : 90.f;
+			const float CurrentFOV = GI->SavedFOV > 0.f ? GI->SavedFOV : 85.f;
 			float FOVNorm = FMath::Clamp((CurrentFOV - MinFOV) / (MaxFOV - MinFOV), 0.f, 1.f);
 			FOVSlider->SetValue(FOVNorm);
 			UpdateFOVText(CurrentFOV);
@@ -102,7 +102,7 @@ void USettingsWidget::NativeConstruct()
 			if (XSlider) XSlider->SetValue(XNorm);
 			if (YSlider) YSlider->SetValue(YNorm);
 
-			UpdateSensText(TB_XSensValue, XNorm);
+			UpdateSensText(TB_XSensValue, XSens);
 			UpdateSensText(TB_YSensValue, YSens);
 		}
 	}
