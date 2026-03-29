@@ -475,14 +475,15 @@ void URelicRunnersGameInstance::OnSessionDestroyedThenJoin(FName SessionName, bo
         return;
     }
 
-    if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
-    {
-        Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
-        Sess->OnJoinSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnJoinSessionComplete);
-        Sess->JoinSession(0, NAME_GameSession, SessionSearch->SearchResults[PendingJoinIndex]);
-    }
-
-    PendingJoinIndex = -1;
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+        {
+            if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
+            {
+                Sess->OnJoinSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnJoinSessionComplete);
+                Sess->JoinSession(0, NAME_GameSession, SessionSearch->SearchResults[PendingJoinIndex]);
+                PendingJoinIndex = -1;
+            }
+        });
 }
 
 void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
