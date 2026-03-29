@@ -503,7 +503,11 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
             UE_LOG(LogTemp, Log, TEXT("Resolved Connect String: %s"), *ConnectInfo);
         }
         FNamedOnlineSession* NamedSession = Sess->GetNamedSession(SessionName);
-        if (NamedSession && NamedSession->SessionInfo.IsValid())
+        if (Sess->GetResolvedConnectString(SessionName, ConnectInfo))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Resolved Connect String: %s"), *ConnectInfo);
+        }
+        else if (NamedSession && NamedSession->SessionInfo.IsValid())
         {
             ConnectInfo = NamedSession->SessionInfo->ToString();
 
@@ -511,10 +515,14 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
         }
         if (!ConnectInfo.IsEmpty())
         {
-            if (APlayerController* PC = GetFirstLocalPlayerController())
-            {
-                PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
-            }
+            FTimerHandle TimerHandl;
+            GetWorld()->GetTimerManager().SetTimer(TimerHandl, [this, ConnectInfo]()
+                {
+                    if (APlayerController* PC = GetFirstLocalPlayerController())
+                    {
+                        PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+                    }
+                }, 0.2f, false);
         }
     }
 }
