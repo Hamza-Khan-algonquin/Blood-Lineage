@@ -475,14 +475,15 @@ void URelicRunnersGameInstance::OnSessionDestroyedThenJoin(FName SessionName, bo
         return;
     }
 
-    if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
-    {
-        Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
-        Sess->OnJoinSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnJoinSessionComplete);
-        Sess->JoinSession(0, NAME_GameSession, SessionSearch->SearchResults[PendingJoinIndex]);
-    }
-
-    PendingJoinIndex = -1;
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+        {
+            if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
+            {
+                Sess->OnJoinSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnJoinSessionComplete);
+                Sess->JoinSession(0, NAME_GameSession, SessionSearch->SearchResults[PendingJoinIndex]);
+                PendingJoinIndex = -1;
+            }
+        });
 }
 
 void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
@@ -502,7 +503,11 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
             UE_LOG(LogTemp, Log, TEXT("Resolved Connect String: %s"), *ConnectInfo);
         }
         FNamedOnlineSession* NamedSession = Sess->GetNamedSession(SessionName);
-        if (NamedSession && NamedSession->SessionInfo.IsValid())
+        if (Sess->GetResolvedConnectString(SessionName, ConnectInfo))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Resolved Connect String: %s"), *ConnectInfo);
+        }
+        else if (NamedSession && NamedSession->SessionInfo.IsValid())
         {
             ConnectInfo = NamedSession->SessionInfo->ToString();
 
@@ -510,10 +515,14 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
         }
         if (!ConnectInfo.IsEmpty())
         {
-            if (APlayerController* PC = GetFirstLocalPlayerController())
-            {
-                PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
-            }
+            FTimerHandle TimerHandl;
+            GetWorld()->GetTimerManager().SetTimer(TimerHandl, [this, ConnectInfo]()
+                {
+                    if (APlayerController* PC = GetFirstLocalPlayerController())
+                    {
+                        PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+                    }
+                }, 0.2f, false);
         }
     }
 }
