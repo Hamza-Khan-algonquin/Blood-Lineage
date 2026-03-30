@@ -34,16 +34,21 @@ void UEnemyLODComponent::UpdateLOD()
 		return;
 	}
 
-	if (players.Num() <= 0)
+	if (players.Num() <= 0 || !IsValid(this) || !IsValid(this))
 	{
 		return;
 	}
 
-	float closeDistance = FVector::Dist(players[0]->GetActorLocation(), GetOwner()->GetActorLocation());
+	float closeDistance = TNumericLimits<float>::Max();
 	//closestPlayer = players[0];
 
-	for (int i = 1; i < players.Num(); i++)
+	for (int i = 0; i < players.Num(); i++)
 	{
+		if (!IsValid(players[i]))
+		{
+			continue;
+		}
+		
 		float newDistance = FVector::Dist(players[i]->GetActorLocation(), GetOwner()->GetActorLocation());
 
 		if (closeDistance > newDistance)
