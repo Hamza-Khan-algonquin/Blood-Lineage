@@ -1,4 +1,4 @@
- * Author:   Tristan Anglin
+ /* Author:   Tristan Anglin
  * Year:     2025
  *
  * Notice:
