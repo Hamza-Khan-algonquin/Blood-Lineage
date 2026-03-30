@@ -132,6 +132,11 @@ public:
     UFUNCTION()
     void OnRep_VortexForce();
 
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_HandleCinematicCameras();
+
+    AActor* GetCameraByTag(FName Tag);
+
     UPROPERTY(EditAnywhere)
     TSubclassOf<class UCameraShakeBase> SlamCameraShake;
 

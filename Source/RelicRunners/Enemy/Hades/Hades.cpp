@@ -296,6 +296,8 @@ void AHades::CinematicSlam()
 
     if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
 
+    Multicast_HandleCinematicCameras();
+
     LastAttack = "Slam";
     bIsBusy = true;
 
@@ -348,6 +350,45 @@ void AHades::CinematicSlam()
             StrongSelf->SpawnBlocking();
         }
         }, Delay, false);
+}
+
+AActor* AHades::GetCameraByTag(FName Tag)
+{
+    TArray<AActor*> FoundCameras;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), Tag, FoundCameras);
+    return (FoundCameras.Num() > 0) ? FoundCameras[0] : nullptr;
+}
+void AHades::Multicast_HandleCinematicCameras_Implementation()
+{
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) return;
+
+    FTimerHandle CamTimer1;
+    GetWorldTimerManager().SetTimer(CamTimer1, [this, PC]()
+        {
+            if (AActor* Cam1 = GetCameraByTag(FName("BossCamera")))
+            {
+                PC->SetViewTargetWithBlend(Cam1, 2.5f, VTBlend_Cubic);
+            }
+        }, 0.1f, false);
+
+    FTimerHandle CamTimer2;
+    GetWorldTimerManager().SetTimer(CamTimer2, [this, PC]()
+        {
+            if (AActor* Cam2 = GetCameraByTag(FName("BossCamera2")))
+            {
+                PC->SetViewTargetWithBlend(Cam2, 5.0f, VTBlend_Cubic);
+            }
+        }, 3.0f, false);
+
+    FTimerHandle ReturnTimer;
+    GetWorldTimerManager().SetTimer(ReturnTimer, [PC]()
+        {
+            if (APawn* PlayerPawn = PC->GetPawn())
+            {
+                PC->SetViewTargetWithBlend(PlayerPawn, 1.5f, VTBlend_Cubic);
+            }
+        }, 8.5f, false);
 }
 
 void AHades::MulticastOnBridgeDestroyed_Implementation(FVector Location)
@@ -802,11 +843,13 @@ void AHades::NotifyObeliskHit(AActor* Obelisk)
     {
         ResetAllStates();
 
-        bIsSpawningShockwaves = true;
         bIsBusy = true;
         ShockwavesSpawned = 0;
 
-        GetWorldTimerManager().SetTimer(ShockwaveTimerHandle, this, &AHades::ExecuteRepeatedShockwave, 4.0f, true, 0.0f);
+        MulticastPlayAttackMontage(DamagedMontage, 0.5, 0);
+        FTimerHandle StartShockwave;
+        GetWorldTimerManager().SetTimer(StartShockwave, [this]() { bIsSpawningShockwaves = true; }, 1.0f, false);
+        GetWorldTimerManager().SetTimer(ShockwaveTimerHandle, this, &AHades::ExecuteRepeatedShockwave, 3.5f, true, 0.0f);
     }
     else
     {
@@ -819,10 +862,10 @@ void AHades::ExecuteRepeatedShockwave()
     SpawnShockwave();
     ShockwavesSpawned++;
 
-    if (ShockwavesSpawned >= 5)
+    if (ShockwavesSpawned >= 6)
     {
         ResetAllStates();
-        ScheduleNextAttack(6.f);
+        ScheduleNextAttack(5.f);
     }
 }
 
