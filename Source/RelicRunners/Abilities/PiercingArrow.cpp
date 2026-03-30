@@ -172,6 +172,18 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
         //SpawnedProjectile->Destroy();
     }
 
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (GetCurrentActorInfo()->PlayerController.IsValid())
+    {
+        PS = GetCurrentActorInfo()->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    if (AvatarActor->HasAuthority())
+    {
+        PS->Multicast_SpawnVFX(ProjectileLocation, FRotator::ZeroRotator, FVector(1.f), AbilityVFX, false);
+        PS->Multicast_SpawnVFX(ProjectileLocation, FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, false);
+    }
+
     // Start DoT ticking
     World->GetTimerManager().SetTimer(DotTimer, FTimerDelegate::CreateLambda([this](){if (this){ApplyDotTick();}}),DotTickRate,true);
 }

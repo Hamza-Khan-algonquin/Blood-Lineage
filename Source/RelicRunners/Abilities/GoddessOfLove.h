@@ -16,17 +16,18 @@ public:
     UGoddessOfLove();
 	
     virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
     virtual FName GetAbilityName() const override { return FName("Goddess Of Love"); }
 
 protected:
-
-    void ApplyInitialOverlap(const FGameplayAbilityActorInfo* ActorInfo);
+    void ApplyInitialOverlap();
     void ApplyPassiveHealthRegen();
     void TickDamage();
 
 
     FTimerHandle DOTTimerHandle;
+    FTimerHandle OverlapTimer;
     FTimerHandle PassiveRegenTimerHandle;
 
     TArray<TWeakObjectPtr<AActor>> AffectedEnemies;
@@ -37,7 +38,11 @@ protected:
     float PassiveRegenTickInterval;
     FVector DamageOrigin;
 
+    UPROPERTY()
+    UMaterialInstanceDynamic* OverlayMID = nullptr;
 
+    UPROPERTY(EditDefaultsOnly)
+    UMaterialInterface* OverlayMaterial;
 
 };
 

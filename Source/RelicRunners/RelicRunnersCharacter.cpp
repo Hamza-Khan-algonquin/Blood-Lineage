@@ -1043,3 +1043,17 @@ void ARelicRunnersCharacter::UltimateAbility()
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
 
+void ARelicRunnersCharacter::Multicast_PlayAbilityAnimation_Implementation(UAnimMontage* Montage, float AnimSpeed)
+{
+	if (IsLocallyControlled()) return; 
+
+	if (!Montage) return;
+
+	USkeletalMeshComponent* Mesh1 = FindComponentByClass<USkeletalMeshComponent>();
+	if (!Mesh1) return;
+
+	UAnimInstance* AnimInstance = Mesh1->GetAnimInstance();
+	if (!AnimInstance) return;
+
+	AnimInstance->Montage_Play(Montage, AnimSpeed);
+}
