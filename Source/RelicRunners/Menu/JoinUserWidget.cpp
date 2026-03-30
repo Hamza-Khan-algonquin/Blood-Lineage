@@ -13,6 +13,8 @@
 #include "Components/Image.h"
 #include "Components/Border.h"
 #include "Components/ProgressBar.h"
+#include <Camera/CameraComponent.h>
+
 #include "MainMenuWidget.h"
 #include "Components/CircularThrobber.h"
 #include <Kismet/GameplayStatics.h>
@@ -112,9 +114,12 @@ void UJoinUserWidget::NativeConstruct()
 		SetSelectedDifficulty("Boar");
 	}
 
+
+
 	PlayAnimation(LeftPanelOpen);
 	PlayAnimation(RightPanelOpen);
 	ApplyColorblindStyle();
+	HandleColorModeChanged();
 }
 
 FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -746,6 +751,50 @@ void UJoinUserWidget::EnableRefresh()
 	{
 		RefreshProgress->SetVisibility(ESlateVisibility::Collapsed);
 	}
+}
+
+void UJoinUserWidget::ApplyColorLUT(UTexture* LUT)
+{
+
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (APlayerCameraManager* CameraManager = PC->PlayerCameraManager)
+		{
+			FPostProcessSettings& PPS = CameraManager->ViewTarget.POV.PostProcessSettings;
+
+			PPS.bOverride_ColorGradingLUT = true;
+			PPS.ColorGradingLUT = LUT;
+
+			PPS.bOverride_ColorGradingIntensity = true;
+
+			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+			{
+				PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.f;
+			}
+			else
+			{
+				PPS.ColorGradingIntensity = 0.0f;
+			}
+
+			CameraManager->ViewTarget.POV.PostProcessBlendWeight = 1.0f;
+		}
+	}
+
+}
+void UJoinUserWidget::HandleColorModeChanged()
+{
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	if (GI->ColorblindMode == EColorblindMode::Normal)
+	{
+		ApplyColorLUT(LUT_Normal);
+	}
+	if (GI->ColorblindMode == EColorblindMode::Tritanopia)
+	{
+		ApplyColorLUT(LUT_Tritanopia);
+	}
+	
 }
 
 void UJoinUserWidget::ApplyColorblindStyle()

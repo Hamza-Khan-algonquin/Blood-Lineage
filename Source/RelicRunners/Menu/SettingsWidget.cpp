@@ -14,6 +14,7 @@
 #include <RelicRunners/RelicRunnersCharacter.h>
 #include <Kismet/GameplayStatics.h>
 #include "Components/Slider.h"
+#include "EngineUtils.h"
 #include <Camera/CameraComponent.h>
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "Components/ComboBoxString.h"
@@ -161,7 +162,14 @@ void USettingsWidget::NativeConstruct()
 		SetWindowMode();
 		WindowModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleWindowModeSelectionChanged);
 	}
-
+	for (TActorIterator<APostProcessVolume> It(GetWorld()); It; ++It)
+	{
+		if (It->bUnbound)
+		{
+			CachedPPV = *It;
+			break;
+		}
+	}
 	if (ColourModeDropDown)
 	{
 		ColourModeDropDown->ClearOptions();
@@ -198,6 +206,7 @@ void USettingsWidget::NativeConstruct()
 		ColourModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleColorModeChanged);
 
 	}
+
 
 	if (OutputDeviceDropDown)
 	{
@@ -715,7 +724,7 @@ void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 		PPS.bOverride_ColorGradingIntensity = true;
 		PPS.ColorGradingIntensity = 0.f;
 	}
-	*/
+	
 	
 
 	if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
@@ -723,6 +732,7 @@ void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
 		{
 			FPostProcessSettings& PPS = Camera->PostProcessSettings;
+			
 
 			PPS.bOverride_ColorGradingLUT = true;
 			PPS.ColorGradingLUT = LUT;
@@ -731,7 +741,7 @@ void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 
 			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 			{
-				PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.2f;
+				PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.f;
 			}
 			else
 			{
@@ -741,6 +751,44 @@ void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 			Camera->PostProcessBlendWeight = 1.0f;
 		}
 	}
+	
+
+	for (TActorIterator<APostProcessVolume> It(GetWorld()); It; ++It)
+	{
+		APostProcessVolume* PPV = *It;
+
+		if (PPV && PPV->bUnbound)
+		{
+			FPostProcessSettings& PPS = PPV->Settings;
+
+			PPS.bOverride_ColorGradingLUT = true;
+			PPS.ColorGradingLUT = LUT;
+
+			PPS.bOverride_ColorGradingIntensity = true;
+
+			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+			{
+				PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.0f;
+			}
+		}
+	}
+	*/
+
+	if (!CachedPPV) return;
+
+	FPostProcessSettings& PPS = CachedPPV->Settings;
+
+	PPS.bOverride_ColorGradingLUT = true;
+	PPS.ColorGradingLUT = LUT;
+
+	PPS.bOverride_ColorGradingIntensity = true;
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.0f;
+	}
+
+
 	
 }
 

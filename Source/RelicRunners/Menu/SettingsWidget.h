@@ -221,6 +221,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
 	UTexture2D* LUT_Tritanopia = nullptr;
 
+	UPROPERTY()
+	APostProcessVolume* CachedPPV;
+
 	
 
 	UFUNCTION()

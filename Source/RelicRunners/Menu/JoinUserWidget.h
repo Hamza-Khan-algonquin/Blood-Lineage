@@ -491,4 +491,21 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* IntelligenceIcon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Normal = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Protanopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Deuternopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Tritanopia = nullptr;
+
+	UFUNCTION()
+	void HandleColorModeChanged();
+
+	void ApplyColorLUT(UTexture* LUT);
 };
