@@ -97,6 +97,27 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 				EnemyStatsComponent->SetRemainingStunTime(AttackDamageEvent->StunDuration);
 			}
 		}
+
+		TArray<FHitResult> HitResult;
+		FCollisionObjectQueryParams objCollParams;
+		objCollParams.AddObjectTypesToQuery(ECC_GameTraceChannel1);
+
+		
+		bool hit = GetWorld()->LineTraceMultiByObjectType(HitResult, DamageCauser->GetActorLocation(), GetActorLocation(), objCollParams);
+
+		if (hit)
+		{
+			for (FHitResult result : HitResult)
+			{
+				AActor* hitActor = result.GetActor();
+				if (hitActor == this)
+				{
+					NetMultPlayParticleEffect(DamageEffect, result.Location);
+					break;
+				}
+			}
+		}
+		
 	}
 
 	return DamageAmount;
@@ -121,8 +142,10 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 		OnDied.Broadcast(this);
 		OnDied.Clear();
 
-		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+		NetMultPlayParticleEffect(DeathEffect, GetActorLocation());
 
+		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+		
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
@@ -134,7 +157,13 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 				EnemyHUDWorld->DestroyComponent();
 			}
 
-			Destroy();
+			//Gives enough time to multicast effect
+			float DeathDelay = 0.2f;
+			FTimerHandle TearOffTimer;
+			GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyCharacter::TearOff, DeathDelay, false);
+
+			//Calls destory
+			SetLifeSpan(DeathDelay);
 		}
 	}
 }
@@ -275,6 +304,14 @@ void AEnemyCharacter::UpdateEnemyHUDWorldFacing()
 
 			EnemyHUDWorld->SetVisibility(true);
 		}
+	}
+}
+
+void AEnemyCharacter::NetMultPlayParticleEffect_Implementation(UNiagaraSystem* effect, FVector position)
+{
+	if (effect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), effect, position, GetActorRotation(), GetActorScale());
 	}
 }
 

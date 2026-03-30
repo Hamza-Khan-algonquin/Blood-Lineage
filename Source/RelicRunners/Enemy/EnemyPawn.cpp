@@ -201,28 +201,31 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
-		SetActorHiddenInGame(true);
-		SetActorEnableCollision(false);
+	
 
-		//Gives enough time to multicast effect
-		float DeathDelay = 0.2f;
-		FTimerHandle TearOffTimer;
-		GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyPawn::TearOff, DeathDelay, false);
-
-		//Calls destory
-		SetLifeSpan(DeathDelay);
+		
 
 		OnDied.Broadcast(this);
 		OnDied.Clear();
 
-		/*if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
+		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
+			
+
 			SetIsActive(false);
 		}
 		else
 		{
-			Destroy();
-		}*/
+			
+
+			//Gives enough time to multicast effect
+			float DeathDelay = 0.2f;
+			FTimerHandle TearOffTimer;
+			GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyPawn::TearOff, DeathDelay, false);
+
+			//Calls destory
+			SetLifeSpan(DeathDelay);
+		}
 	}
 }
 
