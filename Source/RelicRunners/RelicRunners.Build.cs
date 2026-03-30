@@ -23,8 +23,8 @@ public class RelicRunners : ModuleRules
 			"OnlineSubsystem", 
 			"OnlineSubsystemUtils", 
 			"OnlineSubsystemNull",
-			"AdvancedSessions", 
-			"AdvancedSteamSessions",
+			//"AdvancedSessions", 
+			//"AdvancedSteamSessions",
 			"GameplayAbilities",    
 			"GameplayTasks",        
 			"GameplayTags",
@@ -32,6 +32,8 @@ public class RelicRunners : ModuleRules
             "Navmesh",
             "AudioMixer",
 			"NetCore",
+            "Sockets",
+			"Networking"
         });
     }
 }

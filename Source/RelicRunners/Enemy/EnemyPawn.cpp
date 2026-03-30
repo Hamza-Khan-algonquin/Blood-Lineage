@@ -102,12 +102,6 @@ void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-}
-
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	if (!HasAuthority() || DamageAmount <= 0)
@@ -184,6 +178,8 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 	//make sure we are server side
 	if (HasAuthority())
 	{
+		Multicast_PlayDeathEffect(hitDirection);
+
 		//check to make sure it a play and if do add experience
 		if (EventInstigator)
 		{
@@ -203,15 +199,21 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
 		}
 
-		OnDied.Broadcast(this);
-		OnDied.Clear();
-		//OnDestroyed.Clear();
-
-		PlayDeathEffet_Implementation(hitDirection);
-
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 
-		Destroy();
+		SetActorHiddenInGame(true);
+		SetActorEnableCollision(false);
+
+		//Gives enough time to multicast effect
+		float DeathDelay = 0.2f;
+		FTimerHandle TearOffTimer;
+		GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyPawn::TearOff, DeathDelay, false);
+
+		//Calls destory
+		SetLifeSpan(DeathDelay);
+
+		OnDied.Broadcast(this);
+		OnDied.Clear();
 
 		/*if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
@@ -224,8 +226,16 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 	}
 }
 
-void AEnemyPawn::PlayDeathEffet_Implementation(FVector impactDirection)
+void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirection)
 {
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+
+	if (UEnemyBoidMovementComponent* BoidComp = FindComponentByClass<UEnemyBoidMovementComponent>())
+	{
+		BoidComp->Deactivate();
+	}
+	
 	EndHitFlash();
 
 	if (IsValid(DeathEffect))
@@ -543,9 +553,14 @@ void AEnemyPawn::BeginPlay()
 
 	float hueOffset = FMath::FRand();
 	float goldChance = FMath::FRandRange(0.f, 100.0f);
-	if (goldChance <= 1.f) GoldEnemy = true; EnemyStatsComponent->SetMaxHealth(EnemyStatsComponent->GetMaxHealth() * 4);
+	if (goldChance <= 1.f) GoldEnemy = true;
 
-	if (GoldEnemy) SetActorScale3D(GetActorScale3D() * 1.25);
+	if (GoldEnemy)
+	{
+		EnemyStatsComponent->SetMaxHealth(EnemyStatsComponent->GetMaxHealth() * 4);
+		EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
+		SetActorScale3D(GetActorScale3D() * 1.25);
+	}
 
 	for (UMaterialInstanceDynamic* element : DynamicMaterials)
 	{
@@ -648,6 +663,12 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 	{
 		pool->SetActorActive(GetController(), newIsActive);
 	}*/
+}
+
+void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AEnemyPawn, GoldEnemy);
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()

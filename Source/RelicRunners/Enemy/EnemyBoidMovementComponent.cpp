@@ -597,12 +597,19 @@ void UEnemyBoidMovementComponent::AddToMoveDataBuffer(FVector newLocation, FRota
 
 void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 {
-	if (MoveDataBuffer.Num() < 2)
+	if (GetOwner()->GetTearOff())
 	{
+		//The actor is dead. Stop moving and hide it.
+		GetOwner()->SetActorHiddenInGame(true);
 		return;
 	}
 
-	float clientDelta = MoveDataBuffer.Last().TimeStamp - MoveDataBuffer[MoveDataBuffer.Num() - 2].TimeStamp;
+	TArray<FMoveDataWithTimeStamp> LocalBuffer = MoveDataBuffer;
+	const int BufferCount = LocalBuffer.Num();
+
+	if (BufferCount < 2) return;
+
+	float clientDelta = MoveDataBuffer.Last().TimeStamp - MoveDataBuffer[BufferCount - 2].TimeStamp;
 
 	AvgReplicationDelta = FMath::FInterpTo(AvgReplicationDelta, clientDelta, delta, 1.0f);
 
@@ -613,37 +620,39 @@ void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 	float clientRenderTime = GetWorld()->GetTimeSeconds() - (InterpDelay);
 
 	//loop through the move data buffer and find the two move data that the client render time is in between
-	for (int i = 0; i < MoveDataBuffer.Num() - 1; i++)
+	for (int i = 0; i < BufferCount - 1; i++)
 	{
-		if (MoveDataBuffer[i].TimeStamp <= clientRenderTime && MoveDataBuffer[i + 1].TimeStamp >= clientRenderTime)
+		if (LocalBuffer[i].TimeStamp <= clientRenderTime && LocalBuffer[i + 1].TimeStamp >= clientRenderTime)
 		{
-			float denominator = (MoveDataBuffer[i + 1].TimeStamp - MoveDataBuffer[i].TimeStamp);
+			float denominator = (LocalBuffer[i + 1].TimeStamp - LocalBuffer[i].TimeStamp);
 
 			if (denominator < KINDA_SMALL_NUMBER)
 			{
 				continue;
 			}
 
-			float interpAlpha = (clientRenderTime - MoveDataBuffer[i].TimeStamp) / denominator;
+			float interpAlpha = (clientRenderTime - LocalBuffer[i].TimeStamp) / denominator;
 
-			//lerp!!!!!!!!!!!!!!!!!!!!
-			FVector interpLocation = FMath::Lerp(MoveDataBuffer[i].Location, MoveDataBuffer[i + 1].Location, interpAlpha);
-			FRotator interpRotation = FMath::Lerp(MoveDataBuffer[i].Rotation, MoveDataBuffer[i + 1].Rotation, interpAlpha);
+			FVector interpLocation = FMath::Lerp(LocalBuffer[i].Location, LocalBuffer[i + 1].Location, interpAlpha);
+			FRotator interpRotation = FMath::Lerp(LocalBuffer[i].Rotation, LocalBuffer[i + 1].Rotation, interpAlpha);
 
-			//check if the interpolation is too far from the last move data to prevent interpolation from going crazy when there is a big delay between the server and client
-			if (FVector::Dist(interpLocation, MoveDataBuffer.Last().Location) > MaxClientLocationDeviation)
+			if (FVector::Dist(interpLocation, LocalBuffer.Last().Location) > MaxClientLocationDeviation)
 			{
-				UpdatedComponent->SetWorldLocationAndRotation(MoveDataBuffer.Last().Location, interpRotation);
-				//clear so we don't get rubber banding effect
-				MoveDataBuffer.Empty();
+				UpdatedComponent->SetWorldLocationAndRotation(LocalBuffer.Last().Location, interpRotation);
+
+				if (MoveDataBuffer.Num() > 0)
+				{
+					FMoveDataWithTimeStamp LastData = MoveDataBuffer.Last();
+					MoveDataBuffer.Empty();
+					MoveDataBuffer.Add(LastData);
+				}
 			}
 			else
 			{
 				UpdatedComponent->SetWorldLocationAndRotation(interpLocation, interpRotation);
 			}
 
-			//this is just so it will animate client side
-			Velocity = (MoveDataBuffer[i + 1].Location - MoveDataBuffer[i].Location).GetSafeNormal() * 100;
+			Velocity = (LocalBuffer[i + 1].Location - LocalBuffer[i].Location).GetSafeNormal() * 100;
 			return;
 		}
 	}
