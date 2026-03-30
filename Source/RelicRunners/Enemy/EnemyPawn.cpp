@@ -104,7 +104,7 @@ void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() || DamageAmount <= 0)
+	if (!HasAuthority() || DamageAmount <= 0 || IsDead())
 	{
 		return 0;
 	}
@@ -210,14 +210,10 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
-			
-
 			SetIsActive(false);
 		}
 		else
 		{
-			
-
 			//Gives enough time to multicast effect
 			float DeathDelay = 0.2f;
 			FTimerHandle TearOffTimer;
@@ -651,8 +647,9 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		return;
 	}
 
+	//NetMultSetIsActive(newIsActive);
 	IsActive = newIsActive;
-	IPoolActorInterface::SetIsActive(newIsActive);
+	
 
 	if (!newIsActive)
 	{
@@ -679,7 +676,24 @@ FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
 	return LifeSpanTimerHandle;
 }
 
+void AEnemyPawn::NetMultSetIsActive_Implementation(bool newIsActive)
+{
+	if (newIsActive)
+	{
+		this->SetActorHiddenInGame(false);
+		this->SetActorEnableCollision(true);
+		this->SetActorTickEnabled(this->GetShouldTick());
+	}
+	else
+	{
+		this->SetActorHiddenInGame(true);
+		this->SetActorEnableCollision(false);
+		this->SetActorTickEnabled(false);
+	}
+}
+
 #if WITH_EDITOR
+
 void AEnemyPawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);

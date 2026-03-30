@@ -241,6 +241,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector respawnPoint;
 
+	UPROPERTY()
 	AActor* CurrentFocusedActor = nullptr;
 
 	//Timers
