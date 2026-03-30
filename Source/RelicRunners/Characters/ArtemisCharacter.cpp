@@ -118,6 +118,8 @@ void AArtemisCharacter::ActivateUltimateAbilities()
 
 	if (AbilitySystem)
 	{
+		bIsAiming = false;
+
 		// Activate Moonbeam now (fires the beam)
 		AbilitySystem->TryActivateAbilityByClass(BP_MoonbeamClass);
 	}

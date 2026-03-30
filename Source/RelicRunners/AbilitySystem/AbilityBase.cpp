@@ -8,6 +8,7 @@
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
+#include "RelicRunners/RelicRunnersCharacter.h"
 
 UAbilityBase::UAbilityBase()
 {
@@ -131,15 +132,26 @@ UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo
     AActor* Avatar = ActorInfo->AvatarActor.Get();
     if (!Avatar) return nullptr;
 
-    USkeletalMeshComponent* Mesh = Avatar->FindComponentByClass<USkeletalMeshComponent>();
-    if (!Mesh) return nullptr;
+    ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(Avatar);
+    if (!Character) return nullptr;
 
-    UAnimInstance* AnimInstance = Mesh->GetAnimInstance();
-    if (!AnimInstance) return nullptr;
+    if (Character->IsLocallyControlled())
+    {
+        if (USkeletalMeshComponent* Mesh = Character->GetMesh())
+        {
+            if (UAnimInstance* AnimInstance = Mesh->GetAnimInstance())
+            {
+                AnimInstance->Montage_Play(Montage, AnimSpeed);
+            }
+        }
+    }
 
-    AnimInstance->Montage_Play(Montage, AnimSpeed);
+    if (Character->HasAuthority())
+    {
+        Character->Multicast_PlayAbilityAnimation(Montage, AnimSpeed);
+    }
+
     return Montage;
 }
-
 
 

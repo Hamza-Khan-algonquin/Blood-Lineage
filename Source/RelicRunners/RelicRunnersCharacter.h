@@ -204,7 +204,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> HitCameraShake;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAbilityAnimation(UAnimMontage* Montage, float AnimSpeed);
+
+
 protected:
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	UAbilitySystemComponent* AbilitySystem;

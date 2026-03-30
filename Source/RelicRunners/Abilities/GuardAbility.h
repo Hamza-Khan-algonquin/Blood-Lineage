@@ -33,4 +33,11 @@ protected:
     float CheckRadius = 100.f;
     float CheckDistance = 150.f;
     float OriginalSpeed;
+
+    UPROPERTY()
+    UMaterialInstanceDynamic* OverlayMID = nullptr;
+
+    UPROPERTY(EditDefaultsOnly)
+    UMaterialInterface* OverlayMaterial;
+
 };

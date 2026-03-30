@@ -119,12 +119,6 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         }
     }
 
-    if (ActorInfo->AvatarActor->HasAuthority())
-    {
-        PS->Multicast_SpawnVFX(FVector(0, 0, 0), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
-    }
-
-
     ACharacter* Character = Cast<ACharacter>(AvatarActor);
     if (Character)
     {
@@ -159,19 +153,25 @@ void URageOfTheGods::StartPulse()
 
     PulsesExecuted++;
 
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (GetCurrentActorInfo()->PlayerController.IsValid())
+    {
+        PS = GetCurrentActorInfo()->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
     if (PulsesExecuted == 1)
     {
-        ARelicRunnersPlayerState* PS = nullptr;
-        if (GetCurrentActorInfo()->PlayerController.IsValid())
-        {
-            PS = GetCurrentActorInfo()->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-        }
-
         if (PS)
         {
             PS->SetInvincible(false);
         }
     }
+
+    if (PS)
+    {
+        PS->Multicast_SpawnVFX(FVector(0), FRotator(0, 0, 0), FVector(1.f), AbilityVFX, true);
+    }
+
     HitActorsThisPulse.Reset();
     ExpansionElapsedTime = 0.f;
 
@@ -203,7 +203,7 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 
     FVector Center = AvatarActor->GetActorLocation();
 
-    DrawDebugSphere(World, Center, CurrentRadius, 32, FColor::Red, false, 0.06f, 0, 3.f);
+    //DrawDebugSphere(World, Center, CurrentRadius, 32, FColor::Red, false, 0.06f, 0, 3.f);
 
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
