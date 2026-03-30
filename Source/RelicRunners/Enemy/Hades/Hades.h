@@ -135,6 +135,12 @@ public:
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_HandleCinematicCameras();
 
+    UPROPERTY(EditAnywhere, Category = "Hades | Effects")
+    UNiagaraSystem* SlamNiagaraSystem;
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_PlaySlamNiagara(FVector Location, float Radius);
+
     AActor* GetCameraByTag(FName Tag);
 
     UPROPERTY(EditAnywhere)

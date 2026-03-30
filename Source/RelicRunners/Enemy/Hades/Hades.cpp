@@ -763,6 +763,8 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
         }
     }
 
+    Multicast_PlaySlamNiagara(ImpactLocation, ImpactRadius);
+
     //Slam right before sweep
     if (bIsInitialSlamming) return;
 
@@ -782,7 +784,24 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
         UE_LOG(LogTemp, Warning, TEXT("Hades hit the obelisk!"));
     }
 
-    DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
+    //DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
+}
+
+void AHades::Multicast_PlaySlamNiagara_Implementation(FVector Location, float Radius)
+{
+    if (SlamNiagaraSystem)
+    {
+        UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            GetWorld(),
+            SlamNiagaraSystem,
+            Location
+        );
+
+        if (NiagaraComp)
+        {
+            NiagaraComp->SetNiagaraVariableFloat(TEXT("User.SlamRadius"), Radius);
+        }
+    }
 }
 
 void AHades::SelectRandomTarget()
