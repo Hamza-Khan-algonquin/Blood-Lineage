@@ -46,7 +46,10 @@ UENUM(BlueprintType)
 enum class EObstacleType : uint8
 {
 	Building,
-	Environment
+	Environment,
+	Market,
+	Rubble,
+	MAX,
 };
 
 USTRUCT()
