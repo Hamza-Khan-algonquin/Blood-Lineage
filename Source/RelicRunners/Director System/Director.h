@@ -55,7 +55,7 @@ protected:
 	float SpawnTimer;
 
 	//A list of all the players the director is aware of
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player List", meta = (AllowPrivateAccess = "true", ToolTip = "A list of all the players the director is aware of"))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Player List", meta = (AllowPrivateAccess = "true", ToolTip = "A list of all the players the director is aware of"))
 	TArray<APawn*> Players;
 
 	//If a spawn point does not have it spawn cards set it will use this
@@ -119,6 +119,8 @@ protected:
 	void GenerateFlowField();
 #endif
 	void GenerateFlowField(FVector targetLocation, float radius);
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
   
 public:	
 	// Called every frame

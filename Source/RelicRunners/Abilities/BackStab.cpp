@@ -175,6 +175,8 @@ void UBackStab::ExecuteBackStabSequence()
     FVector DashLocation = TargetEnemy->GetActorLocation() - TargetEnemy->GetActorForwardVector() * DashDistance;
     AvatarActor->SetActorLocation(DashLocation, false, nullptr, ETeleportType::TeleportPhysics);
 
+    PlayAbilityCastSound(CurrentActorInfo);
+
     if (AbilityAnim)
     {
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.0f);

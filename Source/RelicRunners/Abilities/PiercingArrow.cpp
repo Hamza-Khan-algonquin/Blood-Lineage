@@ -72,9 +72,13 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+
+    PlayAbilityCastSound(ActorInfo);
+
     // Spend resource
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+
 
     // Initial projectile setup
     ProjectileLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);

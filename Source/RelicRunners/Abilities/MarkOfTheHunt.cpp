@@ -34,6 +34,10 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+
+    PlayAbilityCastSound(ActorInfo);
+
+
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     ACharacter* OwnerChar = Cast<ACharacter>(AvatarActor);
     if (!OwnerChar)
@@ -116,7 +120,7 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UMarkOfTheHunt::ProjectileTick()
 {
-    if (!CurrentActorInfo) return;
+    //if (!CurrentActorInfo) return;
 
     UWorld* World = GetWorld();
     if (!World) return;

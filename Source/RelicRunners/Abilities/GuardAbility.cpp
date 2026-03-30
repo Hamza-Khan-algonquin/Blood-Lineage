@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
+#include "RelicRunners/Inventory/InventoryComponent.h"
 
 UGuardAbility::UGuardAbility()
 {
@@ -71,9 +72,10 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
     }
 
+    PS->IncreasedMovementSpeedFromAbility = 1.5f;
+    PS->GetInventoryComponent()->UpdateTotalEquippedStats(OwnerChar);
 
-    OriginalSpeed = AvatarChar->GetCharacterMovement()->MaxWalkSpeed;
-    AvatarChar->GetCharacterMovement()->MaxWalkSpeed *= 1.5f;
+    PlayAbilityCastSound(ActorInfo);
 
     OwnerChar->GetWorldTimerManager().SetTimer(ChargeTickHandle,FTimerDelegate::CreateUObject(this,&UGuardAbility::HandleChargeTick,Handle,ActorInfo,ActivationInfo),0.05f,true);
 
@@ -84,13 +86,7 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
 
 void UGuardAbility::ResetSpeed()
 {
-    if (!CurrentActorInfo) return;
 
-    ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
-    if (AvatarChar)
-    {
-        AvatarChar->GetCharacterMovement()->MaxWalkSpeed = OriginalSpeed;
-    }
 }
 
 void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo, FGameplayAbilityActivationInfo ActivationInfo)
@@ -187,7 +183,13 @@ void UGuardAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGa
                 }
             }
         }
-        ResetSpeed();
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+        PS->IncreasedMovementSpeedFromAbility = 1;
+        PS->GetInventoryComponent()->UpdateTotalEquippedStats(OwnerChar);
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

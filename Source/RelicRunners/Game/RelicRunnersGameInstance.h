@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "AdvancedFriendsGameInstance.h"
+//#include "AdvancedFriendsGameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSubsystem.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
@@ -42,6 +42,9 @@ public:
     void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
     UFUNCTION(BlueprintCallable)
     void BackToMainMenu();
+
+    UFUNCTION(BlueprintCallable, Category = "Network")
+    void JoinGameByIP(FString IPAddress);
     UFUNCTION(BlueprintCallable)
     void FindGames(class UJoinUserWidget* UserWidget);
     UFUNCTION(BlueprintCallable)
@@ -95,7 +98,7 @@ public:
 
     //Properties
     UPROPERTY(BlueprintReadOnly)
-    FName CurrentDifficulty;
+    FName CurrentDifficulty = "Boar";
     UPROPERTY()
     TArray<FUniqueNetIdRepl> SavedPlayers;
     UPROPERTY(BlueprintReadOnly)

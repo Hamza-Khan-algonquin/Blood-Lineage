@@ -69,6 +69,8 @@ void UMirrorOfDesireAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
     // Set timer to end ability automatically after Duration
     OwnerChar->GetWorldTimerManager().SetTimer(AbilityTimerHandle, [this, Handle, ActorInfo, ActivationInfo]()
         {

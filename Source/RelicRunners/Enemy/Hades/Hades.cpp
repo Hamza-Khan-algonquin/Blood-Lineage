@@ -18,6 +18,7 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include "HadesObelisk.h"
+#include "ShockwaveRing.h"
 
 AHades::AHades()
 {
@@ -84,6 +85,7 @@ void AHades::BeginPlay()
     {
         FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
         BaseDamageFromDifficulty = diffInfo.BossBaseDamagePercent;
+        DifficultyStrength = diffInfo.Index;
     }
 }
 
@@ -99,7 +101,11 @@ void AHades::Tick(float DeltaTime)
 
     UpdateRotation(DeltaTime);
 
-    if (!bIsBusy)
+    if (bIsSpawningShockwaves)
+    {
+        UpdateIdleAnimation();
+    }
+    else if (!bIsBusy)
     {
         UpdateIdleAnimation();
     }
@@ -137,6 +143,18 @@ void AHades::TriggerAllPlayersCinematicWalk()
     }
 }
 
+void AHades::SpawnShockwave()
+{
+    FActorSpawnParameters SpawnParams;
+
+    AShockwaveRing* NewRing = GetWorld()->SpawnActor<AShockwaveRing>(ShockwaveBP, FVector(0, 0, 150), FRotator::ZeroRotator, SpawnParams);
+    if (NewRing)
+    {
+        float Speed = 0.08f;
+        NewRing->InitializeRing(DifficultyStrength, Speed);
+    }
+}
+
 void AHades::OnRep_VortexForce()
 {
     if (ActiveCycloneComp)
@@ -161,6 +179,7 @@ void AHades::ResetAllStates()
 {
     if (!HasAuthority()) return;
 
+    GetWorldTimerManager().ClearTimer(ShockwaveTimerHandle);
     GetWorldTimerManager().ClearTimer(AbilityLogicTimer);
     GetWorldTimerManager().ClearTimer(AttackLoopTimer);
 
@@ -168,6 +187,7 @@ void AHades::ResetAllStates()
     bIsSweeping = false;
     bIsInitialSlamming = false;
     bIsLookingAtAbilityTarget = false;
+    bIsSpawningShockwaves = false;
 
     if (ActiveSweepBeam.IsValid())
     {
@@ -309,11 +329,15 @@ void AHades::CinematicSlam()
 
         if (StrongSelf)
         {
-            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
             StrongSelf->bIsBusy = false;
             StrongSelf->bIsLookingAtAbilityTarget = false;
-            StrongSelf->ScheduleNextAttack(2.0f);
+            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
+
+            if (StrongSelf->SlamImpactSound)
+            {
+                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+            }
 
             StrongSelf->MulticastOnBridgeDestroyed(StrongSelf->BridgeToDestroy->GetActorLocation());
             if (StrongSelf->BridgeToDestroy)
@@ -374,11 +398,15 @@ void AHades::PlaySlam()
 
         if (StrongSelf)
         {
-            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
+
+            if (StrongSelf->SlamImpactSound)
+            {
+                UGameplayStatics::PlaySoundAtLocation(StrongSelf, StrongSelf->SlamImpactSound, SlamLoc);
+            }
 
             StrongSelf->bIsBusy = false;
             StrongSelf->bIsLookingAtAbilityTarget = false;
-            StrongSelf->ScheduleNextAttack(2.0f);
+            StrongSelf->ExecuteDamage(SlamLoc, 1800.0f);
 
             if (StrongSelf->SlamCameraShake)
                 StrongSelf->GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayWorldCameraShake(StrongSelf->GetWorld(), StrongSelf->SlamCameraShake, StrongSelf->GetActorLocation(), 10000.0f, 10000.0f, 1.0f);
@@ -424,6 +452,12 @@ void AHades::PlayFireball()
                 FB->SetOwner(WeakSelf.Get());
 
                 UGameplayStatics::FinishSpawningActor(FB, FTransform(WeakSelf->SkeletalMesh->GetSocketLocation(SocketName)));
+
+                if (FB->SpawnSound)
+                {
+                    UGameplayStatics::SpawnSoundAttached(FB->SpawnSound, WeakSelf->SkeletalMesh, SocketName);
+                }
+
                 FB->AttachToComponent(WeakSelf->SkeletalMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);
 
                 FTimerHandle DetachHandle;
@@ -476,6 +510,16 @@ void AHades::PlaySweep()
 
     GetWorldTimerManager().SetTimer(AbilityLogicTimer, [this, SlamLoc]() {
         ExecuteDamage(SlamLoc, 800.0f);
+
+        if (SlamImpactSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, SlamImpactSound, SlamLoc);
+        }
+
+        if (SweepAttackSound && SkeletalMesh)
+        {
+            UGameplayStatics::SpawnSoundAttached(SweepAttackSound, SkeletalMesh);
+        }
 
         bIsInitialSlamming = false;
         bIsSweeping = true;
@@ -639,6 +683,7 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 
     TArray<AActor*> OutActors;
     TArray<AActor*> ActorsToIgnore;
@@ -649,7 +694,8 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
         ObjectTypes, nullptr, ActorsToIgnore, OutActors
     );
 
-    //Loop through players, apply % damage, and add them to ignore list
+    bool bHitAnObelisk = false;
+
     for (AActor* OverlappedActor : OutActors)
     {
         if (APawn* HitPawn = Cast<APawn>(OverlappedActor))
@@ -657,28 +703,33 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
             if (ARelicRunnersPlayerState* RRPS = HitPawn->GetPlayerState<ARelicRunnersPlayerState>())
             {
                 float DamageToApply = RRPS->PlayerMaxHealth * (BaseDamageFromDifficulty / 100.0f);
-
                 UGameplayStatics::ApplyDamage(OverlappedActor, DamageToApply, nullptr, this, nullptr);
-
-                //So radial for obelisk doesn't hit player
                 ActorsToIgnore.Add(OverlappedActor);
+                continue; 
             }
+        }
+
+        if (OverlappedActor && OverlappedActor->IsA(AHadesObelisk::StaticClass()))
+        {
+            bHitAnObelisk = true;
         }
     }
 
-    float ObeliskDamage = 50.0f;
-
     UGameplayStatics::ApplyRadialDamage(
-        GetWorld(),
-        ObeliskDamage,
-        ImpactLocation,
-        ImpactRadius,
-        nullptr,
-        ActorsToIgnore,
-        this,
-        nullptr,
-        true
+        GetWorld(), 50.0f, ImpactLocation, ImpactRadius,
+        nullptr, ActorsToIgnore, this, nullptr, true
     );
+
+    if (!bHitAnObelisk)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack.")); 
+        bIsBusy = false;
+        ScheduleNextAttack(2.0f);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Hades hit the obelisk!"));
+    }
 
     DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
 }
@@ -737,15 +788,31 @@ void AHades::NotifyObeliskHit(AActor* Obelisk)
 
     UE_LOG(LogTemp, Warning, TEXT("Hades hit an obelisk! Current Health: %f"), CurrentHealth);
 
-    if (bIsBusy || bIsSweeping)
+    if (ObelisksHit < 4 && CurrentHealth > 0)
     {
         ResetAllStates();
-        ScheduleNextAttack(3.0f);
-    }
 
-    if (ObelisksHit >= 4 || CurrentHealth <= 0)
+        bIsSpawningShockwaves = true;
+        bIsBusy = true;
+        ShockwavesSpawned = 0;
+
+        GetWorldTimerManager().SetTimer(ShockwaveTimerHandle, this, &AHades::ExecuteRepeatedShockwave, 4.0f, true, 0.0f);
+    }
+    else
     {
         Die();
+    }
+}
+
+void AHades::ExecuteRepeatedShockwave()
+{
+    SpawnShockwave();
+    ShockwavesSpawned++;
+
+    if (ShockwavesSpawned >= 5)
+    {
+        ResetAllStates();
+        ScheduleNextAttack(6.f);
     }
 }
 

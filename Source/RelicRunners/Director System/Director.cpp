@@ -12,6 +12,7 @@
 #include "NavMesh/RecastQueryFilter.h"
 #include "NavFilters/NavigationQueryFilter.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include <Net/UnrealNetwork.h>
 
 
 TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
@@ -252,6 +253,11 @@ void ADirector::GenerateFlowField(FVector targetLocation, float radius)
 		FlowField.Add(polys[i], direction);
 		DrawDebugDirectionalArrow(GetWorld(), polyCentre, polyCentre + direction * 100, 100, FColor::Red, true, 5.f, 0, 20.f);
 	}
+}
+
+void ADirector::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	DOREPLIFETIME(ADirector, Players);
 }
 
 

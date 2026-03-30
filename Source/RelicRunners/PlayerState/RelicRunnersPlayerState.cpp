@@ -1086,5 +1086,6 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaXPGainInRun);
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaLevel);
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaXPToNextLevel);
+	DOREPLIFETIME(ARelicRunnersPlayerState, IncreasedMovementSpeedFromAbility);
 }
 

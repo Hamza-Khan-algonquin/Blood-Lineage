@@ -225,7 +225,7 @@ void AArtemisCharacter::UpdateCamera(float DeltaTime)
 
 		CameraBoom->SetWorldRotation(FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, AimingInterpSpeed));
 
-		return; // early exit so normal camera logic doesn’t run
+		return; // early exit so normal camera logic doesnï¿½t run
 	}
 	else
 	{
@@ -350,6 +350,15 @@ void AArtemisCharacter::BasicAttack()
 	bCanBasicAttack = false;
 
 	PlayRandomAttackAnimation();
+
+
+	if (BasicAttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, BasicAttackSound, GetActorLocation());
+	}
+
+	AlreadyHitActors.Empty();
+
 
 	float SpawnDelay = 0.3f;
 

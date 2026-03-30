@@ -46,6 +46,8 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
     
 
 
+    PlayAbilityCastSound(ActorInfo);
+
     if (OwnerChar->HasAuthority())
     {
         AController* Controller = nullptr;

@@ -80,6 +80,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float SpawnDelayAfterWorldStart;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MinDistanceFromPlayer;
+
 protected:
 	bool IsTargeting;
 public: 

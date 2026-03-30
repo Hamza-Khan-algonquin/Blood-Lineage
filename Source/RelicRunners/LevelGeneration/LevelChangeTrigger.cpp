@@ -57,9 +57,15 @@ void ALevelChangeTrigger::OnTriggerOverlap(UPrimitiveComponent* OverlapComponent
 {
 	if (!OtherActor->ActorHasTag("Player")) return;
 
+	if (PortalEnterSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, PortalEnterSound, GetActorLocation());
+	}
+
 	if (HasAuthority())
 	{
-		Server_ChangeLevel();
+		//Server_ChangeLevel();
+		GetWorldTimerManager().SetTimer(LevelTravelHandle, this, &ALevelChangeTrigger::ChangeLevel, 0.2f, false);
 	}
 }
 

@@ -30,12 +30,17 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Called to check and update the LOD."))
 	void UpdateLOD();
+	UFUNCTION(BlueprintCallable, Unreliable, NetMulticast)
+	void MultiCastUpdateLOD();
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Getter for the current LOD level."))
 	int GetCurrentLODLevel() const { return CurrentLOD; }
 
 	UFUNCTION(BlueprintCallable)
 	void SetLOD(int newLOD);
+
+	UFUNCTION(BlueprintCallable, Unreliable, NetMulticast)
+	void MultiCastSetLOD(int newLOD);
 
 	UFUNCTION(BlueprintCallable)
 	void SetIsUpdatingLOD(bool isUpdating);

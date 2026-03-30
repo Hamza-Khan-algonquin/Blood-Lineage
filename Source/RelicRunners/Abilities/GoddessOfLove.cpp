@@ -60,11 +60,16 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
+
+    PlayAbilityCastSound(ActorInfo);
+
+
     // Spend resource
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
     if (ActorInfo->IsLocallyControlled())
+
     {
         APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
         if (PC)

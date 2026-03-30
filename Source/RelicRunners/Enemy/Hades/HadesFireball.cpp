@@ -121,6 +121,11 @@ void AHadesFireball::Tick(float DeltaTime)
             }
         }
 
+        if (ImpactSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, TargetLocation);
+        }
+
         Multicast_PlayExplosionEffects(TargetLocation);
 
         if (FireBallCameraShake && GetWorld()->GetFirstPlayerController())

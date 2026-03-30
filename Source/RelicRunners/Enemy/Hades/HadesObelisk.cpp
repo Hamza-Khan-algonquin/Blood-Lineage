@@ -116,6 +116,11 @@ float AHadesObelisk::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
             }
         }
 
+        if (ExplosionSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, ExplosionSound, GetActorLocation());
+        }
+
         Destroy();
     }
 

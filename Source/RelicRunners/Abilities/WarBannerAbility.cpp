@@ -45,6 +45,10 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
+    PlayAbilityCastSound(ActorInfo);
+
+    // Get PlayerState safely
+
     ARelicRunnersPlayerState* PS = nullptr;
     if (ActorInfo->PlayerController.IsValid())
     {

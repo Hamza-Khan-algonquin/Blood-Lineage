@@ -22,16 +22,18 @@ public class RelicRunners : ModuleRules
 			"NavigationSystem", 
 			"OnlineSubsystem", 
 			"OnlineSubsystemUtils", 
-			"AdvancedSessions", 
-			"AdvancedSteamSessions",
+			"OnlineSubsystemNull",
+			//"AdvancedSessions", 
+			//"AdvancedSteamSessions",
 			"GameplayAbilities",    
 			"GameplayTasks",        
 			"GameplayTags",
             "Niagara",
             "Navmesh",
             "AudioMixer",
-			"NetCore"
-
+			"NetCore",
+            "Sockets",
+			"Networking"
         });
     }
 }
