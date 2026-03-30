@@ -446,7 +446,7 @@ void ARelicRunnersCharacter::TraceForInteractables()
 			IInteractInterface::Execute_ShowTooltip(CurrentFocusedActor, false);
 		}
 
-		CurrentFocusedActor = BestTarget;
+		if (BestTarget) CurrentFocusedActor = BestTarget;
 
 		if (CurrentFocusedActor)
 		{
