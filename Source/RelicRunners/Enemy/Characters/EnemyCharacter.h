@@ -123,7 +123,7 @@ protected:
 	//rotates hud to face camera, courtesy of Mr big T him self Tristan
 	void UpdateEnemyHUDWorldFacing();
 
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallablet)
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void NetMultPlayParticleEffect(UNiagaraSystem* effect, FVector position);
 
 	UFUNCTION(NetMulticast, Reliable)
