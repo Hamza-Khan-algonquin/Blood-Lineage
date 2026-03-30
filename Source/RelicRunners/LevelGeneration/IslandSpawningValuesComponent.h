@@ -112,6 +112,21 @@ struct FObstacleTypeValues
 	UPROPERTY(EditAnywhere)
 	FNormalObstacleValues EnvironmentObstacles;
 
+	UPROPERTY(EditAnywhere)
+	uint8 MarketObstacleMaxAmount;
+
+	uint8 RemainingMarketObstacleAmount;
+
+	UPROPERTY(EditAnywhere)
+	FNormalObstacleValues MarketObstacles;
+
+	UPROPERTY(EditAnywhere)
+	uint8 RubbleObstacleMaxAmount;
+
+	uint8 RemainingRubbleObstacleAmount;
+
+	UPROPERTY(EditAnywhere)
+	FNormalObstacleValues RubbleObstacles;
 };
 
 USTRUCT()

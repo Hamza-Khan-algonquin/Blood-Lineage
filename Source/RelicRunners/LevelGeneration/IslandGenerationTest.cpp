@@ -477,7 +477,7 @@ void AIslandGenerationTest::InitializeModularObstacle(FSIslandFloorValues& floor
 
 		floorValue.obstacleYaw = FMath::RandRange(0, 3) * 90;
 
-		floorValue.ObstacleType = EObstacleType(FMath::RandRange(int(EObstacleType::Building), int(EObstacleType::Environment)));
+		floorValue.ObstacleType = EObstacleType(FMath::RandRange(int(EObstacleType::Building), int(EObstacleType::MAX)-1));
 
 		floorValue.randomBuildingObstacleToSpawn = FMath::RandRange(0, GenerationValuesComponent->ObstacleTypeValues.BuildingObstacles.ObstacleActor.Num() - 1);
 		floorValue.randomEnvironmentObstacleToSpawn = FMath::RandRange(0, GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleActor.Num() - 1);
@@ -1478,6 +1478,8 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 	TArray<TSubclassOf<APackedLevelActor>> buildingArray = GenerationValuesComponent->ObstacleTypeValues.BuildingObstacles.ObstacleActor;
 	TArray<TSubclassOf<APackedLevelActor>> environmentArray = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleActor;
+	TArray<TSubclassOf<APackedLevelActor>> marketArray = GenerationValuesComponent->ObstacleTypeValues.MarketObstacles.ObstacleActor;
+	TArray<TSubclassOf<APackedLevelActor>> rubbleArray = GenerationValuesComponent->ObstacleTypeValues.RubbleObstacles.ObstacleActor;
 	TSubclassOf<class APackedLevelActor> buildingWallTemplate = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleWall;
 	TSubclassOf<class APackedLevelActor> environmentWallTemplate = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleWall;
 
@@ -1549,10 +1551,70 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 			}
 
-			if (buildingWallTemplate)
+			if (environmentWallTemplate)
 			{
 				packedWallTemp = environmentWallTemplate;
 			}
+			break;
+		case EObstacleType::Market:
+			max = GenerationValuesComponent->ObstacleTypeValues.MarketObstacleMaxAmount;
+			remaining = GenerationValuesComponent->ObstacleTypeValues.RemainingMarketObstacleAmount;
+			if (remaining >= max)
+			{
+				if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
+				{
+					if (FloorValuesArray[index].IsFullTile)
+					{
+						SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
+					}
+				}
+
+				return;
+			}
+
+			GenerationValuesComponent->ObstacleTypeValues.RemainingMarketObstacleAmount += 1;
+
+			if (marketArray.IsValidIndex(FloorValuesArray[index].randomEnvironmentObstacleToSpawn))
+			{
+				packedActorTemp = marketArray[FloorValuesArray[index].randomEnvironmentObstacleToSpawn];
+
+			}
+
+			if (environmentWallTemplate)
+			{
+				packedWallTemp = environmentWallTemplate;
+			}
+
+			break;
+		case EObstacleType::Rubble:
+			max = GenerationValuesComponent->ObstacleTypeValues.RubbleObstacleMaxAmount;
+			remaining = GenerationValuesComponent->ObstacleTypeValues.RemainingRubbleObstacleAmount;
+			if (remaining >= max)
+			{
+				if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
+				{
+					if (FloorValuesArray[index].IsFullTile)
+					{
+						SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
+					}
+				}
+
+				return;
+			}
+
+			GenerationValuesComponent->ObstacleTypeValues.RemainingRubbleObstacleAmount += 1;
+
+			if (rubbleArray.IsValidIndex(FloorValuesArray[index].randomEnvironmentObstacleToSpawn))
+			{
+				packedActorTemp = rubbleArray[FloorValuesArray[index].randomEnvironmentObstacleToSpawn];
+
+			}
+
+			if (environmentWallTemplate)
+			{
+				packedWallTemp = environmentWallTemplate;
+			}
+
 			break;
 		}
 
