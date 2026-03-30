@@ -4,6 +4,7 @@
 #include "ObjectiveItemEntry.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/ProgressBar.h"
+#include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "TitleData.h"
@@ -41,58 +42,62 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
             Widget->TB_Text->SetText(FText::FromString(ZoneString));
         }
     }
-    else if (UPayloadData* PayloadData = Cast<UPayloadData>(ListItemObject)) 
-    {
-        WidgetSwitcher->SetActiveWidgetIndex(1);
-
-        //Update visuals with data
-        if (UPayloadObjective* Widget = Cast<UPayloadObjective>(WidgetSwitcher->GetActiveWidget())) 
-        {
-            Widget->ProgressionBar->SetPercent(PayloadData->ProgressFraction);
-            Widget->TB_Progression->SetText(FText::AsPercent(PayloadData->ProgressFraction));
-
-            if (PayloadData->ProgressFraction >= 1.0f)
-            {
-                UGameplayStatics::PlaySound2D(this, PayloadCompleteSound);
-            }
-        }
-    }
-    else if (UFlagData* FlagData = Cast<UFlagData>(ListItemObject)) 
-    {
-        WidgetSwitcher->SetActiveWidgetIndex(2);
-
-        UFlagsObjective* FlagWidget = Cast<UFlagsObjective>(WidgetSwitcher->GetWidgetAtIndex(2));
-        RefreshFlagVisuals(FlagData, FlagWidget);
-
-        if (FlagData->Flag1Active && FlagData->Flag2Active && FlagData->Flag3Active)
-        {
-            UGameplayStatics::PlaySound2D(this, FlagCompleteSound);
-        }
-
-    }
-    else if (UEnemiesData* EnemiesData = Cast<UEnemiesData>(ListItemObject)) 
+    else if (UEnemiesData* EnemiesData = Cast<UEnemiesData>(ListItemObject))
     {
         WidgetSwitcher->SetActiveWidgetIndex(3);
 
-        //Update visuals with data
-        if (UEnemiesObjective* Widget = Cast<UEnemiesObjective>(WidgetSwitcher->GetActiveWidget())) 
+        if (UEnemiesObjective* Widget = Cast<UEnemiesObjective>(WidgetSwitcher->GetActiveWidget()))
         {
             Widget->TB_Text->SetText(FText::AsNumber(EnemiesData->EnemiesRemaining));
         }
     }
-    else if (UPandoraData* PandoraData = Cast<UPandoraData>(ListItemObject)) 
+    else if (UPayloadData* PayloadData = Cast<UPayloadData>(ListItemObject))
+    {
+        WidgetSwitcher->SetActiveWidgetIndex(1);
+        if (UPayloadObjective* Widget = Cast<UPayloadObjective>(WidgetSwitcher->GetActiveWidget()))
+        {
+            if (PayloadData->Completed) 
+            {
+                Widget->B_Progress->SetVisibility(ESlateVisibility::Collapsed);
+                Widget->I_Payload->SetBrushFromTexture(ItemStats::LoadIcon("Checkmark"));
+                Widget->I_Payload->SetColorAndOpacity(FLinearColor::Green);
+            }
+            else 
+            {
+                Widget->I_Payload->SetBrushFromTexture(ItemStats::LoadIcon("PayloadIcon"));
+                Widget->I_Payload->SetColorAndOpacity(FLinearColor::White);
+                Widget->B_Progress->SetVisibility(ESlateVisibility::Visible);
+                Widget->ProgressionBar->SetPercent(PayloadData->ProgressFraction);
+                Widget->TB_Progression->SetText(FText::AsPercent(PayloadData->ProgressFraction));
+            }
+        }
+    }
+    else if (UFlagData* FlagData = Cast<UFlagData>(ListItemObject))
+    {
+        WidgetSwitcher->SetActiveWidgetIndex(2);
+        if (UFlagsObjective* FlagWidget = Cast<UFlagsObjective>(WidgetSwitcher->GetActiveWidget()))
+        {
+            RefreshFlagVisuals(FlagData, FlagWidget);
+        }
+    }
+    else if (UPandoraData* PandoraData = Cast<UPandoraData>(ListItemObject))
     {
         WidgetSwitcher->SetActiveWidgetIndex(4);
-
-        //Update visuals with data
         if (UPandorasObjective* Widget = Cast<UPandorasObjective>(WidgetSwitcher->GetActiveWidget()))
         {
-            Widget->ProgressionBar->SetPercent(PandoraData->Percent);
-            Widget->TB_Progression->SetText(FText::FromString(PandoraData->TimeRemainingText));
-
-            if (PandoraData->Percent >= 1.0f)
+            if (PandoraData->Completed) 
             {
-                UGameplayStatics::PlaySound2D(this, PandoraCompleteSound);
+                Widget->B_Progress->SetVisibility(ESlateVisibility::Collapsed);
+                Widget->I_Pandora->SetBrushFromTexture(ItemStats::LoadIcon("Checkmark"));
+                Widget->I_Pandora->SetColorAndOpacity(FLinearColor::Green);
+            }
+            else 
+            {
+                Widget->I_Pandora->SetBrushFromTexture(ItemStats::LoadIcon("PandorasBoxOpenIcon"));
+                Widget->I_Pandora->SetColorAndOpacity(FLinearColor::White);
+                Widget->B_Progress->SetVisibility(ESlateVisibility::Visible);
+                Widget->ProgressionBar->SetPercent(PandoraData->Percent);
+                Widget->TB_Progression->SetText(FText::FromString(PandoraData->TimeRemainingText));
             }
         }
     }
@@ -102,12 +107,23 @@ void UObjectiveItemEntry::RefreshFlagVisuals(UFlagData* FlagData, UFlagsObjectiv
 {
     if (!Widget || !FlagData) return;
 
+    if (FlagData->Completed)
+    {
+        Widget->FlagImage_0->SetVisibility(ESlateVisibility::Collapsed);
+        Widget->FlagImage_2->SetVisibility(ESlateVisibility::Collapsed);
+        Widget->FlagImage_1->SetVisibility(ESlateVisibility::Visible);
+        Widget->FlagImage_1->SetBrushFromTexture(ItemStats::LoadIcon("Checkmark"));
+        Widget->FlagImage_1->SetColorAndOpacity(FLinearColor::Green);
+        return;
+    }
+
     if (!FlagData->FlagUpIcon) FlagData->FlagUpIcon = ItemStats::LoadIcon("FlagUpIcon");
     if (!FlagData->FlagDownIcon) FlagData->FlagDownIcon = ItemStats::LoadIcon("FlagDownIcon");
 
     auto UpdateFlag = [&](bool bEnabled, bool bActive, UImage* Image) {
         if (bEnabled) {
             Image->SetVisibility(ESlateVisibility::Visible);
+            Image->SetColorAndOpacity(FLinearColor::White);
             Image->SetBrushFromTexture(bActive ? FlagData->FlagUpIcon : FlagData->FlagDownIcon);
         }
         else {

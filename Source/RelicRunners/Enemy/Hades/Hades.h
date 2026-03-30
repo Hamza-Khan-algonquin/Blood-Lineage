@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Sound/SoundBase.h"
 #include "Hades.generated.h"
 
 UENUM(BlueprintType)
@@ -37,6 +38,9 @@ public:
     class UAnimMontage* IdleMontage;
 
     UPROPERTY(EditAnywhere, Category = "Animations")
+    class UAnimMontage* SlamChargeMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animations")
     class UAnimMontage* SlamMontage;
 
     UPROPERTY(EditAnywhere, Category = "Animations")
@@ -63,6 +67,12 @@ public:
     UPROPERTY(EditAnywhere, Category = "Classes")
     TSubclassOf<AActor> FireballClass;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> SlamImpactSound = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> SweepAttackSound = nullptr;
+
     UPROPERTY(Replicated)
     EBossPhase CurrentPhase = EBossPhase::Phase1;
 
@@ -77,6 +87,8 @@ public:
     UPROPERTY(Replicated)
     bool bIsInitialSlamming = false; 
 
+    float BaseDamageFromDifficulty = 50;
+
     float MaxHealth = 10000.0f;
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
     float CurrentHealth = MaxHealth;
@@ -85,6 +97,7 @@ public:
     int ObelisksHit = 0;
 
     bool InCinematic = true;
+    int DifficultyStrength = 1;
 
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "AI")
     AActor* CurrentTarget;
@@ -106,26 +119,44 @@ public:
 
     TWeakObjectPtr<AActor> ActiveSweepBeam;
 
+    FTimerHandle ShockwaveTimerHandle;
+    int ShockwavesSpawned = 0;
+    bool bIsSpawningShockwaves = false;
+
+    void ExecuteRepeatedShockwave();
+
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastPlayAttackMontage(UAnimMontage* Montage, float Speed, float StartPosition);
     UPROPERTY(ReplicatedUsing = OnRep_VortexForce)
     float ReplicatedVortexForce;
     UFUNCTION()
     void OnRep_VortexForce();
+
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<class UCameraShakeBase> SlamCameraShake;
+
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<class UCameraShakeBase> SpinCameraShake;
+    UPROPERTY(EditAnywhere, Category = "Combat")
+    TSubclassOf<class AShockwaveRing> ShockwaveBP;
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
     void TriggerAllPlayersCinematicWalk();
 
+    void SpawnShockwave();
+
     void ExecuteAttack();
     void SpawnBridge();
+    void SpawnBlocking();
     void CinematicSlam();
     void ScheduleNextAttack(float Delay);
     void ScheduleCinematicSlam(float Delay);
     void ResetAllStates(); 
     void CheckPhaseTransition();
     void SelectRandomTarget();
+    void OnChargeFinished();
     void PlaySlam();
     void PlayFireball();
     void PlaySweep();
@@ -148,6 +179,12 @@ protected:
 
     UPROPERTY(BlueprintReadOnly, Category = "Boss Mechanics")
     AActor* BridgeToDestroy;
+
+    UPROPERTY(EditAnywhere, Category = "Boss Mechanics")
+    TSubclassOf<AActor> BlockingClass;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Boss Mechanics")
+    AActor* BlockingToSpawn;
 
     UPROPERTY(Replicated)
     FVector AbilityLookAtTarget;

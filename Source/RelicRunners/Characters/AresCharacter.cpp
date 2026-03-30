@@ -203,11 +203,13 @@ void AAresCharacter::PerformSwingTrace()
 			}
 		}
 	}
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
 }
 
 void AAresCharacter::BasicAttack()
 {
+	if (!bCanBasicAttack) return;
+
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
 	if (!HasAuthority())
@@ -224,6 +226,14 @@ void AAresCharacter::Server_PlayAttack_Implementation()
 	HandleAttack();
 }
 
+void AAresCharacter::OnBasicAttackAnimationEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == BasicAnim)
+	{
+		bCanBasicAttack = true;
+	}
+}
+
 void AAresCharacter::HandleAttack()
 {
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
@@ -231,18 +241,26 @@ void AAresCharacter::HandleAttack()
 	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
 		return;
 
-	Damage = 100.0f;
+	Damage = 180.0f;
 	AlreadyHitActors.Empty();
 
+	// Block further attacks
+	bCanBasicAttack = false;
+
+	// Play animation on everyone
 	Multicast_PlayAttack();
 
-	GetWorldTimerManager().SetTimer(
-		TimerHandle_AttackCooldown,
-		this,
-		&AAresCharacter::ResetBasicAttack,
-		BasicAttackCooldown,
-		false
-	);
+	// Bind to animation end event
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (BasicAnim)
+		{
+			float Duration = AnimInstance->Montage_Play(BasicAnim, 1.2f);
+			FOnMontageEnded MontageEndedDelegate;
+			MontageEndedDelegate.BindUObject(this, &AAresCharacter::OnBasicAttackAnimationEnded);
+			AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, BasicAnim);
+		}
+	}
 }
 
 void AAresCharacter::Multicast_PlayAttack_Implementation()
@@ -344,57 +362,29 @@ void AAresCharacter::UpdateCameraPosition(float DeltaTime, const FVector& Veloci
 
 void AAresCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed)
 {
-	// moving
-	if (Speed > 10.f)
-	{
-		FRotator CurrentRot = CameraBoom->GetComponentRotation();
+	if (!Controller) return;
 
-		FRotator DesiredRot = CurrentRot;
+	FRotator ControlRot = Controller->GetControlRotation();
 
-		FRotator MovementRot = Velocity.ToOrientationRotator();
+	// Clamp pitch for camera only
+	float ClampedPitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
 
-		float MoveDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, MovementRot.Yaw);
+	// Smooth camera rotation
+	FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
 
-		DesiredRot.Yaw = CurrentRot.Yaw + MoveDelta * 0.35f;
+	float YawDelta = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
+	float NewYaw = CurrentCamRot.Yaw + YawDelta * DeltaTime * CameraYawSmoothSpeed;
 
-		DesiredRot.Roll = 0.f;
+	float NewPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ClampedPitch, DeltaTime, CameraPitchSmoothSpeed);
 
-		float FinalDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
+	CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
 
-		float NewYaw = CurrentRot.Yaw + FinalDelta * DeltaTime * 30.f;
+	FRotator ActorRot = GetActorRotation();
+	float ActorYawDelta = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, ControlRot.Yaw);
 
-		float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+	ActorRot.Yaw += ActorYawDelta * DeltaTime * CameraYawSmoothSpeed;
 
-		CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
-	}
-	// idle
-	else
-	{
-		if (!Controller) return;
-
-		FRotator ControlRot = Controller->GetControlRotation();
-
-		ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
-		ControlRot.Roll = 0.f;
-
-		FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
-
-		float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
-
-		float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-		float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
-
-		CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
-
-		FRotator ActorRot = GetActorRotation();
-
-		float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
-
-		ActorRot.Yaw += ActorDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-		SetActorRotation(ActorRot);
-	}
+	SetActorRotation(ActorRot);
 }
 
 

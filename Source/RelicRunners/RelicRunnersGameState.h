@@ -21,6 +21,12 @@ struct FDifficultyInfo
 	float LuckAmount;
 
 	float MetaXPIncrease;
+
+	float ItemDropReduction;
+
+	float BossBaseDamagePercent;
+
+	int Index;
 };
 
 

@@ -16,7 +16,10 @@ class RELICRUNNERS_API UEnemyLODSkeletalMeshComponent : public USkeletalMeshComp
 	
 	public:
 		UEnemyLODSkeletalMeshComponent();
+		
+		virtual void InitializeComponent() override;
 
 		UFUNCTION(BlueprintCallable)
 		void LODUpdate(int newLOD, int oldLOD);
+
 };

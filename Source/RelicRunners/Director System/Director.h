@@ -20,6 +20,7 @@ To do:
 
 class ARelicRunnersCharacter;
 class ARecastNavMesh;
+class AEnemyCharacter;
 
 
 
@@ -34,6 +35,9 @@ class RELICRUNNERS_API ADirector : public AActor
 public:
 	FOnPlayerAdd OnPlayerAdd;
 	FOnPlayerRemoved OnPlayerRemoved;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy In Scene", meta = (AllowPrivateAccess = "true", ToolTip = "The enemy characters currently in the scene"))
+	TArray<TObjectPtr<AEnemyCharacter>> EnemyCharactersInWorld;
 
 protected:
 	static TWeakObjectPtr<ADirector> Instance;
@@ -51,7 +55,7 @@ protected:
 	float SpawnTimer;
 
 	//A list of all the players the director is aware of
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player List", meta = (AllowPrivateAccess = "true", ToolTip = "A list of all the players the director is aware of"))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Player List", meta = (AllowPrivateAccess = "true", ToolTip = "A list of all the players the director is aware of"))
 	TArray<APawn*> Players;
 
 	//If a spawn point does not have it spawn cards set it will use this
@@ -61,6 +65,7 @@ protected:
 	//The enemies currently in the scene
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy In Scene", meta = (AllowPrivateAccess = "true", ToolTip = "The enemies currently in the scene"))
 	TArray<APawn*> EnemiesInWorld;
+	
 	
 	//NavNodeRef is just a uint64 so I use that instead of a FNavNodeRef to avoid a include
 	TMap<uint64, FVector> FlowField;
@@ -114,6 +119,8 @@ protected:
 	void GenerateFlowField();
 #endif
 	void GenerateFlowField(FVector targetLocation, float radius);
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
   
 public:	
 	// Called every frame

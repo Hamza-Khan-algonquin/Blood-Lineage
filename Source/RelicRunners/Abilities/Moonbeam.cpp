@@ -15,16 +15,18 @@ UMoonbeam::UMoonbeam()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
              
-    CooldownDuration = 10.f;   
+    CooldownDuration = 15.f;   
     LastUseTime = -100.f;   
     Duration = 5.f;
     AreaRadius = 100.f;
-	Damage = 20.f;
+	Damage = 40.f;
 }
 
 void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    if (!CurrentActorInfo) return;
 
     // Get the character using the ability
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
@@ -42,10 +44,9 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         return;
     }
     
-    if (AbilityAnim)
-    {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
-    }
+
+
+    PlayAbilityCastSound(ActorInfo);
 
     if (OwnerChar->HasAuthority())
     {
@@ -62,14 +63,32 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
 
             if (PS)
             {
+
+                float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+                if (!PS || PS->GetPlayerResource() < FinalManaCost)
+                {
+                    EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+                    return;
+                }
+                PS->SetInvincible(true);
                 PS->Multicast_SpawnVFX(FVector(0), FRotator(0, 0, 0), FVector(1.f), AbilityVFX, true);
+
+                // Spend resource
+                PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+                PS->UpdateRemoteHUDResource();
             }
+        }
+
+        if (AbilityAnim)
+        {
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
         }
 
         // Disable movement
         OwnerChar->GetCharacterMovement()->DisableMovement();
         OwnerChar->GetCharacterMovement()->StopMovementImmediately();
-
+        
         // Start ticking beam
         OwnerChar->GetWorld()->GetTimerManager().SetTimer(BeamTickHandle,this, &UMoonbeam::BeamTick,TickInterval, true);
 
@@ -124,9 +143,23 @@ void UMoonbeam::BeamTick()
 
 void UMoonbeam::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,bool bReplicateEndAbility,bool bWasCancelled)
 {
+    if (!ActorInfo->AvatarActor.IsValid())
+        return;
+
     UWorld* World = ActorInfo->AvatarActor->GetWorld();
     if (World && !bWasCancelled)
     {       
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+
+        if (PS)
+        {
+            PS->SetInvincible(false);
+        }
+
         World->GetTimerManager().ClearTimer(BeamTickHandle);
         World->GetTimerManager().ClearTimer(DurationHandle);
 

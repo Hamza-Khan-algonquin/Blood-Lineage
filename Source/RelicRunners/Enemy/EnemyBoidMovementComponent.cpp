@@ -4,12 +4,14 @@
 #include "EnemyBoidMovementComponent.h"
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
 #include "RelicRunners/Enemy/EnemyPawn.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include "NavigationSystem.h"
 #include <Net/UnrealNetwork.h>
 #include "DrawDebugHelpers.h"
 #include "NavMesh/RecastNavMesh.h"
 #include "Detour/DetourNavMeshQuery.h"
 #include "RelicRunners/Flow Field/FlowFieldComponent.h"
+#include "RelicRunners/Director System/Director.h"
 
 UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 {
@@ -38,6 +40,8 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	MaxClientLocationDeviation = 200.f;
 	AvgReplicationDelta = 0.1f;
 	DistanceFromWallToLoseTargetWeight = 100;
+	EnemyCharacterAvoidanceDistance = 300;
+	EnemyCharacterAvoidanceWeight = 1.5;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -63,7 +67,7 @@ void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 		return;
 	}
 
-	if (MovementMode != EBoidMovementMode::Disabled)
+	if (!IsKnockedBack && MovementMode != EBoidMovementMode::Disabled)
 	{
 		MoveInDirection(delta);
 		UpdateRotation();
@@ -99,6 +103,7 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	FVector coherenceVector = { 0,0,0 };
 	//The unit vector of the average oppsite direction to all near by birds
 	FVector separationVector = { 0,0,0 };
+	FVector enemyCharacterSeparationVector = { 0,0,0 };
 	float currentSeparationDistance = DefaultSeparationRange;
 
 	//The unit vector of the average alignment of all boids
@@ -189,6 +194,25 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 				}
 			}
 		}
+	}
+
+	if (ADirector* dir = ADirector::GetInstance(this))
+	{
+		for (AEnemyCharacter* otherEnemy : dir->EnemyCharactersInWorld)
+		{
+			float distanceToEnemy = FVector::Dist(otherEnemy->GetActorLocation(), GetOwner()->GetActorLocation());
+
+			if (distanceToEnemy < EnemyCharacterAvoidanceDistance && distanceToEnemy > 0)
+			{
+				float linear = distanceToEnemy / currentSeparationDistance;
+
+				//add the oppisite of the direction vector to the other boid to the separation vector
+				enemyCharacterSeparationVector -= (otherEnemy->GetActorLocation() - GetOwner()->GetActorLocation()).GetSafeNormal() * (1 - linear);
+				//boidsEffectingSeparation++;
+			}
+		}
+
+		finalInflunceVector += enemyCharacterSeparationVector * EnemyCharacterAvoidanceWeight;
 	}
 
 	pOtherBoids = pOtherBoidsToCheck;
@@ -392,6 +416,11 @@ void UEnemyBoidMovementComponent::CalculateMoveToDirection(float delta)
 
 void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 {
+	if (!IsValid(GetOwner()))
+	{
+		return;
+	}
+
 	if (Velocity.ContainsNaN())
 	{
 		Velocity = FVector::ZeroVector;
@@ -417,7 +446,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	//DrawDebugLine(GetWorld(), GetActorLocation(), finalMovement, FColor::Red, false, 0.05, 0, 3);
 
-	if (ActiveNavMesh)//navSys)
+	if (ActiveNavMesh)
 	{
 		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, {100,100,200}))
 		{
@@ -429,30 +458,18 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 					return;
 				}
 			}
-			finalMovement = navOutLocation.Location + offset - startLocation;
-		}
-		
-		/*if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
-		{
-			FVector newPosition = navLocation.Location + offset;// + offset.Z;
-			finalMovement = newPosition - startLocation;
-			
-			//EdgeAvoidanceVector = FVector::Zero();
-			LastValidPosition = newPosition;
-		}
-		else if (navSys->ProjectPointToNavigation(startLocation, navLocation, FVector(100,100,200)))
-		{
-			FVector newPosition = navLocation.Location + offset;// + offset.Z;
-			finalMovement = newPosition - startLocation;
-			//finalMovement = ((navLocation.Location + offset) - startLocation).GetSafeNormal() * Velocity.Length();
-			//finalMovement.Z = navLocation.Location.Z + offset.Z;
+			finalMovement = (navOutLocation.Location + offset) - startLocation;
 		}
 		else
 		{
-			return;
-		}*/
+			finalMovement = FVector::Zero();
+		}
 	}
 	
+	if (finalMovement.Size() > MaxSpeed)
+	{
+		finalMovement = finalMovement.GetSafeNormal() * MaxSpeed;
+	}
 
 	SafeMoveUpdatedComponent(finalMovement, GetOwner()->GetActorRotation(), true, hit);
 
@@ -580,12 +597,19 @@ void UEnemyBoidMovementComponent::AddToMoveDataBuffer(FVector newLocation, FRota
 
 void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 {
-	if (MoveDataBuffer.Num() < 2)
+	if (GetOwner()->GetTearOff())
 	{
+		//The actor is dead. Stop moving and hide it.
+		GetOwner()->SetActorHiddenInGame(true);
 		return;
 	}
 
-	float clientDelta = MoveDataBuffer.Last().TimeStamp - MoveDataBuffer[MoveDataBuffer.Num() - 2].TimeStamp;
+	TArray<FMoveDataWithTimeStamp> LocalBuffer = MoveDataBuffer;
+	const int BufferCount = LocalBuffer.Num();
+
+	if (BufferCount < 2) return;
+
+	float clientDelta = MoveDataBuffer.Last().TimeStamp - MoveDataBuffer[BufferCount - 2].TimeStamp;
 
 	AvgReplicationDelta = FMath::FInterpTo(AvgReplicationDelta, clientDelta, delta, 1.0f);
 
@@ -596,35 +620,39 @@ void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 	float clientRenderTime = GetWorld()->GetTimeSeconds() - (InterpDelay);
 
 	//loop through the move data buffer and find the two move data that the client render time is in between
-	for (int i = 0; i < MoveDataBuffer.Num() - 1; i++)
+	for (int i = 0; i < BufferCount - 1; i++)
 	{
-		if (MoveDataBuffer[i].TimeStamp <= clientRenderTime && MoveDataBuffer[i + 1].TimeStamp >= clientRenderTime)
+		if (LocalBuffer[i].TimeStamp <= clientRenderTime && LocalBuffer[i + 1].TimeStamp >= clientRenderTime)
 		{
-			float denominator = (MoveDataBuffer[i + 1].TimeStamp - MoveDataBuffer[i].TimeStamp);
+			float denominator = (LocalBuffer[i + 1].TimeStamp - LocalBuffer[i].TimeStamp);
 
 			if (denominator < KINDA_SMALL_NUMBER)
 			{
 				continue;
 			}
 
-			float interpAlpha = (clientRenderTime - MoveDataBuffer[i].TimeStamp) / denominator;
+			float interpAlpha = (clientRenderTime - LocalBuffer[i].TimeStamp) / denominator;
 
-			//lerp!!!!!!!!!!!!!!!!!!!!
-			FVector interpLocation = FMath::Lerp(MoveDataBuffer[i].Location, MoveDataBuffer[i + 1].Location, interpAlpha);
-			FRotator interpRotation = FMath::Lerp(MoveDataBuffer[i].Rotation, MoveDataBuffer[i + 1].Rotation, interpAlpha);
+			FVector interpLocation = FMath::Lerp(LocalBuffer[i].Location, LocalBuffer[i + 1].Location, interpAlpha);
+			FRotator interpRotation = FMath::Lerp(LocalBuffer[i].Rotation, LocalBuffer[i + 1].Rotation, interpAlpha);
 
-			//check if the interpolation is too far from the last move data to prevent interpolation from going crazy when there is a big delay between the server and client
-			if (FVector::Dist(interpLocation, MoveDataBuffer.Last().Location) > MaxClientLocationDeviation)
+			if (FVector::Dist(interpLocation, LocalBuffer.Last().Location) > MaxClientLocationDeviation)
 			{
-				UpdatedComponent->SetWorldLocationAndRotation(MoveDataBuffer.Last().Location, interpRotation);
-				//clear so we don't get rubber banding effect
-				MoveDataBuffer.Empty();
+				UpdatedComponent->SetWorldLocationAndRotation(LocalBuffer.Last().Location, interpRotation);
+
+				if (MoveDataBuffer.Num() > 0)
+				{
+					FMoveDataWithTimeStamp LastData = MoveDataBuffer.Last();
+					MoveDataBuffer.Empty();
+					MoveDataBuffer.Add(LastData);
+				}
 			}
 			else
 			{
 				UpdatedComponent->SetWorldLocationAndRotation(interpLocation, interpRotation);
 			}
 
+			Velocity = (LocalBuffer[i + 1].Location - LocalBuffer[i].Location).GetSafeNormal() * 100;
 			return;
 		}
 	}

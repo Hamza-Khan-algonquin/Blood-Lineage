@@ -11,6 +11,8 @@
 #include "NavigationSystem.h"
 #include "NavMesh/RecastQueryFilter.h"
 #include "NavFilters/NavigationQueryFilter.h"
+#include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
+#include <Net/UnrealNetwork.h>
 
 
 TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
@@ -105,6 +107,7 @@ void ADirector::RemoveEnemy(AActor* enemy)
 
 	if (enemyCharacterPtr)
 	{
+		EnemyCharactersInWorld.Remove(enemyCharacterPtr);
 		enemyCharacterPtr->OnDestroyed.RemoveDynamic(this, &ADirector::RemoveEnemy);
 		enemyCharacterPtr->OnDeactivated.RemoveDynamic(this, &ADirector::RemoveEnemy);
 	}
@@ -113,9 +116,12 @@ void ADirector::RemoveEnemy(AActor* enemy)
 void ADirector::AddEnemy(AActor* enemy)
 {
 	//cast the actor point as a APawn then check to make sure it when through before adding it
-	APawn* enemyPtr = static_cast<APawn*>(enemy);
-
-	if (enemyPtr)
+	
+	if (AEnemyCharacter* enemyCharacterPtr = Cast<AEnemyCharacter>(enemy))
+	{
+		EnemyCharactersInWorld.Add(enemyCharacterPtr);
+	}
+	else if (APawn* enemyPtr = Cast<APawn>(enemy))
 	{
 		EnemiesInWorld.Add(enemyPtr);
 	}
@@ -247,6 +253,11 @@ void ADirector::GenerateFlowField(FVector targetLocation, float radius)
 		FlowField.Add(polys[i], direction);
 		DrawDebugDirectionalArrow(GetWorld(), polyCentre, polyCentre + direction * 100, 100, FColor::Red, true, 5.f, 0, 20.f);
 	}
+}
+
+void ADirector::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	DOREPLIFETIME(ADirector, Players);
 }
 
 

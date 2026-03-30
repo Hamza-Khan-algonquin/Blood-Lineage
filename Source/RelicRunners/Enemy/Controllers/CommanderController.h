@@ -54,7 +54,7 @@ public:
 	TObjectPtr<UFlockComponent> PawnFlockComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	APawn* TargetPlayer;
+	TObjectPtr<APawn> TargetPlayer;
 
 	float TargetDistance;
 
@@ -79,6 +79,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float SpawnDelayAfterWorldStart;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MinDistanceFromPlayer;
 
 protected:
 	bool IsTargeting;

@@ -10,6 +10,7 @@
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFileListWidget.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
+#include "Kismet/GameplayStatics.h"
 #include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 
 void UUpgradesWidget::NativeConstruct()
@@ -218,6 +219,11 @@ void UUpgradesWidget::OnResetHPClicked()
 	SD.MetaPoints += SD.MetaHealth;
 	SD.MetaHealth = 0;
 
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
+
 	RefreshUI();
 }
 
@@ -229,6 +235,11 @@ void UUpgradesWidget::OnResetDEFClicked()
 	SD.MetaPoints += SD.MetaDefence;
 	SD.MetaDefence = 0;
 
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
+
 	RefreshUI();
 }
 
@@ -239,6 +250,11 @@ void UUpgradesWidget::OnResetLUCKClicked()
 
 	SD.MetaPoints += SD.MetaLuck;
 	SD.MetaLuck = 0;
+	
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
 
 	RefreshUI();
 }
@@ -251,6 +267,11 @@ void UUpgradesWidget::OnResetSTRClicked()
 	SD.MetaPoints += SD.MetaStrength;
 	SD.MetaStrength = 0;
 
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
+
 	RefreshUI();
 }
 
@@ -261,6 +282,11 @@ void UUpgradesWidget::OnResetAGIClicked()
 
 	SD.MetaPoints += SD.MetaAgility;
 	SD.MetaAgility = 0;
+
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
 
 	RefreshUI();
 }
@@ -273,6 +299,11 @@ void UUpgradesWidget::OnResetINTClicked()
 	SD.MetaPoints += SD.MetaIntelligence;
 	SD.MetaIntelligence = 0;
 
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
+
 	RefreshUI();
 }
 
@@ -283,6 +314,11 @@ void UUpgradesWidget::OnResetRegenClicked()
 
 	SD.MetaPoints += SD.MetaResourceRegen;
 	SD.MetaResourceRegen = 0;
+
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
 
 	RefreshUI();
 }
@@ -295,6 +331,11 @@ void UUpgradesWidget::OnResetLevelClicked()
 	SD.MetaPoints += SD.MetaStartingLevel;
 	SD.MetaStartingLevel = 0;
 
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
+
 	RefreshUI();
 }
 
@@ -305,6 +346,11 @@ void UUpgradesWidget::OnResetEfficiencyClicked()
 
 	SD.MetaPoints += SD.MetaPotionEfficiency;
 	SD.MetaPotionEfficiency = 0;
+
+	if (ResetSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResetSound);
+	}
 
 	RefreshUI();
 }
@@ -328,6 +374,11 @@ void UUpgradesWidget::OnUpgradeClicked(FString StatType)
 
 	CurrentSaveData->SaveData.MetaPoints--;
 
+	if (UpgradeSound)
+	{
+		UGameplayStatics::PlaySound2D(this, UpgradeSound);
+	}
+
 	//Update the visuals
 	RefreshUI();
 }
@@ -339,6 +390,11 @@ void UUpgradesWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
 
 void UUpgradesWidget::BackButtonClicked()
 {
+	if (BackSound)
+	{
+		UGameplayStatics::PlaySound2D(this, BackSound);
+	}
+
 	if (ParentMenu)
 	{
 		ParentMenu->ShowModeSelectionWidget();

@@ -111,13 +111,12 @@ void UMainMenuWidget::ShowCreditsWidget()
 
 void UMainMenuWidget::PlayButtonClickSound()
 {   
-        if (!ButtonClickSound) return;
+    if (!ButtonClickSound) return;
 
-        if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-        {
-            UGameplayStatics::PlaySound2D(PC, ButtonClickSound);
-        }
-   
+    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    {
+        UGameplayStatics::PlaySound2D(PC, ButtonClickSound);
+    }
 }
 
 void UMainMenuWidget::ApplyColorblindStyleToChildren()

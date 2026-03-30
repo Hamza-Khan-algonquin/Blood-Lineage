@@ -24,9 +24,7 @@ AAphroditeCharacter::AAphroditeCharacter()
     PrimaryActorTick.bCanEverTick = true;
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
-    ProjectileDamage = 40.0f;
-
-
+    ProjectileDamage = 50.0f;
 }
 
 void AAphroditeCharacter::BeginPlay()
@@ -227,7 +225,7 @@ void AAphroditeCharacter::UpdateCamera(float DeltaTime)
 
         CameraBoom->SetWorldRotation(FMath::RInterpTo(CurrentRot,TargetRot, DeltaTime,AimingInterpSpeed));
 
-        return; // early exit so normal camera logic doesn’t run
+        return; // early exit so normal camera logic doesnï¿½t run
     }
     else
     {
@@ -319,57 +317,29 @@ void AAphroditeCharacter::UpdateCameraPosition(float DeltaTime, const FVector& V
 
 void AAphroditeCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed)
 {
-    // moving
-    if (Speed > 10.f)
-    {
-        FRotator CurrentRot = CameraBoom->GetComponentRotation();
+    if (!Controller) return;
 
-        FRotator DesiredRot = CurrentRot;
+    FRotator ControlRot = Controller->GetControlRotation();
 
-        FRotator MovementRot = Velocity.ToOrientationRotator();
+    // Clamp pitch for camera only
+    float ClampedPitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
 
-        float MoveDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, MovementRot.Yaw);
+    // Smooth camera rotation
+    FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
 
-        DesiredRot.Yaw = CurrentRot.Yaw + MoveDelta * 0.35f;
+    float YawDelta = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
+    float NewYaw = CurrentCamRot.Yaw + YawDelta * DeltaTime * CameraYawSmoothSpeed;
 
-        DesiredRot.Roll = 0.f;
+    float NewPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ClampedPitch, DeltaTime, CameraPitchSmoothSpeed);
 
-        float FinalDelta = FMath::FindDeltaAngleDegrees(CurrentRot.Yaw, DesiredRot.Yaw);
+    CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
 
-        float NewYaw = CurrentRot.Yaw + FinalDelta * DeltaTime * 30.f;
+    FRotator ActorRot = GetActorRotation();
+    float ActorYawDelta = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, ControlRot.Yaw);
 
-        float NewPitch = FMath::FInterpTo(CurrentRot.Pitch, DesiredRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
+    ActorRot.Yaw += ActorYawDelta * DeltaTime * CameraYawSmoothSpeed;
 
-        CameraBoom->SetWorldRotation(FRotator(NewPitch, NewYaw, 0.f));
-    }
-    // idle
-    else
-    {
-        if (!Controller) return;
-
-        FRotator ControlRot = Controller->GetControlRotation();
-
-        ControlRot.Pitch = FMath::Clamp(ControlRot.Pitch, MinPitch, MaxPitch);
-        ControlRot.Roll = 0.f;
-
-        FRotator CurrentCamRot = CameraBoom->GetComponentRotation();
-
-        float CamDeltaYaw = FMath::FindDeltaAngleDegrees(CurrentCamRot.Yaw, ControlRot.Yaw);
-
-        float NewCamYaw = CurrentCamRot.Yaw + CamDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-        float NewCamPitch = FMath::FInterpTo(CurrentCamRot.Pitch, ControlRot.Pitch, DeltaTime, CameraPitchSmoothSpeed);
-
-        CameraBoom->SetWorldRotation(FRotator(NewCamPitch, NewCamYaw, 0.f));
-
-        FRotator ActorRot = GetActorRotation();
-
-        float ActorDeltaYaw = FMath::FindDeltaAngleDegrees(ActorRot.Yaw, NewCamYaw);
-
-        ActorRot.Yaw += ActorDeltaYaw * DeltaTime * CameraYawSmoothSpeed;
-
-        SetActorRotation(ActorRot);
-    }
+    SetActorRotation(ActorRot);
 }
 
 void AAphroditeCharacter::PlayRandomAttackAnimation()
@@ -401,6 +371,13 @@ void AAphroditeCharacter::BasicAttack()
 
     PlayRandomAttackAnimation();
 
+    if (BasicAttackSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, BasicAttackSound, GetActorLocation());
+    }
+
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this,&AAphroditeCharacter::ResetBasicAttack,BasicAttackCooldown,false );
+
     float SpawnDelay = 0.5f;
 
     TWeakObjectPtr<AAphroditeCharacter> WeakThis(this);
@@ -426,12 +403,12 @@ void AAphroditeCharacter::BasicAttack()
             if (Self->ProjectileMeshAsset)
             {
                 UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(Self);
-                ProjectileMesh->RegisterComponent();
                 ProjectileMesh->SetStaticMesh(Self->ProjectileMeshAsset);
                 ProjectileMesh->SetWorldLocation(NewProj.Location);
                 ProjectileMesh->SetWorldScale3D(FVector(0.2f));
                 ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
                 ProjectileMesh->SetWorldRotation(NewProj.Velocity.Rotation());
+                ProjectileMesh->RegisterComponent();
 
                 NewProj.Mesh = ProjectileMesh;
             }

@@ -11,9 +11,11 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 	}
 #endif
 
+	CleanUpData();
+
 	//check for no nullptr
-	Owner = MeshComp->GetOwner();
-	if (!Owner)
+	AActor* owner = MeshComp->GetOwner();
+	if (!owner)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Owner not set"));
 		return;
@@ -24,7 +26,7 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 		UE_LOG(LogTemp, Warning, TEXT("Target Class Not Set"));
 		return;
 	}
-	else if (!Owner->IsA(TargetClass))
+	else if (!owner->IsA(TargetClass))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Class and owner do not match"));
 		return;
@@ -32,7 +34,7 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 
 	//get the collider and check it
 	TArray<UPrimitiveComponent*> colliders; 
-	Owner->GetComponents<UPrimitiveComponent>(colliders);
+	owner->GetComponents<UPrimitiveComponent>(colliders);
 	
 	FObjectProperty* objProp = CastField<FObjectProperty>(TargetClass->FindPropertyByName(*ColliderName));
 
@@ -43,7 +45,7 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 	}
 
 	//not this can cause a error, if this does happen make sure to let me Thomas know and send me the error message and the breakpoint. This should be fixed though
-	UObject* uncastedCollider = objProp->GetObjectPropertyValue_InContainer(Owner);
+	UObject* uncastedCollider = objProp->GetObjectPropertyValue_InContainer(owner);
 
 	if (!uncastedCollider)
 	{
@@ -59,7 +61,9 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 		return;
 	}
 
-	colliderComp = collider;
+	FAttackNotifyStateData& data = ActiveData.FindOrAdd(MeshComp);
+
+	data.ColliderComp = collider;
 
 	//check to make sure their is overlap events
 	if (!collider->GetGenerateOverlapEvents())
@@ -78,10 +82,10 @@ void UAnimNotifyState_BindAttackMethod::NotifyBegin(USkeletalMeshComponent* Mesh
 	}
 
 	//bind the attack method
-	onOverlapDelegate.BindUFunction(this, FName(TEXT("OnComponentBeginOverlapSignature")));
-	if (!collider->OnComponentBeginOverlap.Contains(onOverlapDelegate))
+	data.onOverlapDelegate.BindUFunction(this, FName(TEXT("OnComponentBeginOverlapSignature")));
+	if (!collider->OnComponentBeginOverlap.Contains(data.onOverlapDelegate))
 	{
-		collider->OnComponentBeginOverlap.Add(onOverlapDelegate);
+		collider->OnComponentBeginOverlap.Add(data.onOverlapDelegate);
 		//collider->OnComponentBeginOverlap.Remove(onOverlapDelegate);
 	}
 
@@ -114,28 +118,32 @@ void UAnimNotifyState_BindAttackMethod::NotifyEnd(USkeletalMeshComponent* MeshCo
 	}
 #endif
 
-	if (!Owner)
+	CleanUpData();
+
+	FAttackNotifyStateData data;
+
+	if (!ActiveData.RemoveAndCopyValue(MeshComp, data))
 	{
 		return;
 	}
 
-	if (!colliderComp)
+	if (!data.ColliderComp)
 	{
 		return;
 	}
 
 	if (DisableOverlapEvents)
 	{
-		colliderComp->SetGenerateOverlapEvents(false);
+		data.ColliderComp->SetGenerateOverlapEvents(false);
 	}
 
 	if (ModifiyCollider)
 	{
-		colliderComp->SetCollisionEnabled(EndCollisionType);
+		data.ColliderComp->SetCollisionEnabled(EndCollisionType);
 	}
 
-	colliderComp->OnComponentBeginOverlap.Remove(onOverlapDelegate);
-	AlreadyHitActors.Empty();
+	data.ColliderComp->OnComponentBeginOverlap.Remove(data.onOverlapDelegate);
+	data.AlreadyHitActors.Empty();
 }
 
 #if WITH_EDITOR
@@ -193,35 +201,51 @@ TArray<FString> UAnimNotifyState_BindAttackMethod::GetPropertyOptions() const
 
 void UAnimNotifyState_BindAttackMethod::OnComponentBeginOverlapSignature(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Owner && OtherActor != Owner && !AlreadyHitActors.Contains(OtherActor))
+	for (auto It = ActiveData.CreateIterator(); It; ++It)
 	{
-		UFunction* attackFunction = TargetClass->FindFunctionByName(*AttackMethodName);
+		FAttackNotifyStateData& data = It.Value();
 
-		if (!attackFunction)
+		if (OverlappedComponent == data.ColliderComp && OverlappedComponent->GetOwner() && OtherActor != OverlappedComponent->GetOwner() && !data.AlreadyHitActors.Contains(OtherActor))
 		{
-			return;
+			UFunction* attackFunction = TargetClass->FindFunctionByName(*AttackMethodName);
+
+			if (!attackFunction)
+			{
+				return;
+			}
+
+			//have to use a struct to pass in the parameters as on does not just simply call the function within a UFunction 
+			struct AttackArguments
+			{
+				UPrimitiveComponent* OverlappedComponent;
+				AActor* OtherActor;
+				UPrimitiveComponent* OtherComp;
+				int32 OtherBodyIndex;
+				bool bFromSweep;
+				FHitResult SweepResult;
+			};
+
+			AttackArguments argument;
+			argument.OverlappedComponent = OverlappedComponent;
+			argument.OtherActor = OtherActor;
+			argument.OtherComp = OtherComp;
+			argument.OtherBodyIndex = OtherBodyIndex;
+			argument.bFromSweep = bFromSweep;
+			argument.SweepResult = SweepResult;
+
+			OverlappedComponent->GetOwner()->ProcessEvent(attackFunction, &argument);
+			data.AlreadyHitActors.Add(OtherActor);
 		}
+	}
+}
 
-		//have to use a struct to pass in the parameters as on does not just simply call the function within a UFunction 
-		struct AttackArguments
+void UAnimNotifyState_BindAttackMethod::CleanUpData()
+{
+	for (auto It = ActiveData.CreateIterator(); It; ++It)
+	{
+		if (!It.Key().IsValid())
 		{
-			UPrimitiveComponent* OverlappedComponent;
-			AActor* OtherActor;
-			UPrimitiveComponent* OtherComp;
-			int32 OtherBodyIndex;
-			bool bFromSweep;
-			FHitResult SweepResult;
-		};
-
-		AttackArguments argument;
-		argument.OverlappedComponent = OverlappedComponent;
-		argument.OtherActor = OtherActor;
-		argument.OtherComp = OtherComp;
-		argument.OtherBodyIndex = OtherBodyIndex;
-		argument.bFromSweep = bFromSweep;
-		argument.SweepResult = SweepResult;
-
-		Owner->ProcessEvent(attackFunction, &argument);
-		AlreadyHitActors.Add(OtherActor);
+			It.RemoveCurrent(); 
+		}
 	}
 }

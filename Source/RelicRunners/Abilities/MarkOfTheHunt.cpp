@@ -16,18 +16,14 @@ UMarkOfTheHunt::UMarkOfTheHunt()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 	ConeAngle = 40.f;
-    Damage = 100.f;
+    Damage = 200.f;
 }
 
 void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+    if (!CurrentActorInfo) return;
 
     UWorld* World = GetWorld();
     if (!World) return;
@@ -38,11 +34,9 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+
+    PlayAbilityCastSound(ActorInfo);
+
 
     AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     ACharacter* OwnerChar = Cast<ACharacter>(AvatarActor);
@@ -96,8 +90,26 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
     }
+
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
 
     World->GetTimerManager().SetTimer(ProjectileTickTimer,this, &UMarkOfTheHunt::ProjectileTick,0.02f,true);
 
@@ -108,6 +120,8 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UMarkOfTheHunt::ProjectileTick()
 {
+    //if (!CurrentActorInfo) return;
+
     UWorld* World = GetWorld();
     if (!World) return;
 

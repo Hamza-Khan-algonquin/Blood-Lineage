@@ -19,16 +19,27 @@ public:
 private:
     FTimerHandle BannerDurationTimer;
     FTimerHandle DurationTimerHandle;
-
+    FTimerHandle BuffTickHandle;
     void SpawnBanner();
-    void ApplyAllyBuffs(const FVector& BannerLocation);
+    void UpdateBuffs();
+    void ApplyBuffToActor(AActor* Actor);
+    void RemoveBuffFromActor(AActor* Actor);
     FVector GetBannerLocation() const;
 
     // War Banner properties
     UPROPERTY(EditDefaultsOnly, Category = "War Banner")
     float SpawnDistance = 200.f;
 
-    UPROPERTY(EditDefaultsOnly, Category = "War Banner")
-    float BuffAmount = 2.0f;
+    float ElapsedTime = 0.f;
+    const float BuffAmount = 50.f;
+
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Banner")
+    UStaticMesh* BannerMesh;
+
+    TSet<TWeakObjectPtr<AActor>> BuffedActors;
+
+    
+
 
 };

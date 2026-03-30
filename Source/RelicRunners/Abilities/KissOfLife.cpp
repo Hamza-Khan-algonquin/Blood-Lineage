@@ -14,7 +14,7 @@ UKissOfLife::UKissOfLife()
     AbilityName = FName("KissOfLife");
 
     Duration = 10.f;
-    CooldownTimer = 12.f;
+    CooldownTimer = 15.f;
     LastUseTime = -100.f;
     AreaRadius = 600.f;
 
@@ -30,6 +30,15 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         return;
     }
 
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    if (CurrentTime - LastUseTime < CooldownTimer)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+
+
     AActor* AvatarActor = ActorInfo->AvatarActor.Get();
     UWorld* World = AvatarActor->GetWorld();
     if (!World)
@@ -38,17 +47,65 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
         return;
     }
 
-    ARelicRunnersPlayerState* PS = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
 
-    if (!PS)
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
-    if (AbilityAnim)
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
+
+    if (ActorInfo->IsLocallyControlled())
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
+        if (PC)
+        {
+            PC->DisableInput(PC);
+        }
+
+        if (AbilityAnim)
+        {
+            float AnimDuration = AbilityAnim->GetPlayLength();
+
+            PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 2.0f);
+
+            if (PC)
+            {
+                TWeakObjectPtr<APlayerController> WeakPC = PC;
+                TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+
+                FTimerHandle InputTimerHandle;
+
+                GetWorld()->GetTimerManager().SetTimer(
+                    InputTimerHandle,
+                    [WeakPC, WeakWorld]()
+                    {
+                        if (!WeakWorld.IsValid())
+                            return;
+
+                        if (!WeakPC.IsValid())
+                            return;
+
+                        if (!WeakPC->GetPawn())
+                            return;
+
+                        WeakPC->EnableInput(WeakPC.Get());
+                    },
+                    AnimDuration * 0.5,
+                    false
+                );
+            }
+        }
     }
 
     APawn* OwnerPawn = Cast<APawn>(AvatarActor);
@@ -58,6 +115,8 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
     const FVector Center = ActorInfo->AvatarActor->GetActorLocation();
 
     //DrawDebugCircle(World, Center, AreaRadius, 64, FColor::Green, false, Duration, 0, 2.f, OwnerPawn->GetActorRightVector(), OwnerPawn->GetActorForwardVector(), false);
+
+    PlayAbilityCastSound(ActorInfo);
 
     // This is where is starts healing the players
     World->GetTimerManager().SetTimer(HealTickTimer, this, &UKissOfLife::ApplyHealTick, HealInterval, true);
@@ -73,6 +132,8 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
 
 void UKissOfLife::ApplyHealTick()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor)
     {
@@ -141,12 +202,6 @@ void UKissOfLife::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGame
         }
     }
 
-    // This deletes the debug sphere when the ability ends
-    if (DebugHealSphere)
-    {
-        DebugHealSphere->DestroyComponent();
-        DebugHealSphere = nullptr;
-    }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

@@ -37,7 +37,12 @@ AItemActor::AItemActor()
     bReplicates = true;
     SetReplicateMovement(true);
 
-    RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+    CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
+    RootComponent = CollisionComponent;
+    CollisionComponent->SetSphereRadius(25.f);
+    CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    CollisionComponent->SetCollisionResponseToAllChannels(ECR_Block);
+    CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
     Fog = CreateDefaultSubobject<ULocalFogVolumeComponent>(TEXT("Fog"));
     Fog->SetupAttachment(RootComponent);
@@ -69,6 +74,24 @@ AItemActor::AItemActor()
     AutoLootSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
     AutoLootSphere->SetGenerateOverlapEvents(true);
 
+}
+
+void AItemActor::SnapToGround()
+{
+    if (!HasAuthority()) return;
+
+    FVector Start = GetActorLocation();
+    FVector End = Start + (FVector::UpVector * -1000.f);
+
+    FHitResult HitResult;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
+    {
+        FVector NewLocation = HitResult.Location + FVector(0.f, 0.f, 100.0f);
+        SetActorLocation(NewLocation);
+    }
 }
 
 void AItemActor::InitializeTooltipWidget()
@@ -142,6 +165,7 @@ void AItemActor::Initialize(const FItemData& InItemData)
     if (HasAuthority())
     {
         SetupVisuals();
+        SnapToGround();
     }
 }
 

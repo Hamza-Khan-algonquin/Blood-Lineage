@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "RelicRunners/RelicRunnersCharacter.h" 
+#include "Sound/SoundBase.h"
 #include "AphroditeCharacter.generated.h"
 
 USTRUCT()
@@ -115,4 +116,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Aphrodite")
 	TSubclassOf<UGoddessOfLove> BP_GoddessOfLoveClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> BasicAttackSound = nullptr;
 };

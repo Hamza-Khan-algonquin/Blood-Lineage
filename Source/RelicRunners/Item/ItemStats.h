@@ -466,14 +466,21 @@ public:
         float Min = BaseMin * ItemData.Level * RarityMult;
         float Max = BaseMax * ItemData.Level * RarityMult;
 
+        float LevelBaseValue = ItemData.Level * 0.8f;
+        float RarityFloor = RarityMult * 1.3f;
+
+        //Gold
+        int CalculatedGold = FMath::RoundToInt((LevelBaseValue + RarityFloor) * FMath::FRandRange(0.9f, 1.1f));
+        ItemData.Gold = FMath::Max(1, CalculatedGold);
+
         TSet<FString> ArmorTypes = { "Helmet", "Upper", "Lower", "Arms" };
         TSet<FString> MixedTypes = { "Necklace" };
 
         //Size of armor multiplier
         float SizeMult = 1.0f;
         if (ItemType == "Upper" || ItemType == "Lower") SizeMult = 1.5f;
-        else if (ItemType == "Helmet") SizeMult = 1.25f;
-        else if (ItemType == "Arms") SizeMult = 1.0f;
+        else if (ItemType == "Helmet") SizeMult = 1.3f;
+        else if (ItemType == "Arms") SizeMult = 1.1f;
 
         auto AssignTripleStats = [&](int& Primary, int& Secondary, int& Tertiary)
             {
@@ -500,14 +507,10 @@ public:
             ItemData.Armor = FMath::Max(0, FMath::RoundToInt((ItemData.Level + FMath::FRandRange(Min, Max))));
 
             AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
-
-            ItemData.Gold = FMath::Max(1, FMath::RoundToInt(FMath::FRandRange(Min * 0.5f, Max * 0.5f)));
         }
         else if (MixedTypes.Contains(ItemData.ItemType))
         {
             AssignTripleStats(ItemData.Strength, ItemData.Dexterity, ItemData.Intelligence);
-
-            ItemData.Gold = FMath::Max(1, FMath::RoundToInt(FMath::FRandRange(Min, Max)));
         }
 
         if (MeshData) { SetItemMeshes(ItemData, MeshData); }
@@ -526,6 +529,8 @@ public:
                 UE_LOG(LogTemp, Warning, TEXT("Icon not found in Library for Type: %s"), *ItemData.ItemType);
             }
         }
+
+        ItemData.PowerLevel = ItemData.Health + ItemData.Armor + ItemData.Dexterity + ItemData.Intelligence + ItemData.Strength;
 
         return ItemData;
     }
@@ -583,7 +588,7 @@ public:
     }
     static float GetLootChance(int Value)
     {
-        float Percent = Value * 1.75;
+        float Percent = Value * 1.45;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -604,28 +609,53 @@ public:
 
     static float GetDefencePerc(int Value)
     {
-        float Percent = Value / 4.0;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 60.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (Value / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetStrengthPerc(int Value)
     {
-        float Percent = Value * 1.17;
+        if (Value <= 0) return 0.0f;
+
+        //Base of 1.5 with a 0.9 exponent.
+        //This grows infinitely but slows down over time.
+        float Percent = 1.5f * pow(static_cast<float>(Value), 0.9f);
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetSpeedPerc(int Value)
     {
-        float Percent = Value / 3.8;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 75.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (Value / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }
 
     static float GetCritPerc(int Value)
     {
-        float Percent = Value / 2.1;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 80.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (Value / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -646,7 +676,14 @@ public:
 
     static float GetAbilityCostPerc(int Value)
     {
-        float Percent = Value / 2.7;
+        //The constant K determines how fast the curve climbs.
+        //At Value = 100, the result will be half of max.
+        const float K = 100.0f;
+        const float MaxPercent = 70.0f;
+
+        if (Value <= 0) return 0.0f;
+
+        float Percent = (static_cast<float>(Value) / (Value + K)) * MaxPercent;
 
         return RoundToDecimal(Percent, 1);
     }

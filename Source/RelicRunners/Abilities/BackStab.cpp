@@ -20,7 +20,7 @@ UBackStab::UBackStab()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Damage = 200.f;
+    Damage = 300.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
@@ -35,11 +35,7 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+    if (!CurrentActorInfo) return;
 
     AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
     if (!AvatarActor) // If no valid actor
@@ -57,11 +53,23 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
         return;
     }
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    ARelicRunnersPlayerState* PS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+    }
+
+    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+
+    if (!PS || PS->GetPlayerResource() < FinalManaCost)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
+
+    // Spend resource
+    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+    PS->UpdateRemoteHUDResource();
 
     LastUseTime = World->GetTimeSeconds();
 
@@ -74,6 +82,8 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 
 AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
 {
+    if (!CurrentActorInfo) return nullptr;
+
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return nullptr;
 
@@ -133,6 +143,8 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor, AActor* TargetEnemy)
 
 void UBackStab::ExecuteBackStabSequence()
 {
+
+    if (!CurrentActorInfo) return;
     UWorld* World = GetWorld();
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
 
@@ -163,9 +175,11 @@ void UBackStab::ExecuteBackStabSequence()
     FVector DashLocation = TargetEnemy->GetActorLocation() - TargetEnemy->GetActorForwardVector() * DashDistance;
     AvatarActor->SetActorLocation(DashLocation, false, nullptr, ETeleportType::TeleportPhysics);
 
+    PlayAbilityCastSound(CurrentActorInfo);
+
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.0f);
     }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);
@@ -224,6 +238,8 @@ void UBackStab::ExecuteBackStabSequence()
 
 void UBackStab::ReturnPlayerToOriginalPosition()
 {
+    if (!CurrentActorInfo) return;
+
     AActor* AvatarActor = GetAvatarActorFromActorInfo();
     if (!AvatarActor) return;
 

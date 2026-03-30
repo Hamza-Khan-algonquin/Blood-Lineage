@@ -51,6 +51,10 @@ public:
     UFUNCTION()
     void OnRep_ItemData();
     void HandlePickup(class ARelicRunnersCharacter* Char);
+    void SnapToGround();
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    class USphereComponent* CollisionComponent;
 
     //Properties
     UPROPERTY()

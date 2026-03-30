@@ -51,9 +51,13 @@ ANewPayloadObjective::ANewPayloadObjective() :
 
 	BeaconMesh->SetupAttachment(PayloadOrigin);
 
+	InterpDelay = 0.1f;
+	MaxClientLocationDeviation = 200.f;
+	AvgReplicationDelta = 0.1f;
+
 	bReplicates = true;
 	bAlwaysRelevant = true;
-	SetReplicateMovement(true);
+	//SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
@@ -89,6 +93,12 @@ void ANewPayloadObjective::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!HasAuthority())
+	{
+		ClientMovementInterpolation(DeltaTime);
+		return;
+	}
+
 	if (SplinePath)
 	{
 
@@ -112,8 +122,9 @@ void ANewPayloadObjective::Tick(float DeltaTime)
 			CompletionPercentage = NewPercentage;
 			UpdateObjectiveToAllControllers(CompletionPercentage);
 		}
-
-		SetActorTransform(SplinePath->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World));
+		FTransform newTransform = SplinePath->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
+		SetActorTransform(newTransform);
+		ServerMoveData = FPayloadMoveData(newTransform.GetLocation(), FRotator(newTransform.GetRotation()), 0.0f);
 
 		if (Distance >= SplinePath->GetSplineLength() && !HasReachedDestination)
 		{
@@ -137,9 +148,10 @@ void ANewPayloadObjective::Initialize(float maxSpeed, float acceleration, float 
 	SplinePath = splinePath;
 }
 
-void ANewPayloadObjective::Multicast_Initialize_Implementation(float newSpeed)
+void ANewPayloadObjective::Multicast_Initialize_Implementation(float newSpeed, class USplineComponent* newSplinePath)
 {
 	MaxSpeed = newSpeed;
+	SplinePath = newSplinePath;
 }
 
 void ANewPayloadObjective::OnTriggerOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -191,6 +203,78 @@ void ANewPayloadObjective::Multicast_OnTriggerChange_Implementation(AActor* Othe
 		{
 			TargetSpeed = 0.0f;
 		}
+	}
+}
+
+void ANewPayloadObjective::OnRep_ServerPayloadMoveData()
+{
+	ServerMoveData.TimeStamp = GetWorld()->GetTimeSeconds();
+
+	MoveDataBuffer.Add(ServerMoveData);
+
+	if (MoveDataBuffer.Num() > 6)
+	{
+		MoveDataBuffer.RemoveAt(0);
+	}
+}
+
+void ANewPayloadObjective::ClientMovementInterpolation(float delta)
+{
+	if (MoveDataBuffer.Num() < 2)
+	{
+		return;
+	}
+
+	float clientDelta = MoveDataBuffer.Last().TimeStamp - MoveDataBuffer[MoveDataBuffer.Num() - 2].TimeStamp;
+
+	AvgReplicationDelta = FMath::FInterpTo(AvgReplicationDelta, clientDelta, delta, 1.0f);
+
+	TargetInterpDelay = FMath::Clamp(AvgReplicationDelta * 1.5f, 0.05f, 0.5f);
+
+	InterpDelay = FMath::FInterpTo(InterpDelay, TargetInterpDelay, delta, 5.0f);
+
+	float clientRenderTime = GetWorld()->GetTimeSeconds() - (InterpDelay);
+
+	//loop through the move data buffer and find the two move data that the client render time is in between
+	for (int i = 0; i < MoveDataBuffer.Num() - 1; i++)
+	{
+		if (MoveDataBuffer[i].TimeStamp <= clientRenderTime && MoveDataBuffer[i + 1].TimeStamp >= clientRenderTime)
+		{
+			float denominator = (MoveDataBuffer[i + 1].TimeStamp - MoveDataBuffer[i].TimeStamp);
+
+			if (denominator < KINDA_SMALL_NUMBER)
+			{
+				continue;
+			}
+
+			float interpAlpha = (clientRenderTime - MoveDataBuffer[i].TimeStamp) / denominator;
+
+			//lerp!!!!!!!!!!!!!!!!!!!!
+			FVector interpLocation = FMath::Lerp(MoveDataBuffer[i].Location, MoveDataBuffer[i + 1].Location, interpAlpha);
+			FRotator interpRotation = FMath::Lerp(MoveDataBuffer[i].Rotation, MoveDataBuffer[i + 1].Rotation, interpAlpha);
+
+			//check if the interpolation is too far from the last move data to prevent interpolation from going crazy when there is a big delay between the server and client
+			if (FVector::Dist(interpLocation, MoveDataBuffer.Last().Location) > MaxClientLocationDeviation)
+			{
+				SetActorLocation(MoveDataBuffer.Last().Location);
+				SetActorRotation(interpRotation);
+				//clear so we don't get rubber banding effect
+				MoveDataBuffer.Empty();
+			}
+			else
+			{
+				SetActorLocation(interpLocation);
+				SetActorRotation(interpRotation);
+			}
+
+			return;
+		}
+	}
+
+	if (clientRenderTime > MoveDataBuffer.Last().TimeStamp)
+	{
+		SetActorLocation(MoveDataBuffer.Last().Location);
+		SetActorRotation(MoveDataBuffer.Last().Rotation);
 	}
 }
 

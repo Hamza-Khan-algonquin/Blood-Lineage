@@ -37,7 +37,9 @@ public:
     //Functions
     ARelicRunnersPlayerState();
     ~ARelicRunnersPlayerState();
+	void InitializeMetaStats(struct FSaveData MetaData);
 	void GiveStarterItems();
+	void RefreshStatsForNewLevel();
     UFUNCTION()
     void OnRep_SelectedClass();
 	UFUNCTION()
@@ -120,6 +122,8 @@ public:
 	UFUNCTION()
 	void OnRep_Ability();
 	UFUNCTION()
+	void OnRep_StatsChanged();
+	UFUNCTION()
 	void OnRep_PlayerGold();
 	UFUNCTION()
 	void OnRep_IsHost();
@@ -157,55 +161,58 @@ public:
 	int PlayerStrength;
 	UPROPERTY()
 	int PlayerIntelligence;
-	UPROPERTY()
-	int PlayerStartingLevel = 1;
-	UPROPERTY()
-	int PlayerStartingMaxHealth;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingMaxResource;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
+	int PlayerStartingMaxHealth;
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingArmor;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingDexterity;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingStrength;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingIntelligence;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
+	int PlayerStartingLevel;
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingGold;
 	UPROPERTY()
 	float HealthGranted;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingLuck;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingResourceRegen;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingPotionEfficiency;
 
 	UPROPERTY()
 	int PassiveResourceTime;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedHealth;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedArmor;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedDexterity;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedStrength;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int UpgradedIntelligence;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedHealth;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedArmor;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedDexterity;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedStrength;
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int BuffedIntelligence;
+
+	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
+	float IncreasedMovementSpeedFromAbility = 1;
 
 	UPROPERTY(Replicated)
 	bool bIsInvincible = false; 
@@ -213,22 +220,26 @@ public:
 	bool IsInvincible() const { return bIsInvincible; }
 	void SetInvincible(bool bNewInvincible) { bIsInvincible = bNewInvincible; } 
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_DeathState)
 	bool DeathState = false;
 
-	int MetaLevel;
-	int MetaXP;
-	int MetaXPToNextLevel;
-	int MetaXPGainInRun;
+	UFUNCTION()
+	void OnRep_DeathState();
 
 	UPROPERTY(Replicated)
+	int MetaLevel;
+	UPROPERTY(Replicated)
+	int MetaXP;
+	UPROPERTY(Replicated)
+	int MetaXPToNextLevel;
+	UPROPERTY(Replicated)
+	int MetaXPGainInRun;
+	UPROPERTY(Replicated)
 	int PlayerDeaths = 0;
-
-	int GetDeaths() { return PlayerDeaths; }
-
 	UPROPERTY(Replicated)
 	int EnemiesKilled = 0;
 
+	int GetDeaths() { return PlayerDeaths; }
 	int GetEnemiesKilled() { return EnemiesKilled; }
 
 	UPROPERTY(Replicated)
@@ -310,6 +321,14 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SpawnVFX(FVector Location, FRotator Rotation, FVector Scale, UNiagaraSystem* NiagaraAsset, bool IsAttached);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnStaticMesh(FVector Location, FRotator Rotation, FVector Scale, UStaticMesh* Mesh);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_DestroyAllStaticMeshes();
+
+	UPROPERTY()
+	TArray<UStaticMeshComponent*> SpawnedStaticMeshes;
 protected:
 
 
@@ -319,6 +338,7 @@ protected:
 	virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void CopyProperties(APlayerState* PlayerState) override;
+
 	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, struct FReplicationFlags* RepFlags) override;
 
     //Properties
