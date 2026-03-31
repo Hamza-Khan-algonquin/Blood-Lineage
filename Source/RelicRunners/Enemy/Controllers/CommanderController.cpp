@@ -162,9 +162,13 @@ void ACommanderController::Tick(float DeltaTime)
 	}
 	
 
-	if (AEnemyCharacter* enemyChar = Cast<AEnemyCharacter>(pawn))
+	
+
+		
+	
+	if(InactiveCheck())
 	{
-		if (GetWorld()->GetTimeSeconds() >= SpawnDelayAfterWorldStart && CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0)
+		if (AEnemyCharacter* enemyChar = Cast<AEnemyCharacter>(pawn))
 		{
 			//SetActorTickEnabled(false);
 			if (ShouldUpdateBoid)
@@ -172,7 +176,7 @@ void ACommanderController::Tick(float DeltaTime)
 				GetWorldTimerManager().ClearTimer(SpawnTimer);
 				ShouldUpdateBoid = false;
 			}
-			
+
 
 			if (enemyChar->ShouldDieIfCommanderIsDone)
 			{
@@ -189,24 +193,22 @@ void ACommanderController::Tick(float DeltaTime)
 				{
 					BTComp->StopTree(EBTStopMode::Safe);
 				}
+
 				SetActorTickEnabled(false);
 			}
 		}
-
-		
-	}
-	else
-	{
-		if (GetWorld()->GetTimeSeconds() >= SpawnDelayAfterWorldStart && CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0)
+		else if (!IsValid(BTComp) || !BTComp->IsRunning())
 		{
-			if (!IsValid(BTComp) || !BTComp->IsRunning())
-			{
-				Destroy();
-				pawn->Destroy();
-			}
+			Destroy();
+			pawn->Destroy();
 		}
 	}
 	
+}
+
+inline bool ACommanderController::InactiveCheck()
+{
+	return GetWorld()->GetTimeSeconds() >= SpawnDelayAfterWorldStart && CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0;
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)

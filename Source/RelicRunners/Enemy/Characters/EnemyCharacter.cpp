@@ -17,6 +17,7 @@
 #include "RelicRunners/Enemy/EnemyStats.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
 
 void AEnemyCharacter::Destroy()
 {
@@ -376,6 +377,13 @@ void AEnemyCharacter::AddEnemyToDirector()
 
 bool AEnemyCharacter::GetIsActive()
 {
+
+	if (ACommanderController* commander = Cast<ACommanderController>(Controller))
+	{
+		//both need to be false for it to be inactive
+		return !commander->InactiveCheck() || IsActive;
+	}
+
 	return IsActive;
 }
 
@@ -394,19 +402,34 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	IsActive = newIsActive;
 	NetMultSetIsActive(newIsActive);
 
-	if (!newIsActive)
+	ACommanderController* commander = nullptr;
+
+	if (IsValid(Controller))
+	{
+		commander = Cast<ACommanderController>(Controller);
+	}
+
+	if (newIsActive)
 	{
 		ResetEnemy();
-		if (IsValid(Controller))
+
+		if (IsValid(commander))
 		{
-			if (ACommanderController* commander = Cast<ACommanderController>(Controller))
-			{
-				commander->ResetController();
-			}
+			commander->ResetController();
 		}
 	}
-	else
+	else 
 	{
+		if (IsValid(commander))
+		{
+			UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(commander->BrainComponent);
+
+			if (IsValid(BTComp))
+			{
+				BTComp->StopTree(EBTStopMode::Safe);
+			}
+		}
+		
 		OnDeactivated.Broadcast(this);
 	}
 

@@ -95,6 +95,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
+	UFUNCTION()
+	bool InactiveCheck();
 
 	UFUNCTION(BlueprintCallable)
 	void AddPawnEnemy(AEnemyPawn* enemy);
