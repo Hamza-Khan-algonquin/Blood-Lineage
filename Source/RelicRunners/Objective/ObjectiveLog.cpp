@@ -24,12 +24,15 @@ void UObjectiveLog::AddObjective(UObjectiveItemData* Parent, UObjectiveItemData*
 {
     if (!IsValid(Parent) || !IsValid(NewChild) || !ObjectiveTreeView) return;
 
-    //Add the new data to the top of the list
+    if (Parent->SubObjectives.Contains(NewChild))
+    {
+        UpdateObjective(NewChild);
+        return;
+    }
+
     Parent->SubObjectives.Insert(NewChild, 0);
 
     ObjectiveTreeView->RequestRefresh();
-
-    //Expand the root so the objectives are visible immediately
     ObjectiveTreeView->SetItemExpansion(Parent, true);
 }
 
