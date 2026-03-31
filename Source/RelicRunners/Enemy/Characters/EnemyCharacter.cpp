@@ -16,6 +16,12 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/Enemy/EnemyStats.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include "RelicRunners/Enemy/Controllers/CommanderController.h"
+
+void AEnemyCharacter::Destroy()
+{
+	Super::Destroy();
+}
 
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
 {
@@ -68,7 +74,7 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 {
 	if (!HasAuthority())
 	{
-		return 0;
+		//return 0;
 	}
 
 	//call the super for important stuff
@@ -344,6 +350,7 @@ void AEnemyCharacter::ResetEnemy()
 {
 	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
 	EnemyStatsComponent->SetRemainingStunTime(0.f);
+	
 }
 
 void AEnemyCharacter::AddEnemyToDirector()
@@ -389,8 +396,18 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 
 	if (!newIsActive)
 	{
-		OnDeactivated.Broadcast(this);
 		ResetEnemy();
+		if (IsValid(Controller))
+		{
+			if (ACommanderController* commander = Cast<ACommanderController>(Controller))
+			{
+				commander->ResetController();
+			}
+		}
+	}
+	else
+	{
+		OnDeactivated.Broadcast(this);
 	}
 
 	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);

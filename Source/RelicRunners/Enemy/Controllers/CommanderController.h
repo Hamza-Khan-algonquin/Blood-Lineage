@@ -83,14 +83,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MinDistanceFromPlayer;
 
+	bool ShouldUpdateBoid;
+
 protected:
 	bool IsTargeting;
 public: 
 	ACommanderController();
 	~ACommanderController();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
+	void ResetController();
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
 
 	UFUNCTION(BlueprintCallable)
 	void AddPawnEnemy(AEnemyPawn* enemy);

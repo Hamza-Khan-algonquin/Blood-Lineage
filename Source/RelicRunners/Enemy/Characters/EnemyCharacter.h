@@ -129,6 +129,8 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMultSetIsActive(bool newIsActive);
 
+	void Destroy();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

@@ -93,7 +93,7 @@ protected:
 	TSubclassOf<class AItemActor> ItemActorClass;
 
 	//interface implementation variable
-	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite, ReplicatedUsing = "OnRep_IsActive")
 	bool IsActive = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool SetControllerActiveStatus = true;
@@ -164,6 +164,9 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMultSetIsActive(bool newIsActive);
+
+	UFUNCTION()
+	void OnRep_IsActive();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
