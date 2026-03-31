@@ -23,203 +23,221 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!CurrentActorInfo) return;
+	if (!CurrentActorInfo) return;
 
-    UWorld* World = GetWorld();
-    if (!World) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
 
-    if (World->GetTimeSeconds() - LastUseTime < CooldownTimer)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+	if (World->GetTimeSeconds() - LastUseTime < CooldownTimer)
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
 
+	PlayAbilityCastSound(ActorInfo);
 
-    PlayAbilityCastSound(ActorInfo);
+	AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
+	ACharacter* OwnerChar = Cast<ACharacter>(AvatarActor);
+	if (!OwnerChar)
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
 
+	if (OwnerChar->GetWorld()->GetTimeSeconds() - LastUseTime < CooldownDuration)
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
 
-    AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
-    ACharacter* OwnerChar = Cast<ACharacter>(AvatarActor);
-    if (!OwnerChar)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+	FVector BaseLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 100.f + FVector(0, 0, 50);
+	FVector Forward = AvatarActor->GetActorForwardVector();
 
+	ActiveProjectiles.Empty();
 
-    if (OwnerChar->GetWorld()->GetTimeSeconds() - LastUseTime < CooldownDuration)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+	for (int i = 0; i < NumProjectiles; i++)
+	{
+		float Alpha = (float)i / (NumProjectiles - 1);
+		float YawOffset = FMath::Lerp(-ConeAngle * 0.5f, ConeAngle * 0.5f, Alpha);
 
-    AActor* Avatar = ActorInfo->AvatarActor.Get();
+		FRotator Rot = Forward.Rotation();
+		Rot.Yaw += YawOffset;
 
-    FVector BaseLocation = Avatar->GetActorLocation() + Avatar->GetActorForwardVector() * 100.f + FVector(0, 0, 50);
-    FVector Forward = Avatar->GetActorForwardVector();
+		FMarkProjectile P;
 
-    ActiveProjectiles.Empty();
+		P.Location = BaseLocation;
+		P.PreviousLocation = BaseLocation;
+		P.Velocity = Rot.Vector() * ProjectileSpeed;
 
-    for (int i = 0; i < NumProjectiles; i++)
-    {
-        float Alpha = (float)i / (NumProjectiles - 1);
-        float YawOffset = FMath::Lerp(-ConeAngle * 0.5f, ConeAngle * 0.5f, Alpha);
+		if (ProjectileActorClass)
+		{
+			FActorSpawnParameters Params;
+			Params.Owner = AvatarActor;
+			Params.Instigator = OwnerChar;
 
-        FRotator Rot = Forward.Rotation();
-        Rot.Yaw += YawOffset;
+			P.Actor = World->SpawnActor<AActor>(
+				ProjectileActorClass,
+				P.Location,
+				P.Velocity.Rotation(),
+				Params
+			);
+		}
 
-        FMarkProjectile P;
+		ActiveProjectiles.Add(P);
+	}
 
-        P.Location = BaseLocation;
-        P.PreviousLocation = BaseLocation;
-        P.Velocity = Rot.Vector() * ProjectileSpeed;
+	if (AbilityAnim)
+	{
+		PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
+	}
 
-        // Spawn mesh
-        if (ProjectileMeshAsset)
-        {
-            P.Mesh = NewObject<UStaticMeshComponent>(Avatar);
-            P.Mesh->RegisterComponent();
-            P.Mesh->SetStaticMesh(ProjectileMeshAsset);
-            P.Mesh->SetWorldLocation(P.Location);
-            P.Mesh->SetWorldRotation(P.Velocity.Rotation());
-            P.Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        }
+	ARelicRunnersPlayerState* PS = nullptr;
+	if (ActorInfo->PlayerController.IsValid())
+	{
+		PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+	}
 
-        ActiveProjectiles.Add(P);
-    }
+	float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
 
-    if (AbilityAnim)
-    {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
-    }
+	if (!PS || PS->GetPlayerResource() < FinalManaCost)
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
 
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (ActorInfo->PlayerController.IsValid())
-    {
-        PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
+	PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
+	PS->UpdateRemoteHUDResource();
 
-    float FinalManaCost = CalculateAbilityMana(AvatarActor, Cost);
+	World->GetTimerManager().SetTimer(
+		ProjectileTickTimer,
+		this,
+		&UMarkOfTheHunt::ProjectileTick,
+		0.02f,
+		true
+	);
 
-    if (!PS || PS->GetPlayerResource() < FinalManaCost)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
+	World->GetTimerManager().SetTimer(
+		DurationTimer,
+		[this, Handle, ActorInfo, ActivationInfo]()
+		{
+			EndAbility(Handle, ActorInfo, ActivationInfo, false, false);
+		},
+		Duration,
+		false
+	);
 
-    // Spend resource
-    PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
-    PS->UpdateRemoteHUDResource();
-
-    World->GetTimerManager().SetTimer(ProjectileTickTimer,this, &UMarkOfTheHunt::ProjectileTick,0.02f,true);
-
-    World->GetTimerManager().SetTimer(DurationTimer, [this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, false, false);},Duration,false);
-
-    LastUseTime = World->GetTimeSeconds();
+	LastUseTime = World->GetTimeSeconds();
 }
 
 void UMarkOfTheHunt::ProjectileTick()
 {
-    //if (!CurrentActorInfo) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
 
-    UWorld* World = GetWorld();
-    if (!World) return;
+	for (int i = ActiveProjectiles.Num() - 1; i >= 0; i--)
+	{
+		FMarkProjectile& P = ActiveProjectiles[i];
 
-    for (int i = ActiveProjectiles.Num() - 1; i >= 0; i--)
-    {
-        FMarkProjectile& P = ActiveProjectiles[i];
+		P.Elapsed += 0.02f;
 
-        P.Elapsed += 0.02f;
+		// Gravity
+		P.Velocity.Z -= ProjectileGravity * 0.02f;
 
-        // Gravity
-        P.Velocity.Z -= ProjectileGravity * 0.02f;
+		P.PreviousLocation = P.Location;
+		P.Location += P.Velocity * 0.02f;
 
-        P.PreviousLocation = P.Location;
-        P.Location += P.Velocity * 0.02f;
+		if (P.Actor)
+		{
+			P.Actor->SetActorLocation(P.Location);
+			P.Actor->SetActorRotation(P.Velocity.Rotation());
+		}
 
-        if (P.Mesh)
-        {
-            P.Mesh->SetWorldLocation(P.Location);
-            P.Mesh->SetWorldRotation(P.Velocity.Rotation());
-        }
+		// Collision
+		TArray<FHitResult> Hits;
+		FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-        // Collision
-        TArray<FHitResult> Hits;
-        FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
+		bool bHit = World->SweepMultiByChannel(
+			Hits,
+			P.PreviousLocation,
+			P.Location,
+			FQuat::Identity,
+			ECC_GameTraceChannel1,
+			Sphere
+		);
 
-        bool bHit = World->SweepMultiByChannel(Hits,P.PreviousLocation, P.Location, FQuat::Identity, ECC_GameTraceChannel1, Sphere);
+		for (const FHitResult& Hit : Hits)
+		{
+			AActor* HitActor = Hit.GetActor();
+			if (!HitActor) continue;
 
-        for (const FHitResult& Hit : Hits)
-        {
-            AActor* HitActor = Hit.GetActor();
-            if (!HitActor) continue;
+			if (P.HitActors.Contains(HitActor))
+				continue;
 
-            if (P.HitActors.Contains(HitActor))
-                continue;
+			if (HitActor->ActorHasTag("Enemy"))
+			{
+				CalculateAbilityDamage(GetAvatarActorFromActorInfo(), HitActor, Damage);
 
-            if (HitActor->ActorHasTag("Enemy"))
-            {
-                DrawDebugSphere(World, Hit.ImpactPoint, 25.f, 12, FColor::Red, false, 1.f);
+				P.HitActors.Add(HitActor);
 
-                CalculateAbilityDamage(GetAvatarActorFromActorInfo(), HitActor, Damage);
+				if (P.HitActors.Num() >= MaxPierces)
+				{
+					if (P.Actor)
+						P.Actor->Destroy();
 
-                P.HitActors.Add(HitActor);
+					ActiveProjectiles.RemoveAt(i);
+					break;
+				}
+			}
+		}
 
-                if (P.HitActors.Num() >= MaxPierces)
-                {
-                    if (P.Mesh)
-                        P.Mesh->DestroyComponent();
+		// Lifetime
+		if (P.Elapsed >= ProjectileLifetime)
+		{
+			if (P.Actor)
+				P.Actor->Destroy();
 
-                    ActiveProjectiles.RemoveAt(i);
-                    break;
-                }
-            }
-        }
+			ActiveProjectiles.RemoveAt(i);
+		}
+	}
 
-        // Lifetime
-        if (P.Elapsed >= ProjectileLifetime)
-        {
-            if (P.Mesh)
-            {
-                P.Mesh->DestroyComponent();
-            }
-
-            ActiveProjectiles.RemoveAt(i);
-        }
-    }
-
-    if (ActiveProjectiles.Num() == 0)
-    {
-        World->GetTimerManager().ClearTimer(ProjectileTickTimer);
-    }
+	if (ActiveProjectiles.Num() == 0)
+	{
+		World->GetTimerManager().ClearTimer(ProjectileTickTimer);
+	}
 }
 
 void UMarkOfTheHunt::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
-    if (ActorInfo && ActorInfo->AvatarActor.IsValid())
-    {
-        ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
+	if (ActorInfo && ActorInfo->AvatarActor.IsValid())
+	{
+		UWorld* World = ActorInfo->AvatarActor->GetWorld();
+		if (World)
+		{
+			World->GetTimerManager().ClearTimer(ProjectileTickTimer);
+			World->GetTimerManager().ClearTimer(DurationTimer);
 
-        UWorld* World = ActorInfo->AvatarActor->GetWorld();
-        if (World)
-        {
-            World->GetTimerManager().ClearTimer(ProjectileTickTimer);
-            World->GetTimerManager().ClearTimer(DurationTimer);
-            if (!bWasCancelled)
-            {
-                LastUseTime = World->GetTimeSeconds();
+			for (FMarkProjectile& P : ActiveProjectiles)
+			{
+				if (P.Actor)
+					P.Actor->Destroy();
+			}
 
-                if (ActorInfo->IsLocallyControlled())
-                {
-                    if (RPC)
-                    {
-                        RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
+			ActiveProjectiles.Empty();
 
-                    }
-                }
-            }
-        }
-    }
+			if (!bWasCancelled)
+			{
+				LastUseTime = World->GetTimeSeconds();
+
+				if (ActorInfo->IsLocallyControlled())
+				{
+					if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))
+					{
+						RPC->PlayerHUD->StartUtilityCooldown(CooldownTimer);
+					}
+				}
+			}
+		}
+	}
 }
