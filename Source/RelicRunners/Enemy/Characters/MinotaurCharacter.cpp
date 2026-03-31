@@ -44,7 +44,7 @@ void AMinotaurCharacter::DelaySpikeCheck(float delay, float raduis, float damage
 			for (FVector location : locations)
 			{
 #if WITH_EDITOR
-				DrawDebugSphere(GetWorld(), location, raduis, 12, FColor::Red, 2, 1);
+				DrawDebugSphere(GetWorld(), location, raduis, 12, FColor::Red,false, 2, 1);
 #endif
 				TArray<AActor*> actorToIngore;
 				TArray<AActor*> hitActors;

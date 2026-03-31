@@ -72,7 +72,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
                     return;
                 }
                 PS->SetInvincible(true);
-                PS->Multicast_SpawnVFX(FVector(0), FRotator(0, 0, 0), FVector(1.f), AbilityVFX, true);
+                PS->Multicast_SpawnVFX(FVector(0, 0, 50), FRotator(0, 0, 0), FVector(1.f), AbilityVFX, true);
 
                 // Spend resource
                 PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
