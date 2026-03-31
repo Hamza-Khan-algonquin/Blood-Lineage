@@ -33,6 +33,13 @@ public:
 	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
 	void CheckGameOver();
 	void TriggerPostGameForAll();
+
+	float GetTimeSinceLastPawnSetup() const;
+	void OnAllPawnsSpawned();
+	void RecordPawnReadyTime(APlayerController* PC);
+	UPROPERTY()
+	TMap<APlayerController*, float> ControllerPawnReadyTimes;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ANemesisCharacter> NemesisCharacterClass;
 
