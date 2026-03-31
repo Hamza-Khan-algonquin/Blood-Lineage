@@ -178,11 +178,7 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
-
-		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
-		{
-			GM->RecordPawnReadyTime(this);
-		}
+		Server_RecordPawnReadyTime();
 	}
 
 	if (HasAuthority())
@@ -1049,6 +1045,14 @@ void ARelicRunnersPlayerController::Client_UpdatePayloadUI_Implementation(float 
 void ARelicRunnersPlayerController::Client_UpdatePandoraUI_Implementation(float NewPercent, const FString& NewTimeText)
 {
 	Internal_SetPandoraUI(NewPercent, NewTimeText);
+}
+
+void ARelicRunnersPlayerController::Server_RecordPawnReadyTime_Implementation()
+{
+	if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+	{
+		GM->RecordPawnReadyTime(this);
+	}
 }
 
 void ARelicRunnersPlayerController::Internal_SetPandoraUI(float NewPercent, const FString& NewTimeText)

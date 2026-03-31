@@ -202,4 +202,5 @@ float ARelicRunnersGameMode::GetTimeSinceLastPawnSetup() const
 void ARelicRunnersGameMode::OnAllPawnsSpawned()
 {
     UE_LOG(LogTemp, Warning, TEXT("All Pawns Acknowledged! Starting game logic..."));
+    LastTimeStamp = GetWorld()->GetTimeSeconds();
 }

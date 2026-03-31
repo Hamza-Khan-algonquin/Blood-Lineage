@@ -16,6 +16,9 @@
 #include "RelicRunners/Enemy/FlockComponent.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <Net/UnrealNetwork.h>
+#include "Kismet/GameplayStatics.h"
+#include "RelicRunners/RelicRunnersGameMode.h"
+
 
 ACommanderController::ACommanderController()
 {
@@ -332,7 +335,9 @@ void ACommanderController::SpawnPawnEnemy()
 
 void ACommanderController::SpawmLoop()
 {
-	if (!GetWorld() || GetWorld()->GetTimeSeconds() <= SpawnDelayAfterWorldStart)
+	ARelicRunnersGameMode* GM = Cast<ARelicRunnersGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
+	if (!GetWorld() || !GM || GM->LastTimeStamp == -1 || GetWorld()->GetTimeSeconds() <= GM->LastTimeStamp + SpawnDelayAfterWorldStart)
 	{
 		return;
 	}

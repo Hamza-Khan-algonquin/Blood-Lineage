@@ -37,6 +37,7 @@ public:
 	float GetTimeSinceLastPawnSetup() const;
 	void OnAllPawnsSpawned();
 	void RecordPawnReadyTime(APlayerController* PC);
+	float LastTimeStamp = -1;
 	UPROPERTY()
 	TMap<APlayerController*, float> ControllerPawnReadyTimes;
 
