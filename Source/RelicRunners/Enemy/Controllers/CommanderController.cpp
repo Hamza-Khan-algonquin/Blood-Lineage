@@ -209,7 +209,7 @@ void ACommanderController::Tick(float DeltaTime)
 	
 }
 
-inline bool ACommanderController::InactiveCheck()
+bool ACommanderController::InactiveCheck()
 {
 	return GetWorld()->GetTimeSeconds() >= SpawnDelayAfterWorldStart && CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0;
 }
