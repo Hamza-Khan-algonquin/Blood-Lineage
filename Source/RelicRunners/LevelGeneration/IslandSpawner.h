@@ -19,6 +19,9 @@ public:
 
 	void UpdateControllerStageUI(int StageNumber);
 
+	FTimerHandle UIDelayHandle;
+	FTimerHandle UIZoneDelayHandle;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GenerationValues")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
 	void SyncObjectiveToSinglePlayer(class ARelicRunnersPlayerController* TargetPC);
