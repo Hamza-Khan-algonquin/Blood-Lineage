@@ -54,7 +54,8 @@
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include <ClassData.h>
 #include "ClassInfo.h"
-
+#include "InventoryDragVisual.h"
+#include "Layout/Geometry.h" 
 
 void UInventory::NativeConstruct()
 {
@@ -65,14 +66,7 @@ void UInventory::NativeConstruct()
     InventoryItemOptionsClass = LoadClass<UInventoryItemOptions>(nullptr, TEXT("/Game/Inventory/BP_InventoryItemOptions.BP_InventoryItemOptions_C"));
     InventorySortingOptionsClass = LoadClass<UInventorySortingOptions>(nullptr, TEXT("/Game/Inventory/BP_InventorySortingOptions.BP_InventorySortingOptions_C"));
 
-    if (B_Helmet) B_Helmet->OnClicked.AddDynamic(this, &UInventory::HelmetSlotClicked);
-    if (B_Arms) B_Arms->OnClicked.AddDynamic(this, &UInventory::ArmsSlotClicked);
-    if (B_Upper) B_Upper->OnClicked.AddDynamic(this, &UInventory::UpperSlotClicked);
-    if (B_Lower) B_Lower->OnClicked.AddDynamic(this, &UInventory::LowerSlotClicked);
-    if (B_Mainhand) B_Mainhand->OnClicked.AddDynamic(this, &UInventory::MainhandSlotClicked);
-    if (B_Necklace) B_Necklace->OnClicked.AddDynamic(this, &UInventory::NecklaceSlotClicked);
     if (B_SortingType) B_SortingType->OnClicked.AddDynamic(this, &UInventory::SortingTypeClicked);
-    
     if (B_AutoEquip) B_AutoEquip->OnClicked.AddDynamic(this, &UInventory::OnAutoEquip);
 
     //Vendor
@@ -80,9 +74,6 @@ void UInventory::NativeConstruct()
     if (ForgeCanvas) ForgeCanvas->SetVisibility(ESlateVisibility::Collapsed);
     if (VendorSlots) VendorSlots->ClearListItems();
     if (FuseButton) FuseButton->OnClicked.AddDynamic(this, &UInventory::OnFuseButtonPressed);
-    if (B_ForgeItem1) B_ForgeItem1->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItem1Clicked");
-    if (B_ForgeItem2) B_ForgeItem2->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItem2Clicked");
-    if (B_ForgeItemResult) B_ForgeItemResult->OnMouseButtonDownEvent.BindUFunction(this, "OnForgeItemResultClicked");
 
     if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
@@ -233,31 +224,26 @@ void UInventory::RefreshEquippedUI()
 
     for (const FString& Type : AllItemTypes)
     {
-        UpdateButtonWithTooltip(nullptr, Type, nullptr, FLinearColor::Gray);
+        UpdateSlotVisuals(nullptr, Type, nullptr, FLinearColor::Gray);
     }
 
-    for (const FEquippedItemEntry& Pair : InventoryComponent->EquippedItems)
+    for (const FEquippedItemEntry& Entry : InventoryComponent->EquippedItems)
     {
-        UItemObject* Item = Pair.Item;
-        const FString& ItemType = Pair.ItemType;
+        UItemObject* Item = Entry.Item;
+        const FString& ItemType = Entry.ItemType;
 
         if (!Item) continue;
 
         if (TooltipWidgetClass)
         {
-            if (UInventoryToolTip* ToolTip = CreateWidget<UInventoryToolTip>(GetWorld(), TooltipWidgetClass))
+            UInventoryToolTip* ToolTip = CreateWidget<UInventoryToolTip>(this, TooltipWidgetClass);
+            if (ToolTip)
             {
                 FLinearColor RarityColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
 
-                //Avoid comparing the item to itself
-                UItemObject* EquippedItem = InventoryComponent->GetEquippedItemByType(ItemType);
-                if (EquippedItem == Item)
-                {
-                    EquippedItem = nullptr;
-                }
+                ToolTip->Setup(Item, RarityColor, nullptr);
 
-                ToolTip->Setup(Item, RarityColor, EquippedItem);
-                UpdateButtonWithTooltip(Item, ItemType, ToolTip, RarityColor);
+                UpdateSlotVisuals(Item, ItemType, ToolTip, RarityColor);
             }
         }
     }
@@ -267,53 +253,60 @@ void UInventory::RefreshEquippedUI()
 
 UInventory::FSlotUIComponents UInventory::GetUIComponentsForItemType(const FString& ItemType)
 {
-    if (ItemType == "Helmet") return { B_Helmet, B_Helmet1, I_Helmet, ItemFrameHelmet, TB_LevelHelmet, B_LevelHelmet };
-    if (ItemType == "Arms") return { B_Arms, B_Arms1, I_Arms, ItemFrameArms, TB_LevelArms, B_LevelArms };
-    if (ItemType == "Upper") return { B_Upper, B_Upper1, I_Upper, ItemFrameUpper, TB_LevelUpper, B_LevelUpper };
-    if (ItemType == "Lower") return { B_Lower, B_Lower1, I_Lower, ItemFrameLower, TB_LevelLower, B_LevelLower };
-    if (ItemType == "Necklace") return { B_Necklace, B_Necklace1, I_Necklace, ItemFrameNecklace, TB_LevelNecklace, B_LevelNecklace };
+    if (ItemType == "Helmet") return { B_Helmet1, I_Helmet, ItemFrameHelmet, TB_LevelHelmet, B_LevelHelmet };
+    if (ItemType == "Arms") return { B_Arms1, I_Arms, ItemFrameArms, TB_LevelArms, B_LevelArms };
+    if (ItemType == "Upper") return { B_Upper1, I_Upper, ItemFrameUpper, TB_LevelUpper, B_LevelUpper };
+    if (ItemType == "Lower") return { B_Lower1, I_Lower, ItemFrameLower, TB_LevelLower, B_LevelLower };
+    if (ItemType == "Necklace") return { B_Necklace1, I_Necklace, ItemFrameNecklace, TB_LevelNecklace, B_LevelNecklace };
     if (ItemType == "Greatsword"
         || ItemType == "Sword"
         || ItemType == "Bow"
-        || ItemType == "Staff") return { B_Mainhand, B_Mainhand1, I_Mainhand, ItemFrameMainhand, TB_LevelMainhand, B_LevelMainhand };
+        || ItemType == "Staff") return { B_Mainhand1, I_Mainhand, ItemFrameMainhand, TB_LevelMainhand, B_LevelMainhand };
 
     return { nullptr, nullptr, nullptr };
 }
 
-void UInventory::UpdateButtonWithTooltip(UItemObject* Item, const FString& itemType, UInventoryToolTip* ToolTip, const FLinearColor& Color)
+void UInventory::UpdateSlotVisuals(UItemObject* Item, const FString& ItemType, UInventoryToolTip* ToolTip, const FLinearColor& Color)
 {
-    const FString& ItemType = itemType;
+    auto Components = GetUIComponentsForItemType(ItemType);
 
-    auto Components = GetUIComponentsForItemType(itemType);
-    if (!Components.Border || !Components.Button || !Components.Image || !Components.LevelText) return;
+    if (!Components.Border || !Components.Image || !Components.ItemFrame) return;
 
-    Components.Button->SetToolTip(ToolTip);
+    const bool bHasItem = (Item != nullptr);
 
-    const bool HasEquipped = (ToolTip != nullptr);
-    const float Opacity = HasEquipped ? 1.0f : 0.3f;
-    const FLinearColor Tint = HasEquipped ? Color : FLinearColor(0.3f, 0.3f, 0.3f, Opacity);
-    Components.Border->SetBrushColor(Tint);
-    Components.ItemFrame->SetBrushTintColor(Color);
-    Components.Image->SetColorAndOpacity(FLinearColor(1, 1, 1, Opacity));
-    if (Item && Item->ItemData.Icon)
+    const FLinearColor FrameColor = bHasItem ? Color : FLinearColor(0.2f, 0.2f, 0.2f, 1.f);
+    Components.ItemFrame->SetBrushTintColor(FrameColor);
+    Components.Border->SetBrushColor(FrameColor);
+
+    if (bHasItem && Item->ItemData.Icon)
     {
         Components.Image->SetBrushFromTexture(Item->ItemData.Icon, true);
-        FVector2D NewSize(75.f, 75.f);
-        Components.Image->SetDesiredSizeOverride(NewSize);
-    }
 
-    Components.LevelText->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-
-    if (Item)
-    {
-        Components.LevelText->SetText(FText::AsNumber(Item->GetLevel()));
-        Components.LevelBorder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-        Components.LevelBorder->SetBrushColor(FLinearColor(0.8, 0.8, 0.6, 1));
+        Components.Image->SetColorAndOpacity(FLinearColor::White);
     }
     else
     {
-        Components.LevelText->SetText(FText::FromString(""));
-        Components.LevelBorder->SetVisibility(ESlateVisibility::Collapsed);
+        Components.Image->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.3f));
+    }
+
+    FVector2D ForcedSize(75.f, 75.f);
+    Components.Image->SetDesiredSizeOverride(ForcedSize);
+
+    Components.Border->SetToolTip(ToolTip);
+
+    if (Components.LevelBorder && Components.LevelText)
+    {
+        if (bHasItem)
+        {
+            Components.LevelText->SetText(FText::AsNumber(Item->GetLevel()));
+            Components.LevelBorder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+            Components.LevelBorder->SetBrushColor(FLinearColor(0.8f, 0.8f, 0.6f, 1.0f));
+        }
+        else
+        {
+            Components.LevelBorder->SetVisibility(ESlateVisibility::Collapsed);
+        }
     }
 }
 
@@ -485,21 +478,138 @@ void UInventory::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
     }
 }
 
+FSlotResult UInventory::GetSlotUnderCursor(FVector2D CursorPos)
+{
+    TMap<UBorder*, FString> EquippedBorders;
+    EquippedBorders.Add(B_Helmet1, "Helmet");
+    EquippedBorders.Add(B_Upper1, "Upper");
+    EquippedBorders.Add(B_Lower1, "Lower");
+    EquippedBorders.Add(B_Arms1, "Arms");
+    EquippedBorders.Add(B_Necklace1, "Necklace");
+
+    for (auto& Elem : EquippedBorders)
+    {
+        if (Elem.Key && Elem.Key->GetCachedGeometry().IsUnderLocation(CursorPos))
+        {
+            UItemObject* FoundItem = InventoryComponent->GetEquippedItemByType(Elem.Value);
+            return { FoundItem, Elem.Value, Elem.Key };
+        }
+    }
+
+    if (B_ForgeItem1 && B_ForgeItem1->GetCachedGeometry().IsUnderLocation(CursorPos))
+    {
+        return { InventoryComponent->ForgeItemLeft, TEXT("Forge0"), B_ForgeItem1 };
+    }
+    if (B_ForgeItem2 && B_ForgeItem2->GetCachedGeometry().IsUnderLocation(CursorPos))
+    {
+        return { InventoryComponent->ForgeItemRight, TEXT("Forge1"), B_ForgeItem2 };
+    }
+    if (B_ForgeItemResult && B_ForgeItemResult->GetCachedGeometry().IsUnderLocation(CursorPos))
+    {
+        return { InventoryComponent->ForgeItemResult, TEXT("Forge2"), B_ForgeItemResult };
+    }
+
+    return FSlotResult();
+}
+
 FReply UInventory::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
     if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
     {
-        FEventReply EventReply = UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton);
-        return EventReply.NativeReply;
+        FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
+        auto SlotInfo = GetSlotUnderCursor(CursorPos);
+
+        if (SlotInfo.Item)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Inventory: Mouse Down on %s"), *SlotInfo.SlotTag);
+
+            bIsPressed = true;
+            bIsDragging = false;
+            PressedTime = GetWorld()->GetRealTimeSeconds();
+            PendingDragItem = SlotInfo.Item;
+            PendingSourceTag = SlotInfo.SlotTag;
+
+            FEventReply Reply = UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton);
+            return Reply.NativeReply;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Log, TEXT("Inventory: Mouse Down but no item found at cursor."));
+        }
+    }
+    return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+}
+
+void UInventory::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
+{
+    if (!PendingDragItem) return;
+
+    bIsDragging = true;
+    UInventoryDragOperation* DragOp = NewObject<UInventoryDragOperation>();
+    DragOp->Payload = PendingDragItem;
+    DragOp->Pivot = EDragPivot::CenterCenter;
+
+    if (PendingSourceTag.StartsWith("Forge"))
+        DragOp->FromWhere = UInventoryDragOperation::Locations::Forge;
+    else
+        DragOp->FromWhere = UInventoryDragOperation::Locations::Equipped;
+
+    if (DragVisualClass)
+    {
+        UInventoryDragVisual* VisualWidget = CreateWidget<UInventoryDragVisual>(this, DragVisualClass);
+        if (VisualWidget)
+        {
+            VisualWidget->OnSetupVisual(PendingDragItem);
+            VisualWidget->ForceLayoutPrepass();
+            DragOp->DefaultDragVisual = VisualWidget;
+        }
     }
 
-    return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+    OutOperation = DragOp;
 }
 
 FReply UInventory::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-    Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
+    if (!bIsPressed) return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
 
+    bIsPressed = false;
+    float HeldDuration = GetWorld()->GetRealTimeSeconds() - PressedTime;
+
+    if (!bIsDragging && HeldDuration < 0.25f && PendingDragItem)
+    {
+        if (PendingSourceTag == "Helmet")   HelmetSlotClicked();
+        else if (PendingSourceTag == "Upper")    UpperSlotClicked();
+        else if (PendingSourceTag == "Lower")    LowerSlotClicked();
+        else if (PendingSourceTag == "Arms")     ArmsSlotClicked();
+        else if (PendingSourceTag == "Necklace") NecklaceSlotClicked();
+
+        else if (PendingSourceTag.StartsWith("Forge"))
+        {
+            FString IndexStr = PendingSourceTag.RightChop(5);
+            int ForgeIndex = FCString::Atoi(*IndexStr);
+
+            UItemObject* TargetItem = nullptr;
+            UBorder* TargetBorder = nullptr;
+
+            if (ForgeIndex == 0) { TargetItem = InventoryComponent->ForgeItemLeft; TargetBorder = B_ForgeItem1; }
+            else if (ForgeIndex == 1) { TargetItem = InventoryComponent->ForgeItemRight; TargetBorder = B_ForgeItem2; }
+            else if (ForgeIndex == 2) { TargetItem = InventoryComponent->ForgeItemResult; TargetBorder = B_ForgeItemResult; }
+
+            if (TargetItem && TargetBorder)
+            {
+                FItemOptionsUIConfig Config = (ForgeIndex == 2) ? FItemOptionsUIConfig::ForgeResultItem() : FItemOptionsUIConfig::ForgeItem();
+                CreateItemOptionsPopup(TargetItem, Config, TargetBorder->GetCachedGeometry());
+            }
+        }
+
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Inventory: Clicked slot with untagged source: %s"), *PendingSourceTag);
+        }
+    }
+
+    bIsDragging = false;
+    PendingDragItem = nullptr;
     return FReply::Handled();
 }
 
@@ -689,41 +799,41 @@ void UInventory::PlayUISound(USoundBase* Sound)
 
 void UInventory::HelmetSlotClicked()
 {
-    if (B_Helmet)
+    if (B_Helmet1)
     {
-        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Helmet"), B_Helmet->GetCachedGeometry());
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Helmet"), B_Helmet1->GetCachedGeometry());
     }
 }
 
 void UInventory::ArmsSlotClicked()
 {
-    if (B_Arms)
+    if (B_Arms1)
     {
-        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Arms"), B_Arms->GetCachedGeometry());
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Arms"), B_Arms1->GetCachedGeometry());
     }
 }
 
 void UInventory::UpperSlotClicked()
 {
-    if (B_Upper)
+    if (B_Upper1)
     {
-        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Upper"), B_Upper->GetCachedGeometry());
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Upper"), B_Upper1->GetCachedGeometry());
     }
 }
 
 void UInventory::LowerSlotClicked()
 {
-    if (B_Lower)
+    if (B_Lower1)
     {
-        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Lower"), B_Lower->GetCachedGeometry());
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Lower"), B_Lower1->GetCachedGeometry());
     }
 }
 
 void UInventory::NecklaceSlotClicked()
 {
-    if (B_Necklace)
+    if (B_Necklace1)
     {
-        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Necklace"), B_Necklace->GetCachedGeometry());
+        OnEquippedSlotClick(InventoryComponent->GetEquippedItemByType("Necklace"), B_Necklace1->GetCachedGeometry());
     }
 }
 
@@ -849,11 +959,14 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     {
         EquipItem(DraggedItem);
     }
-    else if (InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory || 
+            InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Equipped ||
+            InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Forge)
     {
         ForgeItem(DraggedItem);
     }
-    else if (InsideShop && ShopCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
+    else if (InsideShop && ShopCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory ||
+            InsideShop && ShopCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Equipped)
     {
         SellItem(DraggedItem);
     }
@@ -861,9 +974,18 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
     {
         BuyItem(DraggedItem);
     }
+    else if (InsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Equipped)
+    {
+        UnequipItem(DraggedItem);
+    }
     else if (InsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory)
     {
         return true;
+    }
+    else if (InsideInventory && DragOp->FromWhere == UInventoryDragOperation::Locations::Forge)
+    {
+        RemoveForgeItem(DraggedItem);
+        InventoryComponent->AddItem(DraggedItem);
     }
     else
     {
@@ -886,10 +1008,34 @@ void UInventory::ForgeItem(UItemObject* Item)
     {
         CancelForgingAnimation();
     }
-
+    
+    UnequipItem(Item);
     InventoryComponent->Server_AddToForge(Item->GetUniqueID());
 
     UpdateForgeUI();
+}
+
+void UInventory::SetEquippedTooltip(UBorder* BorderWidget, FString ItemType)
+{
+    if (!BorderWidget || !InventoryComponent || !TooltipWidgetClass) return;
+
+    UItemObject* Item = InventoryComponent->GetEquippedItemByType(ItemType);
+
+    if (!Item)
+    {
+        BorderWidget->SetToolTip(nullptr);
+        return;
+    }
+
+    UInventoryToolTip* ToolTip = CreateWidget<UInventoryToolTip>(this, TooltipWidgetClass);
+    if (ToolTip)
+    {
+        const FLinearColor RarityColor = ItemStats::GetRarityDataMap()[Item->GetRarity()].Color;
+
+        ToolTip->Setup(Item, RarityColor, nullptr);
+
+        BorderWidget->SetToolTip(ToolTip);
+    }
 }
 
 void UInventory::SetForgeTooltip(UImage* IconWidget, UBorder* BorderWidget, UItemObject* Item)
@@ -988,7 +1134,7 @@ void UInventory::CompleteForgeSequence()
         TB_Odds->SetFont(FontInfo);
 
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(TEXT("Quality Brittled")));
+        TB_Odds->SetText(FText::FromString(TEXT("Quality Decreased")));
     }
 
     if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity2)
@@ -1018,7 +1164,7 @@ void UInventory::CompleteForgeSequence()
         TB_Odds->SetFont(FontInfo);
 
         TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(TEXT("Quality Polished")));
+        TB_Odds->SetText(FText::FromString(TEXT("Quality Increased")));
     }
 
     FinalColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color;

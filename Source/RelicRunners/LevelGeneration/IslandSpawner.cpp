@@ -237,6 +237,7 @@ void AIslandSpawner::GenerateNewIsland()
 		}
 		Islands[CurrentSpawnedIsland]->ActivateIsland();
 	}
+	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::ChangeIslandCamera(int islandIndex)

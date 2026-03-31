@@ -105,6 +105,20 @@ struct FItemOptionsUIConfig
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FSlotResult {
+	GENERATED_BODY()
+
+	class UItemObject* Item = nullptr;
+	FString SlotTag = "";
+	class UBorder* SlotBorder = nullptr;
+
+	FSlotResult() : Item(nullptr), SlotTag("") {}
+	FSlotResult(class UItemObject* InItem, FString InTag) : Item(InItem), SlotTag(InTag) {}
+	FSlotResult(class UItemObject* InItem, FString InTag, class UBorder* InBorder)
+		: Item(InItem), SlotTag(InTag), SlotBorder(InBorder) {}
+};
+
 enum class EInventorySorting : uint8;
 
 UCLASS()
@@ -116,12 +130,11 @@ public:
 	//Structs
 	struct FSlotUIComponents
 	{
-		class UButton* Button;
-		class UBorder* Border;
-		class UImage* Image;
-		class UImage* ItemFrame;
-		class UTextBlock* LevelText;
-		class UBorder* LevelBorder;
+		class UBorder* Border = nullptr;
+		class UImage* Image = nullptr;
+		class UImage* ItemFrame = nullptr;
+		class UTextBlock* LevelText = nullptr;
+		class UBorder* LevelBorder = nullptr;
 	};
 
 	//Properties
@@ -133,6 +146,8 @@ public:
 	TSubclassOf<class UInventoryItemOptions> InventoryItemOptionsClass;
 	UPROPERTY(EditAnywhere, Category = "Popup")
 	TSubclassOf<class UInventorySortingOptions> InventorySortingOptionsClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory | UI")
+	TSubclassOf<class UInventoryDragVisual> DragVisualClass;
 	class UBorder* CurrentHoveredBorder;
 	UPROPERTY()
 	class UStandardTooltip* StandardTooltip;
@@ -150,6 +165,14 @@ public:
 	float ForgeChance2;
 	float ForgeChance3;
 	int CycleCount;
+	bool bIsPressed = false;
+	bool bIsDragging = false;
+	float PressedTime = 0.0f;
+	UPROPERTY()
+	UItemObject* PendingDragItem = nullptr;
+	FString PendingSourceTag = "";
+	FVector2D DragOffset;
+
 	FTimerHandle FuseTimerHandle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PreviewActor")
 	TObjectPtr<UMaterialInstanceDynamic> PreviewActorMaterial;
@@ -181,7 +204,7 @@ public:
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
 	void UpdateForgeOdds(const FString& LeftRarity, const FString& RightRarity);
 	FSlotUIComponents GetUIComponentsForItemType(const FString& ItemType);
-	void UpdateButtonWithTooltip(class UItemObject* Item, const FString& itemType, class UInventoryToolTip* ToolTip, const FLinearColor& Color);
+	void UpdateSlotVisuals(class UItemObject* Item, const FString& ItemType, class UInventoryToolTip* ToolTip, const FLinearColor& Color);
 	void SetInventoryComponent(UInventoryComponent* NewComponent);
 	void SetPreviewActorImage(class UTextureRenderTarget2D* RenderTarget);
 	static UInventory* Get(UObject* Context);
@@ -196,6 +219,8 @@ public:
 	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 	void PlayUISound(USoundBase* Sound);
+	struct FSlotResult GetSlotUnderCursor(FVector2D CursorPos);
+	void SetEquippedTooltip(UBorder* BorderWidget, FString ItemType);
 
 	UFUNCTION()
 	void OnAutoEquip();
@@ -453,18 +478,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_MetaLevel;
 	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Helmet;
-	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Upper;
-	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Lower;
-	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Necklace;
-	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Arms;
-	UPROPERTY(meta = (BindWidget))
-	class UButton* B_Mainhand;
-	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Helmet1;
 	UPROPERTY(meta = (BindWidget))
 	class UBorder* B_Upper1;
@@ -536,4 +549,5 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 };
