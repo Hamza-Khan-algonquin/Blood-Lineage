@@ -204,7 +204,7 @@ void ADirector::SpawnCheck()
 			}
 
 			//check to see if the player is close enough and the spawn point is not at max capacity
-			if (FVector::Dist2D(Players[j]->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
+			if (FVector::Dist(Players[j]->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
 			{
 				point->SpawnEnemies();
 			}

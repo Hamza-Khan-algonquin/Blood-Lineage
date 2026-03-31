@@ -73,9 +73,9 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority())
+	if (!HasAuthority() && !IsActive)
 	{
-		//return 0;
+		return 0;
 	}
 
 	//call the super for important stuff
@@ -132,7 +132,7 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 void AEnemyCharacter::Die(AController* EventInstigator)
 {
-	if (HasAuthority())
+	if (HasAuthority() && IsActive)
 	{
 		SpawnItem();
 
@@ -145,6 +145,8 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 				PS->AddExperience(CalculateXP());
 			}
 		}
+
+		SetActorLocation(GetActorLocation() - FVector(0, 0, 10000));
 
 		OnDied.Broadcast(this);
 		OnDied.Clear();
@@ -435,7 +437,7 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 
 	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+	if (pool && SetControllerActiveStatus && GetController() && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
 	}

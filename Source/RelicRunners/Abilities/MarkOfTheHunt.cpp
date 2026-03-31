@@ -75,21 +75,13 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 			Params.Owner = AvatarActor;
 			Params.Instigator = OwnerChar;
 
-			P.Actor = World->SpawnActor<AActor>(
-				ProjectileActorClass,
-				P.Location,
-				P.Velocity.Rotation(),
-				Params
-			);
+			P.Actor = World->SpawnActor<AActor>(ProjectileActorClass,P.Location,P.Velocity.Rotation(),Params);
 		}
 
 		ActiveProjectiles.Add(P);
 	}
 
-	if (AbilityAnim)
-	{
-		PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
-	}
+
 
 	ARelicRunnersPlayerState* PS = nullptr;
 	if (ActorInfo->PlayerController.IsValid())
@@ -125,6 +117,11 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 		Duration,
 		false
 	);
+
+	if (AbilityAnim)
+	{
+		PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
+	}
 
 	LastUseTime = World->GetTimeSeconds();
 }

@@ -84,6 +84,9 @@ public:
 	class UProgressBar* ResourceBar;
 
 	UPROPERTY(meta = (BindWidget))
+	class UImage* I_BloodOverlay;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* TB_DamageCooldown;
 
 	UPROPERTY(meta = (BindWidget))

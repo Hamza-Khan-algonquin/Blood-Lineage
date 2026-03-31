@@ -104,7 +104,7 @@ void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() || DamageAmount <= 0)
+	if (!HasAuthority() || DamageAmount <= 0 || !IsActive)
 	{
 		return 0;
 	}
@@ -116,7 +116,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	EnemyStatsComponent->AddToCurrentHealth(-DamageAmount);
 
 	//check if we meet the conditions to be dead and then die
-	if (IsDead())
+	if (IsDead() && IsActive)
 	{
 		Die(EventInstigator, (GetActorLocation() - DamageCauser->GetActorLocation().GetSafeNormal()));
 	}
@@ -176,7 +176,7 @@ void AEnemyPawn::EndHitFlash()
 void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 {
 	//make sure we are server side
-	if (HasAuthority())
+	if (HasAuthority() && !IsHidden())
 	{
 		Multicast_PlayDeathEffect(hitDirection);
 
@@ -198,6 +198,8 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 		{
 			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
 		}
+
+		SetActorLocation(GetActorLocation() - FVector(0, 0, 10000));
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
 

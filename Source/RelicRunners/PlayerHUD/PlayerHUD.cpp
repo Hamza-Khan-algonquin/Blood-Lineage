@@ -84,7 +84,7 @@ void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
 	float TargetIntensity = 0.f;
 	if (HealthPercent < 1.f)
 	{
-		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.4f), FVector2D(1.f, 0.f), HealthPercent);
+		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.6f), FVector2D(1.f, 0.f), HealthPercent);
 
 		float Pulse = (FMath::Sin(GetWorld()->GetTimeSeconds() * 3.0f) * 0.2f) + 0.8f;
 		TargetIntensity *= Pulse;
@@ -92,10 +92,7 @@ void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
 
 	CurrentBloodIntensity = FMath::FInterpTo(CurrentBloodIntensity, TargetIntensity, InDeltaTime, 2.0f);
 
-	if (BloodMPC)
-	{
-		UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), BloodMPC, FName("BloodIntensity"), CurrentBloodIntensity);
-	}
+	I_BloodOverlay->SetColorAndOpacity(FLinearColor(1,0,0,CurrentBloodIntensity));
 }
 
 void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
@@ -187,7 +184,7 @@ void UPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		HealthBar_1->SetPercent(GhostHealthPercent);
 	}
 
-	//UpdateBloodSplatter(HealthBar->GetPercent(), InDeltaTime);
+	UpdateBloodSplatter(HealthBar->GetPercent(), InDeltaTime);
 }
 
 void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
