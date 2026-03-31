@@ -427,7 +427,7 @@ void ARelicRunnersCharacter::TraceForInteractables()
 		{
 			AActor* FoundActor = Result.GetActor();
 
-			if (FoundActor && FoundActor->Implements<UInteractInterface>())
+			if (IsValid(FoundActor) && FoundActor->Implements<UInteractInterface>())
 			{
 				FVector ToActor = (FoundActor->GetActorLocation() - TraceStart).GetSafeNormal();
 				float DotProduct = FVector::DotProduct(LookDir, ToActor);

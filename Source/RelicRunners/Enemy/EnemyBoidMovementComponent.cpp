@@ -42,6 +42,7 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	DistanceFromWallToLoseTargetWeight = 100;
 	EnemyCharacterAvoidanceDistance = 300;
 	EnemyCharacterAvoidanceWeight = 1.5;
+
 	SetIsReplicatedByDefault(true);
 }
 
@@ -54,6 +55,11 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 {
+	if (!IsActive())
+	{
+		return;
+	}
+
 	if (!GetOwner()->HasAuthority())
 	{
 		ClientSideEntityInterpolation(delta);
@@ -76,6 +82,11 @@ void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 
 void UEnemyBoidMovementComponent::UpdateMovementInfo(float delta)
 {
+	if (!IsActive())
+	{
+		return;
+	}
+
 	if (IsKnockedBack)
 	{
 		return;
@@ -593,6 +604,11 @@ void UEnemyBoidMovementComponent::AddToMoveDataBuffer(FVector newLocation, FRota
 	{
 		MoveDataBuffer.RemoveAt(0);
 	}
+}
+
+void UEnemyBoidMovementComponent::ClearMoveBuffer_Implementation()
+{
+	MoveDataBuffer.Empty();
 }
 
 void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)

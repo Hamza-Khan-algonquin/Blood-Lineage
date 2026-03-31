@@ -59,7 +59,20 @@ void AIslandSpawner::BeginPlay()
 			if (gameInstance)
 			{
 				gameInstance->StageNumber += 1;
-				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Server Stage Number: %i"), gameInstance->StageNumber));
+
+				int NewStage = gameInstance->StageNumber;
+
+				TWeakObjectPtr<AIslandSpawner> WeakSelf(this);
+
+				GetWorldTimerManager().SetTimer(UIDelayHandle, [WeakSelf, NewStage]()
+					{
+						if (AIslandSpawner* StrongSelf = WeakSelf.Get())
+						{
+							StrongSelf->UpdateControllerStageUI(NewStage);
+
+							UE_LOG(LogTemp, Log, TEXT("Island Spawner: UI Updated to Stage %d after 2s delay."), NewStage);
+						}
+					}, 2.0f, false);
 			}
 
 			int objectiveIndexOffset = FMath::RandRange(0, 100);
@@ -200,12 +213,17 @@ void AIslandSpawner::SyncObjectiveToSinglePlayer(ARelicRunnersPlayerController* 
 
 	TargetPC->AddObjectiveToBuffer(NewObjective);
 
-	URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (gameInstance)
-	{
-		UpdateControllerStageUI(gameInstance->StageNumber);
-		UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
-	}
+	TWeakObjectPtr<AIslandSpawner> WeakSelf(this);
+
+	GetWorldTimerManager().SetTimer(UIZoneDelayHandle, [WeakSelf]()
+		{
+			if (AIslandSpawner* StrongSelf = WeakSelf.Get())
+			{
+				StrongSelf->UpdateControllerZonesUI(StrongSelf->CurrentSpawnedIsland, StrongSelf->NumIslands);
+
+				UE_LOG(LogTemp, Log, TEXT("Island Spawner: UI Zones Updated after 2s delay."));
+			}
+		}, 2.0f, false);
 }
 
 void AIslandSpawner::GenerateNewIsland()
@@ -219,7 +237,6 @@ void AIslandSpawner::GenerateNewIsland()
 		}
 		Islands[CurrentSpawnedIsland]->ActivateIsland();
 	}
-	UpdateControllerZonesUI(CurrentSpawnedIsland, NumIslands);
 }
 
 void AIslandSpawner::ChangeIslandCamera(int islandIndex)

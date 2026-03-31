@@ -611,7 +611,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 300.0f;
         const float MaxPercent = 60.0f;
 
         if (Value <= 0) return 0.0f;
@@ -625,9 +625,9 @@ public:
     {
         if (Value <= 0) return 0.0f;
 
-        //Base of 1.5 with a 0.9 exponent.
+        //Base of 1.1 with a 0.9 exponent.
         //This grows infinitely but slows down over time.
-        float Percent = 1.5f * pow(static_cast<float>(Value), 0.9f);
+        float Percent = 1.1f * pow(static_cast<float>(Value), 0.9f);
 
         return RoundToDecimal(Percent, 1);
     }
@@ -636,7 +636,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 200.0f;
         const float MaxPercent = 75.0f;
 
         if (Value <= 0) return 0.0f;
@@ -650,7 +650,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 200.0f;
         const float MaxPercent = 80.0f;
 
         if (Value <= 0) return 0.0f;
@@ -678,7 +678,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 200.0f;
         const float MaxPercent = 70.0f;
 
         if (Value <= 0) return 0.0f;

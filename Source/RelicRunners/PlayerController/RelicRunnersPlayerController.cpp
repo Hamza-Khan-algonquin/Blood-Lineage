@@ -79,6 +79,7 @@
 #include "NavigationPath.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include <RelicRunners/LevelGeneration/IslandSpawner.h>
+#include <RelicRunners/RelicRunnersGameMode.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -149,7 +150,6 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 	PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 
 	UpdateCharacterVisuals();
-
 }
 
 void ARelicRunnersPlayerController::Server_InitializePlayerData_Implementation(FSaveData ClientMeta)
@@ -178,6 +178,11 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
+
+		if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+		{
+			GM->RecordPawnReadyTime(this);
+		}
 	}
 
 	if (HasAuthority())
