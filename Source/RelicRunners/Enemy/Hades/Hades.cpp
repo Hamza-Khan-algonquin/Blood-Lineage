@@ -339,7 +339,7 @@ void AHades::CinematicSlam()
 
             if (StrongSelf->SlamImpactSound)
             {
-                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+                UGameplayStatics::PlaySoundAtLocation(StrongSelf, StrongSelf->SlamImpactSound, SlamLoc);
             }
 
             StrongSelf->MulticastOnBridgeDestroyed(StrongSelf->BridgeToDestroy->GetActorLocation());
