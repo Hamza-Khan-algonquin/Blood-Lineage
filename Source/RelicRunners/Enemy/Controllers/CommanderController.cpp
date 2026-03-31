@@ -319,7 +319,8 @@ void ACommanderController::SpawnPawnEnemy()
 
 	newEnemy->GetActorBounds(true, origin, bounds);
 
-	newEnemy->SetActorLocation(finalPoint + FVector(0, 0, bounds.Z));
+	newEnemy->SetActorLocation(finalPoint + FVector(0, 0, bounds.Z/2));
+	
 
 	//giving time for the enemy to set
 	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()

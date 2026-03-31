@@ -637,13 +637,13 @@ void AEnemyPawn::OnRep_IsActive()
 	{
 		this->SetActorHiddenInGame(false);
 		this->SetActorEnableCollision(true);
-		this->SetActorTickEnabled(this->GetShouldTick());
+		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
 		this->SetActorEnableCollision(false);
-		this->SetActorTickEnabled(false);
+		//this->SetActorTickEnabled(false);
 	}
 }
 
@@ -664,8 +664,26 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		return;
 	}
 
-	//NetMultSetIsActive(newIsActive);
-	IsActive = newIsActive;
+	
+
+	FTimerHandle tempHandle;
+	if (!newIsActive)
+	{
+		NetMultSetIsActive(newIsActive);
+		GetWorld()->GetTimerManager().SetTimer(tempHandle, [&, newIsActive]()
+			{
+				IsActive = newIsActive;
+			}, 2.f, false);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimer(tempHandle, [&]()
+			{
+				NetMultSetIsActive(newIsActive);
+			}, 2.f, false);
+		IsActive = newIsActive;
+	}
+	
 	
 
 	if (!newIsActive)
@@ -676,13 +694,13 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 			MovementComponent->SetActive(false);
 		}
 
-		this->SetActorHiddenInGame(true);
-		this->SetActorEnableCollision(false);
+		/*this->SetActorHiddenInGame(true);
+		this->SetActorEnableCollision(false);*/
 	}
 	else
 	{
-		this->SetActorHiddenInGame(false);
-		this->SetActorEnableCollision(true);
+		/*this->SetActorHiddenInGame(false);
+		this->SetActorEnableCollision(true);*/
 		ResetEnemy();
 	}
 
@@ -698,7 +716,7 @@ void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AEnemyPawn, GoldEnemy);
-	DOREPLIFETIME(AEnemyPawn, IsActive);
+	//DOREPLIFETIME(AEnemyPawn, IsActive);
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
@@ -710,15 +728,15 @@ void AEnemyPawn::NetMultSetIsActive_Implementation(bool newIsActive)
 {
 	if (newIsActive)
 	{
-
+		this->SetActorHiddenInGame(false);
 		this->SetActorEnableCollision(true);
-		this->SetActorTickEnabled(this->GetShouldTick());
+		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
-
+		this->SetActorHiddenInGame(true);
 		this->SetActorEnableCollision(false);
-		this->SetActorTickEnabled(false);
+		//this->SetActorTickEnabled(false);
 	}
 }
 

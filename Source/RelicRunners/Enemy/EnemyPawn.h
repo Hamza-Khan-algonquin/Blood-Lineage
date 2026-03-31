@@ -93,7 +93,7 @@ protected:
 	TSubclassOf<class AItemActor> ItemActorClass;
 
 	//interface implementation variable
-	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite, ReplicatedUsing = "OnRep_IsActive")
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)//, ReplicatedUsing = "OnRep_IsActive")
 	bool IsActive = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool SetControllerActiveStatus = true;
