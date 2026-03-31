@@ -154,8 +154,10 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 		NetMultPlayParticleEffect(DeathEffect, GetActorLocation());
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+
+		bool check = PoolManager->IsActorClassPooled(this->GetClass());
 		
-		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
+		if (PoolManager && check)
 		{
 			SetIsActive(false);
 		}

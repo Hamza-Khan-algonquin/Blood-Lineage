@@ -34,23 +34,24 @@ void AMinotaurCharacter::DelaySpikeCheck(float delay, float raduis, float damage
 	}
 
 	FTimerHandle temp;
+	TArray<FVector> newLocations = locations;
 
-	GetWorld()->GetTimerManager().SetTimer(temp, [&]() {
+	GetWorld()->GetTimerManager().SetTimer(temp, [&, newLocations, delay, raduis, damageMult]() {
 			if (!GetWorld() && !IsValid(this) && !IsValid(EnemyStatsComponent))
 			{
 				return;
 			}
 
-			for (FVector location : locations)
+			for (int i = 0; i < newLocations.Num(); i++)
 			{
 #if WITH_EDITOR
-				DrawDebugSphere(GetWorld(), location, raduis, 12, FColor::Red,false, 2, 1);
+				DrawDebugSphere(GetWorld(), newLocations[i], raduis, 12, FColor::Red, false, 2, 1);
 #endif
 				TArray<AActor*> actorToIngore;
 				TArray<AActor*> hitActors;
 				TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 				ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-				UKismetSystemLibrary::SphereOverlapActors(GetWorld(), location, raduis, ObjectTypes, nullptr, actorToIngore, hitActors);
+				UKismetSystemLibrary::SphereOverlapActors(GetWorld(), newLocations[i], raduis, ObjectTypes, nullptr, actorToIngore, hitActors);
 
 				for (AActor* hit : hitActors)
 				{
