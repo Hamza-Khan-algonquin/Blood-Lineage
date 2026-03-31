@@ -10,6 +10,7 @@
 #include "TimerManager.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "RelicRunners/RelicRunnersCharacter.h"
 
 UGoddessOfLove::UGoddessOfLove()
 {
@@ -122,7 +123,7 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
             // Create dynamic material
             OverlayMID = UMaterialInstanceDynamic::Create(OverlayMaterial, this);
 
-            // Apply to mesh (overlay or replace slot)
+            // Apply to mesh 
             Mesh1->SetOverlayMaterial(OverlayMID);
         }
     }
@@ -138,51 +139,6 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     World->GetTimerManager().SetTimer(DOTTimerHandle, this,&UGoddessOfLove::TickDamage,DOTTickInterval,true);
 
     World->GetTimerManager().SetTimer(PassiveRegenTimerHandle,this, &UGoddessOfLove::ApplyPassiveHealthRegen,PassiveRegenTickInterval, true);
-}
-
-void UGoddessOfLove::ApplyInitialOverlap()
-{
-    if (!GetCurrentActorInfo() || !GetCurrentActorInfo()->AvatarActor.IsValid())
-    {
-        return;
-    }
-
-    if (!CurrentActorInfo) return;
-
-    AActor* OwnerActor = GetCurrentActorInfo()->AvatarActor.Get();
-    DamageOrigin = OwnerActor->GetActorLocation(); // initialize origin at player
-
-    UWorld* World = GetWorld();
-    if (!World)
-    {
-        return;
-    }
-
-    // Draw the DOT area around the player at start
-    //DrawDebugSphere(World, DamageOrigin, AreaRadius, 32, FColor::Purple, false, DOTDuration);
-
-    // Track overlapping enemies initially
-    TArray<AActor*> OverlappedActors;
-    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
-
-    TArray<AActor*> ActorsToIgnore;
-    ActorsToIgnore.Add(OwnerActor);
-
-    UKismetSystemLibrary::SphereOverlapActors(World, DamageOrigin, AreaRadius, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappedActors);
-
-    for (AActor* Actor : OverlappedActors)
-    {
-        if (!Actor || !Actor->ActorHasTag("Enemy"))
-        {
-            continue;
-        }
-
-        AffectedEnemies.AddUnique(Actor);
-
-        //DrawDebugLine(World, DamageOrigin, Actor->GetActorLocation(), FColor::Red, false, DOTDuration, 0, 2.f);
-    }
 }
 
 void UGoddessOfLove::ApplyPassiveHealthRegen()
@@ -206,11 +162,50 @@ void UGoddessOfLove::ApplyPassiveHealthRegen()
 
         PS->PassiveHealthRegen();
     }
+
 }
 
+void UGoddessOfLove::ApplyInitialOverlap()
+{
+    if (!GetCurrentActorInfo() || !GetCurrentActorInfo()->AvatarActor.IsValid())
+    {
+        return;
+    }
 
-// In your UGoddessOfLove class
-TMap<TWeakObjectPtr<AActor>, UNiagaraComponent*> ActiveBeams;
+    if (!CurrentActorInfo) return;
+
+    // Initialize origin at the player
+    AActor* OwnerActor = GetCurrentActorInfo()->AvatarActor.Get();
+    DamageOrigin = OwnerActor->GetActorLocation();
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    // Track overlapping enemies initially
+    TArray<AActor*> OverlappedActors;
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(OwnerActor);
+
+    UKismetSystemLibrary::SphereOverlapActors(World, DamageOrigin, AreaRadius, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappedActors);
+
+    for (AActor* Actor : OverlappedActors)
+    {
+        if (!Actor || !Actor->ActorHasTag("Enemy"))
+        {
+            continue;
+        }
+
+        // Track enemy only once
+        AffectedEnemies.Add(Actor);
+    }
+}
 
 void UGoddessOfLove::TickDamage()
 {
@@ -233,26 +228,13 @@ void UGoddessOfLove::TickDamage()
     const float DeltaTime = World->GetDeltaSeconds();
     ElapsedDOTTime += DeltaTime;
 
-    ARelicRunnersPlayerState* PS = nullptr;
-    if (CurrentActorInfo->PlayerController.IsValid())
-    {
-        PS = CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
-    }
+    ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(OwnerActor);
 
     for (int32 i = AffectedEnemies.Num() - 1; i >= 0; --i)
     {
         AActor* Enemy = AffectedEnemies[i].Get();
         if (!Enemy)
         {
-            // Destroy beam if enemy is gone
-            if (ActiveBeams.Contains(Enemy))
-            {
-                if (UNiagaraComponent* Beam = ActiveBeams[Enemy])
-                {
-                    Beam->DestroyComponent();
-                }
-                ActiveBeams.Remove(Enemy);
-            }
             AffectedEnemies.RemoveAt(i);
             continue;
         }
@@ -265,66 +247,25 @@ void UGoddessOfLove::TickDamage()
         float EffectiveDPS = FMath::Max(Damage * DamageMultiplier, 50.f);
         float ScaledDamage = EffectiveDPS * DeltaTime;
 
-        if (ScaledDamage > 0.f)
+        if (ScaledDamage > 0.f && GetAvatarActorFromActorInfo()->HasAuthority())
         {
             CalculateAbilityDamage(OwnerActor, Enemy, ScaledDamage);
 
-            if (PS && AbilityVFX)
+            // Spawn beam only if it doesn't exist yet on this enemy
+            if (Character && !Character->ActiveBeams.Contains(Enemy))
             {
-                UNiagaraComponent* BeamComp = nullptr;
-
-                APawn* Pawn = PS->GetPawn();
-                if (!Pawn) continue;
-
-                USceneComponent* RootComp = Pawn->GetRootComponent();
-                if (!RootComp) continue;
-
-                // Spawn new beam if it doesn't exist yet
-                if (!ActiveBeams.Contains(Enemy) || !ActiveBeams[Enemy])
-                {
-                    BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
-                        AbilityVFX,
-                        RootComp,
-                        NAME_None,
-                        FVector::ZeroVector,
-                        FRotator::ZeroRotator,
-                        EAttachLocation::KeepRelativeOffset,
-                        true,
-                        true,
-                        ENCPoolMethod::None
-                    );
-
-                    ActiveBeams.Add(Enemy, BeamComp);
-                }
-                else
-                {
-                    BeamComp = ActiveBeams[Enemy];
-                }
-
-                // Update endpoint to enemy location each tick
-                if (BeamComp)
-                {
-                    BeamComp->SetVectorParameter(TEXT("EndPoint"), Enemy->GetActorLocation());
-                }
+                Character->Multicast_SpawnBeam(Enemy, AbilityVFX);
             }
+
         }
     }
 
-    // Destroy any remaining beams after DOT ends
     if (ElapsedDOTTime >= DOTDuration)
     {
-        for (auto& Pair : ActiveBeams)
-        {
-            if (UNiagaraComponent* Beam = Pair.Value)
-            {
-                Beam->DestroyComponent();
-            }
-        }
-        ActiveBeams.Empty();
-
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
     }
 }
+
 
 void UGoddessOfLove::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
@@ -337,7 +278,7 @@ void UGoddessOfLove::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
-
+            SpawnedBeams.Empty();
             ACharacter* Character = Cast<ACharacter>(GetAvatarActorFromActorInfo());
             if (Character)
             {
@@ -350,8 +291,6 @@ void UGoddessOfLove::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
             }
 
             OverlayMID = nullptr;
-
-
             World->GetTimerManager().ClearTimer(DOTTimerHandle);
             World->GetTimerManager().ClearTimer(PassiveRegenTimerHandle);
 

@@ -20,6 +20,7 @@ public:
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
     virtual FName GetAbilityName() const override { return FName("Goddess Of Love"); }
 
+
 protected:
     void ApplyInitialOverlap();
     void ApplyPassiveHealthRegen();
@@ -43,6 +44,8 @@ protected:
 
     UPROPERTY(EditDefaultsOnly)
     UMaterialInterface* OverlayMaterial;
+    TMap<TWeakObjectPtr<AActor>, UNiagaraComponent*> ActiveBeams;
 
+    TSet<AActor*> SpawnedBeams;
 };
 

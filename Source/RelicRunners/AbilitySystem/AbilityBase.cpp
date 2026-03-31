@@ -146,7 +146,11 @@ UAnimMontage* UAbilityBase::PlayAbilityAnimation(const FGameplayAbilityActorInfo
         }
     }
 
-    if (Character->HasAuthority())
+    if (!Character->HasAuthority())
+    {
+        Character->Server_PlayAbilityAnimation(Montage, AnimSpeed);
+    }
+    else
     {
         Character->Multicast_PlayAbilityAnimation(Montage, AnimSpeed);
     }

@@ -207,7 +207,13 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlayAbilityAnimation(UAnimMontage* Montage, float AnimSpeed);
 
+	UFUNCTION(Server, Reliable)
+	void Server_PlayAbilityAnimation(UAnimMontage* Montage, float AnimSpeed);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnBeam(AActor* Target, UNiagaraSystem* VFX);
+
+	TMap<AActor*, UNiagaraComponent*> ActiveBeams;
 protected:
 
 

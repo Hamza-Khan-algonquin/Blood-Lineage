@@ -96,10 +96,8 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         USkeletalMeshComponent* Mesh1 = Character->GetMesh();
         if (Mesh1 && OverlayMaterial)
         {
-            // Create dynamic material
             OverlayMID = UMaterialInstanceDynamic::Create(OverlayMaterial, this);
 
-            // Apply to mesh (overlay or replace slot)
             Mesh1->SetOverlayMaterial(OverlayMID);
         }
     }

@@ -62,6 +62,8 @@
 #include "CustomDamageEvents.h"
 #include "Camera/CameraShakeBase.h"
 #include "RelicRunners/RelicRunnersGameState.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -1056,4 +1058,53 @@ void ARelicRunnersCharacter::Multicast_PlayAbilityAnimation_Implementation(UAnim
 	if (!AnimInstance) return;
 
 	AnimInstance->Montage_Play(Montage, AnimSpeed);
+}
+
+void ARelicRunnersCharacter::Server_PlayAbilityAnimation_Implementation(UAnimMontage* Montage, float AnimSpeed)
+{
+	Multicast_PlayAbilityAnimation(Montage, AnimSpeed);
+}
+
+void ARelicRunnersCharacter::Multicast_SpawnBeam_Implementation(AActor* Target, UNiagaraSystem* VFX)
+{
+	if (!Target || !VFX) return;
+
+	USceneComponent* RootComp = GetRootComponent();
+	if (!RootComp) return;
+
+	UNiagaraComponent** FoundBeamPtr = ActiveBeams.Find(Target);
+
+	if (FoundBeamPtr)
+	{
+		UNiagaraComponent* FoundBeam = *FoundBeamPtr;
+
+		// Check if the beam is still valid
+		if (IsValid(FoundBeam))
+		{
+			FoundBeam->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
+			return;
+		}
+		else
+		{
+			// Beam is invalid, remove from map
+			ActiveBeams.Remove(Target);
+		}
+	}
+
+	// Spawn new beam if none exists
+	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		VFX,
+		RootComp,
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::KeepRelativeOffset,
+		true
+	);
+
+	if (BeamComp)
+	{
+		BeamComp->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
+		ActiveBeams.Add(Target, BeamComp);
+	}
 }
