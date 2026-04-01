@@ -128,6 +128,20 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UMarkOfTheHunt::ProjectileTick()
 {
+	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+	if (!ActorInfo)
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+
+	AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+	if (!IsValid(AvatarActor))
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+
 	UWorld* World = GetWorld();
 	if (!World) return;
 
@@ -153,14 +167,7 @@ void UMarkOfTheHunt::ProjectileTick()
 		TArray<FHitResult> Hits;
 		FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-		bool bHit = World->SweepMultiByChannel(
-			Hits,
-			P.PreviousLocation,
-			P.Location,
-			FQuat::Identity,
-			ECC_GameTraceChannel1,
-			Sphere
-		);
+		bool bHit = World->SweepMultiByChannel(Hits,P.PreviousLocation,P.Location,FQuat::Identity,ECC_GameTraceChannel1,Sphere);
 
 		for (const FHitResult& Hit : Hits)
 		{
