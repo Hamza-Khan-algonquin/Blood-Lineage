@@ -261,7 +261,7 @@ ARelicRunnersPlayerState::~ARelicRunnersPlayerState()
 void ARelicRunnersPlayerState::InitializeMetaStats(FSaveData MetaData)
 {
 	PlayerStartingLuck = MetaData.MetaLuck;
-	PlayerStartingMaxHealth = 100 + (MetaData.MetaHealth * 10);
+	PlayerStartingMaxHealth = 100 + (MetaData.MetaHealth * 15);
 	PlayerStartingArmor = MetaData.MetaDefence * 5;
 	PlayerStartingStrength = MetaData.MetaStrength * 5;
 	PlayerStartingDexterity = MetaData.MetaAgility * 5;

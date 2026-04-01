@@ -77,7 +77,7 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 	FString AbilityName = "";
 	FString AbilityDesc = "";
 
-	if (HoveredButton == B_HP) { StatKey = "MetaHealth";						RawValue = SD.MetaHealth * 10; }
+	if (HoveredButton == B_HP) { StatKey = "MetaHealth";						RawValue = SD.MetaHealth * 15; }
 	else if (HoveredButton == B_DEF) { StatKey = "MetaDefence";					RawValue = SD.MetaDefence * 5; }
 	else if (HoveredButton == B_STR) { StatKey = "MetaStrength";				RawValue = SD.MetaStrength * 5; }
 	else if (HoveredButton == B_AGI) { StatKey = "MetaAgility";					RawValue = SD.MetaAgility * 5; }

@@ -107,7 +107,7 @@ public:
             Data.Icon = LoadIcon("HealthIcon");
             Data.IconColor = GetIconColor("Health");
             Data.Descriptions.Add(FText::FromString("<Default>Health pool.</>"));
-            Data.Descriptions.Add(FText::FromString("<Green>+10</> <Default>Health per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+15</> <Default>Health per meta point.</>"));
         }
         else if (BorderType == "Defence")
         {
