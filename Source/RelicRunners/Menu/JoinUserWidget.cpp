@@ -446,6 +446,12 @@ void UJoinUserWidget::OnNemesisClicked() { PlayButtonClickSound(); SetSelectedCl
 
 void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
 	CurrentClass = ClassKey;
 	FLinearColor Gold(1.f, 0.5f, 0, 1.f);
 	FLinearColor Cyan(0, 1, 0.714, 1.f);
@@ -466,32 +472,6 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	SetImageColor(I_Artemis, White);
 	SetImageColor(I_Aphrodite, White);
 	SetImageColor(I_Nemesis, White);
-
-	//Highlight the selected one gold
-	if (ClassKey == "Ares")
-	{
-		SetButtonColor(AresButton, Gold);
-		SetBorderColor(B_Ares, Black);
-		SetImageColor(I_Ares, Black);
-	}
-	else if (ClassKey == "Artemis")
-	{
-		SetButtonColor(ArtemisButton, Gold);
-		SetBorderColor(B_Artemis, Black);
-		SetImageColor(I_Artemis, Black);
-	}
-	else if (ClassKey == "Aphrodite")
-	{
-		SetButtonColor(AphroditeButton, Gold);
-		SetBorderColor(B_Aphrodite, Black);
-		SetImageColor(I_Aphrodite, Black);
-	}
-	else if (ClassKey == "Nemesis")
-	{
-		SetButtonColor(NemesisButton, Gold);
-		SetBorderColor(B_Nemesis, Black);
-		SetImageColor(I_Nemesis, Black);
-	}
 
 	if (!ClassDataAsset || !ClassDataAsset->Classes.Contains(ClassKey))
 	{
@@ -534,6 +514,52 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	if (GameInstance)
 	{
 		GameInstance->SetSelectedClass(ClassKey);
+	}
+
+	//Highlight the selected one gold
+	if (ClassKey == "Ares")
+	{
+		SetButtonColor(AresButton, Gold);
+		SetBorderColor(B_Ares, Black);
+		SetImageColor(I_Ares, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+	}
+	else if (ClassKey == "Artemis")
+	{
+		SetButtonColor(ArtemisButton, Gold);
+		SetBorderColor(B_Artemis, Black);
+		SetImageColor(I_Artemis, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("FireArrow"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("Impunity"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("SplitShot"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("Moonbeam"));
+	}
+	else if (ClassKey == "Aphrodite")
+	{
+		SetButtonColor(AphroditeButton, Gold);
+		SetBorderColor(B_Aphrodite, Black);
+		SetImageColor(I_Aphrodite, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+	}
+	else if (ClassKey == "Nemesis")
+	{
+		SetButtonColor(NemesisButton, Gold);
+		SetBorderColor(B_Nemesis, Black);
+		SetImageColor(I_Nemesis, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("Backstab"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("NaturesBlessing"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("VengefulDance"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("DivinePunishment"));
 	}
 }
 

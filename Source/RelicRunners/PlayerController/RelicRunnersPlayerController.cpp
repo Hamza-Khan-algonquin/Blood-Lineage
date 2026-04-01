@@ -1373,22 +1373,25 @@ void ARelicRunnersPlayerController::PostGameUI()
 		if (PostGameWidget)
 		{
 			PostGameWidget->AddToViewport();
-
 			SetInputMode(FInputModeUIOnly());
 			bShowMouseCursor = true;
 
 			FTimerHandle UnusedHandle;
-			GetWorldTimerManager().SetTimer(UnusedHandle, [this]()
+			TWeakObjectPtr<ARelicRunnersPlayerController> WeakThis(this);
+
+			GetWorldTimerManager().SetTimer(UnusedHandle, [WeakThis]()
 				{
-					if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+					if (ARelicRunnersPlayerController* StrongThis = WeakThis.Get())
 					{
-						GI->BackToMainMenu();
+						if (URelicRunnersGameInstance* GI = StrongThis->GetGameInstance<URelicRunnersGameInstance>())
+						{
+							GI->BackToMainMenu();
+						}
 					}
 				}, 5.0f, false);
 		}
 	}
 }
-
 void ARelicRunnersPlayerController::Client_ShowPostGame_Implementation(const TArray<FPlayerPostGameData>& FinalStats)
 {
 	if (SpectatingWidget)
