@@ -122,7 +122,7 @@ public:
             Data.Icon = LoadIcon("DefenceIcon");
             Data.IconColor = GetIconColor("Defence");
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Damage reduction.</>"), FText::AsNumber(GetDefencePerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Green>+3</> <Default>Defence per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Defence per meta point.</>"));
         }
         else if (BorderType == "Strength")
         {
@@ -137,7 +137,7 @@ public:
             Data.Icon = LoadIcon("StrengthIcon");
             Data.IconColor = GetIconColor("Strength");
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Attack & ability damage.</>"), FText::AsNumber(GetStrengthPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Green>+3</> <Default>Strength per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Strength per meta point.</>"));
         }
         else if (BorderType == "Agility")
         {
@@ -156,7 +156,7 @@ public:
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Crit chance.</>"), FText::AsNumber(GetCritPerc(StatValue))));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}x</> <Default>Damage on crit.</>"), FText::AsNumber(GetCritDmgPerc(StatValue))));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Movement speed.</>"), FText::AsNumber(GetSpeedPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Green>+3</> <Default>Agility per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Agility per meta point.</>"));
         }
         else if (BorderType == "Intelligence")
         {
@@ -173,7 +173,7 @@ public:
             Data.IconColor = GetIconColor("Intelligence");
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>Mana pool.</>"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Ability cost reduction.</>"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Green>+3</> <Default>Intelligence per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Intelligence per meta point.</>"));
         }
         else if (BorderType == "Luck")
         {
@@ -636,9 +636,9 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 200.0f;
+        const float K = 300.0f;
         const float MaxPercent = 75.0f;
-
+        
         if (Value <= 0) return 0.0f;
 
         float Percent = (Value / (Value + K)) * MaxPercent;
@@ -652,7 +652,7 @@ public:
         //At Value = 100, the result will be half of max.
         const float K = 200.0f;
         const float MaxPercent = 80.0f;
-
+        
         if (Value <= 0) return 0.0f;
 
         float Percent = (Value / (Value + K)) * MaxPercent;
@@ -678,7 +678,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 200.0f;
+        const float K = 250.0f;
         const float MaxPercent = 70.0f;
 
         if (Value <= 0) return 0.0f;
