@@ -100,23 +100,9 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 	PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
 	PS->UpdateRemoteHUDResource();
 
-	World->GetTimerManager().SetTimer(
-		ProjectileTickTimer,
-		this,
-		&UMarkOfTheHunt::ProjectileTick,
-		0.02f,
-		true
-	);
+	World->GetTimerManager().SetTimer(ProjectileTickTimer,this,&UMarkOfTheHunt::ProjectileTick,0.02f,true);
 
-	World->GetTimerManager().SetTimer(
-		DurationTimer,
-		[this, Handle, ActorInfo, ActivationInfo]()
-		{
-			EndAbility(Handle, ActorInfo, ActivationInfo, false, false);
-		},
-		Duration,
-		false
-	);
+	World->GetTimerManager().SetTimer(DurationTimer,[this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, false, false);},Duration,false);
 
 	if (AbilityAnim)
 	{
