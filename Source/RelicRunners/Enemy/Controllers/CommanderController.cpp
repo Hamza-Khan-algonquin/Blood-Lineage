@@ -61,6 +61,13 @@ void ACommanderController::ResetController()
 {
 	GetWorldTimerManager().SetTimer(SpawnTimer, this, &ACommanderController::SpawmLoop, TimeBetweenSpawnChecks, true);
 	CurrentLifeTimeNumberOfEnemies = 0;
+	TArray<AEnemyPawn*> tempArray = ControlledEnemies;
+
+	for (int i = 0; i < tempArray.Num(); i++)
+	{
+		tempArray[i]->Die(nullptr);
+	}
+
 	ControlledEnemies.Empty();
 
 	for (auto& time : RemainingTimeToAttack)

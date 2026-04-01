@@ -423,7 +423,7 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	{
 		if (IsValid(commander))
 		{
-/*			commander->StopMovement();
+			commander->StopMovement();
 			GetCharacterMovement()->StopMovementImmediately();
 			//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 
@@ -433,7 +433,7 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 			{
 				BTComp->StopLogic(TEXT("Deactivated"));
 				BTComp->RestartLogic();
-			}*/
+			}
 		}
 		
 		OnDeactivated.Broadcast(this);
