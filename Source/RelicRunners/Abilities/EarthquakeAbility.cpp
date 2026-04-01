@@ -24,14 +24,19 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!CurrentActorInfo) return;
-
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor)
+    if (!ActorInfo)
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World)
@@ -60,7 +65,7 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
 
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
-
+    PS->SetInvincible(true);
     // Local input disable during animation
     if (ActorInfo->IsLocallyControlled())
     {
@@ -74,11 +79,12 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
             float AnimDuration = AbilityAnim->GetPlayLength() * 0.5f;
             PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 2.f);
 
+            
+
             if (APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get()))
             {
                 TWeakObjectPtr<APlayerController> WeakPC = PC;
                 FTimerHandle InputTimerHandle;
-
                 World->GetTimerManager().SetTimer(
                     InputTimerHandle,
                     [WeakPC]()
@@ -99,6 +105,7 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
                 [this]()
                 {
                     LaunchShockwave();
+                    
                 },
                 AnimDuration,
                 false
@@ -117,9 +124,22 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
 
 void UEarthquakeAbility::LaunchShockwave()
 {
-    if (!CurrentActorInfo) return;
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor || !IsValid(AvatarActor)) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    ARelicRunnersPlayerState* RRPS = CurrentActorInfo->PlayerController.IsValid() ? CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
+    RRPS->SetInvincible(false);
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
@@ -155,12 +175,26 @@ void UEarthquakeAbility::ApplyShockwaveStep(FVector Location, FVector Forward, U
 {
     if (!World || !CurrentActorInfo) return;
 
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
     UKismetSystemLibrary::SphereOverlapActors(World, Location, AreaRadius, ObjectTypes, APawn::StaticClass(), { AvatarActor }, OverlappingActors);
     float HalfAngleRad = FMath::DegreesToRadians(ConeAngle / 2.f);
 
@@ -198,11 +232,6 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
-        APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
-        if (PC)
-        {
-            //SPC->EnableInput(PC);
-        }
 
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)

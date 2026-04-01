@@ -20,8 +20,6 @@ public:
 
 protected:
 
-    void ResetSpeed();
-
     void HandleChargeTick(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayAbilityActivationInfo ActivationInfo);
 
     FTimerHandle EndTimerHandle;

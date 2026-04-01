@@ -92,10 +92,6 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 }
 
-void UImpunityAbility::ResetSpeed()
-{
-
-}
 
 void UImpunityAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {

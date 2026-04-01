@@ -147,9 +147,9 @@ void UWarBannerAbility::SpawnBanner()
         if (ARelicRunnersPlayerState* PS =
             CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>())
         {
-            PS->Multicast_SpawnVFX( CachedBannerLocation, FRotator::ZeroRotator, FVector(1.2f),AbilityVFX,false);
+            PS->Multicast_SpawnVFX( CachedBannerLocation + FVector(0,0,-100), FRotator::ZeroRotator, FVector(1.2f), AbilityVFX, false);
 
-            PS->Multicast_SpawnStaticMesh(CachedBannerLocation, FRotator::ZeroRotator, FVector(1.0f), BannerMesh);
+            PS->Multicast_SpawnStaticMesh(CachedBannerLocation + FVector(0, 0, -100), FRotator::ZeroRotator, FVector(1.0f), BannerMesh);
         }
     }
 }
