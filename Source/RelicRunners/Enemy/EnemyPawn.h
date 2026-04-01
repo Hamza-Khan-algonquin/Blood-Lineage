@@ -64,9 +64,6 @@ public:
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
-	UPROPERTY(Replicated)
-	bool GoldEnemy = false;
-
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
@@ -128,6 +125,8 @@ public:
 	virtual void Die(AController* EventInstigator, FVector hitDirection = FVector(0,0,0));
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlayDeathEffect(FVector impactDirection);
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void Multicast_GoldStuff();
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Check if the enemy is dead.", ShortToolTip = "Check if the enemy is dead."))
 	//Check if the enemy is dead

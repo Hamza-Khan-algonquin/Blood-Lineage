@@ -146,18 +146,14 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 			}
 		}
 
-		SetActorLocation(GetActorLocation() - FVector(0, 0, 10000));
-
 		OnDied.Broadcast(this);
 		OnDied.Clear();
 
 		NetMultPlayParticleEffect(DeathEffect, GetActorLocation());
 
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
-
-		bool check = PoolManager->IsActorClassPooled(this->GetClass());
 		
-		if (PoolManager && check)
+		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
 		}

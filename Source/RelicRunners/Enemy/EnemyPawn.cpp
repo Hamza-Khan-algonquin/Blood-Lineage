@@ -259,6 +259,26 @@ void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirectio
 	}
 }
 
+void AEnemyPawn::Multicast_GoldStuff_Implementation()
+{
+	/*if (EnemyStatsComponent->IsGold)
+	{
+		SetActorScale3D(GetActorScale3D() * 1.25);
+	}
+	else
+	{
+		SetActorScale3D(GetActorScale3D());
+	}*/
+
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("IsGold", EnemyStatsComponent->IsGold);
+		}
+	}
+}
+
 inline bool AEnemyPawn::IsDead()
 {
 	return EnemyStatsComponent->GetCurrentHealth() <= 0;
@@ -266,7 +286,9 @@ inline bool AEnemyPawn::IsDead()
 
 void AEnemyPawn::ResetEnemy()
 {
-	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
+	EnemyStatsComponent->ResetStats();
+
+	Multicast_GoldStuff();
 
 	if (IsValid(MovementComponent))
 	{
@@ -390,7 +412,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 	float chance = FMath::FRandRange(0.f, 100.f);
 	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
 	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
-	if (GoldEnemy) chance = 0;
+	if (EnemyStatsComponent->IsGold) chance = 0;
 
 	if (chance <= chanceToDropOverall)
 	{
@@ -403,7 +425,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 
 		float GoldLuck = 0;
 		float UsedLuck = Luck;
-		if (GoldEnemy) GoldLuck = 95; UsedLuck = GoldLuck;
+		if (EnemyStatsComponent->IsGold) GoldLuck = 95; UsedLuck = GoldLuck;
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
 			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(UsedLuck), ItemMeshData, Lib),
@@ -553,25 +575,7 @@ void AEnemyPawn::BeginPlay()
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
 
-	float hueOffset = FMath::FRand();
-	float goldChance = FMath::FRandRange(0.f, 100.0f);
-	if (goldChance <= 1.f) GoldEnemy = true;
-
-	if (GoldEnemy)
-	{
-		EnemyStatsComponent->SetMaxHealth(EnemyStatsComponent->GetMaxHealth() * 4);
-		EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
-		SetActorScale3D(GetActorScale3D() * 1.25);
-	}
-
-	for (UMaterialInstanceDynamic* element : DynamicMaterials)
-	{
-		if (element)
-		{
-			//element->SetScalarParameterValue("HueOffset", hueOffset);
-			element->SetScalarParameterValue("IsGold", GoldEnemy);
-		}
-	}
+	
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();
@@ -600,6 +604,7 @@ void AEnemyPawn::BeginPlay()
 
 	if (HasAuthority())
 	{
+		ResetEnemy();
 		MovementComponent->InitializeNavMeshPointer();
 	}
 }
@@ -672,21 +677,22 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 	if (!newIsActive)
 	{
 		NetMultSetIsActive(newIsActive);
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [&, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
 			{
-				IsActive = newIsActive;
+				this->IsActive = newIsActive;
 			}, 2.f, false);
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [&]()
+		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
 			{
-				NetMultSetIsActive(newIsActive);
+				this->NetMultSetIsActive(newIsActive);
 			}, 2.f, false);
 		IsActive = newIsActive;
 	}
 	
-	
+/*	NetMultSetIsActive(newIsActive);
+	IsActive = newIsActive;*/
 
 	if (!newIsActive)
 	{
@@ -717,7 +723,7 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AEnemyPawn, GoldEnemy);
+	//DOREPLIFETIME(AEnemyPawn, GoldEnemy);
 	//DOREPLIFETIME(AEnemyPawn, IsActive);
 }
 
