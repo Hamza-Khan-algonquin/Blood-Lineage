@@ -40,6 +40,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Materials)
 	UMaterialInterface* GlowRed;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	class UNiagaraSystem* CrystalExplosion;
+
 	virtual void BeginPlay() override;
 	UPROPERTY(VisibleAnywhere)
 	bool bWasTriggered = false;
