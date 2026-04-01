@@ -1017,10 +1017,11 @@ void ARelicRunnersPlayerController::SetupObjectives()
 		if (MapName.Contains(TEXT("IslandTest")))
 		{
 			ObjectiveStageTitle->TotalZones = 5;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Visible);
 		}
 		else if (MapName.Contains(TEXT("ShopDemo")) || MapName.Contains(TEXT("ThirdPersonMap")) || MapName.Contains(TEXT("BossLevel")))
 		{
-			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Collapsed);
 		}
 
 		if (ObjectiveLog)

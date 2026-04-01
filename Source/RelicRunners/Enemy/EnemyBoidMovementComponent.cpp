@@ -459,7 +459,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	if (ActiveNavMesh)
 	{
-		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, {100,100,200}))
+		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
 		{
 			FNavLocation navOutLocation;
 			if (!ActiveNavMesh->FindMoveAlongSurface(navLocation, finalMovement, navOutLocation, ActiveNavMesh->GetDefaultQueryFilter(), this))
