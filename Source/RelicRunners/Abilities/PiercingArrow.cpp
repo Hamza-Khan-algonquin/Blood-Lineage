@@ -200,8 +200,8 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
 
     if (AvatarActor->HasAuthority())
     {
-        PS->Multicast_SpawnVFX(ProjectileLocation, FRotator::ZeroRotator, FVector(1.f), AbilityVFX, false);
-        PS->Multicast_SpawnVFX(ProjectileLocation, FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, false);
+        PS->Multicast_SpawnVFX(ProjectileLocation + FVector(0,0,-100), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, false);
+        PS->Multicast_SpawnVFX(ProjectileLocation + FVector(0, 0, -100), FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, false);
     }
 
     // Start DoT ticking
