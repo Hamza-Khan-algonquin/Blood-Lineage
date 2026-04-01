@@ -71,7 +71,6 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->UpdateRemoteHUDResource();
 
     if (ActorInfo->IsLocallyControlled())
-
     {
         APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
         if (PC)
@@ -84,22 +83,19 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
             float AnimDuration = AbilityAnim->GetPlayLength();
 
             PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
-             
+
             if (PC)
             {
                 TWeakObjectPtr<APlayerController> WeakPC = PC;
                 TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+                TWeakObjectPtr<ARelicRunnersPlayerState> WeakPS = PS;
 
                 FTimerHandle InputTimerHandle;
-
                 GetWorld()->GetTimerManager().SetTimer(
                     InputTimerHandle,
                     [WeakPC, WeakWorld]()
                     {
-                        if (!WeakWorld.IsValid())
-                            return;
-
-                        if (!WeakPC.IsValid())
+                        if (!WeakWorld.IsValid() || !WeakPC.IsValid())
                             return;
 
                         if (!WeakPC->GetPawn())
@@ -110,6 +106,23 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
                     AnimDuration,
                     false
                 );
+
+                if (PS)
+                {
+                    PS->SetInvincible(true); 
+
+                    FTimerHandle InvincibleTimerHandle;
+                    GetWorld()->GetTimerManager().SetTimer(
+                        InvincibleTimerHandle,
+                        [WeakPS]()
+                        {
+                            if (!WeakPS.IsValid()) return;
+                            WeakPS->SetInvincible(false); 
+                        },
+                        AnimDuration,
+                        false
+                    );
+                }
             }
         }
     }
@@ -143,7 +156,19 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UGoddessOfLove::ApplyPassiveHealthRegen()
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = GetWorld();
     if (!World)
@@ -209,13 +234,20 @@ void UGoddessOfLove::ApplyInitialOverlap()
 
 void UGoddessOfLove::TickDamage()
 {
-    if (!CurrentActorInfo || !CurrentActorInfo->AvatarActor.IsValid())
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
     {
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
 
-    AActor* OwnerActor = CurrentActorInfo->AvatarActor.Get();
+    AActor* OwnerActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(OwnerActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
     DamageOrigin = OwnerActor->GetActorLocation();
 
     UWorld* World = GetWorld();

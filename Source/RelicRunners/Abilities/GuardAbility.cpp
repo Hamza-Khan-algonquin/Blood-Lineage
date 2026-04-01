@@ -109,10 +109,6 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
     
 }
 
-void UGuardAbility::ResetSpeed()
-{
-
-}
 
 void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo, FGameplayAbilityActivationInfo ActivationInfo)
 {

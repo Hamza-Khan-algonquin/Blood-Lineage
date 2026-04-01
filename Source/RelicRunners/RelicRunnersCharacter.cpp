@@ -589,51 +589,57 @@ bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp
 
 void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 {
-	if (Controller && Value != 0.0f)
+	if (Value == 0.0f)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		return; 
+	}
 
-		float SpeedMultiplier = 1.0f;
+	if (!Controller)
+	{
+		return; 
+	}
 
-		if (Axis == EAxis::X) // forward/backward
-		{
-			if (Value < 0.0f)
-			{
-				// moving backward
-				SpeedMultiplier = 0.6f; 
-			}
-		}
-		else if (Axis == EAxis::Y)
-		{
-			// strafing
-			SpeedMultiplier = 0.7f; 
-		}
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		if (Axis == EAxis::X)
-		{
-			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-			AddMovementInput(Direction, Value * SpeedMultiplier);
-		}
-		else if (Axis == EAxis::Y)
-		{
-			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-			AddMovementInput(Direction, Value * SpeedMultiplier);
-		}
+	float SpeedMultiplier = 1.0f;
 
-		const FString MapName = GetWorld()->GetMapName();
+	if (Axis == EAxis::X) 
+	{
+		if (Value < 0.0f)
+		{
+			SpeedMultiplier = 0.6f; 
+		}
+	}
+	else if (Axis == EAxis::Y) 
+	{
+		SpeedMultiplier = 0.7f;
+	}
+
+	// Base movement
+	FVector Direction;
+	if (Axis == EAxis::X)
+	{
+		Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	}
+	else if (Axis == EAxis::Y)
+	{
+		Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	}
+	else
+	{
+		return; 
+	}
+
+	AddMovementInput(Direction, Value * SpeedMultiplier);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		const FString MapName = World->GetMapName();
 		if (MapName.Contains(TEXT("BossLevel")))
 		{
-			if (Axis == EAxis::X)
-			{
-				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-				AddMovementInput(Direction, Value);
-			}
-			else if (Axis == EAxis::Y)
-			{
-				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-				AddMovementInput(Direction, Value);
-			}
+			AddMovementInput(Direction, Value); 
 		}
 	}
 }
