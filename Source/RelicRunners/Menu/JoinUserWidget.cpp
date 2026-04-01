@@ -951,6 +951,7 @@ void UJoinUserWidget::ApplyColorblindStyle()
 	SetImageColor(I_Cerberus, Highlight);
 	SetImageColor(I_CurrentDifficulty, Highlight);
 
+	//difficulties
 	if (TB_ClassName) TB_ClassName->SetColorAndOpacity(FSlateColor(TextColor));
 	if (TB_ClassRole) TB_ClassRole->SetColorAndOpacity(FSlateColor(TextColor));
 	if (TB_Ability1) TB_Ability1->SetColorAndOpacity(FSlateColor(TextColor));
@@ -984,6 +985,8 @@ void UJoinUserWidget::ApplyColorblindStyle()
 	if (TB_CurrentLuck) TB_CurrentLuck->SetColorAndOpacity(FSlateColor(TextColor));
 	if (TB_Countdown) TB_Countdown->SetColorAndOpacity(FSlateColor(Highlight));
 
+
+	//icons
 	if (DamageIcon) DamageIcon->SetColorAndOpacity(DamageIconColor * 1.5f);
 	if (DefenceIcon) DefenceIcon->SetColorAndOpacity(DefenceIconColor * 1.5f);
 	if (UtilityIcon) UtilityIcon->SetColorAndOpacity(UtilityIconColor * 1.5f);
@@ -994,6 +997,23 @@ void UJoinUserWidget::ApplyColorblindStyle()
 	if (StrengthIcon) StrengthIcon->SetColorAndOpacity(StrengthIconColor * 1.5f);
 	if (AgilityIcon)  AgilityIcon->SetColorAndOpacity(AgilityIconColor);
 	if (IntelligenceIcon) IntelligenceIcon->SetColorAndOpacity(IntelligenceIconColor);
+
+	//progress bars
+	auto SetBarColor = [](UProgressBar* Bar, const FLinearColor& Color)
+		{
+			if (!Bar) return;
+
+			FProgressBarStyle Style = Bar->GetWidgetStyle();
+			Style.FillImage.TintColor = FSlateColor(Color);
+			Bar->SetWidgetStyle(Style);
+		};
+
+	//apply colors 
+	SetBarColor(HealthBar, HealthIconColor);
+	SetBarColor(ArmorBar, DIconColor);
+	SetBarColor(DexterityBar, AgilityIconColor);
+	SetBarColor(StrengthBar, StrengthIconColor);
+	SetBarColor(IntelligenceBar, IntelligenceIconColor);
 
 	SetSelectedClass(CurrentClass);
 

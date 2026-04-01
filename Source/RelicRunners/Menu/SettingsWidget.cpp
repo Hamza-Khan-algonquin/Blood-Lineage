@@ -16,6 +16,7 @@
 #include "Components/Slider.h"
 #include "EngineUtils.h"
 #include <Camera/CameraComponent.h>
+#include "Camera/CameraActor.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "Components/ComboBoxString.h"
 #include "PauseMenuWidget.h"
@@ -711,49 +712,64 @@ void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type Sel
 
 void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 {
-	
-	/*for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	const float Intensity = (GI && GI->ColorblindMode != EColorblindMode::Normal) ? 0.5f : 0.0f;
+
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 	{
-		if (CamItr->GetWorld() != GetWorld()) continue;
-
-		CamItr->PostProcessBlendWeight = 1.0f;
-
-		FPostProcessSettings& PPS = CamItr->PostProcessSettings;
-		PPS.bOverride_ColorGradingLUT = true;
-		PPS.ColorGradingLUT = LUT;
-		PPS.bOverride_ColorGradingIntensity = true;
-		PPS.ColorGradingIntensity = 0.f;
+		if (APlayerCameraManager* CameraManager = PC->PlayerCameraManager)
+		{
+			FPostProcessSettings& PPS = CameraManager->ViewTarget.POV.PostProcessSettings;
+			PPS.bOverride_ColorGradingLUT = true;
+			PPS.ColorGradingLUT = LUT;
+			PPS.bOverride_ColorGradingIntensity = true;
+			PPS.ColorGradingIntensity = Intensity;
+		}
 	}
-	
-	
 
-	if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+
+	/*(ARelicRunnersCharacter * Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
 	{
 		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
 		{
 			FPostProcessSettings& PPS = Camera->PostProcessSettings;
-			
-
 			PPS.bOverride_ColorGradingLUT = true;
 			PPS.ColorGradingLUT = LUT;
-
 			PPS.bOverride_ColorGradingIntensity = true;
-
-			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
-			{
-				PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.f;
-			}
-			else
-			{
-				PPS.ColorGradingIntensity = 0.0f;
-			}
-
+			PPS.ColorGradingIntensity = Intensity;
 			Camera->PostProcessBlendWeight = 1.0f;
 		}
 	}
-	
 
-	for (TActorIterator<APostProcessVolume> It(GetWorld()); It; ++It)
+	*/
+	TArray<AActor*> AllActors;
+	UGameplayStatics::GetAllActorsOfClass(World, AActor::StaticClass(), AllActors);
+
+	for (AActor* Actor : AllActors)
+	{
+		if (!Actor) continue;
+
+		TArray<UCameraComponent*> CameraComponents;
+		Actor->GetComponents<UCameraComponent>(CameraComponents);
+
+		for (UCameraComponent* CameraComp : CameraComponents)
+		{
+			if (!CameraComp) continue;
+
+			FPostProcessSettings& PPS = CameraComp->PostProcessSettings;
+			PPS.bOverride_ColorGradingLUT = true;
+			PPS.ColorGradingLUT = LUT;
+			PPS.bOverride_ColorGradingIntensity = true;
+			PPS.ColorGradingIntensity = Intensity;
+			CameraComp->PostProcessBlendWeight = 1.0f;
+		}
+	}
+
+	/*for (TActorIterator<APostProcessVolume> It(GetWorld()); It; ++It)
 	{
 		APostProcessVolume* PPV = *It;
 
@@ -768,12 +784,26 @@ void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 
 			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 			{
-				PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.0f;
+				PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.5f;
 			}
 		}
 	}
-	*/
+	
+	for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
+	{
+		if (CamItr->GetWorld() != GetWorld()) continue;
 
+		CamItr->PostProcessBlendWeight = 1.0f;
+
+		FPostProcessSettings& PPS = CamItr->PostProcessSettings;
+		PPS.bOverride_ColorGradingLUT = true;
+		PPS.ColorGradingLUT = LUT;
+		PPS.bOverride_ColorGradingIntensity = true;
+		PPS.ColorGradingIntensity = 0.f;
+	}
+
+	
+	
 	if (!CachedPPV) return;
 
 	FPostProcessSettings& PPS = CachedPPV->Settings;
@@ -787,7 +817,7 @@ void USettingsWidget::ApplyColorLUT(UTexture* LUT)
 	{
 		PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.0f;
 	}
-
+	*/
 
 	
 }

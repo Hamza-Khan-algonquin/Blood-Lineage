@@ -20,11 +20,11 @@ void UMinimap::SetMinimapImage(UTextureRenderTarget2D* NewRenderTarget)
 		return;
 	}
 
-	UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(MinimapBaseMaterial, GetOwningPlayer());
-	if (DynMaterial)
+	MinimapID = UMaterialInstanceDynamic::Create(MinimapBaseMaterial, GetOwningPlayer());
+	if (MinimapID)
 	{
-		DynMaterial->SetTextureParameterValue(FName("MinimapTexture"), NewRenderTarget);
-		I_Minimap->SetBrushFromMaterial(DynMaterial);
+		MinimapID->SetTextureParameterValue(FName("MinimapTexture"), NewRenderTarget);
+		I_Minimap->SetBrushFromMaterial(MinimapID);
 		UE_LOG(LogTemp, Warning, TEXT("[UI-Minimap] Success! RenderTarget set."));
 	}
 }
@@ -107,3 +107,4 @@ void UMinimap::SetLevelTitle(FText title)
 {
 	TB_Title->SetText(title);
 }
+

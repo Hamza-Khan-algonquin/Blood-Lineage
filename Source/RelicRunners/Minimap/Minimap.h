@@ -34,4 +34,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Minimap")
 	TObjectPtr<UMaterialInterface> MinimapToonPostProcess;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* MinimapID = nullptr;
+
 };

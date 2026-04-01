@@ -371,10 +371,21 @@ void UPlayerHUD::ApplyHUDColorblindStyle()
 		break;
 	}
 
-	if (HealthBar) HealthBar->SetFillColorAndOpacity(HealthColor);
-	if (HealthBar_1) HealthBar_1->SetFillColorAndOpacity(HealthColor);
-	if (ResourceBar) ResourceBar->SetFillColorAndOpacity(ResourceColor);
-	if (ResourceBar_1) ResourceBar_1->SetFillColorAndOpacity(ResourceColor);
+	auto SetBarColor = [](UProgressBar* Bar, const FLinearColor& Color)
+		{
+			if (!Bar) return;
+
+			FProgressBarStyle Style = Bar->GetWidgetStyle();
+			Style.FillImage.TintColor = FSlateColor(Color);
+			Bar->SetWidgetStyle(Style);
+			Bar->SetFillColorAndOpacity(Color);
+		};
+
+	SetBarColor(HealthBar, HealthColor);
+	SetBarColor(HealthBar_1, HealthColor);
+	SetBarColor(ResourceBar, ResourceColor);
+	SetBarColor(ResourceBar_1, ResourceColor);
+
 	if (ExperienceBar) ExperienceBar->SetFillColorAndOpacity(XPColor);
 
 	if (TB_Health) TB_Health->SetColorAndOpacity(FSlateColor(TextColor));
