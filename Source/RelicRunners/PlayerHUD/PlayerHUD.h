@@ -32,6 +32,10 @@ public:
 
 	virtual void NativeConstruct();
 
+	FTimerHandle TimerHandle_InitHUD;
+
+	void InitializeHUDIcons();
+
 	void ToggleExpBar(bool value);
 
 	void ToggleBossBar(bool value);
@@ -49,6 +53,18 @@ public:
 	void UpdateHUDResource(float CurrentResource, float MaxResource);
 
 	void UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel);
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability1 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability2 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability3 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability4 = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* ExpHUD;

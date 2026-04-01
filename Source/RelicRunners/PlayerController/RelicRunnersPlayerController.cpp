@@ -705,7 +705,7 @@ void ARelicRunnersPlayerController::Client_UpdateStage_Implementation(int StageN
 {
 	if (MinimapWidget)
 	{
-		FText FinalText = FText::Format(FText::FromString("Stage {0}"), StageNumber);
+		FText FinalText = FText::Format(FText::FromString("Olympus {0}"), StageNumber);
 		MinimapWidget->SetLevelTitle(FinalText);
 	}
 }
@@ -1017,10 +1017,11 @@ void ARelicRunnersPlayerController::SetupObjectives()
 		if (MapName.Contains(TEXT("IslandTest")))
 		{
 			ObjectiveStageTitle->TotalZones = 5;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Visible);
 		}
 		else if (MapName.Contains(TEXT("ShopDemo")) || MapName.Contains(TEXT("ThirdPersonMap")) || MapName.Contains(TEXT("BossLevel")))
 		{
-			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Collapsed);
 		}
 
 		if (ObjectiveLog)

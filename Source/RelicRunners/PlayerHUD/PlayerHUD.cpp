@@ -25,6 +25,7 @@
 #include <RelicRunners/Menu/Keybinds.h>
 #include <RelicRunners/Item/ItemStats.h>
 #include <Kismet/KismetMaterialLibrary.h>
+#include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 
 void UPlayerHUD::NativeConstruct()
 {
@@ -35,6 +36,56 @@ void UPlayerHUD::NativeConstruct()
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
 	UpdateBindText();
+
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_InitHUD, this, &UPlayerHUD::InitializeHUDIcons, 0.5f, true);
+}
+
+void UPlayerHUD::InitializeHUDIcons()
+{
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			if (PS->SelectedClass == "Ares")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("BloodRush"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("WarBanner"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("RageOfTheGods"));
+			}
+			else if (PS->SelectedClass == "Artemis")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("FireArrow"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("Impunity"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("SplitShot"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("Moonbeam"));
+			}
+			else if (PS->SelectedClass == "Aphrodite")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("BundleOfJoy"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("MirrorOfDesire"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("GoddessOfLove"));
+			}
+			else if (PS->SelectedClass == "Nemesis")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("Backstab"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("NaturesBlessing"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("VengefulDance"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("DivinePunishment"));
+			}
+		}
+	}
 }
 
 void UPlayerHUD::ToggleExpBar(bool value)

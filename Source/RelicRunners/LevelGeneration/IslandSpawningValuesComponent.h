@@ -21,10 +21,10 @@ struct FIslandValues
 	float FullPercentage = 50.0f;
 
 	UPROPERTY(EditAnywhere)
-	FString TargetLevel;
+	FString BossLevel;
 
 	UPROPERTY(EditAnywhere)
-	FString BossLevel;
+	FString TargetLevel;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ALevelChangeTrigger> LevelChangeTrigger;
