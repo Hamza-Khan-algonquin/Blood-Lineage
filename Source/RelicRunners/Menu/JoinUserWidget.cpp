@@ -547,7 +547,7 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 		if (!Lib) return;
 		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("BundleOfJoy"));
 		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("MirrorOfDesire"));
-		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("KissOfLife"));
 		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("GoddessOfLove"));
 	}
 	else if (ClassKey == "Nemesis")
