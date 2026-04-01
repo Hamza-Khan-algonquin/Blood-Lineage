@@ -18,6 +18,7 @@
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 void AEnemyCharacter::Destroy()
 {
@@ -327,13 +328,13 @@ void AEnemyCharacter::NetMultSetIsActive_Implementation(bool newIsActive)
 	if (newIsActive)
 	{
 		this->SetActorHiddenInGame(false);
-		this->SetActorEnableCollision(true);
+		this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
-		this->SetActorEnableCollision(false);
+		this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		this->SetActorTickEnabled(false);
 	}
 }
@@ -422,23 +423,28 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	{
 		if (IsValid(commander))
 		{
+/*			commander->StopMovement();
+			GetCharacterMovement()->StopMovementImmediately();
+			//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+
 			UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(commander->BrainComponent);
 
 			if (IsValid(BTComp))
 			{
-				BTComp->StopTree(EBTStopMode::Safe);
-			}
+				BTComp->StopLogic(TEXT("Deactivated"));
+				BTComp->RestartLogic();
+			}*/
 		}
 		
 		OnDeactivated.Broadcast(this);
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
 
 	if (pool && SetControllerActiveStatus && GetController() && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyCharacter::GetLifeSpanTimerHandle()

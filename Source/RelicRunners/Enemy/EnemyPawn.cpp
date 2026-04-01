@@ -738,12 +738,14 @@ void AEnemyPawn::NetMultSetIsActive_Implementation(bool newIsActive)
 	{
 		this->SetActorHiddenInGame(false);
 		this->SetActorEnableCollision(true);
+		this->CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
 		this->SetActorEnableCollision(false);
+		this->CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		//this->SetActorTickEnabled(false);
 	}
 }

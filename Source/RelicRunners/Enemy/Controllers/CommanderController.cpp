@@ -137,9 +137,10 @@ void ACommanderController::Tick(float DeltaTime)
 		BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
 		
 		IsTargeting = distance <= DistanceToTargetPlayer;
-
-		if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+		bool test = (!BTComp || !BTComp->IsRunning());
+		if ((!BTComp || !BTComp->IsRunning()) && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
 		{
+
 			MoveToActor(TargetPlayer, 25);
 		}
 		else if (!IsTargeting)
