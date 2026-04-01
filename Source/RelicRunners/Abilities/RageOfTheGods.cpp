@@ -24,19 +24,19 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+    if (!ActorInfo)
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor)
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
-
     }
+
     UWorld* World = GetWorld();
     if (!World) return;
 
@@ -202,7 +202,6 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
         return;
     }
 
-    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
     if (!IsValid(AvatarActor))
     {
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
