@@ -524,9 +524,9 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 		SetImageColor(I_Ares, Black);
 		if (!Lib) return;
 		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
-		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
-		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
-		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("BloodRush"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("WarBanner"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("RageOfTheGods"));
 	}
 	else if (ClassKey == "Artemis")
 	{
@@ -545,10 +545,10 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 		SetBorderColor(B_Aphrodite, Black);
 		SetImageColor(I_Aphrodite, Black);
 		if (!Lib) return;
-		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
-		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("BundleOfJoy"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("MirrorOfDesire"));
 		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
-		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("GoddessOfLove"));
 	}
 	else if (ClassKey == "Nemesis")
 	{

@@ -94,6 +94,8 @@ public:
 	// Sets default values for this actor's properties
 	AIslandGenerationTest();
 
+	bool HasGoneToShop = false;
+
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
 

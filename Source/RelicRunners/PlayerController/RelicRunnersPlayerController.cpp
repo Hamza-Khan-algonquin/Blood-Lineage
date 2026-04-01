@@ -705,7 +705,7 @@ void ARelicRunnersPlayerController::Client_UpdateStage_Implementation(int StageN
 {
 	if (MinimapWidget)
 	{
-		FText FinalText = FText::Format(FText::FromString("Stage {0}"), StageNumber);
+		FText FinalText = FText::Format(FText::FromString("Olympus {0}"), StageNumber);
 		MinimapWidget->SetLevelTitle(FinalText);
 	}
 }
