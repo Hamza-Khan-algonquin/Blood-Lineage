@@ -268,7 +268,14 @@ void ARelicRunnersPlayerController::CleanUI()
 	//Clean up UI
 	if (UWorld* World = GetWorld())
 	{
+
 		if (!IsLocalController()) return;
+
+		ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
+		if (Char)
+		{
+			Char->EndAllAbilities();
+		}
 
 		DisableInput(this);
 
