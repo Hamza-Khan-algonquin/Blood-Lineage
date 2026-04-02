@@ -845,6 +845,7 @@ void ARelicRunnersCharacter::HealthPotions()
 	if (RelicPlayerState)
 	{
 		RelicPlayerState->Server_UseHealthPotion();
+		Server_PlayAbilityAnimation(HealPotionAnim, 1.f);
 	}
 }
 
@@ -1053,8 +1054,6 @@ void ARelicRunnersCharacter::UltimateAbility()
 
 void ARelicRunnersCharacter::Multicast_PlayAbilityAnimation_Implementation(UAnimMontage* Montage, float AnimSpeed)
 {
-	if (IsLocallyControlled()) return; 
-
 	if (!Montage) return;
 
 	USkeletalMeshComponent* Mesh1 = FindComponentByClass<USkeletalMeshComponent>();
@@ -1073,42 +1072,58 @@ void ARelicRunnersCharacter::Server_PlayAbilityAnimation_Implementation(UAnimMon
 
 void ARelicRunnersCharacter::Multicast_SpawnBeam_Implementation(AActor* Target, UNiagaraSystem* VFX)
 {
-	if (!Target || !VFX) return;
+	// Validate input early
+	if (!IsValid(this) || !IsValid(Target) || !IsValid(VFX))
+	{
+		return;
+	}
 
 	USceneComponent* RootComp = GetRootComponent();
-	if (!RootComp) return;
+	if (!IsValid(RootComp))
+	{
+		return;
+	}
 
-	UNiagaraComponent** FoundBeamPtr = ActiveBeams.Find(Target);
+	for (auto It = ActiveBeams.CreateIterator(); It; ++It)
+	{
+		if (!IsValid(It.Key()) || !IsValid(It.Value()))
+		{
+			if (IsValid(It.Value()))
+			{
+				It.Value()->DestroyComponent();
+			}
+			It.RemoveCurrent();
+		}
+	}
 
-	if (FoundBeamPtr)
+	// Try to find existing beam
+	if (UNiagaraComponent** FoundBeamPtr = ActiveBeams.Find(Target))
 	{
 		UNiagaraComponent* FoundBeam = *FoundBeamPtr;
 
-		// Check if the beam is still valid
-		if (IsValid(FoundBeam))
+		if (IsValid(FoundBeam) && IsValid(Target))
 		{
-			FoundBeam->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
-			return;
+			if (FoundBeam->GetWorld() == GetWorld())
+			{
+				FoundBeam->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
+				return;
+			}
+			else
+			{
+				FoundBeam->DestroyComponent();
+				ActiveBeams.Remove(Target);
+			}
 		}
 		else
 		{
-			// Beam is invalid, remove from map
 			ActiveBeams.Remove(Target);
 		}
 	}
 
-	// Spawn new beam if none exists
-	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		VFX,
-		RootComp,
-		NAME_None,
-		FVector::ZeroVector,
-		FRotator::ZeroRotator,
-		EAttachLocation::KeepRelativeOffset,
-		true
-	);
+	// Spawn new beam
+	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(VFX,RootComp,NAME_None,FVector::ZeroVector,FRotator::ZeroRotator,EAttachLocation::KeepRelativeOffset,true);
 
-	if (BeamComp)
+	if (IsValid(BeamComp) && IsValid(Target))
 	{
 		BeamComp->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
 		ActiveBeams.Add(Target, BeamComp);

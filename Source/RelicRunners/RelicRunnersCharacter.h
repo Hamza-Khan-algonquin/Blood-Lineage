@@ -223,6 +223,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* BasicAnim;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* HealPotionAnim;
+
 	//Functions
 	void Tick(float DeltaTime);
 	virtual void UpdateCamera(float DeltaTime);

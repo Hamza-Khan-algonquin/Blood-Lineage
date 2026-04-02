@@ -348,5 +348,10 @@ protected:
     TObjectPtr<UAttributeSet> AttributeSet;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
     class UInventoryComponent* InventoryComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+	TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;
+
+
 };
 

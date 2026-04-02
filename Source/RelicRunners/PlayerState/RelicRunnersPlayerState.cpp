@@ -468,6 +468,7 @@ void ARelicRunnersPlayerState::Server_UseHealthPotion_Implementation()
 		}
 
 		PlayHealPotionSound();
+		Multicast_SpawnVFX(FVector(0, 0, 0), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
 
 		// Notify owning client to update HUD
 		UpdateRemoteHUDHealth();

@@ -187,7 +187,6 @@ void UGoddessOfLove::ApplyPassiveHealthRegen()
 
         PS->PassiveHealthRegen();
     }
-
 }
 
 void UGoddessOfLove::ApplyInitialOverlap()
