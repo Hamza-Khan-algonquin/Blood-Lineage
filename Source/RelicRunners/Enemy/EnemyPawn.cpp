@@ -683,22 +683,22 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		return;
 	}
 
-	
+	TWeakObjectPtr<AEnemyPawn> weakThis = this;
 	if (!newIsActive)
 	{
 		NetMultSetIsActive(newIsActive);
-		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [this, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [weakThis, newIsActive]()
 			{
-				if(this)
-					this->IsActive = newIsActive;
+				if(weakThis.IsValid())
+					weakThis.Get()->IsActive = newIsActive;
 			}, 2.f, false);
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [this, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [weakThis, newIsActive]()
 			{
-				if (this)
-					this->NetMultSetIsActive(newIsActive);
+				if (weakThis.IsValid())
+					weakThis.Get()->NetMultSetIsActive(newIsActive);
 			}, 2.f, false);
 		IsActive = newIsActive;
 	}
