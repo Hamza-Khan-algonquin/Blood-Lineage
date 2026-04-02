@@ -16,6 +16,7 @@ AMinotaurCharacter::AMinotaurCharacter()
 	//AttackOverlapCollider->SetupAttachment(GetMesh());
 	EnemyStatsComponent->SetName("Minotaur");
 	EnemyStatsComponent->SetEnemyType(EEnemyType::MEDIUM);
+	OverrideCollisionType = true;
 }
 
 void AMinotaurCharacter::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -37,7 +38,7 @@ void AMinotaurCharacter::DelaySpikeCheck(float delay, float raduis, float damage
 	TArray<FVector> newLocations = locations;
 
 	GetWorld()->GetTimerManager().SetTimer(temp, [&, newLocations, delay, raduis, damageMult]() {
-			if (!GetWorld() && !IsValid(this) && !IsValid(EnemyStatsComponent))
+			if (!GetWorld() && !this && !EnemyStatsComponent)
 			{
 				return;
 			}

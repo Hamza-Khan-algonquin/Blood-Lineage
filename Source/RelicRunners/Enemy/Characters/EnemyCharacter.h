@@ -62,7 +62,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
 
-
+	UPROPERTY(EditAnywhere)
+	bool OverrideCollisionType = false;
 	
 
 	//interface implementation variable

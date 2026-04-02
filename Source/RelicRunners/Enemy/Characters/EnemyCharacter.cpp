@@ -328,13 +328,19 @@ void AEnemyCharacter::NetMultSetIsActive_Implementation(bool newIsActive)
 	if (newIsActive)
 	{
 		this->SetActorHiddenInGame(false);
-		this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		if (OverrideCollisionType)
+		{
+			this->GetCapsuleComponent()->SetCollisionProfileName("Enemy");
+		}
 		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
-		this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		if (OverrideCollisionType)
+		{
+			this->GetCapsuleComponent()->SetCollisionProfileName("MinotaurDisable");
+		}
 		//this->SetActorTickEnabled(false);
 	}
 }
