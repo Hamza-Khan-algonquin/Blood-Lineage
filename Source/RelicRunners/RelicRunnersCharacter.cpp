@@ -609,11 +609,14 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 		if (Value < 0.0f)
 		{
 			SpeedMultiplier = 0.6f; 
+			Server_PlayAbilityAnimation(BackStepAnim, 1.f);
 		}
 	}
 	else if (Axis == EAxis::Y) 
 	{
 		SpeedMultiplier = 0.7f;
+		Server_PlayAbilityAnimation(SideStepLeftAnim, 1.f);
+
 	}
 
 	// Base movement
@@ -845,6 +848,7 @@ void ARelicRunnersCharacter::HealthPotions()
 	if (RelicPlayerState)
 	{
 		RelicPlayerState->Server_UseHealthPotion();
+		Server_PlayAbilityAnimation(HealPotionAnim, 1.f);
 	}
 }
 
@@ -1053,7 +1057,6 @@ void ARelicRunnersCharacter::UltimateAbility()
 
 void ARelicRunnersCharacter::Multicast_PlayAbilityAnimation_Implementation(UAnimMontage* Montage, float AnimSpeed)
 {
-	if (IsLocallyControlled()) return; 
 
 	if (!Montage) return;
 

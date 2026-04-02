@@ -226,6 +226,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* HealPotionAnim;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* SideStepLeftAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* SideStepRightAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* BackStepAnim;
+
 	//Functions
 	void Tick(float DeltaTime);
 	virtual void UpdateCamera(float DeltaTime);
