@@ -29,6 +29,7 @@
 #include "PlayerController/RelicRunnersPlayerController.h"
 #include "Game/RelicRunnersGameInstance.h"
 #include "Game/PostGameWidget.h"
+#include "RelicRunnersGameState.h"
 
 ARelicRunnersGameMode::ARelicRunnersGameMode()
 {
@@ -160,4 +161,46 @@ void ARelicRunnersGameMode::PreLogin(const FString& Options, const FString& Addr
     {
         ErrorMessage = TEXT("Match_Already_In_Progress");
     }
+}
+
+void ARelicRunnersGameMode::RecordPawnReadyTime(APlayerController* PC)
+{
+    if (!PC) return;
+
+    ControllerPawnReadyTimes.Add(PC, GetWorld()->GetTimeSeconds());
+
+    if (ARelicRunnersGameState* GS = GetWorld()->GetGameState<ARelicRunnersGameState>())
+    {
+        int TotalPlayers = GS->PlayerArray.Num();
+        int ReadyPlayers = ControllerPawnReadyTimes.Num();
+
+        UE_LOG(LogTemp, Log, TEXT("Progress: %d/%d players ready."), ReadyPlayers, TotalPlayers);
+
+        if (ReadyPlayers >= TotalPlayers && TotalPlayers > 0)
+        {
+            OnAllPawnsSpawned();
+        }
+    }
+}
+
+float ARelicRunnersGameMode::GetTimeSinceLastPawnSetup() const
+{
+    if (ControllerPawnReadyTimes.Num() == 0) return -1.0f;
+
+    float LatestTime = 0.0f;
+    for (auto& It : ControllerPawnReadyTimes)
+    {
+        if (It.Value > LatestTime)
+        {
+            LatestTime = It.Value;
+        }
+    }
+
+    return GetWorld()->GetTimeSeconds() - LatestTime;
+}
+
+void ARelicRunnersGameMode::OnAllPawnsSpawned()
+{
+    UE_LOG(LogTemp, Warning, TEXT("All Pawns Acknowledged! Starting game logic..."));
+    LastTimeStamp = GetWorld()->GetTimeSeconds();
 }

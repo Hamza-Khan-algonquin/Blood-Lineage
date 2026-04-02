@@ -35,12 +35,10 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!CurrentActorInfo) return;
-
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor)
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
 
@@ -103,7 +101,19 @@ void UPiercingArrow::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UPiercingArrow::TickArrow()
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     if (!SpawnedProjectile)
         return;
@@ -154,9 +164,19 @@ void UPiercingArrow::TickArrow()
 
 void UPiercingArrow::Explode(FVector ImpactPoint)
 {
-    if (!CurrentActorInfo) return;
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
@@ -180,8 +200,8 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
 
     if (AvatarActor->HasAuthority())
     {
-        PS->Multicast_SpawnVFX(ProjectileLocation, FRotator::ZeroRotator, FVector(1.f), AbilityVFX, false);
-        PS->Multicast_SpawnVFX(ProjectileLocation, FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, false);
+        PS->Multicast_SpawnVFX(ProjectileLocation + FVector(0,0,-100), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, false);
+        PS->Multicast_SpawnVFX(ProjectileLocation + FVector(0, 0, -100), FRotator::ZeroRotator, FVector(1.f), AbilityVFX1, false);
     }
 
     // Start DoT ticking
@@ -190,10 +210,19 @@ void UPiercingArrow::Explode(FVector ImpactPoint)
 
 void UPiercingArrow::ApplyDotTick()
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!IsValid(AvatarActor)) return;
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;

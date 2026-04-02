@@ -132,10 +132,19 @@ void UVengefulDance::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UVengefulDance::ApplyRingDamage()
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor that owns this ability
-    if (!AvatarActor) return; // Exit if invalid
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = AvatarActor->GetWorld(); // Get the world
     if (!World) return; // Exit if world is invalid

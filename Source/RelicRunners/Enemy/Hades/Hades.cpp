@@ -166,6 +166,7 @@ void AHades::OnRep_VortexForce()
 void AHades::ScheduleNextAttack(float Delay)
 {
     if (!HasAuthority()) return;
+    if (bIsSpawningShockwaves || ShockwavesSpawned > 0) return;
     GetWorldTimerManager().SetTimer(AttackLoopTimer, this, &AHades::ExecuteAttack, Delay, false);
 }
 
@@ -338,7 +339,7 @@ void AHades::CinematicSlam()
 
             if (StrongSelf->SlamImpactSound)
             {
-                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+                UGameplayStatics::PlaySoundAtLocation(StrongSelf, StrongSelf->SlamImpactSound, SlamLoc);
             }
 
             StrongSelf->MulticastOnBridgeDestroyed(StrongSelf->BridgeToDestroy->GetActorLocation());
@@ -765,7 +766,6 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 
     Multicast_PlaySlamNiagara(ImpactLocation, ImpactRadius);
 
-    //Slam right before sweep
     if (bIsInitialSlamming) return;
 
     UGameplayStatics::ApplyRadialDamage(
@@ -773,18 +773,22 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
         nullptr, ActorsToIgnore, this, nullptr, true
     );
 
-    if (!bHitAnObelisk)
+    if (bHitAnObelisk)
     {
-        UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack."));
-        bIsBusy = false;
-        ScheduleNextAttack(2.0f);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Hades hit the obelisk!"));
+        UE_LOG(LogTemp, Warning, TEXT("HADES: ExecuteDamage confirmed the hit."));
+        return;
     }
 
-    //DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
+    //If the boss is suddenly "Busy" with a DamagedMontage, don't schedule a miss.
+    if (ShockwavesSpawned > 0 || bIsSpawningShockwaves)
+    {
+        UE_LOG(LogTemp, Log, TEXT("HADES: Obelisk hit detected via Notify before Execute finished. Aborting Miss logic."));
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack."));
+    bIsBusy = false;
+    ScheduleNextAttack(2.0f);
 }
 
 void AHades::Multicast_PlaySlamNiagara_Implementation(FVector Location, float Radius)
@@ -851,6 +855,9 @@ void AHades::NotifyObeliskHit(AActor* Obelisk)
 {
     if (!HasAuthority()) return;
 
+    GetWorldTimerManager().ClearTimer(AttackLoopTimer);
+    GetWorldTimerManager().ClearAllTimersForObject(this);
+
     ObelisksHit++;
 
     float DamageToSelf = MaxHealth * 0.25f;
@@ -884,7 +891,9 @@ void AHades::ExecuteRepeatedShockwave()
     if (ShockwavesSpawned >= 6)
     {
         ResetAllStates();
-        ScheduleNextAttack(5.f);
+        ShockwavesSpawned = 0;
+
+        ScheduleNextAttack(5.0f);
     }
 }
 

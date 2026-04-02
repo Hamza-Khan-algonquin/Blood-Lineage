@@ -11,15 +11,15 @@ struct FPlayerPostGameData
 {
     GENERATED_BODY()
 
-    UPROPERTY() FString Username;
-    UPROPERTY() int MetaLevel;
-    UPROPERTY() int MetaXP;
-    UPROPERTY() int MetaXPToNextLevel;
+    UPROPERTY() FString Username = "";
+    UPROPERTY() int MetaLevel = 0;
+    UPROPERTY() int MetaXP = 0;
+    UPROPERTY() int MetaXPToNextLevel = 0;
 
-    UPROPERTY() int MetaXPGainInRun;
-    UPROPERTY() int LevelsEarned;
-    UPROPERTY() int EnemiesKilled;
-    UPROPERTY() int Deaths;
+    UPROPERTY() int MetaXPGainInRun = 0;
+    UPROPERTY() int LevelsEarned = 0;
+    UPROPERTY() int EnemiesKilled = 0;
+    UPROPERTY() int Deaths = 0;
 };
 
 UCLASS()

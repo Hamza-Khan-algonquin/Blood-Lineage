@@ -140,6 +140,8 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePandoraUI(float NewPercent, const FString& NewTimeText);
+	UFUNCTION(Server, Reliable)
+	void Server_RecordPawnReadyTime();
 
 	//UFUNCTION(Client, Reliable)
 	//void Client_UpdateEnemiesUI(int EnemiesLeft);
