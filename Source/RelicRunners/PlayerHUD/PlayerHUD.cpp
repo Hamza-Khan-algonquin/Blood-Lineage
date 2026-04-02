@@ -37,7 +37,7 @@ void UPlayerHUD::NativeConstruct()
 	}
 	UpdateBindText();
 
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle_InitHUD, this, &UPlayerHUD::InitializeHUDIcons, 2.f, false);
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_InitHUD, this, &UPlayerHUD::InitializeHUDIcons, 3.f, false);
 }
 
 void UPlayerHUD::InitializeHUDIcons()

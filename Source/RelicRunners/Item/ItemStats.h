@@ -477,7 +477,7 @@ public:
         TSet<FString> MixedTypes = { "Necklace" };
 
         //Size of armor multiplier
-        float SizeMult = 1.0f;
+        float SizeMult = 2.0f; //Default for necklace no hp or def on it
         if (ItemType == "Upper" || ItemType == "Lower") SizeMult = 1.5f;
         else if (ItemType == "Helmet") SizeMult = 1.3f;
         else if (ItemType == "Arms") SizeMult = 1.1f;

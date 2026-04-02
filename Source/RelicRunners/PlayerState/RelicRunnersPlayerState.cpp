@@ -823,6 +823,13 @@ void ARelicRunnersPlayerState::Server_UnequipItemByID_Implementation(FGuid ID)
 void ARelicRunnersPlayerState::OnRep_SelectedClass()
 {
     OnSelectedClassChanged.Broadcast(SelectedClass);
+	if (APlayerController* PC = GetPlayerController())
+	{
+		if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+		{
+			if(RPC->PlayerHUD) RPC->PlayerHUD->InitializeHUDIcons();
+		}
+	}
 }
 
 void ARelicRunnersPlayerState::OnRep_PlayerGold()
