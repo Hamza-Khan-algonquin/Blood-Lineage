@@ -74,7 +74,7 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() && !IsActive)
+	if (!HasAuthority() && !IsActive && IsHidden())
 	{
 		return 0;
 	}
@@ -133,7 +133,7 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 void AEnemyCharacter::Die(AController* EventInstigator)
 {
-	if (HasAuthority() && IsActive)
+	if (HasAuthority() && IsActive && !IsHidden())
 	{
 		SpawnItem();
 
@@ -329,13 +329,13 @@ void AEnemyCharacter::NetMultSetIsActive_Implementation(bool newIsActive)
 	{
 		this->SetActorHiddenInGame(false);
 		this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		this->SetActorTickEnabled(this->GetShouldTick());
+		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
-		this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		this->SetActorTickEnabled(false);
+		this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		//this->SetActorTickEnabled(false);
 	}
 }
 
@@ -431,8 +431,7 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 
 			if (IsValid(BTComp))
 			{
-				BTComp->StopLogic(TEXT("Deactivated"));
-				BTComp->RestartLogic();
+				BTComp->StopTree(EBTStopMode::Forced);
 			}
 		}
 		

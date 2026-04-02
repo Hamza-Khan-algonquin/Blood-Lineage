@@ -172,11 +172,6 @@ void ACommanderController::Tick(float DeltaTime)
 		AttackCheck(players, DeltaTime);
 	}
 	
-
-	
-
-		
-	
 	if(InactiveCheck())
 	{
 		if (AEnemyCharacter* enemyChar = Cast<AEnemyCharacter>(pawn))
@@ -215,6 +210,11 @@ void ACommanderController::Tick(float DeltaTime)
 		}
 	}
 	
+}
+
+void ACommanderController::ResetTimeToAttackForPlayer(APawn* player)
+{
+	RemainingTimeToAttack.FindOrAdd(player) = TimeToAttack;
 }
 
 bool ACommanderController::InactiveCheck()
