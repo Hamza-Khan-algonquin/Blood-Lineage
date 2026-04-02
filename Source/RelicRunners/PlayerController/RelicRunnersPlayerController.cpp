@@ -1130,7 +1130,7 @@ void ARelicRunnersPlayerController::Internal_SetPayloadUI(float NewProgress)
 
 			PayloadGoal->ProgressFraction = NewProgress;
 
-			if (PayloadGoal->ProgressFraction >= 0.98f && !PayloadGoal->Completed)
+			if (PayloadGoal->ProgressFraction >= 0.99f && !PayloadGoal->Completed)
 			{
 				PayloadGoal->Completed = true;
 				PayloadGoal->ProgressFraction = 1.0f;
