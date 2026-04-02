@@ -16,6 +16,7 @@ class RELICRUNNERS_API UObjectiveItemEntry : public UUserWidget, public IUserObj
 public:
 
     void CompleteObjective();
+    void PlayObjectiveSound(USoundBase* SoundToPlay);
 protected:
 
     UPROPERTY(meta = (BindWidget))

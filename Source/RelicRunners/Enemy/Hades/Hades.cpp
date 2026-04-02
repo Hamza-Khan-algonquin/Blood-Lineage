@@ -152,6 +152,11 @@ void AHades::SpawnShockwave()
     {
         float Speed = 0.08f;
         NewRing->InitializeRing(DifficultyStrength, Speed);
+
+        if (ShockwaveSpawnSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, ShockwaveSpawnSound, FVector(0, 0, 150));
+        }
     }
 }
 

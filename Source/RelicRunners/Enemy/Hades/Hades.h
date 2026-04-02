@@ -73,6 +73,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
     TObjectPtr<USoundBase> SweepAttackSound = nullptr;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
+    TObjectPtr<USoundBase> ShockwaveSpawnSound = nullptr;
+
     UPROPERTY(Replicated)
     EBossPhase CurrentPhase = EBossPhase::Phase1;
 

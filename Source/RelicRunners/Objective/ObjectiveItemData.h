@@ -23,4 +23,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Objective")
     class UTexture2D* CompletedImage;
+
+    UPROPERTY()
+    bool bCompletionSoundPlayed = false;
 };

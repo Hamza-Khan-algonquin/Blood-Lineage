@@ -61,9 +61,17 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
                 Widget->B_Progress->SetVisibility(ESlateVisibility::Collapsed);
                 Widget->I_Payload->SetBrushFromTexture(ItemStats::LoadIcon("Checkmark"));
                 Widget->I_Payload->SetColorAndOpacity(FLinearColor::Green);
+                
+                if (!PayloadData->bCompletionSoundPlayed)
+                {
+                    PlayObjectiveSound(PayloadCompleteSound);
+                    PayloadData->bCompletionSoundPlayed = true;
+                }
             }
             else 
             {
+                PayloadData->bCompletionSoundPlayed = false;
+
                 Widget->I_Payload->SetBrushFromTexture(ItemStats::LoadIcon("PayloadIcon"));
                 Widget->I_Payload->SetColorAndOpacity(FLinearColor::White);
                 Widget->B_Progress->SetVisibility(ESlateVisibility::Visible);
@@ -90,9 +98,17 @@ void UObjectiveItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
                 Widget->B_Progress->SetVisibility(ESlateVisibility::Collapsed);
                 Widget->I_Pandora->SetBrushFromTexture(ItemStats::LoadIcon("Checkmark"));
                 Widget->I_Pandora->SetColorAndOpacity(FLinearColor::Green);
+
+                if (!PandoraData->bCompletionSoundPlayed)
+                {
+                    PlayObjectiveSound(PandoraCompleteSound);
+                    PandoraData->bCompletionSoundPlayed = true;
+                }
             }
             else 
             {
+                PandoraData->bCompletionSoundPlayed = false;
+
                 Widget->I_Pandora->SetBrushFromTexture(ItemStats::LoadIcon("PandorasBoxOpenIcon"));
                 Widget->I_Pandora->SetColorAndOpacity(FLinearColor::White);
                 Widget->B_Progress->SetVisibility(ESlateVisibility::Visible);
@@ -114,8 +130,17 @@ void UObjectiveItemEntry::RefreshFlagVisuals(UFlagData* FlagData, UFlagsObjectiv
         Widget->FlagImage_1->SetVisibility(ESlateVisibility::Visible);
         Widget->FlagImage_1->SetBrushFromTexture(ItemStats::LoadIcon("Checkmark"));
         Widget->FlagImage_1->SetColorAndOpacity(FLinearColor::Green);
+        
+        if (!FlagData->bCompletionSoundPlayed)
+        {
+            PlayObjectiveSound(FlagCompleteSound);
+            FlagData->bCompletionSoundPlayed = true;
+        }
+
         return;
     }
+
+    FlagData->bCompletionSoundPlayed = false;
 
     if (!FlagData->FlagUpIcon) FlagData->FlagUpIcon = ItemStats::LoadIcon("FlagUpIcon");
     if (!FlagData->FlagDownIcon) FlagData->FlagDownIcon = ItemStats::LoadIcon("FlagDownIcon");
@@ -139,4 +164,12 @@ void UObjectiveItemEntry::RefreshFlagVisuals(UFlagData* FlagData, UFlagsObjectiv
 void UObjectiveItemEntry::CompleteObjective()
 {
     PlayAnimation(Completion);
+}
+
+void UObjectiveItemEntry::PlayObjectiveSound(USoundBase* SoundToPlay)
+{
+    if (SoundToPlay)
+    {
+        UGameplayStatics::PlaySound2D(this, SoundToPlay);
+    }
 }

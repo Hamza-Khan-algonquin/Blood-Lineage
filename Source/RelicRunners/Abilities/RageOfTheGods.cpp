@@ -52,7 +52,7 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
         return;
     }
 
-    PlayAbilityCastSound(ActorInfo);
+    
 
     // Get PlayerState safely
 
@@ -73,6 +73,8 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     // Spend resource
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+
+    PlayAbilityCastSound(ActorInfo);
 
     PS->SetInvincible(true);
 

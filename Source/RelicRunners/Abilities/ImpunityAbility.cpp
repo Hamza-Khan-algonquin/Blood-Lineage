@@ -52,7 +52,7 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         return;
     }
 
-    PlayAbilityCastSound(ActorInfo);
+ 
 
     bIsActive = true;
 
@@ -75,6 +75,8 @@ void UImpunityAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
         // Spend resource
         PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
         PS->UpdateRemoteHUDResource();
+
+        PlayAbilityCastSound(ActorInfo);
 
         if (ActorInfo->PlayerController.IsValid())
         {

@@ -62,12 +62,14 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     }
 
 
-    PlayAbilityCastSound(ActorInfo);
+    
 
 
     // Spend resource
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+
+    PlayAbilityCastSound(ActorInfo);
 
     if (ActorInfo->IsLocallyControlled())
 
