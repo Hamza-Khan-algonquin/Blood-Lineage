@@ -671,8 +671,6 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		return;
 	}
 
-	
-
 	FTimerHandle tempHandle;
 	if (!newIsActive)
 	{
