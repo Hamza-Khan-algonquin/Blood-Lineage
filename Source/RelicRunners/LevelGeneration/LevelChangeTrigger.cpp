@@ -10,6 +10,8 @@
 #include "../PlayerController/RelicRunnersPlayerController.h"
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "Kismet/GameplayStatics.h"
+#include "RelicRunners/RelicRunnersGameState.h"
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 
 // Sets default values
 ALevelChangeTrigger::ALevelChangeTrigger():
@@ -93,7 +95,22 @@ void ALevelChangeTrigger::ChangeLevel()
 
 	RPC->CleanUI();
 
-	FString TravelURL = TEXT("/Game/ThirdPerson/Maps/") + TargetLevel + TEXT("?listen?GameStarted=1");
+	FString level = TargetLevel;
+
+	if (CanGoToBoss)
+	{
+		URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+		ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
+		if (gameInstance && gameState)
+		{
+			uint8 numstages = gameState->GetDifficultyInfo(gameInstance->CurrentDifficulty).NumStages;
+			level = gameInstance->StageNumber >= numstages ?
+				BossLevel :
+				TargetLevel;
+		}
+	}
+
+	FString TravelURL = TEXT("/Game/ThirdPerson/Maps/") + level + TEXT("?listen?GameStarted=1");
 	World->ServerTravel(TravelURL, true);
 }
 

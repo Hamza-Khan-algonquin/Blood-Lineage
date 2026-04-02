@@ -196,9 +196,7 @@ void AIslandGenerationTest::Generate()
 						ICullingToggleInterface::Execute_ToggleVisibility(LevelTrigger, false);
 					}
 
-					FString TargetLevel = gameInstance->StageNumber >= NumStages ?
-						GenerationValuesComponent->IslandValues.BossLevel :
-						GenerationValuesComponent->IslandValues.TargetLevel;
+					FString TargetLevel = GenerationValuesComponent->IslandValues.TargetLevel;
 
 					LevelTrigger->Server_SetTargetLevel(FName(TargetLevel));
 				}
