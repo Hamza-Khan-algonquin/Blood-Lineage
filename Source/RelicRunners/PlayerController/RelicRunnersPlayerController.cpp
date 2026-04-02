@@ -1186,47 +1186,53 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 	{
 		GetWorldTimerManager().ClearTimer(TimerHandle_UIWait);
 
-		for (int i = 0; i < ObjectiveBuffer.Num(); ++i)
+		for (const FPendingObjective& PendingData : ObjectiveBuffer)
 		{
-			const FPendingObjective& PendingData = ObjectiveBuffer[i];
-
-			bool bAlreadyExists = false;
+			// 1. Check if we already have this ID
+			bool bAlreadyInUI = false;
 			for (UObjectiveItemData* Existing : ObjectiveStageTitle->SubObjectives)
 			{
-				if (Existing->IsA<UPayloadData>() && PendingData.Type == EObjectiveType::Payload) bAlreadyExists = true;
-				else if (Existing->IsA<UPandoraData>() && PendingData.Type == EObjectiveType::Pandora) bAlreadyExists = true;
-				else if (Existing->IsA<UEnemiesData>() && PendingData.Type == EObjectiveType::Enemies) bAlreadyExists = true;
-				else if (Existing->IsA<UFlagData>() && PendingData.Type == EObjectiveType::Flag) bAlreadyExists = true;
-
-				if (bAlreadyExists) break;
+				if (Existing && Existing->UniqueID == PendingData.ObjectiveGUID)
+				{
+					bAlreadyInUI = true;
+					Existing->Completed = PendingData.Completed;
+					break;
+				}
 			}
 
-			if (!bAlreadyExists)
+			// 2. Add if it's new
+			if (!bAlreadyInUI)
 			{
 				UObjectiveItemData* NewGoal = Internal_AddObjectiveFromBuffer(PendingData);
-				if (NewGoal && i < ObjectiveBuffer.Num() - 1)
+				if (NewGoal)
 				{
-					NewGoal->Completed = true;
+					NewGoal->Completed = PendingData.Completed;
 				}
 			}
 		}
 
-		for (int i = 1; i < ObjectiveStageTitle->SubObjectives.Num(); ++i)
+		// 3. HISTORY CLEANUP (Protect Index 0)
+		// We only mark as "Done" starting from the SECOND item (Index 1)
+		if (ObjectiveStageTitle->SubObjectives.Num() > 1)
 		{
-			UObjectiveItemData* SubObj = ObjectiveStageTitle->SubObjectives[i];
-			if (SubObj && !SubObj->Completed)
+			for (int32 i = 1; i < ObjectiveStageTitle->SubObjectives.Num(); ++i)
 			{
-				SubObj->Completed = true;
-				if (UPayloadData* PL = Cast<UPayloadData>(SubObj)) PL->ProgressFraction = 1.0f;
-				else if (UPandoraData* PD = Cast<UPandoraData>(SubObj)) { PD->Percent = 1.0f; PD->TimeRemainingText = TEXT(""); }
+				UObjectiveItemData* OldObj = ObjectiveStageTitle->SubObjectives[i];
+				if (OldObj)
+				{
+					OldObj->Completed = true; // Mark old history as done
+
+					// Force visual "Finished" state for old history items
+					if (UPayloadData* PL = Cast<UPayloadData>(OldObj)) PL->ProgressFraction = 1.0f;
+					else if (UPandoraData* PD = Cast<UPandoraData>(OldObj)) { PD->Percent = 1.0f; PD->TimeRemainingText = TEXT(""); }
+				}
 			}
 		}
 
 		ObjectiveLog->ObjectiveTreeView->RequestRefresh();
+		ObjectiveLog->ObjectiveTreeView->SetItemExpansion(ObjectiveStageTitle, true);
 
 		ObjectiveBuffer.Empty();
-
-		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Buffer synced with permanent objective list."));
 	}
 }
 
@@ -1268,6 +1274,7 @@ UObjectiveItemData* ARelicRunnersPlayerController::Internal_AddObjectiveFromBuff
 
 	if (NewGoal)
 	{
+		NewGoal->UniqueID = Data.ObjectiveGUID;
 		ObjectiveLog->AddObjective(ObjectiveStageTitle, NewGoal);
 	}
 
@@ -1276,17 +1283,25 @@ UObjectiveItemData* ARelicRunnersPlayerController::Internal_AddObjectiveFromBuff
 
 void ARelicRunnersPlayerController::AddObjectiveToBuffer(FPendingObjective NewObjective)
 {
-	if (HasAuthority())
+	if (!HasAuthority()) return;
+
+	for (const FPendingObjective& Existing : ObjectiveBuffer)
 	{
-		ObjectiveBuffer.Add(NewObjective);
+		if (Existing.ObjectiveGUID == NewObjective.ObjectiveGUID) return;
+	}
 
-		MARK_PROPERTY_DIRTY_FROM_NAME(ARelicRunnersPlayerController, ObjectiveBuffer, this);
-
-		if (IsLocalController())
+	if (ObjectiveStageTitle)
+	{
+		for (UObjectiveItemData* UIItem : ObjectiveStageTitle->SubObjectives)
 		{
-			FlushObjectiveBuffer();
+			if (UIItem && UIItem->UniqueID == NewObjective.ObjectiveGUID) return;
 		}
 	}
+
+	ObjectiveBuffer.Add(NewObjective);
+	MARK_PROPERTY_DIRTY_FROM_NAME(ARelicRunnersPlayerController, ObjectiveBuffer, this);
+
+	if (IsLocalController()) FlushObjectiveBuffer();
 }
 
 void ARelicRunnersPlayerController::Server_DecrementFlagObjective_Implementation()

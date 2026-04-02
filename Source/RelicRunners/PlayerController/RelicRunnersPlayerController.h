@@ -37,7 +37,7 @@ USTRUCT(BlueprintType)
 struct FPendingObjective {
 	GENERATED_BODY()
 
-		UPROPERTY()
+	UPROPERTY()
 	int FlagCount = 0;
 
 	UPROPERTY()
@@ -45,6 +45,12 @@ struct FPendingObjective {
 
 	UPROPERTY()
 	float PandoraTime = 0.0f;
+
+	UPROPERTY()
+	FGuid ObjectiveGUID;
+
+	UPROPERTY()
+	bool Completed = false;
 
 	UPROPERTY()
 	EObjectiveType Type = EObjectiveType::None;
@@ -74,14 +80,6 @@ public:
 	void UpdatePayloadObjective(float NewProgress);
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
-
-	enum class EObjectiveType { None, Flag, Payload, Enemies, Pandora };
-	struct FPendingObjective {
-		int FlagCount = 0;
-		int EnemyCount = 0;
-		float PandoraTime = 0.0f;
-		EObjectiveType Type = EObjectiveType::None;
-	};
 
 	FTimerHandle TimerHandle_UIWait;
 

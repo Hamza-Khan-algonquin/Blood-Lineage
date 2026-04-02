@@ -66,6 +66,8 @@ void AIslandGenerationTest::Generate()
 {
 	if (HasAuthority())
 	{
+		IslandObjectiveGUID = FGuid::NewGuid();
+
 		//Initialize the starting and ending tiles.
 		int startingIndex = 0, endingIndex = (IslandDepth * IslandWidth) - 1;
 
@@ -226,14 +228,15 @@ void AIslandGenerationTest::ActivateIsland()
 	switch (IslandObjective)
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
-		AddFlagObjectiveToAll(CurrentObjectives);
+		AddFlagObjectiveToAll(CurrentObjectives, IslandObjectiveGUID);
 		break;
 	case EIslandObjectiveType::MoveThePayload:
-		AddPayloadObjectiveToAll();
+		AddPayloadObjectiveToAll(IslandObjectiveGUID);
 		break;
 	case EIslandObjectiveType::Survival:
 		auto& Survival = GenerationValuesComponent->SurvivalZoneObjectiveValues;
-		AddPandoraObjectiveToAll(Survival.SurvivalDuration);
+		AddPandoraObjectiveToAll(Survival.SurvivalDuration, IslandObjectiveGUID);
+		break;
 	}
 
 	if (Bridge)
@@ -621,21 +624,6 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 	}
 }
 
-void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags)
-{
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
-		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Flag;
-			NewObjective.FlagCount = NumFlags;
-
-			TargetPC->AddObjectiveToBuffer(NewObjective);
-		}
-	}
-}
-
 void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 {
 	int TotalFlags = ObjectiveAmount;
@@ -645,7 +633,6 @@ void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			//Update the Server's local UI for this PC
 			TargetPC->Internal_SetFlagUI(CapturedCount);
 
 			TargetPC->Client_UpdateFlagUI(CapturedCount);
@@ -655,42 +642,66 @@ void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 
 void AIslandGenerationTest::AddEnemiesObjectiveToAll(int TotalEnemies)
 {
+	FGuid NewID = FGuid::NewGuid();
+
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Enemies;
+			FPendingObjective NewObjective;
+			NewObjective.Type = EObjectiveType::Enemies;
 			NewObjective.EnemyCount = TotalEnemies;
 
+			NewObjective.ObjectiveGUID = NewID;
+
 			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
 
-void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time)
+void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time, FGuid AssignedID)
 {
+	// We use the ID passed from ActivateIsland (IslandObjectiveGUID)
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Pandora;
+			FPendingObjective NewObjective;
+
+			NewObjective.Type = EObjectiveType::Pandora;
 			NewObjective.PandoraTime = Time;
+			NewObjective.ObjectiveGUID = AssignedID;
 
 			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
 
-void AIslandGenerationTest::AddPayloadObjectiveToAll()
+void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags, FGuid AssignedID)
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Payload;
+			FPendingObjective NewObjective;
+			NewObjective.Type = EObjectiveType::Flag;
+			NewObjective.FlagCount = NumFlags;
+			NewObjective.ObjectiveGUID = AssignedID;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
+		}
+	}
+}
+
+void AIslandGenerationTest::AddPayloadObjectiveToAll(FGuid AssignedID)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			FPendingObjective NewObjective;
+			NewObjective.Type = EObjectiveType::Payload;
+			NewObjective.ObjectiveGUID = AssignedID;
 
 			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
