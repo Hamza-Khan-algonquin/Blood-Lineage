@@ -144,6 +144,12 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		}
 
 		UpdateEmissiveHealth();
+
+		IsAttacking = false;
+		if (MovementComponent)
+		{
+			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+		}
 	}
 
 	return DamageAmount;
