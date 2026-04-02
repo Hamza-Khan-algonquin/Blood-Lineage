@@ -265,17 +265,19 @@ void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, E
 
 void ARelicRunnersPlayerController::CleanUI()
 {
+
+	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
+	if (Char)
+	{
+		Char->EndAllAbilities();
+	}
+
 	//Clean up UI
 	if (UWorld* World = GetWorld())
 	{
 
 		if (!IsLocalController()) return;
 
-		ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
-		if (Char)
-		{
-			Char->EndAllAbilities();
-		}
 
 		DisableInput(this);
 
