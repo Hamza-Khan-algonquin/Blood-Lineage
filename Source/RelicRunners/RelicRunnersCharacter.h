@@ -213,7 +213,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SpawnBeam(AActor* Target, UNiagaraSystem* VFX);
 
-	TMap<AActor*, UNiagaraComponent*> ActiveBeams;
+	TMap<TWeakObjectPtr<AActor>, TWeakObjectPtr<UNiagaraComponent>> ActiveBeams;
 protected:
 
 
