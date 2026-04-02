@@ -17,7 +17,7 @@ UVengefulDance::UVengefulDance()
     DamageInterval = 0.5f;
     KnockbackStrength = 3000.f;
     Duration = 1.f;
-    Damage = 150.f;
+    Damage = 300.f;
     AreaRadius = 300.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;

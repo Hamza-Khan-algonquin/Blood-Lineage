@@ -139,7 +139,11 @@ void UEarthquakeAbility::LaunchShockwave()
     }
 
     ARelicRunnersPlayerState* RRPS = CurrentActorInfo->PlayerController.IsValid() ? CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
-    RRPS->SetInvincible(false);
+    if (RRPS)
+    {
+        RRPS->SetInvincible(false);
+    }
+
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
@@ -153,6 +157,7 @@ void UEarthquakeAbility::LaunchShockwave()
     FVector Forward = AvatarActor->GetActorForwardVector();
     Forward.Z = 0.f;
     Forward.Normalize();
+
 
     for (int i = 1; i <= NumSteps; ++i)
     {
@@ -168,6 +173,7 @@ void UEarthquakeAbility::LaunchShockwave()
             StepInterval * i,
             false
         );
+
     }
 }
 
@@ -187,6 +193,13 @@ void UEarthquakeAbility::ApplyShockwaveStep(FVector Location, FVector Forward, U
     {
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
+    }
+
+    ARelicRunnersPlayerState* RRPS = CurrentActorInfo->PlayerController.IsValid() ? CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
+
+    if (RRPS)
+    {
+        RRPS->Multicast_SpawnVFX(Location, FRotator::ZeroRotator, FVector(1.5f), AbilityVFX, false);
     }
 
 
@@ -223,7 +236,7 @@ void UEarthquakeAbility::ApplyShockwaveStep(FVector Location, FVector Forward, U
     }
 
     // Debug
-    DrawDebugCone(World, Location, Forward, AreaRadius, HalfAngleRad, HalfAngleRad, 16, FColor::Red, false, StepInterval1);
+    //DrawDebugCone(World, Location, Forward, AreaRadius, HalfAngleRad, HalfAngleRad, 16, FColor::Red, false, StepInterval1);
 }
 
 void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)

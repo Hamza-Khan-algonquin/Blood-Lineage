@@ -20,7 +20,7 @@ UBackStab::UBackStab()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
-    Damage = 300.f;
+    Damage = 500.f;
     Duration = 5.f;
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
