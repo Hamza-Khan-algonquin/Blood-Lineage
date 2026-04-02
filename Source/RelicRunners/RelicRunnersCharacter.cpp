@@ -602,10 +602,12 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 		return; 
 	}
 
-	if (!Controller)
+	if (!Controller || !IsValid(Controller))
 	{
 		return; 
 	}
+
+
 
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -617,14 +619,11 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 		if (Value < 0.0f)
 		{
 			SpeedMultiplier = 0.6f; 
-			Server_PlayAbilityAnimation(BackStepAnim, 1.f);
 		}
 	}
 	else if (Axis == EAxis::Y) 
 	{
 		SpeedMultiplier = 0.7f;
-		Server_PlayAbilityAnimation(SideStepLeftAnim, 1.f);
-
 	}
 
 	// Base movement
