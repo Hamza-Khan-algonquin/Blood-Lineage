@@ -29,8 +29,6 @@ public:
 
 protected:
 
-    void ResetSpeed();
-
     float OriginalSpeed;
 
     FTimerHandle SpeedResetTimer;

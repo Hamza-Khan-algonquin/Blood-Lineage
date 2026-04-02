@@ -14,7 +14,7 @@ struct FMarkProjectile
 
 	float Elapsed = 0.f;
 
-	UStaticMeshComponent* Mesh = nullptr;
+	AActor* Actor = nullptr; 
 	TArray<AActor*> HitActors;
 };
 
@@ -48,4 +48,8 @@ private:
 
 	FTimerHandle ProjectileTickTimer;
 	FTimerHandle DurationTimer;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TSubclassOf<AActor> ProjectileActorClass;
+
 };

@@ -27,6 +27,8 @@ UEnemyStats::UEnemyStats()
 	AttackDamage = 3;
 	BaseAttackDamage = 3;
 	AttackDamagePerLevel = 1;
+	IsGold = false;
+	CanBeGold = false;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -55,6 +57,13 @@ void UEnemyStats::ResetStats()
 	if (ARelicRunnersGameState* gameState = GetWorld()->GetGameState<ARelicRunnersGameState>())
 	{
 		int newLevel = 0;
+		int goldMultiplier = 1;
+
+		if (CanBeGold)
+		{
+			float goldChance = FMath::FRandRange(0.f, 100.0f);
+			IsGold = goldChance <= 1.f;
+		}
 
 		for (APawn* playerCharacter : director->GetPlayers())
 		{
@@ -71,10 +80,15 @@ void UEnemyStats::ResetStats()
 
 		EnemyLevel = FMath::Max(1, newLevel / director->GetPlayers().Num());
 
+		if (IsGold)
+		{
+			goldMultiplier = 4;
+		}
+
 
 		FDifficultyInfo DifficultyInfo = gameState->GetDifficultyInfo(gameInst->CurrentDifficulty);
 
-		MaxHealth = BaseMaxHealth * DifficultyInfo.HealthPercent + (DifficultyInfo.HealthPercent * HealthPerLevel * (EnemyLevel - 1));
+		MaxHealth = BaseMaxHealth * DifficultyInfo.HealthPercent * goldMultiplier + (DifficultyInfo.HealthPercent * HealthPerLevel * goldMultiplier * (EnemyLevel - 1));
 		CurrentHealth = MaxHealth;
 		AttackDamage = BaseAttackDamage * DifficultyInfo.DamagePercent + (DifficultyInfo.DamagePercent * AttackDamagePerLevel * (EnemyLevel - 1));
 	}
@@ -95,6 +109,7 @@ void UEnemyStats::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(UEnemyStats, HealthPerLevel);
 	DOREPLIFETIME(UEnemyStats, BaseAttackDamage);
 	DOREPLIFETIME(UEnemyStats, AttackDamagePerLevel);
+	DOREPLIFETIME(UEnemyStats, IsGold);
 }
 
 #if WITH_EDITOR

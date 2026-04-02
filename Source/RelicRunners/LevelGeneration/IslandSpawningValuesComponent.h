@@ -21,10 +21,10 @@ struct FIslandValues
 	float FullPercentage = 50.0f;
 
 	UPROPERTY(EditAnywhere)
-	FString TargetLevel;
+	FString BossLevel;
 
 	UPROPERTY(EditAnywhere)
-	FString BossLevel;
+	FString TargetLevel;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ALevelChangeTrigger> LevelChangeTrigger;
@@ -112,6 +112,21 @@ struct FObstacleTypeValues
 	UPROPERTY(EditAnywhere)
 	FNormalObstacleValues EnvironmentObstacles;
 
+	UPROPERTY(EditAnywhere)
+	uint8 MarketObstacleMaxAmount;
+
+	uint8 RemainingMarketObstacleAmount;
+
+	UPROPERTY(EditAnywhere)
+	FNormalObstacleValues MarketObstacles;
+
+	UPROPERTY(EditAnywhere)
+	uint8 RubbleObstacleMaxAmount;
+
+	uint8 RemainingRubbleObstacleAmount;
+
+	UPROPERTY(EditAnywhere)
+	FNormalObstacleValues RubbleObstacles;
 };
 
 USTRUCT()

@@ -79,6 +79,7 @@
 #include "NavigationPath.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include <RelicRunners/LevelGeneration/IslandSpawner.h>
+#include <RelicRunners/RelicRunnersGameMode.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -149,7 +150,6 @@ void ARelicRunnersPlayerController::OnPossess(APawn* aPawn)
 	PossessedPawn = Cast<ARelicRunnersCharacter>(aPawn);
 
 	UpdateCharacterVisuals();
-
 }
 
 void ARelicRunnersPlayerController::Server_InitializePlayerData_Implementation(FSaveData ClientMeta)
@@ -178,6 +178,7 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
+		Server_RecordPawnReadyTime();
 	}
 
 	if (HasAuthority())
@@ -672,20 +673,39 @@ void ARelicRunnersPlayerController::TrySetupMinimap()
 
 void ARelicRunnersPlayerController::Client_UpdateZones_Implementation(int CurrentZone, int MaxZones)
 {
-	if (ObjectiveLog)
+	if (!ObjectiveLog || !ObjectiveStageTitle) return;
+
+	ObjectiveStageTitle->CurrentZones = CurrentZone;
+	ObjectiveStageTitle->TotalZones = MaxZones;
+
+	int ObjCount = ObjectiveStageTitle->SubObjectives.Num();
+	if (ObjCount == 0) return;
+
+	int StartIdx = (CurrentZone >= MaxZones && MaxZones > 0) ? 0 : 1;
+	for (int i = StartIdx; i < ObjCount; ++i)
 	{
-		ObjectiveStageTitle->CurrentZones = CurrentZone;
-		ObjectiveStageTitle->TotalZones = MaxZones;
-		ObjectiveLog->RefreshLog(ObjectiveStageTitle);
-		ObjectiveLog->UpdateObjective(ObjectiveStageTitle);
+		UObjectiveItemData* SubObj = ObjectiveStageTitle->SubObjectives[i];
+		if (SubObj && !SubObj->Completed)
+		{
+			SubObj->Completed = true;
+
+			if (UPayloadData* PL = Cast<UPayloadData>(SubObj)) PL->ProgressFraction = 1.0f;
+			else if (UPandoraData* PD = Cast<UPandoraData>(SubObj))
+			{
+				PD->Percent = 1.0f;
+				PD->TimeRemainingText = TEXT("");
+			}
+		}
 	}
+
+	ObjectiveLog->UpdateObjective(ObjectiveStageTitle);
 }
 
 void ARelicRunnersPlayerController::Client_UpdateStage_Implementation(int StageNumber)
 {
 	if (MinimapWidget)
 	{
-		FText FinalText = FText::Format(FText::FromString("Stage {0}"), StageNumber);
+		FText FinalText = FText::Format(FText::FromString("Olympus {0}"), StageNumber);
 		MinimapWidget->SetLevelTitle(FinalText);
 	}
 }
@@ -976,35 +996,35 @@ void ARelicRunnersPlayerController::SetupObjectives()
 	{
 		ObjectiveLog = CreateWidget<UObjectiveLog>(this, ObjectiveLogClass);
 		ObjectiveLog->AddToViewport();
+	}
 
+	if (!ObjectiveStageTitle)
+	{
 		ObjectiveStageTitle = NewObject<UTitleData>(this);
+	}
+	else
+	{
+		ObjectiveStageTitle->SubObjectives.Empty();
+		ObjectiveStageTitle->CurrentZones = 0;
+		ObjectiveStageTitle->TotalZones = 0;
+	}
 
-		UWorld* World = GetWorld();
-		if (!World) return;
-
+	UWorld* World = GetWorld();
+	if (World)
+	{
 		const FString MapName = World->GetMapName();
 
-		if (MapName.Contains(TEXT("ShopDemo")))
-		{
-			ObjectiveStageTitle->TotalZones = 0;
-			ObjectiveStageTitle->CurrentZones = 0;
-		}
-		else if (MapName.Contains(TEXT("ThirdPersonMap")))
-		{
-			ObjectiveStageTitle->TotalZones = 0;
-			ObjectiveStageTitle->CurrentZones = 0;
-		}
-		else if (MapName.Contains(TEXT("IslandTest")))
+		if (MapName.Contains(TEXT("IslandTest")))
 		{
 			ObjectiveStageTitle->TotalZones = 5;
-			ObjectiveStageTitle->CurrentZones = 0;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Visible);
 		}
-		else if (MapName.Contains(TEXT("BossLevel")))
+		else if (MapName.Contains(TEXT("ShopDemo")) || MapName.Contains(TEXT("ThirdPersonMap")) || MapName.Contains(TEXT("BossLevel")))
 		{
-			ObjectiveStageTitle->TotalZones = 0;
-			ObjectiveStageTitle->CurrentZones = 0;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Collapsed);
 		}
-		if (ObjectiveStageTitle->TotalZones != 0)
+
+		if (ObjectiveLog)
 		{
 			ObjectiveLog->InitializeObjectives(ObjectiveStageTitle);
 		}
@@ -1012,7 +1032,8 @@ void ARelicRunnersPlayerController::SetupObjectives()
 
 	if (IsLocalController())
 	{
-		Server_RequestCurrentObjective();
+		FTimerHandle SoloRequestTimer;
+		GetWorldTimerManager().SetTimer(SoloRequestTimer, this, &ARelicRunnersPlayerController::Server_RequestCurrentObjective, 0.2f, false);
 	}
 }
 
@@ -1028,7 +1049,10 @@ void ARelicRunnersPlayerController::Server_RequestCurrentObjective_Implementatio
 
 void ARelicRunnersPlayerController::UpdatePayloadObjective(float NewProgress)
 {
-	Internal_SetPayloadUI(NewProgress);
+	if (IsLocalController())
+	{
+		Internal_SetPayloadUI(NewProgress);
+	}
 
 	if (HasAuthority())
 	{
@@ -1038,12 +1062,23 @@ void ARelicRunnersPlayerController::UpdatePayloadObjective(float NewProgress)
 
 void ARelicRunnersPlayerController::Client_UpdatePayloadUI_Implementation(float NewProgress)
 {
-	Internal_SetPayloadUI(NewProgress);
+	if (!HasAuthority())
+	{
+		Internal_SetPayloadUI(NewProgress);
+	}
 }
 
 void ARelicRunnersPlayerController::Client_UpdatePandoraUI_Implementation(float NewPercent, const FString& NewTimeText)
 {
 	Internal_SetPandoraUI(NewPercent, NewTimeText);
+}
+
+void ARelicRunnersPlayerController::Server_RecordPawnReadyTime_Implementation()
+{
+	if (ARelicRunnersGameMode* GM = GetWorld()->GetAuthGameMode<ARelicRunnersGameMode>())
+	{
+		GM->RecordPawnReadyTime(this);
+	}
 }
 
 void ARelicRunnersPlayerController::Internal_SetPandoraUI(float NewPercent, const FString& NewTimeText)
@@ -1057,15 +1092,27 @@ void ARelicRunnersPlayerController::Internal_SetPandoraUI(float NewPercent, cons
 			PandoraGoal->Percent = NewPercent;
 			PandoraGoal->TimeRemainingText = NewTimeText;
 
-			if (PandoraGoal->Percent >= 1.0f && !PandoraGoal->Completed)
+			bool bIsTimeUp = NewTimeText.Equals(TEXT("0")) || NewTimeText.IsEmpty();
+			bool bIsPercentDone = PandoraGoal->Percent >= 0.95f;
+
+			if ((bIsTimeUp || bIsPercentDone) && !PandoraGoal->Completed)
 			{
 				PandoraGoal->Completed = true;
+				PandoraGoal->Percent = 1.0f;
+				PandoraGoal->TimeRemainingText = TEXT("");
+
+				ObjectiveLog->UpdateObjective(PandoraGoal);
+
+				UE_LOG(LogTemp, Warning, TEXT("Pandora UI: State flipped to Completed. Time left was: %s"), *NewTimeText);
+				return;
 			}
 
 			ObjectiveLog->UpdateObjective(PandoraGoal);
 			return;
 		}
 	}
+
+	UE_LOG(LogTemp, Error, TEXT("Pandora UI Update: No UPandoraData found in SubObjectives!"));
 }
 
 void ARelicRunnersPlayerController::Internal_SetPayloadUI(float NewProgress)
@@ -1076,14 +1123,24 @@ void ARelicRunnersPlayerController::Internal_SetPayloadUI(float NewProgress)
 	{
 		if (UPayloadData* PayloadGoal = Cast<UPayloadData>(SubObj))
 		{
+			if (PayloadGoal->Completed && NewProgress < 1.0f)
+			{
+				PayloadGoal->Completed = false;
+			}
+
 			PayloadGoal->ProgressFraction = NewProgress;
 
-			if (PayloadGoal->ProgressFraction >= 1.0f && !PayloadGoal->Completed)
+			if (PayloadGoal->ProgressFraction >= 0.98f && !PayloadGoal->Completed)
 			{
 				PayloadGoal->Completed = true;
+				PayloadGoal->ProgressFraction = 1.0f;
+
+				ObjectiveLog->UpdateObjective(PayloadGoal);
+				return;
 			}
 
 			ObjectiveLog->UpdateObjective(PayloadGoal);
+			ObjectiveLog->RefreshLog(ObjectiveStageTitle);
 			return;
 		}
 	}
@@ -1129,28 +1186,47 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 	{
 		GetWorldTimerManager().ClearTimer(TimerHandle_UIWait);
 
-		ObjectiveLog->ObjectiveTreeView->ClearListItems();
-		ObjectiveLog->ObjectiveTreeView->AddItem(ObjectiveStageTitle);
-		ObjectiveStageTitle->SubObjectives.Empty();
-
 		for (int i = 0; i < ObjectiveBuffer.Num(); ++i)
 		{
-			UObjectiveItemData* NewGoal = Internal_AddObjectiveFromBuffer(ObjectiveBuffer[i]);
+			const FPendingObjective& PendingData = ObjectiveBuffer[i];
 
-			if (NewGoal && i < ObjectiveBuffer.Num() - 1)
+			bool bAlreadyExists = false;
+			for (UObjectiveItemData* Existing : ObjectiveStageTitle->SubObjectives)
 			{
-				NewGoal->Completed = true;
+				if (Existing->IsA<UPayloadData>() && PendingData.Type == EObjectiveType::Payload) bAlreadyExists = true;
+				else if (Existing->IsA<UPandoraData>() && PendingData.Type == EObjectiveType::Pandora) bAlreadyExists = true;
+				else if (Existing->IsA<UEnemiesData>() && PendingData.Type == EObjectiveType::Enemies) bAlreadyExists = true;
+				else if (Existing->IsA<UFlagData>() && PendingData.Type == EObjectiveType::Flag) bAlreadyExists = true;
+
+				if (bAlreadyExists) break;
+			}
+
+			if (!bAlreadyExists)
+			{
+				UObjectiveItemData* NewGoal = Internal_AddObjectiveFromBuffer(PendingData);
+				if (NewGoal && i < ObjectiveBuffer.Num() - 1)
+				{
+					NewGoal->Completed = true;
+				}
 			}
 		}
 
-		ObjectiveLog->ObjectiveTreeView->SetItemExpansion(ObjectiveStageTitle, true);
+		for (int i = 1; i < ObjectiveStageTitle->SubObjectives.Num(); ++i)
+		{
+			UObjectiveItemData* SubObj = ObjectiveStageTitle->SubObjectives[i];
+			if (SubObj && !SubObj->Completed)
+			{
+				SubObj->Completed = true;
+				if (UPayloadData* PL = Cast<UPayloadData>(SubObj)) PL->ProgressFraction = 1.0f;
+				else if (UPandoraData* PD = Cast<UPandoraData>(SubObj)) { PD->Percent = 1.0f; PD->TimeRemainingText = TEXT(""); }
+			}
+		}
+
 		ObjectiveLog->ObjectiveTreeView->RequestRefresh();
 
-		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Catch-up Successful. Buffer Flushed."));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Waiting for Objective Data from Server..."));
+		ObjectiveBuffer.Empty();
+
+		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Buffer synced with permanent objective list."));
 	}
 }
 
@@ -1298,22 +1374,25 @@ void ARelicRunnersPlayerController::PostGameUI()
 		if (PostGameWidget)
 		{
 			PostGameWidget->AddToViewport();
-
 			SetInputMode(FInputModeUIOnly());
 			bShowMouseCursor = true;
 
 			FTimerHandle UnusedHandle;
-			GetWorldTimerManager().SetTimer(UnusedHandle, [this]()
+			TWeakObjectPtr<ARelicRunnersPlayerController> WeakThis(this);
+
+			GetWorldTimerManager().SetTimer(UnusedHandle, [WeakThis]()
 				{
-					if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+					if (ARelicRunnersPlayerController* StrongThis = WeakThis.Get())
 					{
-						GI->BackToMainMenu();
+						if (URelicRunnersGameInstance* GI = StrongThis->GetGameInstance<URelicRunnersGameInstance>())
+						{
+							GI->BackToMainMenu();
+						}
 					}
 				}, 5.0f, false);
 		}
 	}
 }
-
 void ARelicRunnersPlayerController::Client_ShowPostGame_Implementation(const TArray<FPlayerPostGameData>& FinalStats)
 {
 	if (SpectatingWidget)

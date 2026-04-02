@@ -107,7 +107,7 @@ protected:
 
 	// Camera offset when aiming
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")
-	FVector AimingOffset = FVector(-20.f, 80.f, 100.f); 
+	FVector AimingOffset = FVector(-10.f, 50.f, 100.f); 
 
 	// Camera distance/speed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Aiming")

@@ -23,14 +23,17 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!CurrentActorInfo) return;
-
-    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
-    if (!AvatarActor) // If no valid actor
+    if (!ActorInfo)
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true); // End the ability
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
+    }
 
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
     }
 
     UWorld* World = GetWorld();
@@ -134,7 +137,19 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
     CachedCenter = Center;
     DamageTicksElapsed = 0;
 
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = GetWorld();
     if (!World) return;
@@ -145,10 +160,19 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
 
 void UDivinePunishment::DivineDamageTick()
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!IsValid(AvatarActor)) return;
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;

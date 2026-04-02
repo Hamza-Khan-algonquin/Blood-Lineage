@@ -17,6 +17,7 @@
 #include "RelicRunners/Director System/SpawnZone.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "CullingToggleInterface.h"
+#include <RelicRunners/RelicRunnersGameState.h>
 
 /* Maybe TODO
 
@@ -477,7 +478,7 @@ void AIslandGenerationTest::InitializeModularObstacle(FSIslandFloorValues& floor
 
 		floorValue.obstacleYaw = FMath::RandRange(0, 3) * 90;
 
-		floorValue.ObstacleType = EObstacleType(FMath::RandRange(int(EObstacleType::Building), int(EObstacleType::Environment)));
+		floorValue.ObstacleType = EObstacleType(FMath::RandRange(int(EObstacleType::Building), int(EObstacleType::MAX)-1));
 
 		floorValue.randomBuildingObstacleToSpawn = FMath::RandRange(0, GenerationValuesComponent->ObstacleTypeValues.BuildingObstacles.ObstacleActor.Num() - 1);
 		floorValue.randomEnvironmentObstacleToSpawn = FMath::RandRange(0, GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleActor.Num() - 1);
@@ -698,8 +699,28 @@ void AIslandGenerationTest::AddPayloadObjectiveToAll()
 
 void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
 {
+
+	FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
+	int flagAmount = 1;
+
+	//Difficulty
+	if (UWorld* world = GetWorld())
+	{
+		URelicRunnersGameInstance* GI = world->GetGameInstance<URelicRunnersGameInstance>();
+		AGameStateBase* GameState = world->GetGameState();
+		if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+		{
+			//Flag
+			FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+			flagAmount = diffInfo.Index; 
+			if (flagAmount > 3) flagAmount = 3;
+
+			//Payload
+			float MaxIndexPlusOne = 6;
+			val.PayloadSpeed = (MaxIndexPlusOne - diffInfo.Index) * 200;
+		}
+	}
 	auto& Flag = GenerationValuesComponent->FlagObjectiveValues;
-	int flagAmount = FMath::RandRange(Flag.FlagAmountMin, Flag.FlagAmountMax);
 	int enemyZoneAmount = 1;
 	int survivalZoneAmount = 1;
 
@@ -754,8 +775,6 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 					ANewPayloadObjective* payload = GetWorld()->SpawnActor<ANewPayloadObjective>(GenerationValuesComponent->PayloadObjectiveValues.Payload, posOffset, FRotator::ZeroRotator);
 
 					CreateSplinePathStartToEnd(startingIndex, endingIndex, IslandWidth, payload);
-
-					FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
 
 					payload->Initialize(val.PayloadSpeed, val.Acceleration, val.Deceleration, SplinePath);
 					payload->Multicast_Initialize(val.PayloadSpeed, SplinePath);
@@ -1478,6 +1497,8 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 	TArray<TSubclassOf<APackedLevelActor>> buildingArray = GenerationValuesComponent->ObstacleTypeValues.BuildingObstacles.ObstacleActor;
 	TArray<TSubclassOf<APackedLevelActor>> environmentArray = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleActor;
+	TArray<TSubclassOf<APackedLevelActor>> marketArray = GenerationValuesComponent->ObstacleTypeValues.MarketObstacles.ObstacleActor;
+	TArray<TSubclassOf<APackedLevelActor>> rubbleArray = GenerationValuesComponent->ObstacleTypeValues.RubbleObstacles.ObstacleActor;
 	TSubclassOf<class APackedLevelActor> buildingWallTemplate = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleWall;
 	TSubclassOf<class APackedLevelActor> environmentWallTemplate = GenerationValuesComponent->ObstacleTypeValues.EnvironmentObstacles.ObstacleWall;
 
@@ -1549,10 +1570,70 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 			}
 
-			if (buildingWallTemplate)
+			if (environmentWallTemplate)
 			{
 				packedWallTemp = environmentWallTemplate;
 			}
+			break;
+		case EObstacleType::Market:
+			max = GenerationValuesComponent->ObstacleTypeValues.MarketObstacleMaxAmount;
+			remaining = GenerationValuesComponent->ObstacleTypeValues.RemainingMarketObstacleAmount;
+			if (remaining >= max)
+			{
+				if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
+				{
+					if (FloorValuesArray[index].IsFullTile)
+					{
+						SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
+					}
+				}
+
+				return;
+			}
+
+			GenerationValuesComponent->ObstacleTypeValues.RemainingMarketObstacleAmount += 1;
+
+			if (marketArray.IsValidIndex(FloorValuesArray[index].randomEnvironmentObstacleToSpawn))
+			{
+				packedActorTemp = marketArray[FloorValuesArray[index].randomEnvironmentObstacleToSpawn];
+
+			}
+
+			if (environmentWallTemplate)
+			{
+				packedWallTemp = environmentWallTemplate;
+			}
+
+			break;
+		case EObstacleType::Rubble:
+			max = GenerationValuesComponent->ObstacleTypeValues.RubbleObstacleMaxAmount;
+			remaining = GenerationValuesComponent->ObstacleTypeValues.RemainingRubbleObstacleAmount;
+			if (remaining >= max)
+			{
+				if (cornerWallTemplate != nullptr && basicWallTemplate != nullptr)
+				{
+					if (FloorValuesArray[index].IsFullTile)
+					{
+						SetWall(index, posOffset, cornerWallTemplate, basicWallTemplate);
+					}
+				}
+
+				return;
+			}
+
+			GenerationValuesComponent->ObstacleTypeValues.RemainingRubbleObstacleAmount += 1;
+
+			if (rubbleArray.IsValidIndex(FloorValuesArray[index].randomEnvironmentObstacleToSpawn))
+			{
+				packedActorTemp = rubbleArray[FloorValuesArray[index].randomEnvironmentObstacleToSpawn];
+
+			}
+
+			if (environmentWallTemplate)
+			{
+				packedWallTemp = environmentWallTemplate;
+			}
+
 			break;
 		}
 
@@ -1718,7 +1799,20 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 			newZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
-			newZone->Duration = GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
+
+			//Difficulty
+			if (UWorld* world = GetWorld())
+			{
+				URelicRunnersGameInstance* GI = world->GetGameInstance<URelicRunnersGameInstance>();
+				AGameStateBase* GameState = world->GetGameState();
+				if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+				{
+					FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+					newZone->Duration = diffInfo.Index * 3;
+					GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration = newZone->Duration;
+				}
+			}
+			//GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
 			newZone->SetActorHiddenInGame(true);
 
 			ObjectiveArrays.Add(newZone);

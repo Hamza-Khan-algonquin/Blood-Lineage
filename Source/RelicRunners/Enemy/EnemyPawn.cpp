@@ -104,7 +104,7 @@ void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() || DamageAmount <= 0)
+	if (!HasAuthority() || DamageAmount <= 0 || !IsActive)
 	{
 		return 0;
 	}
@@ -116,7 +116,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	EnemyStatsComponent->AddToCurrentHealth(-DamageAmount);
 
 	//check if we meet the conditions to be dead and then die
-	if (IsDead())
+	if (IsDead() && IsActive)
 	{
 		Die(EventInstigator, (GetActorLocation() - DamageCauser->GetActorLocation().GetSafeNormal()));
 	}
@@ -176,7 +176,7 @@ void AEnemyPawn::EndHitFlash()
 void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 {
 	//make sure we are server side
-	if (HasAuthority())
+	if (HasAuthority() && !IsHidden())
 	{
 		Multicast_PlayDeathEffect(hitDirection);
 
@@ -199,37 +199,33 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 			UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
 		}
 
+		SetActorLocation(GetActorLocation() - FVector(0, 0, 10000));
+
 		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
-
-		SetActorHiddenInGame(true);
-		SetActorEnableCollision(false);
-
-		//Gives enough time to multicast effect
-		float DeathDelay = 0.2f;
-		FTimerHandle TearOffTimer;
-		GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyPawn::TearOff, DeathDelay, false);
-
-		//Calls destory
-		SetLifeSpan(DeathDelay);
 
 		OnDied.Broadcast(this);
 		OnDied.Clear();
 
-		/*if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
+		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
 		}
 		else
 		{
-			Destroy();
-		}*/
+			//Gives enough time to multicast effect
+			float DeathDelay = 0.2f;
+			FTimerHandle TearOffTimer;
+			GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyPawn::TearOff, DeathDelay, false);
+
+			//Calls destory
+			SetLifeSpan(DeathDelay);
+		}
 	}
 }
 
 void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirection)
 {
-	SetActorHiddenInGame(true);
-	SetActorEnableCollision(false);
+	
 
 	if (UEnemyBoidMovementComponent* BoidComp = FindComponentByClass<UEnemyBoidMovementComponent>())
 	{
@@ -263,6 +259,26 @@ void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirectio
 	}
 }
 
+void AEnemyPawn::Multicast_GoldStuff_Implementation()
+{
+	/*if (EnemyStatsComponent->IsGold)
+	{
+		SetActorScale3D(GetActorScale3D() * 1.25);
+	}
+	else
+	{
+		SetActorScale3D(GetActorScale3D());
+	}*/
+
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("IsGold", EnemyStatsComponent->IsGold);
+		}
+	}
+}
+
 inline bool AEnemyPawn::IsDead()
 {
 	return EnemyStatsComponent->GetCurrentHealth() <= 0;
@@ -270,8 +286,16 @@ inline bool AEnemyPawn::IsDead()
 
 void AEnemyPawn::ResetEnemy()
 {
-	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
-	SetActorLocation(FVector::Zero());
+	EnemyStatsComponent->ResetStats();
+
+	Multicast_GoldStuff();
+
+	if (IsValid(MovementComponent))
+	{
+		MovementComponent->SetActive(true);
+		MovementComponent->ClearMoveBuffer();
+		MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+	}
 }
 
 void AEnemyPawn::AddEnemyToDirector()
@@ -379,7 +403,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 	//Difficulty
 	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
 	AGameStateBase* GameState = GetWorld()->GetGameState();
-	FDifficultyInfo diffInfo;
+	FDifficultyInfo diffInfo = FDifficultyInfo();
 	if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
 	{
 		diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
@@ -388,7 +412,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 	float chance = FMath::FRandRange(0.f, 100.f);
 	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
 	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
-	if (GoldEnemy) chance = 0;
+	if (EnemyStatsComponent->IsGold) chance = 0;
 
 	if (chance <= chanceToDropOverall)
 	{
@@ -401,7 +425,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 
 		float GoldLuck = 0;
 		float UsedLuck = Luck;
-		if (GoldEnemy) GoldLuck = 95; UsedLuck = GoldLuck;
+		if (EnemyStatsComponent->IsGold) GoldLuck = 95; UsedLuck = GoldLuck;
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
 			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(UsedLuck), ItemMeshData, Lib),
@@ -551,25 +575,7 @@ void AEnemyPawn::BeginPlay()
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
 
-	float hueOffset = FMath::FRand();
-	float goldChance = FMath::FRandRange(0.f, 100.0f);
-	if (goldChance <= 1.f) GoldEnemy = true;
-
-	if (GoldEnemy)
-	{
-		EnemyStatsComponent->SetMaxHealth(EnemyStatsComponent->GetMaxHealth() * 4);
-		EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
-		SetActorScale3D(GetActorScale3D() * 1.25);
-	}
-
-	for (UMaterialInstanceDynamic* element : DynamicMaterials)
-	{
-		if (element)
-		{
-			//element->SetScalarParameterValue("HueOffset", hueOffset);
-			element->SetScalarParameterValue("IsGold", GoldEnemy);
-		}
-	}
+	
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();
@@ -598,6 +604,7 @@ void AEnemyPawn::BeginPlay()
 
 	if (HasAuthority())
 	{
+		ResetEnemy();
 		MovementComponent->InitializeNavMeshPointer();
 	}
 }
@@ -631,6 +638,22 @@ void AEnemyPawn::Tick(float DeltaTime)
 	HitFlashTimeline.TickTimeline(DeltaTime);
 }
 
+void AEnemyPawn::OnRep_IsActive()
+{
+	if (IsActive)
+	{
+		this->SetActorHiddenInGame(false);
+		this->SetActorEnableCollision(true);
+		//this->SetActorTickEnabled(this->GetShouldTick());
+	}
+	else
+	{
+		this->SetActorHiddenInGame(true);
+		this->SetActorEnableCollision(false);
+		//this->SetActorTickEnabled(false);
+	}
+}
+
 bool AEnemyPawn::GetIsActive()
 {
 	return IsActive;
@@ -648,12 +671,44 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		return;
 	}
 
-	IsActive = newIsActive;
-	IPoolActorInterface::SetIsActive(newIsActive);
+	
+
+	FTimerHandle tempHandle;
+	if (!newIsActive)
+	{
+		NetMultSetIsActive(newIsActive);
+		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
+			{
+				this->IsActive = newIsActive;
+			}, 2.f, false);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
+			{
+				this->NetMultSetIsActive(newIsActive);
+			}, 2.f, false);
+		IsActive = newIsActive;
+	}
+	
+/*	NetMultSetIsActive(newIsActive);
+	IsActive = newIsActive;*/
 
 	if (!newIsActive)
 	{
 		OnDeactivated.Broadcast(this);
+		if (IsValid(MovementComponent))
+		{
+			MovementComponent->SetActive(false);
+		}
+
+		/*this->SetActorHiddenInGame(true);
+		this->SetActorEnableCollision(false);*/
+	}
+	else
+	{
+		/*this->SetActorHiddenInGame(false);
+		this->SetActorEnableCollision(true);*/
 		ResetEnemy();
 	}
 
@@ -668,7 +723,8 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AEnemyPawn, GoldEnemy);
+	//DOREPLIFETIME(AEnemyPawn, GoldEnemy);
+	//DOREPLIFETIME(AEnemyPawn, IsActive);
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
@@ -676,7 +732,26 @@ FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
 	return LifeSpanTimerHandle;
 }
 
+void AEnemyPawn::NetMultSetIsActive_Implementation(bool newIsActive)
+{
+	if (newIsActive)
+	{
+		this->SetActorHiddenInGame(false);
+		this->SetActorEnableCollision(true);
+		this->CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		//this->SetActorTickEnabled(this->GetShouldTick());
+	}
+	else
+	{
+		this->SetActorHiddenInGame(true);
+		this->SetActorEnableCollision(false);
+		this->CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		//this->SetActorTickEnabled(false);
+	}
+}
+
 #if WITH_EDITOR
+
 void AEnemyPawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);

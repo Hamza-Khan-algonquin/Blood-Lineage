@@ -46,7 +46,10 @@ UENUM(BlueprintType)
 enum class EObstacleType : uint8
 {
 	Building,
-	Environment
+	Environment,
+	Market,
+	Rubble,
+	MAX,
 };
 
 USTRUCT()
@@ -90,6 +93,8 @@ class RELICRUNNERS_API AIslandGenerationTest : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AIslandGenerationTest();
+
+	bool HasGoneToShop = false;
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;

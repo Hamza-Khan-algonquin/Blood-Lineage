@@ -34,6 +34,13 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
         return;
     }
 
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    if (!AvatarActor)
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
     ACharacter* AvatarChar = Cast<ACharacter>(GetAvatarActorFromActorInfo());
     if (!AvatarChar)
     {
@@ -77,6 +84,24 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
 
     PlayAbilityCastSound(ActorInfo);
 
+    if (PS && ActorInfo)
+    {
+        PS->Multicast_SpawnVFX(FVector(0, 0, 0), FRotator::ZeroRotator, FVector(1.f), AbilityVFX, true);
+        PS->Multicast_SpawnVFX(FVector(0, 0, -90), FRotator(0, 0, 0), FVector(1.f), AbilityVFX1, true);
+    }
+
+    ACharacter* Character = Cast<ACharacter>(AvatarActor);
+    if (Character)
+    {
+        USkeletalMeshComponent* Mesh1 = Character->GetMesh();
+        if (Mesh1 && OverlayMaterial)
+        {
+            OverlayMID = UMaterialInstanceDynamic::Create(OverlayMaterial, this);
+
+            Mesh1->SetOverlayMaterial(OverlayMID);
+        }
+    }
+
     OwnerChar->GetWorldTimerManager().SetTimer(ChargeTickHandle,FTimerDelegate::CreateUObject(this,&UGuardAbility::HandleChargeTick,Handle,ActorInfo,ActivationInfo),0.05f,true);
 
     // End ability after duration
@@ -84,10 +109,6 @@ void UGuardAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,cons
     
 }
 
-void UGuardAbility::ResetSpeed()
-{
-
-}
 
 void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo, FGameplayAbilityActivationInfo ActivationInfo)
 {
@@ -164,6 +185,8 @@ void UGuardAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGa
 
         if (OwnerChar && World)
         {
+            OverlayMID = nullptr;
+
             World->GetTimerManager().ClearTimer(ChargeTickHandle);
             World->GetTimerManager().ClearTimer(EndTimerHandle);
 

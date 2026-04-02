@@ -64,9 +64,6 @@ public:
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
-	UPROPERTY(Replicated)
-	bool GoldEnemy = false;
-
 	FTimeline HitFlashTimeline;
 
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
@@ -93,7 +90,7 @@ protected:
 	TSubclassOf<class AItemActor> ItemActorClass;
 
 	//interface implementation variable
-	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)//, ReplicatedUsing = "OnRep_IsActive")
 	bool IsActive = true;
 	UPROPERTY(Category = "Object Pooling Info", EditAnywhere, BlueprintReadWrite)
 	bool SetControllerActiveStatus = true;
@@ -128,6 +125,8 @@ public:
 	virtual void Die(AController* EventInstigator, FVector hitDirection = FVector(0,0,0));
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlayDeathEffect(FVector impactDirection);
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void Multicast_GoldStuff();
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Check if the enemy is dead.", ShortToolTip = "Check if the enemy is dead."))
 	//Check if the enemy is dead
@@ -161,6 +160,12 @@ public:
 	//best method name ever
 	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
 	void ResetKnockBackStuff();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMultSetIsActive(bool newIsActive);
+
+	UFUNCTION()
+	void OnRep_IsActive();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

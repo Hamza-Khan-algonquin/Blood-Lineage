@@ -25,6 +25,7 @@
 #include <RelicRunners/Menu/Keybinds.h>
 #include <RelicRunners/Item/ItemStats.h>
 #include <Kismet/KismetMaterialLibrary.h>
+#include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 
 void UPlayerHUD::NativeConstruct()
 {
@@ -35,6 +36,56 @@ void UPlayerHUD::NativeConstruct()
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
 	UpdateBindText();
+
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_InitHUD, this, &UPlayerHUD::InitializeHUDIcons, 0.5f, true);
+}
+
+void UPlayerHUD::InitializeHUDIcons()
+{
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			if (PS->SelectedClass == "Ares")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("BloodRush"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("WarBanner"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("RageOfTheGods"));
+			}
+			else if (PS->SelectedClass == "Artemis")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("FireArrow"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("Impunity"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("SplitShot"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("Moonbeam"));
+			}
+			else if (PS->SelectedClass == "Aphrodite")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("BundleOfJoy"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("MirrorOfDesire"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("KissOfLife"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("GoddessOfLove"));
+			}
+			else if (PS->SelectedClass == "Nemesis")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("Backstab"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("NaturesBlessing"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("VengefulDance"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("DivinePunishment"));
+			}
+		}
+	}
 }
 
 void UPlayerHUD::ToggleExpBar(bool value)
@@ -84,7 +135,7 @@ void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
 	float TargetIntensity = 0.f;
 	if (HealthPercent < 1.f)
 	{
-		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.4f), FVector2D(1.f, 0.f), HealthPercent);
+		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.6f), FVector2D(1.f, 0.f), HealthPercent);
 
 		float Pulse = (FMath::Sin(GetWorld()->GetTimeSeconds() * 3.0f) * 0.2f) + 0.8f;
 		TargetIntensity *= Pulse;
@@ -92,10 +143,7 @@ void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
 
 	CurrentBloodIntensity = FMath::FInterpTo(CurrentBloodIntensity, TargetIntensity, InDeltaTime, 2.0f);
 
-	if (BloodMPC)
-	{
-		UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), BloodMPC, FName("BloodIntensity"), CurrentBloodIntensity);
-	}
+	I_BloodOverlay->SetColorAndOpacity(FLinearColor(1,0,0,CurrentBloodIntensity));
 }
 
 void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
@@ -187,7 +235,7 @@ void UPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		HealthBar_1->SetPercent(GhostHealthPercent);
 	}
 
-	//UpdateBloodSplatter(HealthBar->GetPercent(), InDeltaTime);
+	UpdateBloodSplatter(HealthBar->GetPercent(), InDeltaTime);
 }
 
 void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)

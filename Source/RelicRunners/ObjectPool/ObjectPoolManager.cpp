@@ -150,7 +150,9 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 {
 	if (!HasAuthority())
 	{
+#if WITH_EDITOR
 		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager GetActor called on client! This should only be called on the server!"));
+#endif
 		return nullptr;
 	}
 
@@ -164,6 +166,7 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 			if (pointer.IsValid() && ((isInterface && !Cast<IPoolActorInterface>(pointer.Get())->GetIsActive()) || (!isInterface && pointer->IsHidden())))
 			{
 				returnActor = pointer.Get();
+				break;
 			}
 		}
 	}
