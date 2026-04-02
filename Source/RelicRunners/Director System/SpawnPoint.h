@@ -21,6 +21,9 @@ class RELICRUNNERS_API ASpawnPoint : public AActor
 {
 	GENERATED_BODY()
 protected:
+	UPROPERTY(EditAnywhere)
+	bool SpawnInfinitely;
+
 	//The allowance to use for spawn on each wave
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Wave Properties", meta = (AllowPrivateAccess = "true", ToolTip = "The allowance to use for spawn on each wave"))
 	float SpawnAllowance;

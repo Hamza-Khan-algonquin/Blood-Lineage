@@ -73,8 +73,17 @@ public:
 	UFUNCTION()
 	void PassiveResourceRegen();
 	void OnStartingLevelUp();
+	void HandleRarityUpgrade(class UItemObject* Item);
+	FString GetStartingWeaponName();
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
+	UPROPERTY(BlueprintReadOnly, Category = "Leveling")
+	float RarityPityCounter = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Leveling")
+	TArray<FString> RarityOrder = {
+		"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic"
+	};
 
 	UFUNCTION(Client, Reliable)
 	void PlayHealPotionSound();

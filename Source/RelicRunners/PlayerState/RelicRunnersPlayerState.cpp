@@ -480,80 +480,56 @@ void ARelicRunnersPlayerState::OnStartingLevelUp()
 {
 	PlayerLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
-
-	//Ability points
 	PlayerAbilityPoints++;
 
-	//Weapon Upgrade
-	int HealthIncrease = 0;
-	int ArmorIncrease = 0;
-	int DexterityIncrease = 0;
-	int StrengthIncrease = 0;
-	int IntelligenceIncrease = 0;
-	FString StartingWeapon = "";
-	if (SelectedClass == "Ares")
+	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(GetStartingWeaponName());
+	if (!Item) return;
+
+	Item->ItemData.Level++;
+
+	//Handle Rarity Upgrade
+	HandleRarityUpgrade(Item);
+
+	//Scale Stats based on Rarity
+	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;
+	float Multiplier = 1.0f + (RarityIndex * 0.2f); //Each rarity tier adds 20% more potential
+
+	Item->ItemData.Health += FMath::RandRange(2, FMath::RoundToInt(10 * Multiplier));
+	Item->ItemData.Armor += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Dexterity += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Strength += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Intelligence += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+}
+
+void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
+{
+	int CurrentIndex = RarityOrder.Find(Item->ItemData.Rarity);
+
+	//Don't upgrade if already at max rarity
+	if (CurrentIndex == INDEX_NONE || CurrentIndex >= RarityOrder.Num() - 1) return;
+
+	//Base chance is 3% + 3% for every level since the last upgrade
+	float SuccessChance = 4.0f + RarityPityCounter;
+	float Roll = FMath::FRandRange(0.0f, 100.0f);
+
+	if (Roll <= SuccessChance)
 	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
-	}
-	else if (SelectedClass == "Artemis")
-	{
-		StartingWeapon = "Bow";
-		DexterityIncrease = 3;
-	}
-	else if (SelectedClass == "Aphrodite")
-	{
-		StartingWeapon = "Staff";
-		IntelligenceIncrease = 3;
-	}
-	else if (SelectedClass == "Nemesis")
-	{
-		StartingWeapon = "Sword";
-		DexterityIncrease = 3;
+		//Upgrade!
+		Item->ItemData.Rarity = RarityOrder[CurrentIndex + 1];
+		RarityPityCounter = 0.0f; //Reset pity
 	}
 	else
 	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
+		RarityPityCounter += 4.0f; //Increase odds for next level
 	}
+}
 
-	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(StartingWeapon);
-	if (!Item) return;
-	Item->ItemData.Level++;
-
-	if (Item->ItemData.Level >= 3 && Item->ItemData.Rarity == "Common")
-	{
-		Item->ItemData.Rarity = "Uncommon";
-	}
-	else if (Item->ItemData.Level >= 6 && Item->ItemData.Rarity == "Uncommon")
-	{
-		Item->ItemData.Rarity = "Rare";
-	}
-	else if (Item->ItemData.Level >= 9 && Item->ItemData.Rarity == "Rare")
-	{
-		Item->ItemData.Rarity = "Epic";
-	}
-	else if (Item->ItemData.Level >= 12 && Item->ItemData.Rarity == "Epic")
-	{
-		Item->ItemData.Rarity = "Legendary";
-	}
-	else if (Item->ItemData.Level >= 15 && Item->ItemData.Rarity == "Legendary")
-	{
-		Item->ItemData.Rarity = "Mythic";
-	}
-	else if (Item->ItemData.Level >= 18 && Item->ItemData.Rarity == "Mythic")
-	{
-		Item->ItemData.Rarity = "Relic";
-	}
-	Item->ItemData.Health += FMath::RandRange(2, 5 + HealthIncrease);
-	Item->ItemData.Armor += FMath::RandRange(0, 1 + ArmorIncrease);
-	Item->ItemData.Dexterity += FMath::RandRange(0, 1 + DexterityIncrease);
-	Item->ItemData.Strength += FMath::RandRange(0, 1 + StrengthIncrease);
-	Item->ItemData.Intelligence += FMath::RandRange(0, 1 + IntelligenceIncrease);
+FString ARelicRunnersPlayerState::GetStartingWeaponName()
+{
+	if (SelectedClass == "Artemis")   return "Bow";
+	if (SelectedClass == "Aphrodite") return "Staff";
+	if (SelectedClass == "Nemesis")   return "Sword";
+	return "Greatsword"; //Default for Ares
 }
 
 int CalculateXPForNextLevel(int CurrentLevel) {
@@ -577,78 +553,23 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	//Ability points
 	PlayerAbilityPoints++;
 
-	//Weapon Upgrade
-	int HealthIncrease = 0;
-	int ArmorIncrease = 0;
-	int DexterityIncrease = 0;
-	int StrengthIncrease = 0;
-	int IntelligenceIncrease = 0;
-	FString StartingWeapon = "";
-	if (SelectedClass == "Ares")
-	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
-	}
-	else if (SelectedClass == "Artemis")
-	{
-		StartingWeapon = "Bow";
-		DexterityIncrease = 3;
-		StrengthIncrease = 2;
-	}
-	else if (SelectedClass == "Aphrodite")
-	{
-		StartingWeapon = "Staff";
-		IntelligenceIncrease = 3;
-		StrengthIncrease = 1;
-	}
-	else if (SelectedClass == "Nemesis")
-	{
-		StartingWeapon = "Sword";
-		DexterityIncrease = 3;
-		StrengthIncrease = 6;
-	}
-	else
-	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
-	}
+	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(GetStartingWeaponName());
+	if (!Item) return;
 
-	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(StartingWeapon);
 	Item->ItemData.Level++;
 
-	if (Item->ItemData.Level >= 3 && Item->ItemData.Rarity == "Common")
-	{
-		Item->ItemData.Rarity = "Uncommon";
-	}
-	else if (Item->ItemData.Level >= 6 && Item->ItemData.Rarity == "Uncommon")
-	{
-		Item->ItemData.Rarity = "Rare";
-	}
-	else if (Item->ItemData.Level >= 9 && Item->ItemData.Rarity == "Rare")
-	{
-		Item->ItemData.Rarity = "Epic";
-	}
-	else if (Item->ItemData.Level >= 12 && Item->ItemData.Rarity == "Epic")
-	{
-		Item->ItemData.Rarity = "Legendary";
-	}
-	else if (Item->ItemData.Level >= 15 && Item->ItemData.Rarity == "Legendary")
-	{
-		Item->ItemData.Rarity = "Mythic";
-	}
-	else if (Item->ItemData.Level >= 18 && Item->ItemData.Rarity == "Mythic")
-	{
-		Item->ItemData.Rarity = "Relic";
-	}
-	Item->ItemData.Health += FMath::RandRange(2, 5 + HealthIncrease);
-	Item->ItemData.Armor += FMath::RandRange(0, 1 + ArmorIncrease);
-	Item->ItemData.Dexterity += FMath::RandRange(0, 1 + DexterityIncrease);
-	Item->ItemData.Strength += FMath::RandRange(0, 1 + StrengthIncrease);
-	Item->ItemData.Intelligence += FMath::RandRange(0, 1 + IntelligenceIncrease);
+	//Handle Rarity Upgrade
+	HandleRarityUpgrade(Item);
+
+	//Scale Stats based on Rarity
+	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;
+	float Multiplier = 1.0f + (RarityIndex * 0.2f); //Each rarity tier adds 20% more potential
+
+	Item->ItemData.Health += FMath::RandRange(2, FMath::RoundToInt(10 * Multiplier));
+	Item->ItemData.Armor += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Dexterity += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Strength += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Intelligence += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
 
 	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
 
