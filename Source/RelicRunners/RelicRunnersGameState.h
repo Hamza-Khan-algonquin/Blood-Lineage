@@ -27,6 +27,8 @@ struct FDifficultyInfo
 	float BossBaseDamagePercent;
 
 	int Index;
+
+	uint8 NumStages;
 };
 
 

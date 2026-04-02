@@ -8,16 +8,16 @@ ARelicRunnersGameState::ARelicRunnersGameState()
 {
     bReplicates = true;
 
-    // Structure: { HP_Mult, DMG_Mult, LUCK, XP_Mult, LOOT_Bonus, BOSS_DMG, TIER }
-    DifficultyModifiers.Add("Boar", { 1.0f,  1.0f,  0,  1.0f,  0,  10, 1 });
+    // Structure: { HP_Mult, DMG_Mult, LUCK, XP_Mult, LOOT_Bonus, BOSS_DMG, TIER , NUMBER of STAGES}
+    DifficultyModifiers.Add("Boar", { 1.0f,  1.0f,  0,  1.0f,  0,  10, 1, 1 });
 
-    DifficultyModifiers.Add("Bull", { 1.5f,  1.8f,  1,  1.5f,  0,  25, 2 });
+    DifficultyModifiers.Add("Bull", { 1.5f,  1.8f,  1,  1.5f,  0,  25, 2, 2 });
 
-    DifficultyModifiers.Add("Lion", { 2.2f,  3.0f,  2,  2.2f,  0, 40, 3 });
+    DifficultyModifiers.Add("Lion", { 2.2f,  3.0f,  2,  2.2f,  0, 40, 3, 3 });
 
-    DifficultyModifiers.Add("Hydra", { 3.5f,  5.0f,  4,  3.5f,  0, 60, 4 });
+    DifficultyModifiers.Add("Hydra", { 3.5f,  5.0f,  4,  3.5f,  0, 60, 4, 4 });
 
-    DifficultyModifiers.Add("Cerberus", { 6.0f,  8.0f,  7,  6.0f,  0, 80, 5 });
+    DifficultyModifiers.Add("Cerberus", { 6.0f,  8.0f,  7,  6.0f,  0, 80, 5, 5 });
 }
 
 FDifficultyInfo ARelicRunnersGameState::GetDifficultyInfo(FName DifficultyName) const
