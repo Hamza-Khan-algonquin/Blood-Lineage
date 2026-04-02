@@ -99,6 +99,7 @@ void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	GetWorld()->GetTimerManager().ClearTimer(ActiveChangeTimerHandle);
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -682,20 +683,22 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		return;
 	}
 
-	FTimerHandle tempHandle;
+	
 	if (!newIsActive)
 	{
 		NetMultSetIsActive(newIsActive);
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [this, newIsActive]()
 			{
-				this->IsActive = newIsActive;
+				if(this)
+					this->IsActive = newIsActive;
 			}, 2.f, false);
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [this, newIsActive]()
 			{
-				this->NetMultSetIsActive(newIsActive);
+				if (this)
+					this->NetMultSetIsActive(newIsActive);
 			}, 2.f, false);
 		IsActive = newIsActive;
 	}

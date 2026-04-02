@@ -66,6 +66,8 @@ public:
 
 	FTimeline HitFlashTimeline;
 
+	FTimerHandle ActiveChangeTimerHandle;
+
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
 
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
