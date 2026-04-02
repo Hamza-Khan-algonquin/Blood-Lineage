@@ -187,6 +187,12 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	SetReplicates(true);
 	SetReplicateMovement(true);
 
+	ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>();
+	if (PS)
+	{
+		AbilitySystem = PS->GetAbilitySystemComponent();
+	}
+
 	Tags.Add("Player");
 }
 
@@ -263,7 +269,9 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
+
 	if (!HasAuthority()) return;
+
 
 	if (RelicPlayerState)
 	{
@@ -299,7 +307,7 @@ void ARelicRunnersCharacter::Die()
 		}
 	}
 
-	Destroy();
+	SetLifeSpan(0.5f);
 }
 
 void ARelicRunnersCharacter::OnRep_PlayerState()
@@ -1112,4 +1120,15 @@ void ARelicRunnersCharacter::Multicast_SpawnBeam_Implementation(AActor* Target, 
 		BeamComp->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
 		ActiveBeams.Add(WeakTarget, BeamComp);
 	}
+}
+
+
+void ARelicRunnersCharacter::EndAllAbilities()
+{
+	if (AbilitySystem)
+	{
+		AbilitySystem->CancelAllAbilities();
+	}
+
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }

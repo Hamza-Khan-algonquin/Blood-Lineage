@@ -1395,12 +1395,14 @@ void ARelicRunnersPlayerController::PostGameUI()
 			FTimerHandle UnusedHandle;
 			TWeakObjectPtr<ARelicRunnersPlayerController> WeakThis(this);
 
+
 			GetWorldTimerManager().SetTimer(UnusedHandle, [WeakThis]()
 				{
 					if (ARelicRunnersPlayerController* StrongThis = WeakThis.Get())
 					{
 						if (URelicRunnersGameInstance* GI = StrongThis->GetGameInstance<URelicRunnersGameInstance>())
 						{
+
 							GI->BackToMainMenu();
 						}
 					}
@@ -1408,6 +1410,7 @@ void ARelicRunnersPlayerController::PostGameUI()
 		}
 	}
 }
+
 void ARelicRunnersPlayerController::Client_ShowPostGame_Implementation(const TArray<FPlayerPostGameData>& FinalStats)
 {
 	if (SpectatingWidget)

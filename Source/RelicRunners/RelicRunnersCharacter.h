@@ -106,6 +106,7 @@ public:
 	void DefenceAbility();
 	void UtilityAbility();
 	void UltimateAbility();
+	void EndAllAbilities();
 	virtual void ActivateDamageAbilities();
 	virtual void ActivateDefenceAbilities();
 	virtual void ActivateUtilityAbilities();

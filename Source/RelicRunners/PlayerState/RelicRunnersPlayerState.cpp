@@ -953,6 +953,7 @@ void ARelicRunnersPlayerState::ModifyHealth(float Value)
 		ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
 		if (Char)
 		{
+			Char->EndAllAbilities();
 			Char->Die();
 		}
 	}
