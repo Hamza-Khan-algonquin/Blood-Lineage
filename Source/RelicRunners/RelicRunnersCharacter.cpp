@@ -1102,15 +1102,7 @@ void ARelicRunnersCharacter::Multicast_SpawnBeam_Implementation(AActor* Target, 
 	}
 
 	// Spawn new beam
-	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		VFX,
-		RootComp,
-		NAME_None,
-		FVector::ZeroVector,
-		FRotator::ZeroRotator,
-		EAttachLocation::KeepRelativeOffset,
-		true
-	);
+	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(VFX,RootComp,NAME_None,FVector::ZeroVector,FRotator::ZeroRotator,EAttachLocation::KeepRelativeOffset,true);
 
 	if (IsValid(BeamComp))
 	{
