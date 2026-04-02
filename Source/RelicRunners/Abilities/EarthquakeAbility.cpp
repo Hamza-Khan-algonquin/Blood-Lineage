@@ -253,5 +253,4 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
             }
         }
     }
-    
 }

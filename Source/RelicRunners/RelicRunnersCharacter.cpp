@@ -609,11 +609,14 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 		if (Value < 0.0f)
 		{
 			SpeedMultiplier = 0.6f; 
+			Server_PlayAbilityAnimation(BackStepAnim, 1.f);
 		}
 	}
 	else if (Axis == EAxis::Y) 
 	{
 		SpeedMultiplier = 0.7f;
+		Server_PlayAbilityAnimation(SideStepLeftAnim, 1.f);
+
 	}
 
 	// Base movement
@@ -845,6 +848,7 @@ void ARelicRunnersCharacter::HealthPotions()
 	if (RelicPlayerState)
 	{
 		RelicPlayerState->Server_UseHealthPotion();
+		Server_PlayAbilityAnimation(HealPotionAnim, 1.f);
 	}
 }
 
@@ -1053,7 +1057,6 @@ void ARelicRunnersCharacter::UltimateAbility()
 
 void ARelicRunnersCharacter::Multicast_PlayAbilityAnimation_Implementation(UAnimMontage* Montage, float AnimSpeed)
 {
-	if (IsLocallyControlled()) return; 
 
 	if (!Montage) return;
 
@@ -1073,44 +1076,40 @@ void ARelicRunnersCharacter::Server_PlayAbilityAnimation_Implementation(UAnimMon
 
 void ARelicRunnersCharacter::Multicast_SpawnBeam_Implementation(AActor* Target, UNiagaraSystem* VFX)
 {
-	if (!Target || !VFX) return;
+	if (!IsValid(this) || !IsValid(Target) || !IsValid(VFX)) return;
 
 	USceneComponent* RootComp = GetRootComponent();
-	if (!RootComp) return;
+	if (!IsValid(RootComp)) return;
 
-	UNiagaraComponent** FoundBeamPtr = ActiveBeams.Find(Target);
+	TWeakObjectPtr<AActor> WeakTarget = Target;
 
-	if (FoundBeamPtr)
+	TWeakObjectPtr<UNiagaraComponent>* FoundBeamPtr = ActiveBeams.Find(WeakTarget);
+
+	if (FoundBeamPtr && FoundBeamPtr->IsValid())
 	{
-		UNiagaraComponent* FoundBeam = *FoundBeamPtr;
-
-		// Check if the beam is still valid
-		if (IsValid(FoundBeam))
+		UNiagaraComponent* Beam = FoundBeamPtr->Get();
+		if (IsValid(Beam))
 		{
-			FoundBeam->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
+			Beam->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
 			return;
 		}
 		else
 		{
-			// Beam is invalid, remove from map
-			ActiveBeams.Remove(Target);
+			ActiveBeams.Remove(WeakTarget);
 		}
 	}
+	else if (FoundBeamPtr)
+	{
+		// Weak pointer expired
+		ActiveBeams.Remove(WeakTarget);
+	}
 
-	// Spawn new beam if none exists
-	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		VFX,
-		RootComp,
-		NAME_None,
-		FVector::ZeroVector,
-		FRotator::ZeroRotator,
-		EAttachLocation::KeepRelativeOffset,
-		true
-	);
+	// Spawn new beam
+	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(VFX,RootComp,NAME_None,FVector::ZeroVector,FRotator::ZeroRotator,EAttachLocation::KeepRelativeOffset,true);
 
-	if (BeamComp)
+	if (IsValid(BeamComp))
 	{
 		BeamComp->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
-		ActiveBeams.Add(Target, BeamComp);
+		ActiveBeams.Add(WeakTarget, BeamComp);
 	}
 }

@@ -213,7 +213,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SpawnBeam(AActor* Target, UNiagaraSystem* VFX);
 
-	TMap<AActor*, UNiagaraComponent*> ActiveBeams;
+	TMap<TWeakObjectPtr<AActor>, TWeakObjectPtr<UNiagaraComponent>> ActiveBeams;
 protected:
 
 
@@ -222,6 +222,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* BasicAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* HealPotionAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* SideStepLeftAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* SideStepRightAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* BackStepAnim;
 
 	//Functions
 	void Tick(float DeltaTime);
