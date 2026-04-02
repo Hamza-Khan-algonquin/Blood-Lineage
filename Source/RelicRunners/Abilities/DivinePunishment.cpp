@@ -45,9 +45,6 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         return;
     }
 
-
-    PlayAbilityCastSound(ActorInfo);
-
     // Get PlayerState safely
 
     ARelicRunnersPlayerState* PS = nullptr;
@@ -67,6 +64,8 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     // Spend resource
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+
+    PlayAbilityCastSound(ActorInfo);
 
     CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
 
