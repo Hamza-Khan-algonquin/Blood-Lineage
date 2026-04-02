@@ -104,7 +104,7 @@ void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() || DamageAmount <= 0 || !IsActive)
+	if (!HasAuthority() || DamageAmount <= 0 || !IsActive || !MovementComponent || !MovementComponent->Commander)
 	{
 		return 0;
 	}
@@ -112,6 +112,14 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
+	if (APawn* pawn = EventInstigator ? EventInstigator->GetPawn() : nullptr)
+	{
+		if (ARelicRunnersCharacter* PlayerCharacter = Cast<ARelicRunnersCharacter>(pawn))
+		{
+			MovementComponent->Commander->ResetTimeToAttackForPlayer(pawn);
+		}
+	}
+	
 	//add the damage
 	EnemyStatsComponent->AddToCurrentHealth(-DamageAmount);
 
@@ -464,11 +472,14 @@ void AEnemyPawn::SpawnItem(int Luck)
 
 void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 {
-	CapsuleComponent->SetSimulatePhysics(true);
-	CapsuleComponent->AddImpulse(forces, NAME_None, true);
-	CapsuleComponent->SetNotifyRigidBodyCollision(true);
+	if (CapsuleComponent->GetCollisionEnabled() == ECollisionEnabled::PhysicsOnly || CapsuleComponent->GetCollisionEnabled() == ECollisionEnabled::QueryAndPhysics)
+	{
+		CapsuleComponent->SetSimulatePhysics(true);
+		CapsuleComponent->AddImpulse(forces, NAME_None, true);
+		CapsuleComponent->SetNotifyRigidBodyCollision(true);
 
-	MovementComponent->IsKnockedBack = true;
+		MovementComponent->IsKnockedBack = true;
+	}
 }
 
 void AEnemyPawn::KnockBack_Implementation(FVector forces)
@@ -670,8 +681,6 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 	{
 		return;
 	}
-
-	
 
 	FTimerHandle tempHandle;
 	if (!newIsActive)

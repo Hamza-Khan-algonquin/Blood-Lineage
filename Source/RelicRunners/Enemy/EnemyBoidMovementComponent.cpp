@@ -255,13 +255,15 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 	if (ActiveNavMesh)
 	{
 		FNavLocation navLocation;
+		FVector wallAvoidanceVector = { 0,0,0 };
+		int wallAvoidanceCount = 0;
 		float closeWallDist = DistanceToStartAvoidingWalls;
 
 		if (ActiveNavMesh->ProjectPoint(GetActorLocation(), navLocation, WallAvoidanceExtent))
 		{
-			FVector temp;
-			ActiveNavMesh->GetPolyCenter(navLocation.NodeRef, temp);
-			DrawDebugLine(GetWorld(), temp, temp + FVector(0, 0, 100), FColor::Red, false, 0.1, 0, 10);
+			FVector polyCenter;
+			ActiveNavMesh->GetPolyCenter(navLocation.NodeRef, polyCenter);
+			//DrawDebugLine(GetWorld(), polyCenter, polyCenter + FVector(0, 0, 100), FColor::White, false, 0.1, 0, 10);
 
 			NavNodeRef polyRef = navLocation.NodeRef;
 			TArray<FNavigationPortalEdge> wallPoints;
@@ -279,11 +281,16 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 					continue;
 				}
 
+				wallAvoidanceCount++;
+
 				if (!FMath::IsNearlyZero(distanceToWall))
 				{
 					strength = FMath::Clamp((1 - distanceToWall / DistanceToStartAvoidingWalls), 0, 1);
 					direction = (navLocation.Location - closestPointOnWall).GetSafeNormal2D();
-					closeWallDist = 0;
+					if (distanceToWall < closeWallDist)
+					{
+						closeWallDist = distanceToWall;
+					}
 				}
 				else
 				{
@@ -293,47 +300,28 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 					//it the cross product. Don't believe me go look at the body of FVector::CrossProduct. I just felt like being a dick to anyone who tries to read this mess
 					direction = edgeDirection ^ FVector::UpVector;
 
-					FVector polyCenter;
-					ActiveNavMesh->GetPolyCenter(wallPoint.ToRef, polyCenter);
+					FVector dirToCenter = (polyCenter - wallPoint.GetMiddlePoint()).GetSafeNormal();
+					float dot = (direction | dirToCenter);
 
-					if ((direction | polyCenter - wallPoint.GetMiddlePoint()) < 0)
+					if (dot < 0)
 					{
 						direction *= -1;
 					}
 
-					if (distanceToWall < closeWallDist)
-					{
-						closeWallDist = distanceToWall;
-					}
+					closeWallDist = 0;
 				}
 
-/*				strength = 1;
-				FVector edgeDirection = (wallPoint.Left - wallPoint.Right).GetSafeNormal();
-
-				//it the cross product. Don't believe me go look at the body of FVector::CrossProduct. I just felt like being a dick to anyone who tries to read this mess
-				direction = edgeDirection ^ FVector::UpVector;
-
-				FVector polyCenter;
-				ActiveNavMesh->GetPolyCenter(wallPoint.ToRef, polyCenter);
-				FVector dirToCenter = (polyCenter - wallPoint.GetMiddlePoint()).GetSafeNormal();
-				float dot = (direction | dirToCenter);
-
-				if (dot < 0)
-				{
-					direction *= -1;
-				}
-
-				if (distanceToWall < closeWallDist)
-				{
-					closeWallDist = distanceToWall;
-				}*/
-
-				finalInflunceVector += direction * strength * WallAvoidanceWeight;
-				/*DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + direction * strength * WallAvoidanceWeight * 100, FColor::Cyan, false, 0.1, 0, 3);
-				DrawDebugLine(GetWorld(), temp, temp + FVector(0, 0, 100), FColor::Black, false, 0.1, 0, 10);
+				wallAvoidanceVector += direction * strength;
+/*				DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + direction * strength * WallAvoidanceWeight * 100, FColor::Cyan, false, 0.1, 0, 3);
+				DrawDebugLine(GetWorld(), polyCenter, polyCenter + FVector(0, 0, 100), FColor::Black, false, 0.1, 0, 10);
 				DrawDebugLine(GetWorld(), wallPoint.GetMiddlePoint(), wallPoint.GetMiddlePoint() + FVector(0, 0, 100), FColor::Black, false, 0.1, 0, 10);
-
+				DrawDebugLine(GetWorld(), wallPoint.GetMiddlePoint(), polyCenter, FColor::Red, false, 0.1, 0, 10);
 				DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + dirToCenter * 500, FColor::Green, false, 0.1, 0, 3);*/
+			}
+
+			if (wallAvoidanceCount > 0)
+			{
+				finalInflunceVector += (wallAvoidanceVector / wallAvoidanceCount) * WallAvoidanceWeight;
 			}
 		}
 

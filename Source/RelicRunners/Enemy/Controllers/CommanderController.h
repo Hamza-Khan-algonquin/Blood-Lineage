@@ -94,6 +94,9 @@ public:
 	void ResetController();
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION()
+	void ResetTimeToAttackForPlayer(APawn* player);
 	
 	UFUNCTION()
 	bool InactiveCheck();
