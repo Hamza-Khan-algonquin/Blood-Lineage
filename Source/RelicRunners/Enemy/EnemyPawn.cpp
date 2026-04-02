@@ -678,7 +678,7 @@ bool AEnemyPawn::GetShouldTick()
 
 void AEnemyPawn::SetIsActive(bool newIsActive)
 {
-	if (IsActive == newIsActive)
+	if (IsActive == newIsActive || !IsValid(this))
 	{
 		return;
 	}
