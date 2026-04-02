@@ -187,7 +187,7 @@ public:
 
 	void UpdateBindText();
 	void UpdateAbilityManaCosts(float Mana1, float Mana2, float Mana3, float Mana4);
-	void RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime);
+	void RunCooldown(UImage* image, UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime);
 
 	UFUNCTION(BlueprintCallable)
 	void StartDamageCooldown(float CooldownTime);

@@ -288,7 +288,7 @@ void UPlayerHUD::UpdateBindText()
 
 }
 
-void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
+void UPlayerHUD::RunCooldown(UImage* image, UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
 {
 	if (!CooldownText || CooldownTime <= 0.f) return;
 	if (RemainingTime > 0.f) return;
@@ -304,13 +304,14 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 	}
 
 	TWeakObjectPtr<UTextBlock> CooldownTextWeak = CooldownText;
+	TWeakObjectPtr<UImage> ImageWeak = image;
 	float* RemainingTimePtr = &RemainingTime;
 
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().SetTimer(
 			TimerHandle,
-			[this, CooldownTextWeak, RemainingTimePtr]()
+			[this, CooldownTextWeak, RemainingTimePtr, ImageWeak]()
 			{
 				//Widget or HUD is gone — do nothing
 				if (!CooldownTextWeak.IsValid() || !RemainingTimePtr)
@@ -323,6 +324,7 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 				if (*RemainingTimePtr <= 0.f)
 				{
 					CooldownTextWeak->SetText(FText::GetEmpty());
+					ImageWeak->SetOpacity(1.f);
 					return;
 				}
 
@@ -337,20 +339,24 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 }
 void UPlayerHUD::StartDamageCooldown(float CooldownTime)
 {
-	RunCooldown(TB_DamageCooldown, DamageRemainingTime, DamageCooldownHandle, CooldownTime);
+	RunCooldown(I_Ability1, TB_DamageCooldown, DamageRemainingTime, DamageCooldownHandle, CooldownTime);
+	I_Ability1->SetOpacity(0.3f);
 }
 
 void UPlayerHUD::StartDefenceCooldown(float CooldownTime)
 {
-	RunCooldown(TB_DefenceCooldown, DefenceRemainingTime, DefenceCooldownHandle, CooldownTime);
+	RunCooldown(I_Ability2, TB_DefenceCooldown, DefenceRemainingTime, DefenceCooldownHandle, CooldownTime);
+	I_Ability2->SetOpacity(0.3f);
 }
 
 void UPlayerHUD::StartUtilityCooldown(float CooldownTime)
 {
-	RunCooldown(TB_UtilityCooldown, UtilityRemainingTime, UtilityCooldownHandle, CooldownTime);
+	RunCooldown(I_Ability3, TB_UtilityCooldown, UtilityRemainingTime, UtilityCooldownHandle, CooldownTime);
+	I_Ability3->SetOpacity(0.3f);
 }
 
 void UPlayerHUD::StartUltimateCooldown(float CooldownTime)
 {
-	RunCooldown(TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
+	RunCooldown(I_Ability4, TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
+	I_Ability4->SetOpacity(0.3f);
 }
