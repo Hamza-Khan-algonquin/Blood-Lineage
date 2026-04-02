@@ -8,13 +8,9 @@
 #include <Components/TextBlock.h>
 #include <Components/CheckBox.h>
 #include "AudioMixerBlueprintLibrary.h"
+#include <Components/Border.h>
 #include "SettingsWidget.generated.h"
 
-
-
-/**
- * 
- */
 UENUM(BlueprintType)
 enum class EColorblindMode : uint8
 {
@@ -223,6 +219,12 @@ public:
 
 	UPROPERTY()
 	APostProcessVolume* CachedPPV;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* SettingsBackground;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* SettingsBackground1;
 
 	
 

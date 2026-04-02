@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/PostProcessVolume.h"
 #include "Components/Image.h"
 
 #include "JoinUserWidget.generated.h"
@@ -508,4 +509,7 @@ public:
 	void HandleColorModeChanged();
 
 	void ApplyColorLUT(UTexture* LUT);
+
+	UPROPERTY()
+	APostProcessVolume* CachedPPV = nullptr;
 };

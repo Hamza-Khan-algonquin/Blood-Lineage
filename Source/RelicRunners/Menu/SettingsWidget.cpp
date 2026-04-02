@@ -1021,14 +1021,14 @@ void USettingsWidget::ApplyColorblindStyle()
 
 	case EColorblindMode::Tritanopia:
 		PrimaryAccent = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
-		SecondaryAccent = FLinearColor(1.0f, 0.35f, 0.35f, 1.0f);
-		DangerColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		SecondaryAccent = FLinearColor(0.60f, 0.53f, 0.38f, 1.0f);
+		DangerColor = SecondaryAccent;
 		break;
 
 	case EColorblindMode::Normal:
 	default:
 		PrimaryAccent = FLinearColor(0.075f, 0.058f, 0.036f, 1.0f);
-		SecondaryAccent = FLinearColor(0.075f, 0.058f, 0.036f, 1.0f);
+		SecondaryAccent = FLinearColor::White;
 		DangerColor = FLinearColor(0.075f, 0.058f, 0.036f, 1.0f);
 		TextColor = FLinearColor(0.046875f, 0.039974f, 0.0304f, 1.0f);
 		break;
@@ -1072,6 +1072,14 @@ void USettingsWidget::ApplyColorblindStyle()
 	{
 		MasterVolumeSlider->SetSliderBarColor(SecondaryAccent);
 		MasterVolumeSlider->SetSliderHandleColor(FLinearColor::White);
+	}
+	if (SettingsBackground)
+	{
+		SettingsBackground->SetBrushColor(SecondaryAccent);
+	}
+	if (SettingsBackground1)
+	{
+		SettingsBackground1->SetBrushColor(SecondaryAccent);
 	}
 }
 

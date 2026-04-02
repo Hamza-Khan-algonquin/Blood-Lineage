@@ -98,7 +98,7 @@ void UModeSelectionWidget::ApplyColorblindStyle()
 
 	case EColorblindMode::Normal:
 	default:
-		//AccentColor = FLinearColor(0.0625, 0.049255, 0.031143);
+		AccentColor = FLinearColor(0.5f, 0.4f, 0.3f, 1.f);
 		break;
 	}
 
