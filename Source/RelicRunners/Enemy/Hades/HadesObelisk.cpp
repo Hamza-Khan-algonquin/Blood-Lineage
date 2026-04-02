@@ -122,7 +122,7 @@ float AHadesObelisk::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
             UGameplayStatics::PlaySoundAtLocation(this, ExplosionSound, GetActorLocation());
         }
 
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CrystalExplosion, GetActorLocation());
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CrystalExplosion, GetActorLocation() + FVector(0,0,600));
 
         SetLifeSpan(0.2);
     }
