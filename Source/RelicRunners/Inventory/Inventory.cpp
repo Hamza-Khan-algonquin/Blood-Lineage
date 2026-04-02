@@ -24,6 +24,7 @@
 #include "Components/Border.h"
 #include "Components/VerticalBox.h"
 #include "Components/Image.h"
+#include "EngineUtils.h"
 #include "Components/Throbber.h"
 #include "Components/CanvasPanel.h"
 #include "InventoryToolTip.h"
@@ -87,6 +88,18 @@ void UInventory::NativeConstruct()
     if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
+
+
+    for (TActorIterator<APostProcessVolume> It(GetWorld()); It; ++It)
+    {
+        if (It->bUnbound)
+        {
+            CachedPPV = *It;
+            break;
+        }
+    }
+
+    ApplyColorblindStyle();
 }
 
 void UInventory::OnAutoEquip()
@@ -1308,4 +1321,76 @@ void UInventory::ApplyColorLUT(UTexture* LUT)
     }
 
     CachedPPV->BlendWeight = 1.0f;
+}
+
+void UInventory::ApplyColorblindStyle()
+{
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+    if (!GI) return;
+
+    FLinearColor PrimaryAccent;
+
+    switch (GI->ColorblindMode)
+    {
+    case EColorblindMode::Protanopia:
+        PrimaryAccent = FLinearColor(1.0f, 0.55f, 0.0f, 1.0f);
+        
+        break;
+
+    case EColorblindMode::Deuteranopia:
+        PrimaryAccent = FLinearColor(1.0f, 0.6f, 0.0f, 1.0f);
+        
+        break;
+
+    case EColorblindMode::Tritanopia:
+        PrimaryAccent = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
+        
+        break;
+
+    case EColorblindMode::Normal:
+    default:
+        PrimaryAccent = FLinearColor::White;
+        
+        break;
+    }
+
+    if (B_Forge)
+    {
+        B_Forge->SetBrushColor(PrimaryAccent);
+    }
+    if (B_Armory)
+    {
+        B_Armory->SetBrushColor(PrimaryAccent);
+    }
+    if (B_Inventory)
+    {
+        B_Inventory->SetBrushColor(PrimaryAccent);
+    }
+}
+
+void UInventory::HandleColorModeChanged()
+{
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+    if (!GI) return;
+
+    switch (GI->ColorblindMode)
+    {
+    case EColorblindMode::Protanopia:
+        ApplyColorLUT(LUT_Protanopia);
+        break;
+
+    case EColorblindMode::Deuteranopia:
+        ApplyColorLUT(LUT_Deuternopia);
+        break;
+
+    case EColorblindMode::Tritanopia:
+        ApplyColorLUT(LUT_Tritanopia);
+        break;
+
+    case EColorblindMode::Normal:
+    default:
+        ApplyColorLUT(LUT_Normal);
+        break;
+    }
+
 }
