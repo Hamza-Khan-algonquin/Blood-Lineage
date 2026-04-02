@@ -103,7 +103,7 @@ void ALevelChangeTrigger::ChangeLevel()
 		ARelicRunnersGameState* gameState = Cast<ARelicRunnersGameState>(GetWorld()->GetGameState());
 		if (gameInstance && gameState)
 		{
-			uint8 numstages = gameState->GetDifficultyInfo(gameInstance->CurrentDifficulty).NumStages;
+			uint8 numstages = gameState->GetDifficultyInfo(gameInstance->CurrentDifficulty).Index;
 			level = gameInstance->StageNumber >= numstages ?
 				BossLevel :
 				TargetLevel;
