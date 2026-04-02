@@ -93,7 +93,7 @@ void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FG
         OwnerChar->GetWorld()->GetTimerManager().SetTimer(BeamTickHandle,this, &UMoonbeam::BeamTick,TickInterval, true);
 
         // End ability after duration
-        OwnerChar->GetWorld()->GetTimerManager().SetTimer( DurationHandle,[this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, true, false);},Duration,false);
+        OwnerChar->GetWorld()->GetTimerManager().SetTimer(DurationHandle, this, &UMoonbeam::HandleDurationEnd,Duration,false);
     }
 
 }
@@ -184,6 +184,11 @@ void UMoonbeam::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGamepl
     }
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UMoonbeam::HandleDurationEnd()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 
