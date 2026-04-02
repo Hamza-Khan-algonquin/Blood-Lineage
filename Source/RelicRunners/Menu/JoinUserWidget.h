@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Engine/PostProcessVolume.h"
 #include "Components/Image.h"
+#include <Components/Border.h>
 
 #include "JoinUserWidget.generated.h"
 
@@ -512,4 +513,15 @@ public:
 
 	UPROPERTY()
 	APostProcessVolume* CachedPPV = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* Join1;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* Join2;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* Join3;
+
+
 };

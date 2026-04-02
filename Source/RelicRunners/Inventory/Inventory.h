@@ -528,6 +528,19 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Class")
 	class UClassInfo* ClassDataAsset = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Forge;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Armory;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Inventory;
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorLUT(UTexture* LUT);
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

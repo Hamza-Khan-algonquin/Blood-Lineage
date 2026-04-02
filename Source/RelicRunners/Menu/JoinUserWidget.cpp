@@ -127,6 +127,7 @@ void UJoinUserWidget::NativeConstruct()
 	PlayAnimation(RightPanelOpen);
 	ApplyColorblindStyle();
 	HandleColorModeChanged();
+	SetSelectedClass(CurrentClass);
 }
 
 FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -773,7 +774,7 @@ void UJoinUserWidget::ApplyColorLUT(UTexture* LUT)
 
 	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 	{
-		PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 1.0f;
+		PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.5f;
 	}
 	else
 	{
@@ -847,7 +848,7 @@ void UJoinUserWidget::ApplyColorblindStyle()
 		UtilityIconColor = FLinearColor(0.6f, 0.3f, 1.0f, 1.0f);
 		UltimateIconColor = FLinearColor(1.0f, 1.0f, 0.0f, 1.0f);
 
-		HealthIconColor = FLinearColor(1.0f, 0.8f, 0.0f, 1.0f);
+		HealthIconColor = FLinearColor(0.90f, 0.60f, 0.00f, 1.0f);
 		DIconColor = FLinearColor(0.0f, 1.0f, 0.25f, 1.0f);
 		StrengthIconColor = FLinearColor(0.0f, 0.85f, 1.0f, 1.0f);
 		AgilityIconColor = FLinearColor(1.0f, 1.0f, 0.0f, 1.0f);
@@ -890,12 +891,13 @@ void UJoinUserWidget::ApplyColorblindStyle()
 		StrengthIconColor = FLinearColor(1.0f, 0.35f, 0.35f, 1.0f);
 		AgilityIconColor = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
 		IntelligenceIconColor = FLinearColor(0.85f, 0.45f, 1.0f, 1.0f);
+
 		break;
 
 	case EColorblindMode::Normal:
 	default:
 		PrimaryAccent = FLinearColor(0.38f, 0.24f, 0.12f, 1.0f);
-		SecondaryAccent = FLinearColor(0.28f, 0.18f, 0.10f, 1.0f);
+		SecondaryAccent = FLinearColor::White;
 		Highlight = FLinearColor(0.85f, 0.65f, 0.25f, 1.0f);
 		PanelColor = FLinearColor(0.16f, 0.12f, 0.08f, 1.0f);
 		OutlineColor = FLinearColor(0.55f, 0.38f, 0.18f, 1.0f);
@@ -998,6 +1000,20 @@ void UJoinUserWidget::ApplyColorblindStyle()
 	if (TB_Countdown) TB_Countdown->SetColorAndOpacity(FSlateColor(Highlight));
 
 
+	//Borders
+	if (Join1)
+	{
+		Join1->SetBrushColor(SecondaryAccent);
+	}
+	if (Join2)
+	{
+		Join2->SetBrushColor(SecondaryAccent);
+	}
+	if (Join3)
+	{
+		Join3->SetBrushColor(SecondaryAccent);
+	}
+
 	//icons
 	if (DamageIcon) DamageIcon->SetColorAndOpacity(DamageIconColor * 1.5f);
 	if (DefenceIcon) DefenceIcon->SetColorAndOpacity(DefenceIconColor * 1.5f);
@@ -1005,7 +1021,7 @@ void UJoinUserWidget::ApplyColorblindStyle()
 	if (UltimateIcon) UltimateIcon->SetColorAndOpacity(UltimateIconColor * 1.5f);
 
 	if (HealthIcon) HealthIcon->SetColorAndOpacity(HealthIconColor);
-	if (DIcon) DIcon->SetColorAndOpacity(DIconColor * 1.5f);
+	if (DIcon) DIcon->SetColorAndOpacity(DIconColor);
 	if (StrengthIcon) StrengthIcon->SetColorAndOpacity(StrengthIconColor * 1.5f);
 	if (AgilityIcon)  AgilityIcon->SetColorAndOpacity(AgilityIconColor);
 	if (IntelligenceIcon) IntelligenceIcon->SetColorAndOpacity(IntelligenceIconColor);
@@ -1026,8 +1042,6 @@ void UJoinUserWidget::ApplyColorblindStyle()
 	SetBarColor(DexterityBar, AgilityIconColor);
 	SetBarColor(StrengthBar, StrengthIconColor);
 	SetBarColor(IntelligenceBar, IntelligenceIconColor);
-
-	SetSelectedClass(CurrentClass);
 
 	ARelicRunnersGameState* RunnersGameState = GetWorld() ? GetWorld()->GetGameState<ARelicRunnersGameState>() : nullptr;
 	if (RunnersGameState)

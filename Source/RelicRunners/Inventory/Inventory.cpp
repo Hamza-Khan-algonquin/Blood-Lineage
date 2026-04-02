@@ -1286,3 +1286,26 @@ UInventory* UInventory::Get(UObject* ContextObject)
     }
     return nullptr;
 }
+
+void UInventory::ApplyColorLUT(UTexture* LUT)
+{
+    if (!CachedPPV) return;
+
+    FPostProcessSettings& PPS = CachedPPV->Settings;
+
+    PPS.bOverride_ColorGradingLUT = true;
+    PPS.ColorGradingLUT = LUT;
+
+    PPS.bOverride_ColorGradingIntensity = true;
+
+    if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+    {
+        PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.5f;
+    }
+    else
+    {
+        PPS.ColorGradingIntensity = 0.0f;
+    }
+
+    CachedPPV->BlendWeight = 1.0f;
+}
