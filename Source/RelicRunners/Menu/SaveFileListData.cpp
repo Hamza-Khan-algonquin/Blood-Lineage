@@ -4,17 +4,34 @@
 #include "SaveFileListData.h"
 #include "ModeSelectionWidget.h"
 
-void USaveFileListData::AddMetaExp(int Value)
+int USaveFileListData::AddMetaExp(int Value)
 {
-
+    int InitialLevel = SaveData.MetaLevel;
     SaveData.MetaExperience += Value;
-    while (SaveData.MetaExperience >= SaveData.MetaExperienceToLevel && SaveData.MetaLevel > 0)
+
+    if (SaveData.MetaExperienceToLevel != GetRequiredMetaXP(SaveData.MetaLevel))
+    {
+        SaveData.MetaExperienceToLevel = GetRequiredMetaXP(SaveData.MetaLevel);
+    }
+
+    while (SaveData.MetaExperience >= SaveData.MetaExperienceToLevel)
     {
         SaveData.MetaExperience -= SaveData.MetaExperienceToLevel;
-        SaveData.MetaExperienceToLevel *= 2;
-        SaveData.MetaPoints++;
         SaveData.MetaLevel++;
+        SaveData.MetaPoints++;
+        SaveData.MetaExperienceToLevel = GetRequiredMetaXP(SaveData.MetaLevel);
+
+        if (SaveData.MetaExperienceToLevel <= 0) break;
     }
+
+    return SaveData.MetaLevel - InitialLevel;
+}
+
+void USaveFileListData::InitializeNewSave()
+{
+    SaveData.MetaLevel = 1;
+    SaveData.MetaExperience = 0;
+    SaveData.MetaExperienceToLevel = GetRequiredMetaXP(SaveData.MetaLevel);
 }
 
 FSaveData USaveFileListData::MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,

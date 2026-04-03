@@ -933,11 +933,7 @@ void AHades::Die()
                 int AddedMeta = FMath::RandRange(400, 500) * DiffInfo.MetaXPIncrease;
 
                 RRPS->MetaXPGainInRun += AddedMeta;
-
-                if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(RRPS->GetOwner()))
-                {
-                    PC->Client_RegisterMetaXPGain(AddedMeta);
-                }
+                RRPS->ForceNetUpdate();
             }
         }
     }

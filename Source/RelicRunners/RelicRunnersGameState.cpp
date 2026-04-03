@@ -13,11 +13,11 @@ ARelicRunnersGameState::ARelicRunnersGameState()
 
     DifficultyModifiers.Add("Bull", { 1.f,  1.f,  1,  1.5f,  0,  25, 2 });
 
-    DifficultyModifiers.Add("Lion", { 2.5f,  1.5f,  2,  2.2f,  0, 40, 3 });
+    DifficultyModifiers.Add("Lion", { 2.5f,  1.75f,  2,  2.2f,  0, 40, 3 });
 
-    DifficultyModifiers.Add("Hydra", { 4.f,  2.5f,  4,  3.5f,  0, 60, 4 });
+    DifficultyModifiers.Add("Hydra", { 3.75f,  3.f,  4,  3.5f,  0, 60, 4 });
 
-    DifficultyModifiers.Add("Cerberus", { 6.0f,  5.0f,  7,  6.0f,  0, 80, 5 });
+    DifficultyModifiers.Add("Cerberus", { 6.0f,  4.0f,  7,  6.0f,  0, 80, 5 });
 }
 
 FDifficultyInfo ARelicRunnersGameState::GetDifficultyInfo(FName DifficultyName) const

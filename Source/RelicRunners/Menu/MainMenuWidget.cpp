@@ -95,6 +95,7 @@ void UMainMenuWidget::ShowTutorialWidget()
     if (WidgetSwitcher && HowToPlayWidget)
     {
         WidgetSwitcher->SetActiveWidget(HowToPlayWidget);
+        HowToPlayWidget->BlendToForgeCamera();
     }
 }
 

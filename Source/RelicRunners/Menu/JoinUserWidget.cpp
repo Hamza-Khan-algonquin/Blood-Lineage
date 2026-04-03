@@ -83,11 +83,11 @@ void UJoinUserWidget::NativeConstruct()
 	}
 	else
 	{
-		DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
-		DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
-		DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 180, 150, 2 });
-		DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
-		DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
+		DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 0, 0, 0 });
+		DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 0, 0, 1 });
+		DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 0, 0, 2 });
+		DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 0, 0, 3 });
+		DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 0, 0, 5 });
 	}
 	UpdateDifficultyNumbers();
 
@@ -423,8 +423,8 @@ void UJoinUserWidget::UpdateClientDifficultyUI()
 
 	FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(ActualDifficulty);
 	TB_CurrentDifficulty->SetText(FText::FromName(ActualDifficulty));
-	TB_CurrentEnemyDamage->SetText(FText::AsNumber(diffInfo.HealthPercent));
-	TB_CurrentEnemyHealth->SetText(FText::AsNumber(diffInfo.DamagePercent));
+	TB_CurrentEnemyDamage->SetText(FText::AsNumber(diffInfo.DamagePercent));
+	TB_CurrentEnemyHealth->SetText(FText::AsNumber(diffInfo.HealthPercent));
 	TB_CurrentLuck->SetText(FText::AsNumber(diffInfo.LuckAmount));
 
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_DifficultyUpdate);
