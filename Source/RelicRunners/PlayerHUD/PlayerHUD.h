@@ -183,18 +183,4 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartUltimateCooldown(float CooldownTime);
 
-	UFUNCTION(BlueprintCallable)
-	void ApplyHUDColorblindStyle();
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DamageIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DefenceIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* UtilityIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* UltimateIcon;
 };

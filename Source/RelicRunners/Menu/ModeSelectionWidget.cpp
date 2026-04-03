@@ -48,8 +48,7 @@ void UModeSelectionWidget::NativeConstruct()
 		}
 	}, 0.05f, false);
 
-	ApplyColorblindStyle();
-	
+
 }
 
 void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelection)
@@ -71,44 +70,6 @@ void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelecti
 void UModeSelectionWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
 {
 	ParentMenu = InParentMenu;
-}
-
-void UModeSelectionWidget::ApplyColorblindStyle()
-{
-	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
-	if (!GI) return;
-
-	FLinearColor AccentColor;
-	FLinearColor TextColor = FLinearColor::White;
-	switch (GI->ColorblindMode)
-	{
-	case EColorblindMode::Protanopia:
-		AccentColor = FLinearColor(1.0f, 0.55f, 0.0f, 1.0f);
-		break;
-
-	case EColorblindMode::Deuteranopia:
-		AccentColor = FLinearColor(1.0f, 0.6f, 0.0f, 1.0f);
-		
-		break;
-
-	case EColorblindMode::Tritanopia:
-		AccentColor = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
-		
-		break;
-
-	case EColorblindMode::Normal:
-	default:
-		AccentColor = FLinearColor(0.5f, 0.4f, 0.3f, 1.f);
-		break;
-	}
-
-	if (HostButton)     HostButton->SetBackgroundColor(AccentColor);
-	if (UpgradesButton) UpgradesButton->SetBackgroundColor(AccentColor);
-	if (SettingsButton) SettingsButton->SetBackgroundColor(AccentColor);
-	if (TutorialButton) TutorialButton->SetBackgroundColor(AccentColor);
-	if (CreditsButton)  CreditsButton->SetBackgroundColor(AccentColor);
-	if (ExitButton)     ExitButton->SetBackgroundColor(AccentColor);
-
 }
 
 void UModeSelectionWidget::HostButtonClicked()

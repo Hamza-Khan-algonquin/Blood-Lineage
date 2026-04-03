@@ -64,7 +64,7 @@
 #include "RelicRunners/Objective/ObjectiveLog.h"
 
 #include "RelicRunners/Enemy/Hades/Hades.h"
-
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/TreeView.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
@@ -81,6 +81,7 @@
 #include "NavigationPath.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include <RelicRunners/LevelGeneration/IslandSpawner.h>
+#include <Runtime/SlateRHIRenderer/Private/SlateRHIRenderer.h>
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -181,6 +182,7 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
 		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::ApplySavedFOV);
+		ApplyColorblindMode();
 
 	}
 
@@ -263,6 +265,7 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 	PlayerPreviewInstance = nullptr;
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+		ApplyColorblindMode();
 
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
@@ -1151,6 +1154,47 @@ void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FSt
 	}
 }
 
+void ARelicRunnersPlayerController::ApplyColorblindMode()
+{
+	if (!IsLocalController()) return;
+
+	URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	EColorVisionDeficiency Type = EColorVisionDeficiency::NormalVision;
+	float Severity = 0.0f;
+	bool CorrectDeficiency = false;
+
+	switch (GI->ColorblindMode)
+	{
+	case EColorblindMode::Normal:
+		Type = EColorVisionDeficiency::NormalVision;
+		Severity = 0.0f;
+		CorrectDeficiency = false;
+		break;
+
+	case EColorblindMode::Protanopia:
+		Type = EColorVisionDeficiency::Protanope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+
+	case EColorblindMode::Deuteranopia:
+		Type = EColorVisionDeficiency::Deuteranope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+
+	case EColorblindMode::Tritanopia:
+		Type = EColorVisionDeficiency::Tritanope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+	}
+
+	UWidgetBlueprintLibrary::SetColorVisionDeficiencyType(Type, Severity, CorrectDeficiency, false);
+}
+
 void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 {
 	if (!ObjectiveLog || !ObjectiveStageTitle || !ObjectiveLog->ObjectiveTreeView) return;
@@ -1506,18 +1550,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
-	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
-	{
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimerForNextTick([this, GI]()
-			{
-				GI->ApplyAllSettings(this);
-				if (PlayerHUD)
-				{
-					PlayerHUD->ApplyHUDColorblindStyle();
-				}
-			});
-	}
+	
 	TryBindUI();
 
 }
@@ -1631,6 +1664,10 @@ void ARelicRunnersPlayerController::BeginPlay()
 		PlayerCameraManager->ViewPitchMax = 10.f;
 	}
 
+	if (IsLocalController())
+	{
+		ApplyColorblindMode();
+	}
 }
 
 void ARelicRunnersPlayerController::Client_StartCinematicWalk_Implementation(FVector TargetLocation)

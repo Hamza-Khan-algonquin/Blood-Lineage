@@ -37,7 +37,6 @@ void UMainMenuWidget::NativeConstruct()
 
             // Start by showing ModeSelectionWidget
             ShowModeSelectionWidget();
-            ApplyColorblindStyleToChildren();
         }
     }
 
@@ -116,33 +115,5 @@ void UMainMenuWidget::PlayButtonClickSound()
     if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
     {
         UGameplayStatics::PlaySound2D(PC, ButtonClickSound);
-    }
-}
-
-void UMainMenuWidget::ApplyColorblindStyleToChildren()
-{
-    if (ModeSelectionWidget)
-    {
-        ModeSelectionWidget->ApplyColorblindStyle();
-    }
-
-    if (JoinGameWidget)
-    {
-        JoinGameWidget->ApplyColorblindStyle();
-    }
-
-    if (CreditsWidget)
-    {
-        CreditsWidget->ApplyColorblindStyle();
-    }
-
-    if (UpgradesWidget)
-    {
-        UpgradesWidget->ApplyColorblindStyle();
-    }
-
-    if (SettingsWidget)
-    {
-        SettingsWidget->ApplyColorblindStyle();
     }
 }

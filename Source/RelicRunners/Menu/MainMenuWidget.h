@@ -51,8 +51,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Audio")
     void PlayButtonClickSound();
 
-    UFUNCTION(BlueprintCallable)
-    void ApplyColorblindStyleToChildren();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> ModeSelectionUserWidgetClass;

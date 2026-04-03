@@ -75,6 +75,10 @@ public:
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
+	UFUNCTION(BlueprintCallable, Category = "Accessibility")
+	void ApplyColorblindMode();
+
+
 	enum class EObjectiveType { None, Flag, Payload, Enemies, Pandora };
 	struct FPendingObjective {
 		int FlagCount = 0;
@@ -297,6 +301,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
 	int GetCalculatedManaCost(float BaseMana);
+
+	
 
 	FVector CinematicTargetLocation;
 

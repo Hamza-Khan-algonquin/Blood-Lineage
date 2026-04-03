@@ -205,6 +205,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> HitCameraShake;
 
+	
+
 protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
@@ -291,6 +293,8 @@ protected:
 
 
 	FVector CurrentLookAhead;
+
+	
 
 };
 

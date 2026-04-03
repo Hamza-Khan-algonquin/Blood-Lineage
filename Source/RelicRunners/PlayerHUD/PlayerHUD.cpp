@@ -37,8 +37,6 @@ void UPlayerHUD::NativeConstruct()
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
 	UpdateBindText();
-	ApplyHUDColorblindStyle();
-
 }
 
 void UPlayerHUD::ToggleExpBar(bool value)
@@ -311,90 +309,3 @@ void UPlayerHUD::StartUltimateCooldown(float CooldownTime)
 	RunCooldown(TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
 }
 
-
-void UPlayerHUD::ApplyHUDColorblindStyle()
-{
-	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
-	if (!GI) return;
-
-	FLinearColor HealthColor = FLinearColor::Red;
-	FLinearColor ResourceColor = FLinearColor(0.0f, 0.723055f, 1.0f);
-	FLinearColor XPColor = FLinearColor::Yellow;
-	FLinearColor TextColor = FLinearColor::White;
-
-	FLinearColor DamageIconColor;
-	FLinearColor DefenceIconColor;
-	FLinearColor UtilityIconColor;
-	FLinearColor UltimateIconColor;
-
-	switch (GI->ColorblindMode)
-	{
-	case EColorblindMode::Protanopia://red/green colorblindness
-		HealthColor = FLinearColor(1.0f, 0.8f, 0.0f, 1.0f);
-		ResourceColor = FLinearColor(0.0f, 0.75f, 1.0f, 1.0f);
-		XPColor = FLinearColor(1.0f, 1.0f, 0.35f, 1.0f);  
-
-		DamageIconColor = FLinearColor(0.0f, 0.85f, 1.0f, 1.0f);
-		DefenceIconColor = FLinearColor(0.0f, 1.0f, 0.25f, 1.0f);
-		UtilityIconColor = FLinearColor(0.6f, 0.3f, 1.0f, 1.0f);
-		UltimateIconColor = FLinearColor(1.0f, 1.0f, 0.0f, 1.0f);
-		break;
-
-	case EColorblindMode::Deuteranopia: //red/green colorblindness
-		HealthColor = FLinearColor(1.0f, 0.75f, 0.0f, 1.0f);
-		ResourceColor = FLinearColor(0.15f, 0.8f, 1.0f, 1.0f);
-		XPColor = FLinearColor(1.0f, 0.95f, 0.45f, 1.0f); 
-
-		DamageIconColor = FLinearColor(0.0f, 0.85f, 1.0f, 1.0f);
-		DefenceIconColor = FLinearColor(0.2f, 1.0f, 0.2f, 1.0f);
-		UtilityIconColor = FLinearColor(0.65f, 0.35f, 1.0f, 1.0f);
-		UltimateIconColor = FLinearColor(1.0f, 1.0f, 0.0f, 1.0f);
-		break;
-
-	case EColorblindMode::Tritanopia: //blue/yellow colorblindness
-		HealthColor = FLinearColor(1.0f, 0.35f, 0.6f, 1.0f);
-		ResourceColor = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
-		XPColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-		DamageIconColor = FLinearColor(1.0f, 0.35f, 0.35f, 1.0f);
-		DefenceIconColor = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
-		UtilityIconColor = FLinearColor(0.85f, 0.45f, 1.0f, 1.0f);
-		UltimateIconColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		break;
-
-	case EColorblindMode::Normal:
-	default:
-		DamageIconColor = FLinearColor(0.462f, 0.0f, 1.0f, 1.0f);
-		DefenceIconColor = FLinearColor(0.0f, 1.0f, 0.14f, 1.0f);
-		UtilityIconColor = FLinearColor(0.0f, 0.55f, 1.0f, 1.0f);
-		UltimateIconColor = FLinearColor(1.0f, 0.82f, 0.0f, 1.0f); 
-		break;
-	}
-
-	auto SetBarColor = [](UProgressBar* Bar, const FLinearColor& Color)
-		{
-			if (!Bar) return;
-
-			FProgressBarStyle Style = Bar->GetWidgetStyle();
-			Style.FillImage.TintColor = FSlateColor(Color);
-			Bar->SetWidgetStyle(Style);
-			Bar->SetFillColorAndOpacity(Color);
-		};
-
-	SetBarColor(HealthBar, HealthColor);
-	SetBarColor(HealthBar_1, HealthColor);
-	SetBarColor(ResourceBar, ResourceColor);
-	SetBarColor(ResourceBar_1, ResourceColor);
-
-	if (ExperienceBar) ExperienceBar->SetFillColorAndOpacity(XPColor);
-
-	if (TB_Health) TB_Health->SetColorAndOpacity(FSlateColor(TextColor));
-	if (TB_Resource) TB_Resource->SetColorAndOpacity(FSlateColor(TextColor));
-	if (TB_Experience) TB_Experience->SetColorAndOpacity(FSlateColor(TextColor));
-	if (TB_Level) TB_Level->SetColorAndOpacity(FSlateColor(TextColor));
-
-	if (DamageIcon) DamageIcon->SetColorAndOpacity(DamageIconColor * 1.5f);
-	if (DefenceIcon) DefenceIcon->SetColorAndOpacity(DefenceIconColor *1.5f);
-	if (UtilityIcon) UtilityIcon->SetColorAndOpacity(UtilityIconColor *1.5f);
-	if (UltimateIcon) UltimateIcon->SetColorAndOpacity(UltimateIconColor *1.5f);
-}

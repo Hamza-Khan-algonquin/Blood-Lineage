@@ -41,8 +41,6 @@ public:
 
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 
-	UFUNCTION(BlueprintCallable)
-	void ApplyColorblindStyle();
 
 	void ResetUI();
 	UFUNCTION(BlueprintCallable)

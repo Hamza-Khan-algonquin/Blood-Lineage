@@ -57,8 +57,6 @@ public:
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 	void SetParentMenu(class UPauseMenuWidget* InParentMenu);
 
-	UFUNCTION(BlueprintCallable)
-	void ApplyColorblindStyle();
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_BackButton = nullptr;
@@ -205,34 +203,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UComboBoxString* ColourModeDropDown = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess="true"))
-	UTexture2D* LUT_Normal = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Protanopia = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Deuternopia = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Tritanopia = nullptr;
-
-	UPROPERTY()
-	APostProcessVolume* CachedPPV;
-
-	UPROPERTY(meta = (BindWidget))
-	UBorder* SettingsBackground;
-
-	UPROPERTY(meta = (BindWidget))
-	UBorder* SettingsBackground1;
-
-	
-
 	UFUNCTION()
 	void HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType);
 	
-	void ApplyColorLUT(UTexture* LUT);
-
 	//Output devices
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UComboBoxString* OutputDeviceDropDown = nullptr;

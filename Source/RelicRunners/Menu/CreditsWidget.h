@@ -21,8 +21,6 @@ public:
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
 
-	UFUNCTION(BlueprintCallable)
-	void ApplyColorblindStyle();
 protected:
 	UFUNCTION()
 	void BackButtonClicked();

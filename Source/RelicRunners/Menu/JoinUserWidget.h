@@ -420,9 +420,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_Intelligence = nullptr;
 
-	UFUNCTION(BlueprintCallable)
-	void ApplyColorblindStyle();
-
 protected:
 	UFUNCTION()
 	void BackButtonClicked();
@@ -493,35 +490,5 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* IntelligenceIcon;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Normal = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Protanopia = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Deuternopia = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Tritanopia = nullptr;
-
-	UFUNCTION()
-	void HandleColorModeChanged();
-
-	void ApplyColorLUT(UTexture* LUT);
-
-	UPROPERTY()
-	APostProcessVolume* CachedPPV = nullptr;
-
-	UPROPERTY(meta = (BindWidget))
-	UBorder* Join1;
-
-	UPROPERTY(meta = (BindWidget))
-	UBorder* Join2;
-
-	UPROPERTY(meta = (BindWidget))
-	UBorder* Join3;
-
 
 };
