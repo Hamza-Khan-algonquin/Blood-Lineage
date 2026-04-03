@@ -19,6 +19,9 @@ public:
 
 	void UpdateControllerStageUI(int StageNumber);
 
+	FTimerHandle UIDelayHandle;
+	FTimerHandle UIZoneDelayHandle;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GenerationValues")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
 	void SyncObjectiveToSinglePlayer(class ARelicRunnersPlayerController* TargetPC);
@@ -40,10 +43,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "GenerationValues")
 	class AActor* CameraActor;
 
-	UPROPERTY(EditAnywhere, Category = "GenerationValues", meta = (ClampMin = "1", UIMin = "1"))
+	UPROPERTY(VisibleAnywhere, Category = "GenerationValues")
 	uint8 NumIslands;
 
-	UPROPERTY(EditAnywhere, Category = "GenerationValues", meta = (ClampMin = "1", UIMin = "1"))
+	UPROPERTY(VisibleAnywhere, Category = "GenerationValues")
 	uint8 NumStages;
 
 	UPROPERTY(EditAnywhere, Category = "GenerationValues")

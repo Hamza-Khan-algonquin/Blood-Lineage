@@ -16,6 +16,9 @@
 #include "RelicRunners/Enemy/FlockComponent.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include <Net/UnrealNetwork.h>
+#include "Kismet/GameplayStatics.h"
+#include "RelicRunners/RelicRunnersGameMode.h"
+
 
 ACommanderController::ACommanderController()
 {
@@ -30,6 +33,7 @@ ACommanderController::ACommanderController()
 	TimeToAttack = 1;
 	bReplicates = true;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
+	
 	SpawnDelayAfterWorldStart = 20;
 	MinDistanceFromPlayer = 500;
 }
@@ -51,6 +55,39 @@ void ACommanderController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	GetWorldTimerManager().ClearTimer(SpawnTimer);
 	Super::EndPlay(EndPlayReason);
+}
+
+void ACommanderController::ResetController()
+{
+	GetWorldTimerManager().SetTimer(SpawnTimer, this, &ACommanderController::SpawmLoop, TimeBetweenSpawnChecks, true);
+	CurrentLifeTimeNumberOfEnemies = 0;
+	TArray<AEnemyPawn*> tempArray = ControlledEnemies;
+
+	for (int i = 0; i < tempArray.Num(); i++)
+	{
+		tempArray[i]->Die(nullptr);
+	}
+
+	ControlledEnemies.Empty();
+
+	for (auto& time : RemainingTimeToAttack)
+	{
+		time.Value = TimeToAttack;
+	}
+
+	if (StartingBehaviorTree)
+	{
+		RunBehaviorTree(StartingBehaviorTree);
+	}
+	
+	//their a high chance that the reset will be called before SetActorTickEnabled(false) in the tick
+	GetWorldTimerManager().SetTimerForNextTick([&]()
+		{
+			SetActorTickEnabled(true);
+		});
+	
+
+	ShouldUpdateBoid = true;
 }
 
 void ACommanderController::Tick(float DeltaTime)
@@ -107,9 +144,10 @@ void ACommanderController::Tick(float DeltaTime)
 		BoidShouldFocusePlayer = distance <= DistanceForBoidsToFocusePlayer;
 		
 		IsTargeting = distance <= DistanceToTargetPlayer;
-
-		if (!BTComp && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
+		bool test = (!BTComp || !BTComp->IsRunning());
+		if ((!BTComp || !BTComp->IsRunning()) && IsTargeting && GetMoveStatus() == EPathFollowingStatus::Idle)
 		{
+
 			MoveToActor(TargetPlayer, 25);
 		}
 		else if (!IsTargeting)
@@ -127,18 +165,61 @@ void ACommanderController::Tick(float DeltaTime)
 		UpdateTarget(nullptr);
 	}
 
-	UpdateLODs(players, pawn->GetActorLocation());
-	UpdateBoidMovement(DeltaTime);
-	AttackCheck(players, DeltaTime);
+	if (ShouldUpdateBoid)
+	{
+		UpdateLODs(players, pawn->GetActorLocation());
+		UpdateBoidMovement(DeltaTime);
+		AttackCheck(players, DeltaTime);
+	}
 	
 
-	if (CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0)
+	
+
+		
+	
+	if(InactiveCheck())
 	{
-		if (!IsValid(BTComp) || !BTComp->IsRunning())
+		if (AEnemyCharacter* enemyChar = Cast<AEnemyCharacter>(pawn))
+		{
+			//SetActorTickEnabled(false);
+			if (ShouldUpdateBoid)
+			{
+				GetWorldTimerManager().ClearTimer(SpawnTimer);
+				ShouldUpdateBoid = false;
+			}
+
+
+			if (enemyChar->ShouldDieIfCommanderIsDone)
+			{
+				enemyChar->Die(nullptr);
+				if (BTComp && BTComp->IsRunning())
+				{
+					BTComp->StopTree(EBTStopMode::Safe);
+				}
+				SetActorTickEnabled(false);
+			}
+			else if (enemyChar->IsDead())
+			{
+				if (BTComp && BTComp->IsRunning())
+				{
+					BTComp->StopTree(EBTStopMode::Safe);
+				}
+
+				SetActorTickEnabled(false);
+			}
+		}
+		else if (!IsValid(BTComp) || !BTComp->IsRunning())
 		{
 			Destroy();
-		}	
+			pawn->Destroy();
+		}
 	}
+	
+}
+
+bool ACommanderController::InactiveCheck()
+{
+	return GetWorld()->GetTimeSeconds() >= SpawnDelayAfterWorldStart && CurrentLifeTimeNumberOfEnemies >= MaxLifeTimeNumberOfEnemies && ControlledEnemies.Num() == 0;
 }
 
 void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
@@ -147,6 +228,8 @@ void ACommanderController::AddPawnEnemy(AEnemyPawn* enemy)
 	{
 		return;
 	}
+
+	CurrentLifeTimeNumberOfEnemies++;
 
 	ControlledEnemies.AddUnique(enemy);
 	enemy->MovementComponent->Commander = this;
@@ -165,7 +248,7 @@ void ACommanderController::RemovePawnEnemy(AActor* enemy)
 {
 	AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(enemy);
 
-	if (!enemyPawn || !IsValid(enemyPawn) || !ControlledEnemies.Contains(enemyPawn))
+	if (!enemyPawn || !IsValid(enemyPawn))
 	{
 		return;
 	}
@@ -247,7 +330,8 @@ void ACommanderController::SpawnPawnEnemy()
 
 	newEnemy->GetActorBounds(true, origin, bounds);
 
-	newEnemy->SetActorLocation(finalPoint + FVector(0, 0, bounds.Z));
+	newEnemy->SetActorLocation(finalPoint + FVector(0, 0, bounds.Z/2));
+	
 
 	//giving time for the enemy to set
 	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
@@ -259,17 +343,19 @@ void ACommanderController::SpawnPawnEnemy()
 
 void ACommanderController::SpawmLoop()
 {
-	if (!GetWorld() || GetWorld()->GetTimeSeconds() <= SpawnDelayAfterWorldStart)
+	ARelicRunnersGameMode* GM = Cast<ARelicRunnersGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
+	if (!GetWorld() || !GM || GM->LastTimeStamp == -1 || GetWorld()->GetTimeSeconds() <= GM->LastTimeStamp + SpawnDelayAfterWorldStart)
 	{
 		return;
 	}
 
 	for (int i = 0; i < EnemyToSpawnPerLoop && ControlledEnemies.Num() < MaxNumberOfEnemies; i++)
 	{
-		if (CurrentLifeTimeNumberOfEnemies < MaxLifeTimeNumberOfEnemies)
+		if (CurrentLifeTimeNumberOfEnemies + i < MaxLifeTimeNumberOfEnemies)
 		{
 			SpawnPawnEnemy();
-			CurrentLifeTimeNumberOfEnemies++;
+			
 		}
 		else
 		{
@@ -337,11 +423,6 @@ void ACommanderController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	if (StartingBehaviorTree)
-	{
-		RunBehaviorTree(StartingBehaviorTree);
-	}
-
 	PawnFlockComponent = InPawn->FindComponentByClass<UFlockComponent>();
 
 	if(!PawnFlockComponent)
@@ -350,7 +431,7 @@ void ACommanderController::OnPossess(APawn* InPawn)
 		PawnFlockComponent->RegisterComponent();
 	}
 
-	GetWorldTimerManager().SetTimer(SpawnTimer, this, &ACommanderController::SpawmLoop, TimeBetweenSpawnChecks, true);
+	ResetController();
 }
 
 void ACommanderController::UpdateLODs(TArray<APawn*> players, FVector refernceLocation)

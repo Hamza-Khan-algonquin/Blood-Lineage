@@ -42,6 +42,7 @@ UEnemyBoidMovementComponent::UEnemyBoidMovementComponent()
 	DistanceFromWallToLoseTargetWeight = 100;
 	EnemyCharacterAvoidanceDistance = 300;
 	EnemyCharacterAvoidanceWeight = 1.5;
+
 	SetIsReplicatedByDefault(true);
 }
 
@@ -54,6 +55,11 @@ void UEnemyBoidMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 {
+	if (!IsActive())
+	{
+		return;
+	}
+
 	if (!GetOwner()->HasAuthority())
 	{
 		ClientSideEntityInterpolation(delta);
@@ -76,6 +82,11 @@ void UEnemyBoidMovementComponent::UpdateMovement(float delta)
 
 void UEnemyBoidMovementComponent::UpdateMovementInfo(float delta)
 {
+	if (!IsActive())
+	{
+		return;
+	}
+
 	if (IsKnockedBack)
 	{
 		return;
@@ -248,6 +259,10 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 
 		if (ActiveNavMesh->ProjectPoint(GetActorLocation(), navLocation, WallAvoidanceExtent))
 		{
+			FVector temp;
+			ActiveNavMesh->GetPolyCenter(navLocation.NodeRef, temp);
+			DrawDebugLine(GetWorld(), temp, temp + FVector(0, 0, 100), FColor::Red, false, 0.1, 0, 10);
+
 			NavNodeRef polyRef = navLocation.NodeRef;
 			TArray<FNavigationPortalEdge> wallPoints;
 	
@@ -292,8 +307,33 @@ void UEnemyBoidMovementComponent::CalculateBoidDirection(float delta)
 					}
 				}
 
+/*				strength = 1;
+				FVector edgeDirection = (wallPoint.Left - wallPoint.Right).GetSafeNormal();
+
+				//it the cross product. Don't believe me go look at the body of FVector::CrossProduct. I just felt like being a dick to anyone who tries to read this mess
+				direction = edgeDirection ^ FVector::UpVector;
+
+				FVector polyCenter;
+				ActiveNavMesh->GetPolyCenter(wallPoint.ToRef, polyCenter);
+				FVector dirToCenter = (polyCenter - wallPoint.GetMiddlePoint()).GetSafeNormal();
+				float dot = (direction | dirToCenter);
+
+				if (dot < 0)
+				{
+					direction *= -1;
+				}
+
+				if (distanceToWall < closeWallDist)
+				{
+					closeWallDist = distanceToWall;
+				}*/
+
 				finalInflunceVector += direction * strength * WallAvoidanceWeight;
-				//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + direction * strength * WallAvoidanceWeight * 100, FColor::Cyan, false, 0.1, 0, 3);
+				/*DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + direction * strength * WallAvoidanceWeight * 100, FColor::Cyan, false, 0.1, 0, 3);
+				DrawDebugLine(GetWorld(), temp, temp + FVector(0, 0, 100), FColor::Black, false, 0.1, 0, 10);
+				DrawDebugLine(GetWorld(), wallPoint.GetMiddlePoint(), wallPoint.GetMiddlePoint() + FVector(0, 0, 100), FColor::Black, false, 0.1, 0, 10);
+
+				DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + dirToCenter * 500, FColor::Green, false, 0.1, 0, 3);*/
 			}
 		}
 
@@ -448,7 +488,7 @@ void UEnemyBoidMovementComponent::MoveInDirection(float DeltaTime)
 
 	if (ActiveNavMesh)
 	{
-		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, {100,100,200}))
+		if (navSys->ProjectPointToNavigation(finalMovement, navLocation, NavMeshClampExtent))
 		{
 			FNavLocation navOutLocation;
 			if (!ActiveNavMesh->FindMoveAlongSurface(navLocation, finalMovement, navOutLocation, ActiveNavMesh->GetDefaultQueryFilter(), this))
@@ -593,6 +633,11 @@ void UEnemyBoidMovementComponent::AddToMoveDataBuffer(FVector newLocation, FRota
 	{
 		MoveDataBuffer.RemoveAt(0);
 	}
+}
+
+void UEnemyBoidMovementComponent::ClearMoveBuffer_Implementation()
+{
+	MoveDataBuffer.Empty();
 }
 
 void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)

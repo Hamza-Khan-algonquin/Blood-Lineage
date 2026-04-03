@@ -166,6 +166,7 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 			if (pointer.IsValid() && ((isInterface && !Cast<IPoolActorInterface>(pointer.Get())->GetIsActive()) || (!isInterface && pointer->IsHidden())))
 			{
 				returnActor = pointer.Get();
+				break;
 			}
 		}
 	}
