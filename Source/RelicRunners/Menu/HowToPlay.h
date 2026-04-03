@@ -38,6 +38,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* B_Classes = nullptr;
 
+	void BlendToForgeCamera();
+	void BlendToMainMenuCamera();
 protected:
 
 	UFUNCTION()
@@ -57,10 +59,10 @@ protected:
 
 	UFUNCTION()
 	void OnClassesClicked();
-
 private:
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
 
 	void SwitchToPage(int Index);
+	AActor* FindActorByTag(FName TargetTag);
 };

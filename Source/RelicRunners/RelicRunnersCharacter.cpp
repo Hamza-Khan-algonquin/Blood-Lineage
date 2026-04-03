@@ -283,7 +283,6 @@ void ARelicRunnersCharacter::Die()
 	if (RPC)
 	{
 		RPC->ChangeState(NAME_Spectating);
-		RPC->Client_RequestSaveStats();
 
 		if (RPC->IsLocalController())
 		{
@@ -307,7 +306,7 @@ void ARelicRunnersCharacter::Die()
 		}
 	}
 
-	SetLifeSpan(0.5f);
+	Destroy();
 }
 
 void ARelicRunnersCharacter::OnRep_PlayerState()

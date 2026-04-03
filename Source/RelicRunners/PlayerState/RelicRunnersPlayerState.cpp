@@ -149,6 +149,11 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerDeaths = this->PlayerDeaths;
 		PS->EnemiesKilled = this->EnemiesKilled;
 		PS->MetaXPGainInRun = this->MetaXPGainInRun;
+		PS->MetaXPToNextLevel = this->MetaXPToNextLevel;
+		PS->MetaLevel = this->MetaLevel;
+		PS->bMetaStatsInitialized = this->bMetaStatsInitialized;
+		PS->MetaLevelAtStart = this->MetaLevelAtStart;
+		PS->MetaXPAtStart = this->MetaXPAtStart;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)
@@ -492,7 +497,7 @@ void ARelicRunnersPlayerState::OnStartingLevelUp()
 
 	//Scale Stats based on Rarity
 	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;
-	float Multiplier = 1.0f + (RarityIndex * 0.2f); //Each rarity tier adds 20% more potential
+	float Multiplier = 1.0f + (RarityIndex * 0.3f); //Each rarity tier adds 30% more potential
 
 	Item->ItemData.Health += FMath::RandRange(2, FMath::RoundToInt(10 * Multiplier));
 	Item->ItemData.Armor += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
@@ -508,8 +513,7 @@ void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
 	//Don't upgrade if already at max rarity
 	if (CurrentIndex == INDEX_NONE || CurrentIndex >= RarityOrder.Num() - 1) return;
 
-	//Base chance is 3% + 3% for every level since the last upgrade
-	float SuccessChance = 4.0f + RarityPityCounter;
+	float SuccessChance = 10.0f + RarityPityCounter;
 	float Roll = FMath::FRandRange(0.0f, 100.0f);
 
 	if (Roll <= SuccessChance)
@@ -520,7 +524,7 @@ void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
 	}
 	else
 	{
-		RarityPityCounter += 4.0f; //Increase odds for next level
+		RarityPityCounter += 3.0f; //Increase odds for next level
 	}
 }
 
@@ -563,7 +567,7 @@ void ARelicRunnersPlayerState::OnLevelUp()
 
 	//Scale Stats based on Rarity
 	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;
-	float Multiplier = 1.0f + (RarityIndex * 0.2f); //Each rarity tier adds 20% more potential
+	float Multiplier = 1.0f + (RarityIndex * 0.3f); //Each rarity tier adds 20% more potential
 
 	Item->ItemData.Health += FMath::RandRange(2, FMath::RoundToInt(10 * Multiplier));
 	Item->ItemData.Armor += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
@@ -613,12 +617,7 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 		}
 	}
 
-	if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetOwner()))
-	{
-		PC->Client_RegisterMetaXPGain(AddedMeta);
-	}
-
-	float Chance = 10.0f;
+	float Chance = 5.0f;
 	if (FMath::FRandRange(0.0f, 100.0f) < Chance)
 	{
 		AddGold(1);
@@ -764,7 +763,6 @@ void ARelicRunnersPlayerState::OnRep_DeathState()
 			RPC->CleanUI();
 			RPC->ChangeState(NAME_Spectating);
 			RPC->SpectatingUI();
-			RPC->Client_RequestSaveStats();
 		}
 	}
 }
@@ -1016,6 +1014,8 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaXPGainInRun);
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaLevel);
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaXPToNextLevel);
+	DOREPLIFETIME(ARelicRunnersPlayerState, MetaLevelAtStart);
+	DOREPLIFETIME(ARelicRunnersPlayerState, bMetaStatsInitialized);
 	DOREPLIFETIME(ARelicRunnersPlayerState, IncreasedMovementSpeedFromAbility);
 }
 

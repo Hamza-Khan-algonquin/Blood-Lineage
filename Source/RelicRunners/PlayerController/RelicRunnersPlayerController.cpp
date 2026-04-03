@@ -1427,6 +1427,25 @@ void ARelicRunnersPlayerController::Client_ShowPostGame_Implementation(const TAr
 		SpectatingWidget->RemoveFromParent();
 	}
 
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		if (GI->SelectedSaveSlot)
+		{
+			FString LocalName = GetPlayerState<APlayerState>()->GetPlayerName();
+
+			for (const FPlayerPostGameData& Data : FinalStats)
+			{
+				if (Data.Username == LocalName)
+				{
+					GI->SelectedSaveSlot->AddMetaExp(Data.MetaXPGainInRun);
+
+					UE_LOG(LogTemp, Log, TEXT("Local Save Updated: Added %d Meta XP."), Data.MetaXPGainInRun);
+					break;
+				}
+			}
+		}
+	}
+
 	PostGameUI();
 	if (PostGameWidget) PostGameWidget->UpdateScoreboard(FinalStats);
 }
@@ -1435,9 +1454,16 @@ void ARelicRunnersPlayerController::Server_UpdateMetaFromSave_Implementation(int
 {
 	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
 	{
-		PS->MetaLevel = MetaLevel;
-		PS->MetaXP = MetaXP;
-		PS->MetaXPToNextLevel = MetaXPToNextLevel;
+		if (!PS->bMetaStatsInitialized)
+		{
+			PS->MetaLevel = MetaLevel;              
+			PS->MetaLevelAtStart = MetaLevel;       
+			PS->MetaXP = MetaXP;
+			PS->MetaXPAtStart = MetaXP;
+			PS->MetaXPToNextLevel = MetaXPToNextLevel;
+			PS->bMetaStatsInitialized = true;
+			PS->ForceNetUpdate();
+		}
 	}
 }
 
@@ -1686,6 +1712,10 @@ void ARelicRunnersPlayerController::BeginPlay()
 				FSaveData DefaultData;
 				Server_InitializePlayerData(DefaultData);
 			}
+		}
+		if (IsLocalController())
+		{
+			Client_RequestSaveStats();
 		}
 	}
 

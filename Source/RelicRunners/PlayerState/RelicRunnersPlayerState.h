@@ -236,6 +236,12 @@ public:
 	void OnRep_DeathState();
 
 	UPROPERTY(Replicated)
+	int MetaXPAtStart = 0;
+	UPROPERTY(Replicated)
+	int MetaLevelAtStart = 0;
+	UPROPERTY(Replicated)
+	bool bMetaStatsInitialized = false;
+	UPROPERTY(Replicated)
 	int MetaLevel;
 	UPROPERTY(Replicated)
 	int MetaXP;
