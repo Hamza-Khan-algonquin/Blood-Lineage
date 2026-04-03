@@ -40,10 +40,10 @@ void UHowToPlay::BackButtonClicked()
 }
 
 void UHowToPlay::OnItemsClicked() { SwitchToPage(0); BlendToForgeCamera(); }
-void UHowToPlay::OnObjectivesClicked() { SwitchToPage(1); }
+void UHowToPlay::OnObjectivesClicked() { SwitchToPage(1); BlendToObjectivesCamera(); }
 void UHowToPlay::OnUpgradesClicked() { SwitchToPage(2); }
-void UHowToPlay::OnEnemiesClicked() { SwitchToPage(3); }
-void UHowToPlay::OnClassesClicked() { SwitchToPage(4); }
+void UHowToPlay::OnEnemiesClicked() { SwitchToPage(3); BlendToEnemiesCamera(); }
+void UHowToPlay::OnClassesClicked() { SwitchToPage(4); BlendToClassesCamera(); }
 
 void UHowToPlay::SwitchToPage(int Index)
 {
@@ -69,6 +69,42 @@ void UHowToPlay::BlendToForgeCamera()
 	if (!PC) return;
 
 	AActor* TargetCamera = FindActorByTag(FName("ForgeCamera"));
+	if (TargetCamera)
+	{
+		PC->SetViewTargetWithBlend(TargetCamera, 1.0f, EViewTargetBlendFunction::VTBlend_Cubic);
+	}
+}
+
+void UHowToPlay::BlendToObjectivesCamera()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	AActor* TargetCamera = FindActorByTag(FName("ObjectiveCamera"));
+	if (TargetCamera)
+	{
+		PC->SetViewTargetWithBlend(TargetCamera, 1.0f, EViewTargetBlendFunction::VTBlend_Cubic);
+	}
+}
+
+void UHowToPlay::BlendToEnemiesCamera()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	AActor* TargetCamera = FindActorByTag(FName("EnemiesCamera"));
+	if (TargetCamera)
+	{
+		PC->SetViewTargetWithBlend(TargetCamera, 1.0f, EViewTargetBlendFunction::VTBlend_Cubic);
+	}
+}
+
+void UHowToPlay::BlendToClassesCamera()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	AActor* TargetCamera = FindActorByTag(FName("ClassesCamera"));
 	if (TargetCamera)
 	{
 		PC->SetViewTargetWithBlend(TargetCamera, 1.0f, EViewTargetBlendFunction::VTBlend_Cubic);

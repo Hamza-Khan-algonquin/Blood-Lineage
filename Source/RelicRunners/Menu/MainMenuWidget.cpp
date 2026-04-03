@@ -106,6 +106,7 @@ void UMainMenuWidget::ShowCreditsWidget()
     if (WidgetSwitcher && CreditsWidget)
     {
         WidgetSwitcher->SetActiveWidget(CreditsWidget);
+        CreditsWidget->BlendToCreditsCamera();
     }
 }
 
