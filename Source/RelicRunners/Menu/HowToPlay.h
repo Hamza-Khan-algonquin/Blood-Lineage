@@ -39,6 +39,9 @@ public:
 	class UButton* B_Classes = nullptr;
 
 	void BlendToForgeCamera();
+	void BlendToObjectivesCamera();
+	void BlendToEnemiesCamera();
+	void BlendToClassesCamera();
 	void BlendToMainMenuCamera();
 protected:
 
