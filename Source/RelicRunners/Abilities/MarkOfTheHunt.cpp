@@ -16,7 +16,7 @@ UMarkOfTheHunt::UMarkOfTheHunt()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 	ConeAngle = 40.f;
-    Damage = 200.f;
+    Damage = 300.f;
 }
 
 void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

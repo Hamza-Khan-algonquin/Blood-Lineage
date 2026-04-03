@@ -66,6 +66,7 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
     PS->SetInvincible(true);
+
     // Local input disable during animation
     if (ActorInfo->IsLocallyControlled())
     {
@@ -79,12 +80,11 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
             float AnimDuration = AbilityAnim->GetPlayLength() * 0.5f;
             PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 2.f);
 
-            
-
             if (APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get()))
             {
                 TWeakObjectPtr<APlayerController> WeakPC = PC;
                 FTimerHandle InputTimerHandle;
+
                 World->GetTimerManager().SetTimer(
                     InputTimerHandle,
                     [WeakPC]()
@@ -98,19 +98,23 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
                     false
                 );
             }
-
-            FTimerHandle ShockwaveTimerHandle;
-            World->GetTimerManager().SetTimer(
-                ShockwaveTimerHandle,
-                [this]()
-                {
-                    LaunchShockwave();
-                    
-                },
-                AnimDuration,
-                false
-            );
         }
+    }
+
+    if (AbilityAnim)
+    {
+        float AnimDuration = AbilityAnim->GetPlayLength() * 0.5f;
+
+        FTimerHandle ShockwaveTimerHandle;
+        World->GetTimerManager().SetTimer(
+            ShockwaveTimerHandle,
+            [this]()
+            {
+                LaunchShockwave();
+            },
+            AnimDuration,
+            false
+        );
     }
 
 
@@ -137,6 +141,8 @@ void UEarthquakeAbility::LaunchShockwave()
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
+
+    if (!AvatarActor->HasAuthority()) return;
 
     ARelicRunnersPlayerState* RRPS = CurrentActorInfo->PlayerController.IsValid() ? CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
     if (RRPS)
@@ -202,7 +208,6 @@ void UEarthquakeAbility::ApplyShockwaveStep(FVector Location, FVector Forward, U
         RRPS->Multicast_SpawnVFX(Location, FRotator::ZeroRotator, FVector(1.5f), AbilityVFX, false);
     }
 
-
     TArray<AActor*> OverlappingActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
@@ -235,8 +240,6 @@ void UEarthquakeAbility::ApplyShockwaveStep(FVector Location, FVector Forward, U
         }
     }
 
-    // Debug
-    //DrawDebugCone(World, Location, Forward, AreaRadius, HalfAngleRad, HalfAngleRad, 16, FColor::Red, false, StepInterval1);
 }
 
 void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)

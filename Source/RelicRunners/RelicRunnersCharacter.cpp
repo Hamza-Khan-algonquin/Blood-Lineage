@@ -607,8 +607,6 @@ void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 		return; 
 	}
 
-
-
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 

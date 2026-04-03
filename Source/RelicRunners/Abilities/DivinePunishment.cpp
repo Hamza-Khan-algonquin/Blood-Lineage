@@ -16,7 +16,7 @@ UDivinePunishment::UDivinePunishment()
 	LastUseTime = -100.f;
 	CooldownTimer = 15.f;
 	Damage = 300.f;
-    AreaRadius = 500.f;
+    AreaRadius = 600.f;
 }
 
 void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -64,34 +64,14 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
     // Spend resource
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
-
+    PS->SetInvincible(true);
     PlayAbilityCastSound(ActorInfo);
 
     CachedInstigatorController = ActorInfo->PlayerController.IsValid() ? ActorInfo->PlayerController.Get() : nullptr;
 
     if (AbilityAnim)
     {
-        UAnimMontage* Montage = PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
-
-        if (Montage)
-        {
-            if (!World) return;
-
-            // Timer to pause after 2 seconds
-            World->GetTimerManager().SetTimer(PauseMontageTimerHandle,FTimerDelegate::CreateLambda([this, Montage]()
-                    {
-                        if (ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(CurrentActorInfo->AvatarActor.Get()))
-                        {
-                            if (UAnimInstance* AnimInstance = Char->GetMesh()->GetAnimInstance())
-                            {
-                                AnimInstance->Montage_Pause(Montage);
-
-                                // Timer to resume after 3 seconds
-                                GetWorld()->GetTimerManager().SetTimer( ResumeMontageTimerHandle,FTimerDelegate::CreateLambda([AnimInstance, Montage](){AnimInstance->Montage_Resume(Montage); }),4.5f,false);
-                            }
-                        }
-                    }), 2.f, false);
-        }
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
     }
 
     if (APlayerController* PC = Cast<APlayerController>(AvatarActor->GetInstigatorController()))
@@ -116,7 +96,6 @@ void UDivinePunishment::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                     if (PS)
                     {
                         PS->Multicast_SpawnVFX(Center + FVector(0.f, 0.f, -100.f),FRotator::ZeroRotator,FVector(2.f),AbilityVFX,false);
-						PS->SetInvincible(true);
                     }
                 }),1.5f, false );
     }
@@ -149,6 +128,7 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
+
 
     UWorld* World = GetWorld();
     if (!World) return;

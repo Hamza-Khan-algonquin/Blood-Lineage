@@ -34,7 +34,7 @@ private:
     FTimerHandle EndTimer;
 
     void ApplyHealTick();
-
+    bool bIsInvincible = false;
     UPROPERTY()
     USphereComponent* DebugHealSphere; 
 };

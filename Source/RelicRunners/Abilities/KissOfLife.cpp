@@ -65,6 +65,15 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
 
+   
+	bIsInvincible = true;
+
+    if (bIsInvincible)
+    {
+        PS->SetInvincible(true);
+
+    }
+
     if (ActorInfo->IsLocallyControlled())
     {
         APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
@@ -132,6 +141,7 @@ void UKissOfLife::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const
 
 void UKissOfLife::ApplyHealTick()
 {
+
     const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
     if (!ActorInfo)
     {
@@ -150,6 +160,12 @@ void UKissOfLife::ApplyHealTick()
     if (!World)
     {
         return;
+    }
+
+    ARelicRunnersPlayerState* RRPS = nullptr;
+    if (ActorInfo->PlayerController.IsValid())
+    {
+        RRPS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
     }
 
     FVector Origin = AvatarActor->GetActorLocation();
@@ -181,10 +197,13 @@ void UKissOfLife::ApplyHealTick()
         PS->ModifyHealth(HealAmount);
 
     }
+
+    RRPS->SetInvincible(false);
 }
 
 void UKissOfLife::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,bool bReplicateEndAbility,bool bWasCancelled)
 {
+    bIsInvincible = false;  
     if (ActorInfo && ActorInfo->AvatarActor.IsValid())
     {
         UWorld* World = ActorInfo->AvatarActor->GetWorld();

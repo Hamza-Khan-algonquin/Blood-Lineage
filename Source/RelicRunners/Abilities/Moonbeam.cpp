@@ -19,7 +19,7 @@ UMoonbeam::UMoonbeam()
     LastUseTime = -100.f;   
     Duration = 5.f;
     AreaRadius = 100.f;
-	Damage = 40.f;
+	Damage = 100.f;
 }
 
 void UMoonbeam::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)

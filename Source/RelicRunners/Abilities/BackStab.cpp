@@ -27,7 +27,7 @@ UBackStab::UBackStab()
 	ConeAngle = 80.f;
 	Range = 600.f;
 	BehindOffset = 120.f;
-    AreaRadius = 200.f;
+    AreaRadius = 400.f;
 
 }
 
@@ -70,6 +70,7 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
     // Spend resource
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
+    PS->SetInvincible(true);
 
     LastUseTime = World->GetTimeSeconds();
 
@@ -82,36 +83,44 @@ void UBackStab::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 
 AActor* UBackStab::FindBackstabTarget(AActor* AvatarActor) const
 {
-    if (!CurrentActorInfo) return nullptr;
+    if (!CurrentActorInfo || !AvatarActor) return nullptr;
 
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return nullptr;
 
     FVector Origin = AvatarActor->GetActorLocation();
 
+    const float MinDistance = 200.f;
+    const float MinDistanceSq = MinDistance * MinDistance;
+
     TArray<AActor*> FoundActors;
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
 
-    UKismetSystemLibrary::SphereOverlapActors(World,Origin,Range,ObjectTypes, APawn::StaticClass(), { AvatarActor }, FoundActors);
+    UKismetSystemLibrary::SphereOverlapActors(World, Origin,Range, ObjectTypes, APawn::StaticClass(), { AvatarActor },FoundActors);
 
-    AActor* Closest = nullptr;
+    AActor* BestTarget = nullptr;
     float BestDistSq = MAX_FLT;
 
     for (AActor* Actor : FoundActors)
     {
         if (!Actor || !Actor->ActorHasTag("Enemy")) continue;
 
-        float DistSq = FVector::DistSquared(Origin, Actor->GetActorLocation());
+        FVector ToTarget = Actor->GetActorLocation() - Origin;
+        float DistSq = ToTarget.SizeSquared();
+
+        if (DistSq < MinDistanceSq) continue;
+
         if (DistSq < BestDistSq)
         {
             BestDistSq = DistSq;
-            Closest = Actor;
+            BestTarget = Actor;
         }
     }
 
-    return Closest;
+    return BestTarget;
 }
+
 void UBackStab::PerformBackStabDamage(AActor* AvatarActor, AActor* TargetEnemy)
 {
     if (!AvatarActor || !TargetEnemy) return;
@@ -130,7 +139,6 @@ void UBackStab::PerformBackStabDamage(AActor* AvatarActor, AActor* TargetEnemy)
 
     UKismetSystemLibrary::SphereOverlapActors(World, Center, AreaRadius, ObjectTypes, APawn::StaticClass(), ActorsToIgnore, OverlappingActors);
 
-    DrawDebugSphere(World, Center, AreaRadius, 16, FColor::Red, false, 1.f);
 
     for (AActor* Actor : OverlappingActors)
     {
@@ -167,7 +175,7 @@ void UBackStab::ExecuteBackStabSequence()
         return;
     }
 
-    if (CurrentBackStabCount >= 3)
+    if (CurrentBackStabCount >= 5)
     {
         ReturnPlayerToOriginalPosition();
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, false, false);
@@ -178,6 +186,7 @@ void UBackStab::ExecuteBackStabSequence()
     AActor* TargetEnemy = FindBackstabTarget(AvatarActor);
     if (!TargetEnemy || !IsValid(TargetEnemy))
     {
+        World->GetTimerManager().ClearTimer(BackStabDamageTimerHandle);
         ReturnPlayerToOriginalPosition();
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, false, false);
         return;
@@ -187,11 +196,18 @@ void UBackStab::ExecuteBackStabSequence()
     FVector DashLocation = TargetEnemy->GetActorLocation() - TargetEnemy->GetActorForwardVector() * DashDistance;
     AvatarActor->SetActorLocation(DashLocation, false, nullptr, ETeleportType::TeleportPhysics);
 
+    AController* Controller1 = Cast<AController>(AvatarActor->GetInstigatorController());
+    if (Controller1)
+    {
+        FRotator NewRotation = TargetEnemy->GetActorForwardVector().Rotation();
+        Controller1->SetControlRotation(NewRotation);
+    }
+
     PlayAbilityCastSound(CurrentActorInfo);
 
     if (AbilityAnim)
     {
-        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.0f);
+        PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.5f);
     }
 
     ACharacter* Char = Cast<ACharacter>(AvatarActor);
@@ -204,7 +220,6 @@ void UBackStab::ExecuteBackStabSequence()
 
     Char->GetCharacterMovement()->DisableMovement();
 
-    // VFX (unchanged)
     if (AvatarActor->HasAuthority())
     {
         AController* Controller = nullptr;
@@ -242,7 +257,7 @@ void UBackStab::ExecuteBackStabSequence()
                 CurrentBackStabCount++;
                 ExecuteBackStabSequence();
             }),
-        0.6f,
+        0.4f,
         false
     );
 }
@@ -285,6 +300,13 @@ void UBackStab::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGamep
     {
         ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get());
 
+        ARelicRunnersPlayerState* PS = nullptr;
+        if (ActorInfo->PlayerController.IsValid())
+        {
+            PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+
+        PS->SetInvincible(false);
         UWorld* World = ActorInfo->AvatarActor->GetWorld();
         if (World)
         {
