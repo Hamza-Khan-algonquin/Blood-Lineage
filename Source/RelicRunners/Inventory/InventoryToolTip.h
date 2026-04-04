@@ -144,4 +144,51 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UHorizontalBox* HB_Gold;
+
+	protected:
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UHorizontalBox* HB_Luck;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UBorder* B_Luck;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_LuckTooltip; 
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_LuckValue; 
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_LuckValue_2; 
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UHorizontalBox* HB_Regen;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UBorder* B_Regen;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_RegenTooltip;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_RegenValue;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_RegenValue_2;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UHorizontalBox* HB_Purity;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UBorder* B_Purity;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_PurityTooltip;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_PurityValue;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UTextBlock* TB_PurityValue_2;
 };

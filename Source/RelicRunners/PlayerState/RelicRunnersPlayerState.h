@@ -189,7 +189,7 @@ public:
 	UPROPERTY()
 	float HealthGranted;
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
-	int PlayerStartingLuck;
+	float PlayerStartingLuck;
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	float PlayerStartingResourceRegen;
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
@@ -286,7 +286,7 @@ public:
 	UFUNCTION()
 	int GetPlayerStartingIntelligence() const { return PlayerStartingIntelligence; }
 	UFUNCTION()
-	int GetPlayerStartingLuck() const { return PlayerStartingLuck; }
+	float GetPlayerStartingLuck() const { return PlayerStartingLuck; }
 	UFUNCTION()
 	float GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
 	UFUNCTION()

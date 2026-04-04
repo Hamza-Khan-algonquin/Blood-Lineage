@@ -192,7 +192,7 @@ void AVendor::GenerateStock()
 	}
 
 	//Force no common items in shop
-	int LootQualityIncrease = 70;
+	int LootQualityIncrease = 75;
 
 	UIconLibrary* Lib = nullptr;
 	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
@@ -200,7 +200,7 @@ void AVendor::GenerateStock()
 		Lib = GI->GlobalIconLibrary;
 	}
 
-	for (int i = 0; i < 20; ++i)
+	for (int i = 0; i < 50; ++i)
 	{
 		int ItemLevel = FMath::RandRange(MinLevel, MaxLevel);
 

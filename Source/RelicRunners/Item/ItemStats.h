@@ -463,6 +463,30 @@ public:
         ItemData.ItemType = ItemType;
         ItemData.Name = ItemData.ItemType;
         ItemData.Level = Level;
+        ItemData.Purity = 0;
+        ItemData.Luck = 0;
+        ItemData.Regen = 0;
+
+        if (Rarity == "Relic")
+        {
+            float RandomValue = FMath::FRandRange(0.1f, 1.0f);
+            RandomValue = FMath::RoundToFloat(RandomValue * 10.0f) / 10.0f;
+
+            int StatIndex = FMath::RandRange(0, 2);
+
+            if (StatIndex == 0)
+            {
+                ItemData.Luck = RandomValue;
+            }
+            else if (StatIndex == 1)
+            {
+                ItemData.Purity = RandomValue;
+            }
+            else
+            {
+                ItemData.Regen = RandomValue;
+            }
+        }
 
         float BaseMin = 0.1f;
         float BaseMax = 1.f;
@@ -586,29 +610,29 @@ public:
         return FMath::RoundToFloat(Value * Multiplier) / Multiplier;
     }
 
-    static float GetLootQuality(int Value)
+    static float GetLootQuality(float Value)
     {
         float Percent = Value * 2.3f;
 
         return RoundToDecimal(Percent, 1);
     }
-    static float GetLootChance(int Value)
+    static float GetLootChance(float Value)
     {
         float Percent = Value * 1.45f;
 
         return RoundToDecimal(Percent, 1);
     }
 
-    static float GetHealPercent(int Value)
+    static float GetHealPercent(float Value)
     {
-        float Percent = Value;
+        float Percent = Value * 1.0f;
 
         return RoundToDecimal(Percent, 1);
     }
 
-    static float GetChanceToNotConsume(int Value)
+    static float GetChanceToNotConsume(float Value)
     {
-        float Percent = Value / 3;
+        float Percent = Value / 3.0f;
 
         return RoundToDecimal(Percent, 1);
     }

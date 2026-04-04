@@ -96,7 +96,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	BuffedIntelligence = 0;
 	//Gold
 	PlayerStartingGold = 0;
-	PlayerGold = 0;
+	PlayerGold = 1000;
 
 	//Abilities
 	PlayerAbilityPoints = PlayerStartingLevel;

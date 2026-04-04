@@ -649,6 +649,9 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
             Summary.TotalDexterity += Item->ItemData.Dexterity;
             Summary.TotalStrength += Item->ItemData.Strength;
             Summary.TotalIntelligence += Item->ItemData.Intelligence;
+            Summary.TotalPotionEfficiency += Item->ItemData.Purity;
+            Summary.TotalLuck += Item->ItemData.Luck;
+            Summary.TotalResourceRegen += Item->ItemData.Regen;
         }
     }
 
