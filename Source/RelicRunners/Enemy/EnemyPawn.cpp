@@ -100,6 +100,22 @@ void AEnemyPawn::UpdateEmissiveHealth()
 	}
 }
 
+void AEnemyPawn::UpdateMaterialIsAttacking()
+{
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("IsAttacking", IsAttacking);
+		}
+	}
+}
+
+void AEnemyPawn::NetMulticast_UpdateMaterialIsAttacking_Implementation()
+{
+	UpdateMaterialIsAttacking();
+}
+
 void AEnemyPawn::NetMulticast_UpdateEmissiveHealth_Implementation()
 {
 	UpdateEmissiveHealth();
@@ -186,6 +202,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		NetMulticast_UpdateEmissiveHealth();
 
 		IsAttacking = false;
+		NetMulticast_UpdateMaterialIsAttacking();
 		if (MovementComponent)
 		{
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
@@ -329,6 +346,7 @@ void AEnemyPawn::StartAttack()
 {
 	MovementComponent->SetMovementMode(EBoidMovementMode::DirectMoveTo);
 	IsAttacking = true;
+	NetMulticast_UpdateMaterialIsAttacking();
 	SetActorTickEnabled(true);
 }
 
@@ -370,6 +388,7 @@ void AEnemyPawn::AttackTick()
 void AEnemyPawn::EndAttackTick()
 {
 	IsAttacking = false;
+	NetMulticast_UpdateMaterialIsAttacking();
 	if (MovementComponent)
 	{
 		MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
@@ -624,13 +643,14 @@ void AEnemyPawn::BeginPlay()
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
 
 	IsAttacking = false;
+	NetMulticast_UpdateMaterialIsAttacking();
 	SetActorTickEnabled(false);
 
 	SetActorHiddenInGame(true);
 
 	TWeakObjectPtr<AEnemyPawn> weakThis = this;
 	FTimerHandle temp;
-	GetWorld()->GetTimerManager().SetTimer(temp,[weakThis]()
+	GetWorld()->GetTimerManager().SetTimer(temp, [weakThis]()
 		{
 			if (weakThis.IsValid())
 			{
@@ -739,6 +759,9 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 			MovementComponent->SetActive(false);
 		}
 
+		IsAttacking = false;
+		NetMulticast_UpdateMaterialIsAttacking();
+
 		/*this->SetActorHiddenInGame(true);
 		this->SetActorEnableCollision(false);*/
 	}
@@ -762,6 +785,7 @@ void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	//DOREPLIFETIME(AEnemyPawn, GoldEnemy);
 	//DOREPLIFETIME(AEnemyPawn, IsActive);
+	DOREPLIFETIME(AEnemyPawn, IsAttacking);
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()

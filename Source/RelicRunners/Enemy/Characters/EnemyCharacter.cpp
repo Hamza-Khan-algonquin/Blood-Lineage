@@ -230,6 +230,18 @@ void AEnemyCharacter::BeginPlay()
 		}
 	}
 
+	SetActorHiddenInGame(true);
+
+	TWeakObjectPtr<AEnemyCharacter> weakThis = this;
+	FTimerHandle temp;
+	GetWorld()->GetTimerManager().SetTimer(temp, [weakThis]()
+		{
+			if (weakThis.IsValid())
+			{
+				weakThis->SetActorHiddenInGame(false);
+			}
+		}, 2.f, false);
+
 
 	//mesh data
 	if (ItemMeshDataClass)

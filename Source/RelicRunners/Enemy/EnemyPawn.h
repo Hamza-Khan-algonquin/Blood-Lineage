@@ -84,6 +84,7 @@ public:
 	UPROPERTY()
 	FTimerHandle HitStunTimer;
 
+	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
 	
 
@@ -93,6 +94,7 @@ public:
 	float AdditionalUpwardsKnockBackForces;
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float HitStunTime;
+	UPROPERTY(Replicated)
 	bool IsAttacking = false;
 
 	UPROPERTY(EditAnywhere)
@@ -130,9 +132,14 @@ public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
 
+	UFUNCTION()
 	void UpdateEmissiveHealth();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticast_UpdateEmissiveHealth();
+	UFUNCTION()
+	void UpdateMaterialIsAttacking();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticast_UpdateMaterialIsAttacking();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
 
