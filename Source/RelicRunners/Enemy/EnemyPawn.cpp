@@ -146,7 +146,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	{
 		if (ARelicRunnersCharacter* PlayerCharacter = Cast<ARelicRunnersCharacter>(pawn))
 		{
-			MovementComponent->Commander->ResetTimeToAttackForPlayer(pawn);
+			//MovementComponent->Commander->ResetTimeToAttackForPlayer(pawn);
 		}
 	}
 	
