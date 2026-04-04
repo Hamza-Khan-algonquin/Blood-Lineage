@@ -89,7 +89,7 @@ void UBundleOfJoy::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 void UBundleOfJoy::TickThrown()
 {
     if (!bIsFlying) return;
-    
+
     const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
     if (!ActorInfo)
     {
@@ -105,20 +105,30 @@ void UBundleOfJoy::TickThrown()
     }
 
     UWorld* World = AvatarActor->GetWorld();
-	if (!World) return;
+    if (!World) return;
 
     float Delta = World->GetDeltaSeconds();
 
-    // projectile physics
     Velocity += FVector(0, 0, -980.f) * Delta;  // gravity
     StartLocation += Velocity * Delta;
 
-    // see throw trajectory
-    DrawDebugSphere(World, StartLocation, 10.f, 12, FColor::Yellow, false, 0.05f);
+    if (!SpawnedProjectile && BPProjectileActorClass)
+    {
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        SpawnParams.Owner = AvatarActor;
 
-    // Check ground hit
+        SpawnedProjectile = World->SpawnActor<AActor>(BPProjectileActorClass,StartLocation,Velocity.Rotation(), SpawnParams);
+    }
+
+    if (SpawnedProjectile)
+    {
+        SpawnedProjectile->SetActorLocation(StartLocation);
+        SpawnedProjectile->SetActorRotation(Velocity.Rotation()); 
+    }
+
     FVector TraceStart = StartLocation;
-    FVector TraceEnd = StartLocation - FVector(0, 0, 50);
+    FVector TraceEnd = StartLocation - FVector(0, 0, 50.f);
 
     FHitResult Hit;
     FCollisionQueryParams Params;
@@ -130,7 +140,18 @@ void UBundleOfJoy::TickThrown()
         bIsFlying = false;
         World->GetTimerManager().ClearTimer(AttractTimer);
 
+        if (SpawnedProjectile)
+        {
+            SpawnedProjectile->SetActorLocation(Hit.ImpactPoint);
+        }
+
         OnThrownLanded(Hit.ImpactPoint);
+
+        if (SpawnedProjectile && IsValid(SpawnedProjectile))
+        {
+            SpawnedProjectile->Destroy();
+            SpawnedProjectile = nullptr;
+        }
     }
 }
 
@@ -155,33 +176,38 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return;
 
-    if (AvatarActor->HasAuthority())
+    AController* Controller = nullptr;
+
+    if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
     {
-        AController* Controller = nullptr;
+        Controller = CurrentActorInfo->PlayerController.Get();
+    }
 
-        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+    if (Controller)
+    {
+        ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+        if (PS)
         {
-            Controller = CurrentActorInfo->PlayerController.Get();
-        }
-
-        if (Controller)
-        {
-            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
-
-            if (PS)
-            {
-                PS->Multicast_SpawnVFX(AttractionCenter, FRotator(0, 0, 0), FVector(1.f), AbilityVFX, false);
-            }
+            PS->Multicast_SpawnVFX(AttractionCenter, FRotator(0, 0, 0), FVector(1.f), AbilityVFX, false);
         }
     }
+    
 
     // start attraction loop
     World->GetTimerManager().SetTimer(AttractTimer, this, &UBundleOfJoy::Attract, 0.016f, true);
 
     // Timer for explosion
-    World->GetTimerManager().SetTimer(ExplosionTimer, FTimerDelegate::CreateUObject(this, &UBundleOfJoy::Explode), Duration, false);
+    if (AvatarActor->HasAuthority())
+    {
+        World->GetTimerManager().SetTimer(ExplosionTimer, FTimerDelegate::CreateUObject(this, &UBundleOfJoy::Server_Explode), Duration, false);
+    }
+}
 
-    //DrawDebugSphere(World, LandLocation, 25.f, 12, FColor::Purple, false, 5.f);
+
+void UBundleOfJoy::Server_Explode_Implementation()
+{
+    Explode(); 
 }
 
 void UBundleOfJoy::Attract()
@@ -205,9 +231,7 @@ void UBundleOfJoy::Attract()
 
     FVector Center = AttractionCenter; // Set the attraction center 
 
-    //DrawDebugCircle(World, Center, AttractionRadius, 32, FColor::Purple, false, 0.1f, 0, 5.f, FVector(1, 0, 0), FVector(0, 1, 0), false); // Draw the debug circle showing the attraction radius
-    
-
+   
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Only check for pawns
@@ -292,29 +316,25 @@ void UBundleOfJoy::Explode()
         }
     }
     
-    //DrawDebugSphere(World, Center, ExplosionRadius, 32, FColor::Red, false, 2.f); // Draw debug sphere for explosion radius
-
-
 	// Spawn explosion VFX
-    if (AvatarActor->HasAuthority())
+
+    AController* Controller = nullptr;
+
+    if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
     {
-        AController* Controller = nullptr;
+        Controller = CurrentActorInfo->PlayerController.Get();
+    }
 
-        if (CurrentActorInfo && CurrentActorInfo->PlayerController.IsValid())
+    if (Controller)
+    {
+        ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
+
+        if (PS)
         {
-            Controller = CurrentActorInfo->PlayerController.Get();
-        }
-
-        if (Controller)
-        {
-            ARelicRunnersPlayerState* PS = Controller->GetPlayerState<ARelicRunnersPlayerState>();
-
-            if (PS)
-            {
-                PS->Multicast_SpawnVFX(AttractionCenter, FRotator(0, 0, 0), FVector(2.f), AbilityVFX1, false);
-            }
+            PS->Multicast_SpawnVFX(AttractionCenter, FRotator(0, 0, 0), FVector(2.f), AbilityVFX1, false);
         }
     }
+    
 
     // End the ability after explosion
     EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);

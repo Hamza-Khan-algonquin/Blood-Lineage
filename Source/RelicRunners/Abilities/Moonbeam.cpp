@@ -17,7 +17,7 @@ UMoonbeam::UMoonbeam()
              
     CooldownDuration = 15.f;   
     LastUseTime = -100.f;   
-    Duration = 5.f;
+    Duration = 6.f;
     AreaRadius = 100.f;
 	Damage = 100.f;
 }

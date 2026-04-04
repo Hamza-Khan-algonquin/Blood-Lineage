@@ -30,6 +30,14 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BundleOfJoy")
     float AttractionStrength = 800.f;
 
+    UFUNCTION(Server, Reliable)
+    void Server_Explode();
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
+    TSubclassOf<AActor> BPProjectileActorClass;
+
+    AActor* SpawnedProjectile = nullptr;  
+
 private:
     FTimerHandle ExplosionTimer;
     FTimerHandle AttractTimer;

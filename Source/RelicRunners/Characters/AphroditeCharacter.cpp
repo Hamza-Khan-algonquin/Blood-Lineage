@@ -387,22 +387,12 @@ void AAphroditeCharacter::HandleBasicAttack()
 
     bCanBasicAttack = false;
 
-    // Play animation + sound for everyone
     Multicast_PlayAttack();
 
-    // Reset attack after montage ends (if you want a hard cooldown)
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this,
-        &AAphroditeCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this, &AAphroditeCharacter::ResetBasicAttack, BasicAttackCooldown, false);
 
-    // Spawn projectile after delay
     FTimerHandle SpawnHandle;
-    GetWorldTimerManager().SetTimer(
-        SpawnHandle,
-        this,
-        &AAphroditeCharacter::SpawnProjectile,
-        0.5f,
-        false
-    );
+    GetWorldTimerManager().SetTimer(SpawnHandle, this, &AAphroditeCharacter::SpawnProjectile, 0.5f, false);
 }
 
 void AAphroditeCharacter::Multicast_PlayAttack_Implementation()
@@ -434,7 +424,6 @@ void AAphroditeCharacter::SpawnProjectile()
     FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
     FVector Velocity = GetActorForwardVector() * ProjectileSpeed;
 
-    // Spawn VFX on everyone
     Multicast_SpawnProjectile(SpawnLocation, Velocity);
 }
 
@@ -447,15 +436,7 @@ void AAphroditeCharacter::Multicast_SpawnProjectile_Implementation(FVector Locat
 
     if (AbilityVFX1)
     {
-        UNiagaraComponent* VFX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            GetWorld(),
-            AbilityVFX1,
-            Location,
-            Velocity.Rotation(),
-            FVector(0.5f),
-            true,
-            true
-        );
+        UNiagaraComponent* VFX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(),AbilityVFX1,Location,Velocity.Rotation(),FVector(0.5f), true, true);
 
         NewProj.VFXComponent = VFX;
     }
