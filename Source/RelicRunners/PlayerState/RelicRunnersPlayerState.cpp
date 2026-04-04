@@ -272,7 +272,7 @@ void ARelicRunnersPlayerState::InitializeMetaStats(FSaveData MetaData)
 	PlayerStartingDexterity = MetaData.MetaAgility * 5;
 	PlayerStartingIntelligence = MetaData.MetaIntelligence * 5;
 	PlayerStartingPotionEfficiency = 30 + MetaData.MetaPotionEfficiency * 5;
-	PlayerStartingResourceRegen = 5 + MetaData.MetaResourceRegen;
+	PlayerStartingResourceRegen = 5 + (MetaData.MetaResourceRegen / 2.0);
 	PlayerStartingLevel = 1 + MetaData.MetaStartingLevel;
 }
 

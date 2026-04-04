@@ -191,7 +191,7 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingLuck;
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
-	int PlayerStartingResourceRegen;
+	float PlayerStartingResourceRegen;
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingPotionEfficiency;
 
@@ -288,7 +288,7 @@ public:
 	UFUNCTION()
 	int GetPlayerStartingLuck() const { return PlayerStartingLuck; }
 	UFUNCTION()
-	int GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
+	float GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
 	UFUNCTION()
 	int GetPlayerStartingPotionEfficiency() const { return PlayerStartingPotionEfficiency; }
 

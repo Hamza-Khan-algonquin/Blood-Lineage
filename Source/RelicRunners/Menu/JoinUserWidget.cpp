@@ -13,6 +13,8 @@
 #include "Components/Image.h"
 #include "Components/Border.h"
 #include "Components/ProgressBar.h"
+#include <Camera/CameraComponent.h>
+#include "EngineUtils.h"
 #include "MainMenuWidget.h"
 #include "Components/CircularThrobber.h"
 #include <Kismet/GameplayStatics.h>
@@ -114,6 +116,7 @@ void UJoinUserWidget::NativeConstruct()
 
 	PlayAnimation(LeftPanelOpen);
 	PlayAnimation(RightPanelOpen);
+	SetSelectedClass(CurrentClass);
 }
 
 FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

@@ -43,6 +43,8 @@
 #include "RelicRunners/Inventory/Inventory.h"
 #include "RelicRunners/Vendor/Vendor.h"
 
+#include "Camera/CameraComponent.h"
+
 #include "RelicRunners/AbilitySystem/AbilitySelection.h"
 
 #include "RelicRunners/Menu/MainMenuWidget.h"
@@ -62,7 +64,7 @@
 #include "RelicRunners/Objective/ObjectiveLog.h"
 
 #include "RelicRunners/Enemy/Hades/Hades.h"
-
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/TreeView.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
@@ -79,7 +81,10 @@
 #include "NavigationPath.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include <RelicRunners/LevelGeneration/IslandSpawner.h>
+#include <Runtime/SlateRHIRenderer/Private/SlateRHIRenderer.h>
+
 #include <RelicRunners/RelicRunnersGameMode.h>
+
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
@@ -178,7 +183,33 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
+		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::ApplySavedFOV);
+		ApplyColorblindMode();
+
+	}
+
+}
+void ARelicRunnersPlayerController::ApplySavedFOV()
+{
+	URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	const float FinalFOV = (GI->SavedFOV > 0.f) ? GI->SavedFOV : 90.f;
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetFOV(FinalFOV);
+	}
+
+	if (ARelicRunnersCharacter* RCharacter = Cast<ARelicRunnersCharacter>(GetPawn()))
+	{
+		if (RCharacter->GetFollowCamera())
+		{
+			RCharacter->GetFollowCamera()->SetFieldOfView(FinalFOV);
+		}
+
 		Server_RecordPawnReadyTime();
+
 	}
 
 	if (HasAuthority())
@@ -189,7 +220,6 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		}
 	}
 }
-
 void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 {
 	Super::ClientRestart_Implementation(NewPawn);
@@ -240,12 +270,19 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 	PlayerPreviewInstance = nullptr;
 
 	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+		ApplyColorblindMode();
 
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::ApplySavedFOV);
+		GI->ApplyAllSettings(this);
+	}
 	if (HasAuthority())
 	{
 		FTimerHandle RefreshTimer;
 		GetWorldTimerManager().SetTimer(RefreshTimer, this, &ARelicRunnersPlayerController::OnTravelRefreshDelay, 0.2f, false);
 	}
+
 
 	EnableInput(this);
 }
@@ -1187,6 +1224,47 @@ void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FSt
 	}
 }
 
+void ARelicRunnersPlayerController::ApplyColorblindMode()
+{
+	if (!IsLocalController()) return;
+
+	URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	EColorVisionDeficiency Type = EColorVisionDeficiency::NormalVision;
+	float Severity = 0.0f;
+	bool CorrectDeficiency = false;
+
+	switch (GI->ColorblindMode)
+	{
+	case EColorblindMode::Normal:
+		Type = EColorVisionDeficiency::NormalVision;
+		Severity = 0.0f;
+		CorrectDeficiency = false;
+		break;
+
+	case EColorblindMode::Protanopia:
+		Type = EColorVisionDeficiency::Protanope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+
+	case EColorblindMode::Deuteranopia:
+		Type = EColorVisionDeficiency::Deuteranope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+
+	case EColorblindMode::Tritanopia:
+		Type = EColorVisionDeficiency::Tritanope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+	}
+
+	UWidgetBlueprintLibrary::SetColorVisionDeficiencyType(Type, Severity, CorrectDeficiency, false);
+}
+
 void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 {
 	if (!ObjectiveLog || !ObjectiveStageTitle || !ObjectiveLog->ObjectiveTreeView) return;
@@ -1482,7 +1560,7 @@ void ARelicRunnersPlayerController::Client_RequestSaveStats_Implementation()
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
-	if (!IsLocalController()) return; 
+	if (!IsLocalController()) return;
 
 	UWorld* World = GetWorld();
 	if (!World) return;
@@ -1608,7 +1686,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
-
+	
 	TryBindUI();
 
 }
@@ -1697,6 +1775,7 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		SetupMainMenuView();
 	}
+
 	else
 	{
 		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
@@ -1723,6 +1802,11 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		PlayerCameraManager->ViewPitchMin = -60.f;
 		PlayerCameraManager->ViewPitchMax = 10.f;
+	}
+
+	if (IsLocalController())
+	{
+		ApplyColorblindMode();
 	}
 }
 

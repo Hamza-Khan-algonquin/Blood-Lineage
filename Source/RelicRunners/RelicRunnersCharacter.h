@@ -202,6 +202,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
 
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> HitCameraShake;
 
@@ -215,6 +216,7 @@ public:
 	void Multicast_SpawnBeam(AActor* Target, UNiagaraSystem* VFX);
 
 	TMap<TWeakObjectPtr<AActor>, TWeakObjectPtr<UNiagaraComponent>> ActiveBeams;
+
 protected:
 
 
@@ -315,6 +317,8 @@ protected:
 
 
 	FVector CurrentLookAhead;
+
+	
 
 };
 

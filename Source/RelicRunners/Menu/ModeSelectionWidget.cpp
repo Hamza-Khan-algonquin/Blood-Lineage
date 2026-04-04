@@ -47,7 +47,8 @@ void UModeSelectionWidget::NativeConstruct()
 			}
 		}
 	}, 0.05f, false);
-	
+
+
 }
 
 void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelection)

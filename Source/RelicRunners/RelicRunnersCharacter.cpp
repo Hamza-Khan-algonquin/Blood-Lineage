@@ -220,8 +220,6 @@ void ARelicRunnersCharacter::BeginPlay()
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	}
-
-	
 }
 
 void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

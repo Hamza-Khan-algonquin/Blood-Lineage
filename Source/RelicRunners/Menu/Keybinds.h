@@ -42,10 +42,10 @@ public:
     bool InvertedYMouse = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse Sens")
-    float HorizSens = 1.0f;
+    float HorizSens = 2.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse Sens")
-    float VertSens = 1.0f;
+    float VertSens = 2.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
     float Brightness = 0.0f;
@@ -58,6 +58,14 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
     bool bAutoLoot = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+    float FOV = 90.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+    FString ColorBlindMode = "Normal";
+
+    
 };
 
 static FString GetReadableKeyName(const FKey& Key)
