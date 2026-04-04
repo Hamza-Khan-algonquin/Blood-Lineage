@@ -346,21 +346,24 @@ void AArtemisCharacter::UpdateCameraRotation(float DeltaTime, const FVector& Vel
 
 void AArtemisCharacter::BasicAttack()
 {
-	if (!bCanBasicAttack)
+	if (!HasAuthority())
+	{
+		Server_BasicAttack();
 		return;
+	}
+
+	HandleBasicAttack();
+}
+
+void AArtemisCharacter::HandleBasicAttack()
+{
+	if (!bCanBasicAttack) return;
 
 	bCanBasicAttack = false;
 
-	PlayRandomAttackAnimation();
-
-
-	if (BasicAttackSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, BasicAttackSound, GetActorLocation());
-	}
-
 	AlreadyHitActors.Empty();
 
+	Multicast_PlayAttack();
 
 	float SpawnDelay = 0.3f;
 
@@ -371,38 +374,85 @@ void AArtemisCharacter::BasicAttack()
 		SpawnHandle,
 		[WeakThis]()
 		{
-			if (!WeakThis.IsValid())
-				return;
+			if (!WeakThis.IsValid()) return;
 
 			AArtemisCharacter* Self = WeakThis.Get();
 			if (!Self) return;
 
-			FProjectileData NewProj;
-
-			NewProj.Location = Self->GetActorLocation() + Self->GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
-			NewProj.Velocity = Self->GetActorForwardVector() * Self->ProjectileSpeed;
-			NewProj.Elapsed = 0.f;
-			NewProj.CurrentPierces = 0;
-
-			// Spawn mesh
-			if (Self->ProjectileMeshAsset)
-			{
-				UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(Self);
-				ProjectileMesh->SetStaticMesh(Self->ProjectileMeshAsset);
-				ProjectileMesh->SetWorldLocation(NewProj.Location);
-				ProjectileMesh->SetWorldScale3D(FVector(1.f));
-				ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-				ProjectileMesh->SetWorldRotation(NewProj.Velocity.Rotation());
-				ProjectileMesh->RegisterComponent();
-
-				NewProj.Mesh = ProjectileMesh;
-			}
-
-			Self->ActiveProjectiles.Add(NewProj);
+			Self->SpawnProjectile(); 
 		},
 		SpawnDelay,
 		false
 	);
+}
+
+void AArtemisCharacter::Server_BasicAttack_Implementation()
+{
+	HandleBasicAttack();
+}
+
+void AArtemisCharacter::Multicast_PlayAttack_Implementation()
+{
+	if (!BasicAnim) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance) return;
+
+	float Duration = AnimInstance->Montage_Play(BasicAnim, 3.5f);
+
+	if (Duration > 0.f)
+	{
+		FOnMontageEnded EndDelegate;
+		EndDelegate.BindUObject(this, &AArtemisCharacter::OnAttackMontageEnded);
+		AnimInstance->Montage_SetEndDelegate(EndDelegate, BasicAnim);
+	}
+
+	if (BasicAttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, BasicAttackSound, GetActorLocation());
+	}
+}
+
+void AArtemisCharacter::Multicast_SpawnProjectile_Implementation(FVector Location, FVector Velocity)
+{
+	FProjectileData NewProj;
+	NewProj.Location = Location;
+	NewProj.Velocity = Velocity;
+	NewProj.Elapsed = 0.f;
+	NewProj.CurrentPierces = 0;
+
+	if (ProjectileMeshAsset)
+	{
+		UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(this);
+		ProjectileMesh->SetStaticMesh(ProjectileMeshAsset);
+		ProjectileMesh->SetWorldLocation(Location);
+		ProjectileMesh->SetWorldRotation(Velocity.Rotation());
+		ProjectileMesh->SetWorldScale3D(FVector(1.f));
+		ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ProjectileMesh->RegisterComponent();
+
+		NewProj.Mesh = ProjectileMesh;
+	}
+
+	ActiveProjectiles.Add(NewProj);
+
+}
+void AArtemisCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == BasicAnim)
+	{
+		bCanBasicAttack = true;
+	}
+}
+
+void AArtemisCharacter::SpawnProjectile()
+{
+	if (!HasAuthority()) return;
+
+	FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
+	FVector Velocity = GetActorForwardVector() * ProjectileSpeed;
+
+	Multicast_SpawnProjectile(SpawnLocation, Velocity);
 }
 
 void AArtemisCharacter::HeavyAttack()
@@ -436,13 +486,6 @@ void AArtemisCharacter::PlayRandomAttackAnimation()
 	}
 }
 
-void AArtemisCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (Montage == BasicAnim)
-	{
-		bCanBasicAttack = true;
-	}
-}
 
 void AArtemisCharacter::Tick(float DeltaTime)
 {

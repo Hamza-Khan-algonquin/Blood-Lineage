@@ -176,25 +176,23 @@ void ANemesisCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 
     bIsAttacking = false;
 
-    if (bBufferedInput)
+    if (HasAuthority())
     {
-        bBufferedInput = false;
+        CurrentComboIndex++;
 
-        int32 NextIndex = CurrentComboIndex + 1;
-
-        if (NextIndex <= 2)
+        if (CurrentComboIndex > 2)
         {
-            StartAttack(NextIndex);
-            return;
+            ResetCombo();
         }
-    }
 
-    ResetCombo();
-    CanBasicAttack = true;
+        CanBasicAttack = true;
+    }
 }
 
 void ANemesisCharacter::PerformSwingTrace()
 {
+    if (!HasAuthority()) return;
+
     FVector Start = GetMesh()->GetSocketLocation("MainhandSocket");
     FVector End = GetMesh()->GetSocketLocation("TipSocket");
 
@@ -233,30 +231,37 @@ void ANemesisCharacter::PerformSwingTrace()
 
 void ANemesisCharacter::BasicAttack()
 {
-    if (!BasicAnim || !CanBasicAttack) return;
+    if (!BasicAnim) return;
 
-    UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-    if (!AnimInstance) return;
-
-    if (bIsAttacking)
+    if (!HasAuthority())
     {
-        bBufferedInput = true;
+        Server_BasicAttack();
         return;
     }
 
-    StartAttack(0);
+    HandleBasicAttack();
+}
+
+void ANemesisCharacter::Server_BasicAttack_Implementation()
+{
+    HandleBasicAttack();
 }
 
 void ANemesisCharacter::StartAttack(int32 ComboIndex)
 {
     bIsAttacking = true;
-    bBufferedInput = false;
+    CanBasicAttack = false;
 
     CurrentComboIndex = ComboIndex;
 
-    Damage = (ComboIndex == 2) ? 150.0f : 120.0f;
-
     AlreadyHitActors.Empty();
+
+    Multicast_PlayAttack(ComboIndex);
+}
+
+void ANemesisCharacter::Multicast_PlayAttack_Implementation(int32 ComboIndex)
+{
+    if (!BasicAnim) return;
 
     UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
     if (!AnimInstance) return;
@@ -266,15 +271,26 @@ void ANemesisCharacter::StartAttack(int32 ComboIndex)
     if (ComboIndex == 0)
         AnimInstance->Montage_JumpToSection(FName("Attack1"), BasicAnim);
     else if (ComboIndex == 1)
-        AnimInstance->Montage_JumpToSection(FName("Attack2"), BasicAnim);
-    else if (ComboIndex == 2)
         AnimInstance->Montage_JumpToSection(FName("Attack3"), BasicAnim);
+    else if (ComboIndex == 2)
+        AnimInstance->Montage_JumpToSection(FName("Attack2"), BasicAnim);
+
+    // Bind end delegate 
+    FOnMontageEnded EndDelegate;
+    EndDelegate.BindUObject(this, &ANemesisCharacter::OnMontageEnded);
+    AnimInstance->Montage_SetEndDelegate(EndDelegate, BasicAnim);
+}
+
+void ANemesisCharacter::HandleBasicAttack()
+{
+    if (!CanBasicAttack || bIsAttacking) return;
+
+    StartAttack(CurrentComboIndex);
 }
 
 void ANemesisCharacter::ResetCombo()
 {
     CurrentComboIndex = 0;
-    bBufferedInput = false;
 }
 
 void ANemesisCharacter::HeavyAttack()

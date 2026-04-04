@@ -41,6 +41,22 @@ protected:
 	virtual void ActivateUtilityAbilities() override;
 	virtual void ActivateUltimateAbilities() override;
 
+	UFUNCTION(Server, Reliable)
+	void Server_BasicAttack();
+
+	void HandleBasicAttack();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAttack();
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnProjectile(FVector Location, FVector Velocity);
+
+	void SpawnProjectile();
+
 	void GiveBundleOfJoy();
 	void GiveMirrorOfDesire();
 	void GiveKissOfLife();
@@ -55,7 +71,6 @@ protected:
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	virtual void HeavyAttack() override;
 	virtual void ProjectileHeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;

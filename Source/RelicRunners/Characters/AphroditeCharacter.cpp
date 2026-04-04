@@ -367,65 +367,100 @@ void AAphroditeCharacter::PlayRandomAttackAnimation()
 
 void AAphroditeCharacter::BasicAttack()
 {
-    if (!bCanBasicAttack)
+    if (!HasAuthority())
+    {
+        Server_BasicAttack();
         return;
+    }
+
+    HandleBasicAttack();
+}
+
+void AAphroditeCharacter::Server_BasicAttack_Implementation()
+{
+    HandleBasicAttack();
+}
+
+void AAphroditeCharacter::HandleBasicAttack()
+{
+    if (!bCanBasicAttack) return;
 
     bCanBasicAttack = false;
 
-    PlayRandomAttackAnimation();
+    // Play animation + sound for everyone
+    Multicast_PlayAttack();
+
+    // Reset attack after montage ends (if you want a hard cooldown)
+    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown, this,
+        &AAphroditeCharacter::ResetBasicAttack, BasicAttackCooldown, false);
+
+    // Spawn projectile after delay
+    FTimerHandle SpawnHandle;
+    GetWorldTimerManager().SetTimer(
+        SpawnHandle,
+        this,
+        &AAphroditeCharacter::SpawnProjectile,
+        0.5f,
+        false
+    );
+}
+
+void AAphroditeCharacter::Multicast_PlayAttack_Implementation()
+{
+    if (!BasicAnim) return;
+
+    UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+    if (!AnimInstance) return;
+
+    float Duration = AnimInstance->Montage_Play(BasicAnim, 1.5f);
+
+    if (Duration > 0.f)
+    {
+        FOnMontageEnded EndDelegate;
+        EndDelegate.BindUObject(this, &AAphroditeCharacter::OnAttackMontageEnded);
+        AnimInstance->Montage_SetEndDelegate(EndDelegate, BasicAnim);
+    }
 
     if (BasicAttackSound)
     {
         UGameplayStatics::PlaySoundAtLocation(this, BasicAttackSound, GetActorLocation());
     }
+}
 
-    GetWorldTimerManager().SetTimer(TimerHandle_AttackCooldown,this, &AAphroditeCharacter::ResetBasicAttack,BasicAttackCooldown, false);
+void AAphroditeCharacter::SpawnProjectile()
+{
+    if (!HasAuthority()) return;
 
-    float SpawnDelay = 0.5f;
+    FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
+    FVector Velocity = GetActorForwardVector() * ProjectileSpeed;
 
-    TWeakObjectPtr<AAphroditeCharacter> WeakThis(this);
+    // Spawn VFX on everyone
+    Multicast_SpawnProjectile(SpawnLocation, Velocity);
+}
 
-    FTimerHandle SpawnHandle;
-    GetWorldTimerManager().SetTimer(
-        SpawnHandle,
-        [WeakThis]()
-        {
-            if (!WeakThis.IsValid())
-                return;
+void AAphroditeCharacter::Multicast_SpawnProjectile_Implementation(FVector Location, FVector Velocity)
+{
+    FBasicProjectile NewProj;
+    NewProj.Location = Location;
+    NewProj.Velocity = Velocity;
+    NewProj.ElapsedTime = 0.f;
 
-            AAphroditeCharacter* Self = WeakThis.Get();
-            if (!Self) return;
+    if (AbilityVFX1)
+    {
+        UNiagaraComponent* VFX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            GetWorld(),
+            AbilityVFX1,
+            Location,
+            Velocity.Rotation(),
+            FVector(0.5f),
+            true,
+            true
+        );
 
-            FBasicProjectile NewProj;
+        NewProj.VFXComponent = VFX;
+    }
 
-            NewProj.Location = Self->GetActorLocation() +
-                Self->GetActorForwardVector() * 50.f +
-                FVector(0, 0, 50.f);
-
-            NewProj.Velocity = Self->GetActorForwardVector() * Self->ProjectileSpeed;
-            NewProj.ElapsedTime = 0.f;
-
-            // Spawn Niagara VFX projectile
-            if (Self->AbilityVFX)
-            {
-                UNiagaraComponent* VFX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-                    Self->GetWorld(),
-                    Self->AbilityVFX1,
-                    NewProj.Location,
-                    NewProj.Velocity.Rotation(),
-                    FVector(0.5f),
-                    true,
-                    true
-                );
-
-                NewProj.VFXComponent = VFX;
-            }
-
-            Self->ActiveProjectiles.Add(NewProj);
-        },
-        SpawnDelay,
-        false
-    );
+    ActiveProjectiles.Add(NewProj);
 }
 
 void AAphroditeCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -434,7 +469,6 @@ void AAphroditeCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInte
     {
         bCanBasicAttack = true;
     }
-
 }
 
 void AAphroditeCharacter::HeavyAttack()

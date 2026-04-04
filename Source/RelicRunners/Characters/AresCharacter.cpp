@@ -203,13 +203,10 @@ void AAresCharacter::PerformSwingTrace()
 			}
 		}
 	}
-	//DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
 }
 
 void AAresCharacter::BasicAttack()
 {
-	if (!bCanBasicAttack) return;
-
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
 
 	if (!HasAuthority())
@@ -226,6 +223,7 @@ void AAresCharacter::Server_PlayAttack_Implementation()
 	HandleAttack();
 }
 
+
 void AAresCharacter::OnBasicAttackAnimationEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == BasicAnim)
@@ -236,31 +234,16 @@ void AAresCharacter::OnBasicAttackAnimationEnded(UAnimMontage* Montage, bool bIn
 
 void AAresCharacter::HandleAttack()
 {
+	if (!bCanBasicAttack) return;
+
 	if (!RelicPlayerState || !RelicPlayerState->GetInventoryComponent()) return;
+	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent())) return;
 
-	if (!HasValidWeaponEquipped(RelicPlayerState->GetInventoryComponent()))
-		return;
-
-	Damage = 180.0f;
+	bCanBasicAttack = false;
+	Damage = 180.f;
 	AlreadyHitActors.Empty();
 
-	// Block further attacks
-	bCanBasicAttack = false;
-
-	// Play animation on everyone
 	Multicast_PlayAttack();
-
-	// Bind to animation end event
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		if (BasicAnim)
-		{
-			float Duration = AnimInstance->Montage_Play(BasicAnim, 1.2f);
-			FOnMontageEnded MontageEndedDelegate;
-			MontageEndedDelegate.BindUObject(this, &AAresCharacter::OnBasicAttackAnimationEnded);
-			AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, BasicAnim);
-		}
-	}
 }
 
 void AAresCharacter::Multicast_PlayAttack_Implementation()
@@ -269,9 +252,14 @@ void AAresCharacter::Multicast_PlayAttack_Implementation()
 
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
-		AnimInstance->Montage_Play(BasicAnim);
+		AnimInstance->Montage_Play(BasicAnim, 1.2f);
+
+		FOnMontageEnded EndDelegate;
+		EndDelegate.BindUObject(this, &AAresCharacter::OnBasicAttackAnimationEnded);
+		AnimInstance->Montage_SetEndDelegate(EndDelegate, BasicAnim);
 	}
 }
+
 void AAresCharacter::UpdateCamera(float DeltaTime)
 {
 	const FString MapName = GetWorld()->GetMapName();

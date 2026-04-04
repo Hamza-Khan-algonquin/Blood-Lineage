@@ -24,6 +24,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     class UClassInfo* ClassInfo;
 
+    void BasicAttack();
+
 
 protected:
     virtual void BeginPlay() override;
@@ -41,9 +43,16 @@ protected:
     void GiveDivinePunishment();
 
     virtual void PerformSwingTrace() override;
-    virtual void BasicAttack() override;
+    UFUNCTION(Server, Reliable)
+    void Server_BasicAttack();
+
+    void HandleBasicAttack();
     void StartAttack(int32 ComboIndex);
     void ResetCombo();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_PlayAttack(int32 ComboIndex);
+
     virtual void HeavyAttack() override;
 
     virtual void UpdateCamera(float DeltaTime) override;

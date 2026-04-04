@@ -133,7 +133,7 @@ void UDivinePunishment::KillEnemiesInRadius(const FVector& Center)
     UWorld* World = GetWorld();
     if (!World) return;
 
-    World->GetTimerManager().SetTimer(DivineDamageTimerHandle,this, &UDivinePunishment::DivineDamageTick, 1.f,true);
+    World->GetTimerManager().SetTimer(DivineDamageTimerHandle,this, &UDivinePunishment::DivineDamageTick, 0.8f,true);
 }
 
 
