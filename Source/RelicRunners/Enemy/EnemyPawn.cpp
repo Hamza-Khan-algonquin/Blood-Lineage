@@ -527,6 +527,11 @@ void AEnemyPawn::ResetKnock_Implementation()
 
 void AEnemyPawn::KnockBackFallBack()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	FNavLocation navLocation;
 
 	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());

@@ -182,6 +182,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void ClearMoveBuffer();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SetLocation(FVector newLocation);
+
 	UFUNCTION()
 	void ClientSideEntityInterpolation(float delta);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;

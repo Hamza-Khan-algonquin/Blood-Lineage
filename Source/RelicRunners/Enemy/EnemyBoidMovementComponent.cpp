@@ -628,6 +628,13 @@ void UEnemyBoidMovementComponent::ClearMoveBuffer_Implementation()
 	MoveDataBuffer.Empty();
 }
 
+void UEnemyBoidMovementComponent::Multicast_SetLocation_Implementation(FVector newLocation)
+{
+	UpdatedComponent->SetWorldLocationAndRotation(newLocation, FRotator::ZeroRotator);
+
+	AddToMoveDataBuffer(newLocation, FRotator::ZeroRotator);
+}
+
 void UEnemyBoidMovementComponent::ClientSideEntityInterpolation(float delta)
 {
 	if (GetOwner()->GetTearOff())
