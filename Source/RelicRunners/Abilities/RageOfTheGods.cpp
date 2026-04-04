@@ -8,6 +8,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 URageOfTheGods::URageOfTheGods()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
@@ -243,10 +244,15 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 
         CalculateAbilityDamage(AvatarActor, Actor, Damage);
 
+        FVector KnockDir = (Actor->GetActorLocation() - Center).GetSafeNormal();
+
         if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
         {
-            FVector KnockDir = (EnemyChar->GetActorLocation() - Center).GetSafeNormal();
             EnemyChar->LaunchCharacter(KnockDir * KnockbackStrength, true, true);
+        }
+        else if (AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(Actor))
+        {
+            enemyPawn->ApplyForceToEnemy(KnockDir * KnockbackStrength);
         }
     }
 

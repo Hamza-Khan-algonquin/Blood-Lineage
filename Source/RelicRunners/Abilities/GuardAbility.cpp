@@ -170,7 +170,7 @@ void UGuardAbility::HandleChargeTick(FGameplayAbilitySpecHandle Handle,const FGa
         {
             FVector Direction = DirToEnemy;
 
-            HitCharacter->ApplyForceToEnemy(Direction * KnockbackStrength + FVector(0.f, 0.f, 400.f));
+            HitCharacter->ApplyForceToEnemy(Direction * KnockbackStrength + FVector(0,0,125));
         }
     }
 }
