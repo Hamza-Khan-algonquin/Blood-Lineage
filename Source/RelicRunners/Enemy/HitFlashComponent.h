@@ -27,7 +27,7 @@ protected:
 	FTimeline HitFlashTimeline;
 	
 	//The dynamic materials that will be used to apply the hit flash effect. Call InitializeNewDynamicMaterials add pass the mesh you want the effect to have to use it
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere)
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> DynamicMaterials;
 
 	UPROPERTY(EditAnywhere, Replicated)
@@ -55,8 +55,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void InitializeNewDynamicMaterials(UMeshComponent* newComponent);
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void Multicast_InitializeNewDynamicMaterials(UMeshComponent* newComponent);
 	UFUNCTION(BlueprintCallable)
 	void RemoveNewDynamicMaterials(UMeshComponent* removedComponent);
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void Multicast_RemoveNewDynamicMaterials(UMeshComponent* removedComponent);
 	UFUNCTION(BlueprintCallable)
 	void SetHitFlashColor(const FColor newColor);
 protected:

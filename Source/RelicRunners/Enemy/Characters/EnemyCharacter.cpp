@@ -53,7 +53,7 @@ AEnemyCharacter::AEnemyCharacter() : ACharacter()
 	HitStunComponent = CreateDefaultSubobject<UHitStunComponent>(TEXT("Hit Stun Component"));
 
 	ShouldDieIfCommanderIsDone = false;
-	ShouldTakeDamage = false;
+	ShouldNotTakeDamage = false;
 	//tick moment :O
 	PrimaryActorTick.bCanEverTick = false;
 	//Setting up networking for the actor
@@ -83,7 +83,7 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() && !IsActive && IsHidden() && !ShouldTakeDamage)
+	if (!HasAuthority() || !IsActive || IsHidden() || !ShouldNotTakeDamage)
 	{
 		return 0;
 	}
@@ -240,7 +240,7 @@ void AEnemyCharacter::BeginPlay()
 
 	if (HasAuthority())
 	{
-		HitFlashComponent->InitializeNewDynamicMaterials(GetMesh());
+		HitFlashComponent->Multicast_InitializeNewDynamicMaterials(GetMesh());
 
 		//get refernce to objects that we need to get the director
 		UWorld* World = GetWorld();

@@ -16,7 +16,6 @@ UHitFlashComponent::UHitFlashComponent()
 void UHitFlashComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UHitFlashComponent, DynamicMaterials);
 	DOREPLIFETIME(UHitFlashComponent, HitFlashColor);
 }
 
@@ -120,6 +119,11 @@ void UHitFlashComponent::InitializeNewDynamicMaterials(UMeshComponent* newCompon
 	}
 }
 
+void UHitFlashComponent::Multicast_InitializeNewDynamicMaterials_Implementation(UMeshComponent* newComponent)
+{
+	InitializeNewDynamicMaterials(newComponent);
+}
+
 void UHitFlashComponent::RemoveNewDynamicMaterials(UMeshComponent* removedComponent)
 {
 	if (!removedComponent)
@@ -139,6 +143,11 @@ void UHitFlashComponent::RemoveNewDynamicMaterials(UMeshComponent* removedCompon
 			DynamicMaterials.Remove(material);
 		}
 	}
+}
+
+void UHitFlashComponent::Multicast_RemoveNewDynamicMaterials_Implementation(UMeshComponent* removedComponent)
+{
+	RemoveNewDynamicMaterials(removedComponent);
 }
 
 void UHitFlashComponent::SetHitFlashColor(const FColor newColor)

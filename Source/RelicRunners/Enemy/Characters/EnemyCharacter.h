@@ -44,7 +44,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyStats> EnemyStatsComponent;
 	UPROPERTY(EditAnywhere)
-	bool ShouldTakeDamage;
+	bool ShouldNotTakeDamage;
 
 	UPROPERTY(EditAnywhere)
 	float HitStunTime;
