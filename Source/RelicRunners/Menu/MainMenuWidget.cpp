@@ -55,6 +55,7 @@ void UMainMenuWidget::ShowModeSelectionWidget()
     {
         WidgetSwitcher->SetActiveWidget(ModeSelectionWidget);
     }
+    ModeSelectionWidget->ShowUpgradesAvailable();
 }
 
 void UMainMenuWidget::ShowSessionsWidget()
