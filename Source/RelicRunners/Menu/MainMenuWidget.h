@@ -19,9 +19,7 @@ public:
     class USettingsWidget* SettingsWidget;
     class UUpgradesWidget* UpgradesWidget;
     class UCreditsWidget* CreditsWidget;
-
-    //need to be fixed later 
-    class UJoinUserWidget* TutorialWidget;
+    class UHowToPlay* HowToPlayWidget;
 
 public:
     UPROPERTY(meta = (BindWidget))
@@ -66,6 +64,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> SettingsWidgetClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<UUserWidget> HowToPlayWidgetClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
     USoundBase* ButtonClickSound = nullptr;

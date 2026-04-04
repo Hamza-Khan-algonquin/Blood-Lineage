@@ -90,10 +90,23 @@ void UBundleOfJoy::TickThrown()
 {
     if (!bIsFlying) return;
     
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
-    AActor* Avatar = GetAvatarActorFromActorInfo();
-    UWorld* World = Avatar->GetWorld();
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    UWorld* World = AvatarActor->GetWorld();
+	if (!World) return;
+
     float Delta = World->GetDeltaSeconds();
 
     // projectile physics
@@ -109,7 +122,7 @@ void UBundleOfJoy::TickThrown()
 
     FHitResult Hit;
     FCollisionQueryParams Params;
-    Params.AddIgnoredActor(Avatar);
+    Params.AddIgnoredActor(AvatarActor);
 
     if (World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, Params))
     {
@@ -125,12 +138,24 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
 {
     AttractionCenter = LandLocation;
 
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
-    AActor* Avatar = GetAvatarActorFromActorInfo();
-    UWorld* World = Avatar->GetWorld();
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
-    if (Avatar->HasAuthority())
+    UWorld* World = AvatarActor->GetWorld();
+    if (!World) return;
+
+    if (AvatarActor->HasAuthority())
     {
         AController* Controller = nullptr;
 
@@ -161,10 +186,19 @@ void UBundleOfJoy::OnThrownLanded(const FVector& LandLocation)
 
 void UBundleOfJoy::Attract()
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
-    if (!AvatarActor) return; // Exit if no valid actor
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = AvatarActor->GetWorld(); // Get the world the actor is in
     if (!World) return; // Exit if no world
@@ -212,9 +246,19 @@ void UBundleOfJoy::Attract()
 
 void UBundleOfJoy::Explode()
 {
-    if (!CurrentActorInfo) return;
-    AActor* AvatarActor = GetAvatarActorFromActorInfo(); // Get the actor this ability belongs to
-    if (!AvatarActor) return; // Exit if no actor
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = AvatarActor->GetWorld(); // Get the world the actor is in
     if (!World) return; // Exit if no world

@@ -349,6 +349,13 @@ void UInventoryComponent::Server_AutoEquip_Implementation()
         }
     }
     UpdateTotalEquippedStats(Char);
+
+    OnEquipmentChanged.Broadcast();
+    OnInventoryChanged.Broadcast();
+
+    Char->SyncEquippedVisuals(EquippedItems);
+
+    if (RPC) RPC->UpdatePreviewWithEquippedItems();
 }
 
 void UInventoryComponent::UnequipItem(UItemObject* Item, ARelicRunnersPlayerController* RPC)

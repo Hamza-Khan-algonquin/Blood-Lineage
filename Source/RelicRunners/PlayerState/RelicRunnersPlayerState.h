@@ -73,8 +73,17 @@ public:
 	UFUNCTION()
 	void PassiveResourceRegen();
 	void OnStartingLevelUp();
+	void HandleRarityUpgrade(class UItemObject* Item);
+	FString GetStartingWeaponName();
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
+	UPROPERTY(BlueprintReadOnly, Category = "Leveling")
+	float RarityPityCounter = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Leveling")
+	TArray<FString> RarityOrder = {
+		"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic"
+	};
 
 	UFUNCTION(Client, Reliable)
 	void PlayHealPotionSound();
@@ -227,6 +236,12 @@ public:
 	void OnRep_DeathState();
 
 	UPROPERTY(Replicated)
+	int MetaXPAtStart = 0;
+	UPROPERTY(Replicated)
+	int MetaLevelAtStart = 0;
+	UPROPERTY(Replicated)
+	bool bMetaStatsInitialized = false;
+	UPROPERTY(Replicated)
 	int MetaLevel;
 	UPROPERTY(Replicated)
 	int MetaXP;
@@ -348,5 +363,10 @@ protected:
     TObjectPtr<UAttributeSet> AttributeSet;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
     class UInventoryComponent* InventoryComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+	TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;
+
+
 };
 

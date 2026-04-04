@@ -62,6 +62,8 @@
 #include "CustomDamageEvents.h"
 #include "Camera/CameraShakeBase.h"
 #include "RelicRunners/RelicRunnersGameState.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -185,6 +187,12 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	SetReplicates(true);
 	SetReplicateMovement(true);
 
+	ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>();
+	if (PS)
+	{
+		AbilitySystem = PS->GetAbilitySystemComponent();
+	}
+
 	Tags.Add("Player");
 }
 
@@ -259,7 +267,9 @@ float ARelicRunnersCharacter::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void ARelicRunnersCharacter::Die()
 {
+
 	if (!HasAuthority()) return;
+
 
 	if (RelicPlayerState)
 	{
@@ -271,7 +281,6 @@ void ARelicRunnersCharacter::Die()
 	if (RPC)
 	{
 		RPC->ChangeState(NAME_Spectating);
-		RPC->Client_RequestSaveStats();
 
 		if (RPC->IsLocalController())
 		{
@@ -423,7 +432,7 @@ void ARelicRunnersCharacter::TraceForInteractables()
 		{
 			AActor* FoundActor = Result.GetActor();
 
-			if (FoundActor && FoundActor->Implements<UInteractInterface>())
+			if (IsValid(FoundActor) && FoundActor->Implements<UInteractInterface>())
 			{
 				FVector ToActor = (FoundActor->GetActorLocation() - TraceStart).GetSafeNormal();
 				float DotProduct = FVector::DotProduct(LookDir, ToActor);
@@ -585,51 +594,59 @@ bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp
 
 void ARelicRunnersCharacter::MoveInDirection(EAxis::Type Axis, float Value)
 {
-	if (Controller && Value != 0.0f)
+	if (Value == 0.0f)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		return; 
+	}
 
-		float SpeedMultiplier = 1.0f;
+	if (!Controller || !IsValid(Controller))
+	{
+		return; 
+	}
 
-		if (Axis == EAxis::X) // forward/backward
-		{
-			if (Value < 0.0f)
-			{
-				// moving backward
-				SpeedMultiplier = 0.6f; 
-			}
-		}
-		else if (Axis == EAxis::Y)
-		{
-			// strafing
-			SpeedMultiplier = 0.7f; 
-		}
 
-		if (Axis == EAxis::X)
-		{
-			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-			AddMovementInput(Direction, Value * SpeedMultiplier);
-		}
-		else if (Axis == EAxis::Y)
-		{
-			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-			AddMovementInput(Direction, Value * SpeedMultiplier);
-		}
 
-		const FString MapName = GetWorld()->GetMapName();
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+	float SpeedMultiplier = 1.0f;
+
+	if (Axis == EAxis::X) 
+	{
+		if (Value < 0.0f)
+		{
+			SpeedMultiplier = 0.6f; 
+		}
+	}
+	else if (Axis == EAxis::Y) 
+	{
+		SpeedMultiplier = 0.7f;
+	}
+
+	// Base movement
+	FVector Direction;
+	if (Axis == EAxis::X)
+	{
+		Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	}
+	else if (Axis == EAxis::Y)
+	{
+		Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	}
+	else
+	{
+		return; 
+	}
+
+	AddMovementInput(Direction, Value * SpeedMultiplier);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		const FString MapName = World->GetMapName();
 		if (MapName.Contains(TEXT("BossLevel")))
 		{
-			if (Axis == EAxis::X)
-			{
-				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-				AddMovementInput(Direction, Value);
-			}
-			else if (Axis == EAxis::Y)
-			{
-				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-				AddMovementInput(Direction, Value);
-			}
+			AddMovementInput(Direction, Value); 
 		}
 	}
 }
@@ -835,6 +852,7 @@ void ARelicRunnersCharacter::HealthPotions()
 	if (RelicPlayerState)
 	{
 		RelicPlayerState->Server_UseHealthPotion();
+		Server_PlayAbilityAnimation(HealPotionAnim, 1.f);
 	}
 }
 
@@ -1041,3 +1059,72 @@ void ARelicRunnersCharacter::UltimateAbility()
 	UE_LOG(LogTemp, Log, TEXT("Ultimate Ability Activated on Character"));
 }
 
+void ARelicRunnersCharacter::Multicast_PlayAbilityAnimation_Implementation(UAnimMontage* Montage, float AnimSpeed)
+{
+
+	if (!Montage) return;
+
+	USkeletalMeshComponent* Mesh1 = FindComponentByClass<USkeletalMeshComponent>();
+	if (!Mesh1) return;
+
+	UAnimInstance* AnimInstance = Mesh1->GetAnimInstance();
+	if (!AnimInstance) return;
+
+	AnimInstance->Montage_Play(Montage, AnimSpeed);
+}
+
+void ARelicRunnersCharacter::Server_PlayAbilityAnimation_Implementation(UAnimMontage* Montage, float AnimSpeed)
+{
+	Multicast_PlayAbilityAnimation(Montage, AnimSpeed);
+}
+
+void ARelicRunnersCharacter::Multicast_SpawnBeam_Implementation(AActor* Target, UNiagaraSystem* VFX)
+{
+	if (!IsValid(this) || !IsValid(Target) || !IsValid(VFX)) return;
+
+	USceneComponent* RootComp = GetRootComponent();
+	if (!IsValid(RootComp)) return;
+
+	TWeakObjectPtr<AActor> WeakTarget = Target;
+
+	TWeakObjectPtr<UNiagaraComponent>* FoundBeamPtr = ActiveBeams.Find(WeakTarget);
+
+	if (FoundBeamPtr && FoundBeamPtr->IsValid())
+	{
+		UNiagaraComponent* Beam = FoundBeamPtr->Get();
+		if (IsValid(Beam))
+		{
+			Beam->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
+			return;
+		}
+		else
+		{
+			ActiveBeams.Remove(WeakTarget);
+		}
+	}
+	else if (FoundBeamPtr)
+	{
+		// Weak pointer expired
+		ActiveBeams.Remove(WeakTarget);
+	}
+
+	// Spawn new beam
+	UNiagaraComponent* BeamComp = UNiagaraFunctionLibrary::SpawnSystemAttached(VFX,RootComp,NAME_None,FVector::ZeroVector,FRotator::ZeroRotator,EAttachLocation::KeepRelativeOffset,true);
+
+	if (IsValid(BeamComp))
+	{
+		BeamComp->SetVectorParameter(TEXT("EndPoint"), Target->GetActorLocation());
+		ActiveBeams.Add(WeakTarget, BeamComp);
+	}
+}
+
+
+void ARelicRunnersCharacter::EndAllAbilities()
+{
+	if (AbilitySystem)
+	{
+		AbilitySystem->CancelAllAbilities();
+	}
+
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+}

@@ -6,6 +6,7 @@
 #include "UpgradesWidget.h"
 #include "SettingsWidget.h"
 #include "CreditsWidget.h"
+#include "HowToPlay.h"
 #include "Kismet/GameplayStatics.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
@@ -20,6 +21,7 @@ void UMainMenuWidget::NativeConstruct()
         CreditsWidget = CreateWidget<UCreditsWidget>(GetWorld(), CreditsWidgetClass);
         UpgradesWidget = CreateWidget<UUpgradesWidget>(GetWorld(), UpgradesWidgetClass);
         SettingsWidget = CreateWidget<USettingsWidget>(GetWorld(), SettingsWidgetClass);
+        HowToPlayWidget = CreateWidget<UHowToPlay>(GetWorld(), HowToPlayWidgetClass);
 
         if (ModeSelectionWidget && JoinGameWidget)
         {
@@ -28,12 +30,14 @@ void UMainMenuWidget::NativeConstruct()
             WidgetSwitcher->AddChild(CreditsWidget);
             WidgetSwitcher->AddChild(UpgradesWidget);
             WidgetSwitcher->AddChild(SettingsWidget);
+            WidgetSwitcher->AddChild(HowToPlayWidget);
 
             ModeSelectionWidget->SetParentMenu(this);
             JoinGameWidget->SetParentMenu(this);
             CreditsWidget->SetParentMenu(this);
             UpgradesWidget->SetParentMenu(this);
             SettingsWidget->SetParentMenu(this);
+            HowToPlayWidget->SetParentMenu(this);
 
             // Start by showing ModeSelectionWidget
             ShowModeSelectionWidget();
@@ -92,9 +96,10 @@ void UMainMenuWidget::ShowTutorialWidget()
 {
     PlayButtonClickSound();
 
-    if (WidgetSwitcher && TutorialWidget)
+    if (WidgetSwitcher && HowToPlayWidget)
     {
-        WidgetSwitcher->SetActiveWidget(TutorialWidget);
+        WidgetSwitcher->SetActiveWidget(HowToPlayWidget);
+        HowToPlayWidget->BlendToForgeCamera();
     }
 }
 
@@ -105,6 +110,7 @@ void UMainMenuWidget::ShowCreditsWidget()
     if (WidgetSwitcher && CreditsWidget)
     {
         WidgetSwitcher->SetActiveWidget(CreditsWidget);
+        CreditsWidget->BlendToCreditsCamera();
     }
 }
 

@@ -107,7 +107,7 @@ public:
             Data.Icon = LoadIcon("HealthIcon");
             Data.IconColor = GetIconColor("Health");
             Data.Descriptions.Add(FText::FromString("<Default>Health pool.</>"));
-            Data.Descriptions.Add(FText::FromString("<Blue>+10</> <Default>Health per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+15</> <Default>Health per meta point.</>"));
         }
         else if (BorderType == "Defence")
         {
@@ -121,8 +121,8 @@ public:
             Data.Name = FText::FromString("Defence");
             Data.Icon = LoadIcon("DefenceIcon");
             Data.IconColor = GetIconColor("Defence");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Damage reduction.</>"), FText::AsNumber(GetDefencePerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Defence per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Damage reduction.</>"), FText::AsNumber(GetDefencePerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Defence per meta point.</>"));
         }
         else if (BorderType == "Strength")
         {
@@ -136,8 +136,8 @@ public:
             Data.Name = FText::FromString("Strength");
             Data.Icon = LoadIcon("StrengthIcon");
             Data.IconColor = GetIconColor("Strength");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Attack & ability damage.</>"), FText::AsNumber(GetStrengthPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Strength per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Attack & ability damage.</>"), FText::AsNumber(GetStrengthPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Strength per meta point.</>"));
         }
         else if (BorderType == "Agility")
         {
@@ -153,10 +153,10 @@ public:
             Data.Name = FText::FromString("Agility");
             Data.Icon = LoadIcon("AgilityIcon");
             Data.IconColor = GetIconColor("Agility");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Crit chance.</>"), FText::AsNumber(GetCritPerc(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>{0}x</> <Default>Damage on crit.</>"), FText::AsNumber(GetCritDmgPerc(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Movement speed.</>"), FText::AsNumber(GetSpeedPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Agility per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Crit chance.</>"), FText::AsNumber(GetCritPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}x</> <Default>Damage on crit.</>"), FText::AsNumber(GetCritDmgPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Movement speed.</>"), FText::AsNumber(GetSpeedPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Agility per meta point.</>"));
         }
         else if (BorderType == "Intelligence")
         {
@@ -171,9 +171,9 @@ public:
             Data.Name = FText::FromString("Intelligence");
             Data.Icon = LoadIcon("IntelligenceIcon");
             Data.IconColor = GetIconColor("Intelligence");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}</> <Default>Mana pool.</>"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Ability cost reduction.</>"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Intelligence per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>Mana pool.</>"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Ability cost reduction.</>"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Intelligence per meta point.</>"));
         }
         else if (BorderType == "Luck")
         {
@@ -188,9 +188,9 @@ public:
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Luck per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Luck per meta point.</>"));
         }
         else if (BorderType == "HealthPotion")
         {
@@ -212,9 +212,9 @@ public:
             Data.Name = FText::FromString("Purity");
             Data.Icon = LoadIcon("PotionIcon");
             Data.IconColor = GetIconColor("Purity");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Health potion heal.</>"), FText::AsNumber(GetHealPercent(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Chance to not consume.</>"), FText::AsNumber(GetChanceToNotConsume(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+5</> <Default>Purity per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Health potion heal.</>"), FText::AsNumber(GetHealPercent(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Chance to not consume.</>"), FText::AsNumber(GetChanceToNotConsume(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Purity per meta point.</>"));
         }
         else if (BorderType == "Level")
         {
@@ -222,7 +222,7 @@ public:
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("Level");
             Data.Descriptions.Add(FText::FromString("<Default>Current Level.</>"));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}</> <Default>From Meta-Upgrade.</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>From Meta-Upgrade.</>"), FText::AsNumber(StatValue2)));
         }
         else if (BorderType == "MetaLevel")
         {
@@ -230,7 +230,7 @@ public:
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("MetaLevel");
             Data.Descriptions.Add(FText::FromString("<Default>Current Meta Level.</>"));
-            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Meta point per meta level.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Meta point per meta level.</>"));
             Data.Descriptions.Add(FText::FromString("<Default>Meta points are spent in the upgrades menu.</>"));
             }
         else if (BorderType == "MetaStartingLevel")
@@ -238,7 +238,7 @@ public:
             Data.Name = FText::FromString("Starting Level");
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("Level");
-            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Starting level per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Starting level per meta point.</>"));
         }
         else if (BorderType == "Mana")
         {
@@ -253,8 +253,8 @@ public:
             Data.Name = FText::FromString("Mana Regen");
             Data.Icon = LoadIcon("ResourceIcon");
             Data.IconColor = GetIconColor("Mana");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
-            Data.Descriptions.Add(FText::FromString("<Blue>+1%</> <Default>Mana regen per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
+            Data.Descriptions.Add(FText::FromString("<Green>+1%</> <Default>Mana regen per meta point.</>"));
         }
         else if (BorderType == "BoarDifficulty")
         {
@@ -477,7 +477,7 @@ public:
         TSet<FString> MixedTypes = { "Necklace" };
 
         //Size of armor multiplier
-        float SizeMult = 1.0f;
+        float SizeMult = 2.0f; //Default for necklace no hp or def on it
         if (ItemType == "Upper" || ItemType == "Lower") SizeMult = 1.5f;
         else if (ItemType == "Helmet") SizeMult = 1.3f;
         else if (ItemType == "Arms") SizeMult = 1.1f;
@@ -611,7 +611,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 300.0f;
         const float MaxPercent = 60.0f;
 
         if (Value <= 0) return 0.0f;
@@ -625,9 +625,9 @@ public:
     {
         if (Value <= 0) return 0.0f;
 
-        //Base of 1.5 with a 0.9 exponent.
+        //Base of 1.1 with a 0.9 exponent.
         //This grows infinitely but slows down over time.
-        float Percent = 1.5f * pow(static_cast<float>(Value), 0.9f);
+        float Percent = 1.1f * pow(static_cast<float>(Value), 0.9f);
 
         return RoundToDecimal(Percent, 1);
     }
@@ -636,9 +636,9 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 300.0f;
         const float MaxPercent = 75.0f;
-
+        
         if (Value <= 0) return 0.0f;
 
         float Percent = (Value / (Value + K)) * MaxPercent;
@@ -650,9 +650,9 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 200.0f;
         const float MaxPercent = 80.0f;
-
+        
         if (Value <= 0) return 0.0f;
 
         float Percent = (Value / (Value + K)) * MaxPercent;
@@ -678,7 +678,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
+        const float K = 250.0f;
         const float MaxPercent = 70.0f;
 
         if (Value <= 0) return 0.0f;

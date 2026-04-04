@@ -23,6 +23,7 @@ To Do:
 class UWidgetComponent;
 class UAnimMontage;
 class UEnemyStats;
+class UNiagaraSystem;
 
 UCLASS(Blueprintable, Abstract)
 class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
@@ -43,6 +44,12 @@ public:
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UNiagaraSystem> DamageEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UNiagaraSystem> DeathEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<struct FItemData> ItemLootPool;
 
 	UPROPERTY()
@@ -50,38 +57,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Item Generation")
 	TSubclassOf<class UItemMeshData> ItemMeshDataClass;
 
-	//UPROPERTY(DisplayName = "Name", Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
-	//FName EnemyName = "Enemy";
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetCurrentHealth, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
-	//float CurrentHealth;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetMaxHealth, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
-	//float MaxHealth;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 0.1))
-	//float RemainingStunTime = 0;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 1))
-	//int Level = 1;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
-	////A Stand in for mana, energy, or stamina
-	//int EnemyResource = 100;
-
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
-	////A Stand in for mana, energy, or stamina
-	//int EnemyMaxResource = 100;
-
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
-	////The Chance the enemy has to drop an item on death from 0.0 to 1.0
-	//float ChanceToDropItem = 0.2f;
-
-	
-
-	//UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
-	//EEnemyType TypeOfEnemy;
 	UPROPERTY(Category = "Enemy|Component", VisibleAnywhere, Replicated, NoClear, meta = (DisplayThumbnail = true))
 	UWidgetComponent* EnemyHUDWorld;
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
 
-
+	UPROPERTY(EditAnywhere)
+	bool OverrideCollisionType = false;
 	
 
 	//interface implementation variable
@@ -142,8 +124,13 @@ protected:
 	//rotates hud to face camera, courtesy of Mr big T him self Tristan
 	void UpdateEnemyHUDWorldFacing();
 
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void NetMultPlayParticleEffect(UNiagaraSystem* effect, FVector position);
+
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMultSetIsActive(bool newIsActive);
+
+	void Destroy();
 
 public:	
 	// Called every frame

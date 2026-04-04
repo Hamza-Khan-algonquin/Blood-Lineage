@@ -20,8 +20,6 @@ public:
 
 protected:
 
-    void ResetSpeed();
-
     void HandleChargeTick(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayAbilityActivationInfo ActivationInfo);
 
     FTimerHandle EndTimerHandle;
@@ -33,4 +31,11 @@ protected:
     float CheckRadius = 100.f;
     float CheckDistance = 150.f;
     float OriginalSpeed;
+
+    UPROPERTY()
+    UMaterialInstanceDynamic* OverlayMID = nullptr;
+
+    UPROPERTY(EditDefaultsOnly)
+    UMaterialInterface* OverlayMaterial;
+
 };

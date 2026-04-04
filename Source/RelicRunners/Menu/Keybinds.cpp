@@ -19,7 +19,7 @@ UKeybinds::UKeybinds()
     KeyBinds.Add({ TEXT("Defence Ability"),    EKeys::Two });
     KeyBinds.Add({ TEXT("Utility Ability"),    EKeys::Three });
     KeyBinds.Add({ TEXT("Ultimate Ability"),   EKeys::Four });
-    KeyBinds.Add({ TEXT("Health Potion"),      EKeys::H });
+    KeyBinds.Add({ TEXT("Health Potion"),      EKeys::F });
     KeyBinds.Add({ TEXT("Zoom"),               EKeys::MouseWheelAxis });
 }
 

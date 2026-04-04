@@ -16,9 +16,8 @@ struct FBasicProjectile
 	FVector Velocity;
 	FVector PreviousLocation;
 	float ElapsedTime = 0.f;
-
+	UNiagaraComponent* VFXComponent;
 	TSet<AActor*> AlreadyHitActors;
-	UStaticMeshComponent* Mesh = nullptr;
 };
 
 UCLASS()
@@ -119,4 +118,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
 	TObjectPtr<USoundBase> BasicAttackSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+	TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+	TObjectPtr<UNiagaraSystem> AbilityVFX1 = nullptr;
+
+	bool bRemoved = false;
 };

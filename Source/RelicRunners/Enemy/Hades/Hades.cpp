@@ -166,6 +166,7 @@ void AHades::OnRep_VortexForce()
 void AHades::ScheduleNextAttack(float Delay)
 {
     if (!HasAuthority()) return;
+    if (bIsSpawningShockwaves || ShockwavesSpawned > 0) return;
     GetWorldTimerManager().SetTimer(AttackLoopTimer, this, &AHades::ExecuteAttack, Delay, false);
 }
 
@@ -296,6 +297,8 @@ void AHades::CinematicSlam()
 
     if (!CurrentTarget) { ScheduleNextAttack(1.0f); return; }
 
+    Multicast_HandleCinematicCameras();
+
     LastAttack = "Slam";
     bIsBusy = true;
 
@@ -336,7 +339,7 @@ void AHades::CinematicSlam()
 
             if (StrongSelf->SlamImpactSound)
             {
-                UGameplayStatics::PlaySoundAtLocation(WeakSelf.Get(), WeakSelf->SlamImpactSound, SlamLoc);
+                UGameplayStatics::PlaySoundAtLocation(StrongSelf, StrongSelf->SlamImpactSound, SlamLoc);
             }
 
             StrongSelf->MulticastOnBridgeDestroyed(StrongSelf->BridgeToDestroy->GetActorLocation());
@@ -348,6 +351,45 @@ void AHades::CinematicSlam()
             StrongSelf->SpawnBlocking();
         }
         }, Delay, false);
+}
+
+AActor* AHades::GetCameraByTag(FName Tag)
+{
+    TArray<AActor*> FoundCameras;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), Tag, FoundCameras);
+    return (FoundCameras.Num() > 0) ? FoundCameras[0] : nullptr;
+}
+void AHades::Multicast_HandleCinematicCameras_Implementation()
+{
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) return;
+
+    FTimerHandle CamTimer1;
+    GetWorldTimerManager().SetTimer(CamTimer1, [this, PC]()
+        {
+            if (AActor* Cam1 = GetCameraByTag(FName("BossCamera")))
+            {
+                PC->SetViewTargetWithBlend(Cam1, 2.5f, VTBlend_Cubic);
+            }
+        }, 0.1f, false);
+
+    FTimerHandle CamTimer2;
+    GetWorldTimerManager().SetTimer(CamTimer2, [this, PC]()
+        {
+            if (AActor* Cam2 = GetCameraByTag(FName("BossCamera2")))
+            {
+                PC->SetViewTargetWithBlend(Cam2, 5.0f, VTBlend_Cubic);
+            }
+        }, 3.0f, false);
+
+    FTimerHandle ReturnTimer;
+    GetWorldTimerManager().SetTimer(ReturnTimer, [PC]()
+        {
+            if (APawn* PlayerPawn = PC->GetPawn())
+            {
+                PC->SetViewTargetWithBlend(PlayerPawn, 1.5f, VTBlend_Cubic);
+            }
+        }, 8.5f, false);
 }
 
 void AHades::MulticastOnBridgeDestroyed_Implementation(FVector Location)
@@ -698,6 +740,8 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
 
     for (AActor* OverlappedActor : OutActors)
     {
+        if (!OverlappedActor || OverlappedActor->IsPendingKillPending()) continue;
+
         if (APawn* HitPawn = Cast<APawn>(OverlappedActor))
         {
             if (ARelicRunnersPlayerState* RRPS = HitPawn->GetPlayerState<ARelicRunnersPlayerState>())
@@ -705,33 +749,63 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
                 float DamageToApply = RRPS->PlayerMaxHealth * (BaseDamageFromDifficulty / 100.0f);
                 UGameplayStatics::ApplyDamage(OverlappedActor, DamageToApply, nullptr, this, nullptr);
                 ActorsToIgnore.Add(OverlappedActor);
-                continue; 
+                continue;
             }
         }
 
-        if (OverlappedActor && OverlappedActor->IsA(AHadesObelisk::StaticClass()))
+        if (!bHitAnObelisk && OverlappedActor->IsA(AHadesObelisk::StaticClass()))
         {
-            bHitAnObelisk = true;
+            float ActualDistance = FVector::Dist(ImpactLocation, OverlappedActor->GetActorLocation());
+
+            if (ActualDistance <= ImpactRadius)
+            {
+                bHitAnObelisk = true;
+            }
         }
     }
+
+    Multicast_PlaySlamNiagara(ImpactLocation, ImpactRadius);
+
+    if (bIsInitialSlamming) return;
 
     UGameplayStatics::ApplyRadialDamage(
         GetWorld(), 50.0f, ImpactLocation, ImpactRadius,
         nullptr, ActorsToIgnore, this, nullptr, true
     );
 
-    if (!bHitAnObelisk)
+    if (bHitAnObelisk)
     {
-        UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack.")); 
-        bIsBusy = false;
-        ScheduleNextAttack(2.0f);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Hades hit the obelisk!"));
+        UE_LOG(LogTemp, Warning, TEXT("HADES: ExecuteDamage confirmed the hit."));
+        return;
     }
 
-    DrawDebugSphere(GetWorld(), ImpactLocation, ImpactRadius, 32, FColor::Orange, false, 2.0f);
+    //If the boss is suddenly "Busy" with a DamagedMontage, don't schedule a miss.
+    if (ShockwavesSpawned > 0 || bIsSpawningShockwaves)
+    {
+        UE_LOG(LogTemp, Log, TEXT("HADES: Obelisk hit detected via Notify before Execute finished. Aborting Miss logic."));
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("Hades missed the obelisk! Scheduling next attack."));
+    bIsBusy = false;
+    ScheduleNextAttack(2.0f);
+}
+
+void AHades::Multicast_PlaySlamNiagara_Implementation(FVector Location, float Radius)
+{
+    if (SlamNiagaraSystem)
+    {
+        UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            GetWorld(),
+            SlamNiagaraSystem,
+            Location
+        );
+
+        if (NiagaraComp)
+        {
+            NiagaraComp->SetNiagaraVariableFloat(TEXT("User.SlamRadius"), Radius);
+        }
+    }
 }
 
 void AHades::SelectRandomTarget()
@@ -781,6 +855,9 @@ void AHades::NotifyObeliskHit(AActor* Obelisk)
 {
     if (!HasAuthority()) return;
 
+    GetWorldTimerManager().ClearTimer(AttackLoopTimer);
+    GetWorldTimerManager().ClearAllTimersForObject(this);
+
     ObelisksHit++;
 
     float DamageToSelf = MaxHealth * 0.25f;
@@ -792,11 +869,13 @@ void AHades::NotifyObeliskHit(AActor* Obelisk)
     {
         ResetAllStates();
 
-        bIsSpawningShockwaves = true;
         bIsBusy = true;
         ShockwavesSpawned = 0;
 
-        GetWorldTimerManager().SetTimer(ShockwaveTimerHandle, this, &AHades::ExecuteRepeatedShockwave, 4.0f, true, 0.0f);
+        MulticastPlayAttackMontage(DamagedMontage, 0.5, 0);
+        FTimerHandle StartShockwave;
+        GetWorldTimerManager().SetTimer(StartShockwave, [this]() { bIsSpawningShockwaves = true; }, 1.0f, false);
+        GetWorldTimerManager().SetTimer(ShockwaveTimerHandle, this, &AHades::ExecuteRepeatedShockwave, 3.5f, true, 0.0f);
     }
     else
     {
@@ -809,10 +888,12 @@ void AHades::ExecuteRepeatedShockwave()
     SpawnShockwave();
     ShockwavesSpawned++;
 
-    if (ShockwavesSpawned >= 5)
+    if (ShockwavesSpawned >= 6)
     {
         ResetAllStates();
-        ScheduleNextAttack(6.f);
+        ShockwavesSpawned = 0;
+
+        ScheduleNextAttack(5.0f);
     }
 }
 
@@ -852,11 +933,7 @@ void AHades::Die()
                 int AddedMeta = FMath::RandRange(400, 500) * DiffInfo.MetaXPIncrease;
 
                 RRPS->MetaXPGainInRun += AddedMeta;
-
-                if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(RRPS->GetOwner()))
-                {
-                    PC->Client_RegisterMetaXPGain(AddedMeta);
-                }
+                RRPS->ForceNetUpdate();
             }
         }
     }

@@ -16,6 +16,14 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/Enemy/EnemyStats.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include "RelicRunners/Enemy/Controllers/CommanderController.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
+void AEnemyCharacter::Destroy()
+{
+	Super::Destroy();
+}
 
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
 {
@@ -66,7 +74,7 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority())
+	if (!HasAuthority() && !IsActive && IsHidden())
 	{
 		return 0;
 	}
@@ -97,6 +105,27 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 				EnemyStatsComponent->SetRemainingStunTime(AttackDamageEvent->StunDuration);
 			}
 		}
+
+		TArray<FHitResult> HitResult;
+		FCollisionObjectQueryParams objCollParams;
+		objCollParams.AddObjectTypesToQuery(ECC_GameTraceChannel1);
+
+		
+		bool hit = GetWorld()->LineTraceMultiByObjectType(HitResult, DamageCauser->GetActorLocation(), GetActorLocation(), objCollParams);
+
+		if (hit)
+		{
+			for (FHitResult result : HitResult)
+			{
+				AActor* hitActor = result.GetActor();
+				if (hitActor == this)
+				{
+					NetMultPlayParticleEffect(DamageEffect, result.Location);
+					break;
+				}
+			}
+		}
+		
 	}
 
 	return DamageAmount;
@@ -104,7 +133,7 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 void AEnemyCharacter::Die(AController* EventInstigator)
 {
-	if (HasAuthority())
+	if (HasAuthority() && IsActive && !IsHidden())
 	{
 		SpawnItem();
 
@@ -121,8 +150,10 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 		OnDied.Broadcast(this);
 		OnDied.Clear();
 
-		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+		NetMultPlayParticleEffect(DeathEffect, GetActorLocation());
 
+		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+		
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
@@ -134,7 +165,13 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 				EnemyHUDWorld->DestroyComponent();
 			}
 
-			Destroy();
+			//Gives enough time to multicast effect
+			float DeathDelay = 0.2f;
+			FTimerHandle TearOffTimer;
+			GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyCharacter::TearOff, DeathDelay, false);
+
+			//Calls destory
+			SetLifeSpan(DeathDelay);
 		}
 	}
 }
@@ -278,19 +315,33 @@ void AEnemyCharacter::UpdateEnemyHUDWorldFacing()
 	}
 }
 
+void AEnemyCharacter::NetMultPlayParticleEffect_Implementation(UNiagaraSystem* effect, FVector position)
+{
+	if (effect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), effect, position, GetActorRotation(), GetActorScale());
+	}
+}
+
 void AEnemyCharacter::NetMultSetIsActive_Implementation(bool newIsActive)
 {
 	if (newIsActive)
 	{
 		this->SetActorHiddenInGame(false);
-		this->SetActorEnableCollision(true);
-		this->SetActorTickEnabled(this->GetShouldTick());
+		if (OverrideCollisionType)
+		{
+			this->GetCapsuleComponent()->SetCollisionProfileName("Enemy");
+		}
+		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
-		this->SetActorEnableCollision(false);
-		this->SetActorTickEnabled(false);
+		if (OverrideCollisionType)
+		{
+			this->GetCapsuleComponent()->SetCollisionProfileName("MinotaurDisable");
+		}
+		//this->SetActorTickEnabled(false);
 	}
 }
 
@@ -307,6 +358,7 @@ void AEnemyCharacter::ResetEnemy()
 {
 	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
 	EnemyStatsComponent->SetRemainingStunTime(0.f);
+	
 }
 
 void AEnemyCharacter::AddEnemyToDirector()
@@ -332,6 +384,13 @@ void AEnemyCharacter::AddEnemyToDirector()
 
 bool AEnemyCharacter::GetIsActive()
 {
+
+	if (ACommanderController* commander = Cast<ACommanderController>(Controller))
+	{
+		//both need to be false for it to be inactive
+		return !commander->InactiveCheck() || IsActive;
+	}
+
 	return IsActive;
 }
 
@@ -350,18 +409,47 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	IsActive = newIsActive;
 	NetMultSetIsActive(newIsActive);
 
-	if (!newIsActive)
+	ACommanderController* commander = nullptr;
+
+	if (IsValid(Controller))
 	{
-		OnDeactivated.Broadcast(this);
-		ResetEnemy();
+		commander = Cast<ACommanderController>(Controller);
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	if (newIsActive)
+	{
+		ResetEnemy();
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+		if (IsValid(commander))
+		{
+			commander->ResetController();
+		}
+	}
+	else 
+	{
+		if (IsValid(commander))
+		{
+			commander->StopMovement();
+			GetCharacterMovement()->StopMovementImmediately();
+			//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+
+			UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(commander->BrainComponent);
+
+			if (IsValid(BTComp))
+			{
+				BTComp->StopTree(EBTStopMode::Forced);
+			}
+		}
+		
+		OnDeactivated.Broadcast(this);
+	}
+
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+
+	if (pool && SetControllerActiveStatus && GetController() && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyCharacter::GetLifeSpanTimerHandle()

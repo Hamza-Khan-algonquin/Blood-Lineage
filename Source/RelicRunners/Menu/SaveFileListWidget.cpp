@@ -162,6 +162,7 @@ void USaveFileListWidget::FinalizeSaveCreation(const FString& PlayerName)
         SaveFileData->GetMetaExpToLevel(), SaveFileData->GetMetaPoints(), SaveFileData->GetMetaHealth(), SaveFileData->GetMetaDefence(), SaveFileData->GetMetaLuck(), SaveFileData->GetMetaStrength(),
         SaveFileData->GetMetaAgility(), SaveFileData->GetMetaIntelligence(), SaveFileData->GetMetaStartingLevel(), SaveFileData->GetMetaPotionEfficiency(), SaveFileData->GetMetaResourceRegen());
     Setup(SaveFileData);
+    SaveFileData->InitializeNewSave();
 
     SpawnEmptySlot();
 

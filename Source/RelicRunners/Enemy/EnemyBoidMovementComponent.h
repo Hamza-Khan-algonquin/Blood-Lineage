@@ -179,6 +179,9 @@ public:
 	void InitializeNavMeshPointer();
 	void AddToMoveDataBuffer(FVector newLocation, FRotator newRotation);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void ClearMoveBuffer();
+
 	UFUNCTION()
 	void ClientSideEntityInterpolation(float delta);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;

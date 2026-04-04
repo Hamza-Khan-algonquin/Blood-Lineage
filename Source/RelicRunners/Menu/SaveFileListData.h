@@ -23,7 +23,7 @@ struct FSaveData
 	UPROPERTY(BlueprintReadWrite)
 	float MetaExperience = 0;
 	UPROPERTY(BlueprintReadWrite)
-	float MetaExperienceToLevel = 50;
+	float MetaExperienceToLevel = 0;
 	UPROPERTY(BlueprintReadWrite)
 	int MetaPoints = 10;
 
@@ -72,7 +72,9 @@ public:
 	FGuid GetUniqueID() { return SaveData.UniqueID; }
 
 	UFUNCTION(BlueprintCallable)
-	void AddMetaExp(int Value);
+	int AddMetaExp(int Value);
+
+	void InitializeNewSave();
 
 	UFUNCTION(BlueprintCallable)
 	float GetMetaExp() { return SaveData.MetaExperience; }
@@ -112,6 +114,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	int GetMetaLevel() { return SaveData.MetaLevel; }
+
+	static float GetRequiredMetaXP(int Level)
+	{
+		return (Level * 100.0f);
+	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
     static FSaveData MakeSaveData(const FString& Name, float TimePlayed, int MetaLevel, FGuid UniqueID, float MetaExperience,

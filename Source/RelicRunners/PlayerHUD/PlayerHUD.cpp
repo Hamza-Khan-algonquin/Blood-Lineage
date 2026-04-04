@@ -27,6 +27,7 @@
 #include "Materials/MaterialInterface.h"
 #include <RelicRunners/Item/ItemStats.h>
 #include <Kismet/KismetMaterialLibrary.h>
+#include <RelicRunners/PlayerState/RelicRunnersPlayerState.h>
 
 void UPlayerHUD::NativeConstruct()
 {
@@ -37,6 +38,56 @@ void UPlayerHUD::NativeConstruct()
 		World->GetTimerManager().ClearAllTimersForObject(this);
 	}
 	UpdateBindText();
+
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_InitHUD, this, &UPlayerHUD::InitializeHUDIcons, 3.f, false);
+}
+
+void UPlayerHUD::InitializeHUDIcons()
+{
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (ARelicRunnersPlayerState* PS = PC->GetPlayerState<ARelicRunnersPlayerState>())
+		{
+			if (PS->SelectedClass == "Ares")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("BloodRush"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("WarBanner"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("RageOfTheGods"));
+			}
+			else if (PS->SelectedClass == "Artemis")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("FireArrow"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("Impunity"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("SplitShot"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("Moonbeam"));
+			}
+			else if (PS->SelectedClass == "Aphrodite")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("BundleOfJoy"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("MirrorOfDesire"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("KissOfLife"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("GoddessOfLove"));
+			}
+			else if (PS->SelectedClass == "Nemesis")
+			{
+				if (!Lib) return;
+				I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("Backstab"));
+				I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("NaturesBlessing"));
+				I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("VengefulDance"));
+				I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("DivinePunishment"));
+			}
+		}
+	}
 }
 
 void UPlayerHUD::ToggleExpBar(bool value)
@@ -86,7 +137,7 @@ void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
 	float TargetIntensity = 0.f;
 	if (HealthPercent < 1.f)
 	{
-		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.4f), FVector2D(1.f, 0.f), HealthPercent);
+		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.6f), FVector2D(1.f, 0.f), HealthPercent);
 
 		float Pulse = (FMath::Sin(GetWorld()->GetTimeSeconds() * 3.0f) * 0.2f) + 0.8f;
 		TargetIntensity *= Pulse;
@@ -94,10 +145,7 @@ void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
 
 	CurrentBloodIntensity = FMath::FInterpTo(CurrentBloodIntensity, TargetIntensity, InDeltaTime, 2.0f);
 
-	if (BloodMPC)
-	{
-		UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), BloodMPC, FName("BloodIntensity"), CurrentBloodIntensity);
-	}
+	I_BloodOverlay->SetColorAndOpacity(FLinearColor(1,0,0,CurrentBloodIntensity));
 }
 
 void UPlayerHUD::UpdateHUDHealth(float CurrentHealth, float MaxHealth)
@@ -189,7 +237,7 @@ void UPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		HealthBar_1->SetPercent(GhostHealthPercent);
 	}
 
-	//UpdateBloodSplatter(HealthBar->GetPercent(), InDeltaTime);
+	UpdateBloodSplatter(HealthBar->GetPercent(), InDeltaTime);
 }
 
 void UPlayerHUD::UpdateHUDXP(int CurrentLevel, float CurrentXP, float XPToLevel)
@@ -242,7 +290,7 @@ void UPlayerHUD::UpdateBindText()
 
 }
 
-void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
+void UPlayerHUD::RunCooldown(UImage* image, UTextBlock* CooldownText, float& RemainingTime, FTimerHandle& TimerHandle, float CooldownTime)
 {
 	if (!CooldownText || CooldownTime <= 0.f) return;
 	if (RemainingTime > 0.f) return;
@@ -258,13 +306,14 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 	}
 
 	TWeakObjectPtr<UTextBlock> CooldownTextWeak = CooldownText;
+	TWeakObjectPtr<UImage> ImageWeak = image;
 	float* RemainingTimePtr = &RemainingTime;
 
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().SetTimer(
 			TimerHandle,
-			[this, CooldownTextWeak, RemainingTimePtr]()
+			[this, CooldownTextWeak, RemainingTimePtr, ImageWeak]()
 			{
 				//Widget or HUD is gone — do nothing
 				if (!CooldownTextWeak.IsValid() || !RemainingTimePtr)
@@ -277,6 +326,7 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 				if (*RemainingTimePtr <= 0.f)
 				{
 					CooldownTextWeak->SetText(FText::GetEmpty());
+					ImageWeak->SetOpacity(1.f);
 					return;
 				}
 
@@ -291,21 +341,29 @@ void UPlayerHUD::RunCooldown(UTextBlock* CooldownText, float& RemainingTime, FTi
 }
 void UPlayerHUD::StartDamageCooldown(float CooldownTime)
 {
-	RunCooldown(TB_DamageCooldown, DamageRemainingTime, DamageCooldownHandle, CooldownTime);
+	RunCooldown(I_Ability1, TB_DamageCooldown, DamageRemainingTime, DamageCooldownHandle, CooldownTime);
+	I_Ability1->SetOpacity(0.3f);
 }
 
 void UPlayerHUD::StartDefenceCooldown(float CooldownTime)
 {
-	RunCooldown(TB_DefenceCooldown, DefenceRemainingTime, DefenceCooldownHandle, CooldownTime);
+	RunCooldown(I_Ability2, TB_DefenceCooldown, DefenceRemainingTime, DefenceCooldownHandle, CooldownTime);
+	I_Ability2->SetOpacity(0.3f);
 }
 
 void UPlayerHUD::StartUtilityCooldown(float CooldownTime)
 {
-	RunCooldown(TB_UtilityCooldown, UtilityRemainingTime, UtilityCooldownHandle, CooldownTime);
+	RunCooldown(I_Ability3, TB_UtilityCooldown, UtilityRemainingTime, UtilityCooldownHandle, CooldownTime);
+	I_Ability3->SetOpacity(0.3f);
 }
 
 void UPlayerHUD::StartUltimateCooldown(float CooldownTime)
 {
+
 	RunCooldown(TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
+}
+
+	RunCooldown(I_Ability4, TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
+	I_Ability4->SetOpacity(0.3f);
 }
 

@@ -79,11 +79,11 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 	FString AbilityName = "";
 	FString AbilityDesc = "";
 
-	if (HoveredButton == B_HP) { StatKey = "MetaHealth";						RawValue = SD.MetaHealth * 10; }
-	else if (HoveredButton == B_DEF) { StatKey = "MetaDefence";					RawValue = SD.MetaDefence * 3; }
-	else if (HoveredButton == B_STR) { StatKey = "MetaStrength";				RawValue = SD.MetaStrength * 3; }
-	else if (HoveredButton == B_AGI) { StatKey = "MetaAgility";					RawValue = SD.MetaAgility * 3; }
-	else if (HoveredButton == B_INT) { StatKey = "MetaIntelligence";			RawValue = SD.MetaIntelligence * 3; }
+	if (HoveredButton == B_HP) { StatKey = "MetaHealth";						RawValue = SD.MetaHealth * 15; }
+	else if (HoveredButton == B_DEF) { StatKey = "MetaDefence";					RawValue = SD.MetaDefence * 5; }
+	else if (HoveredButton == B_STR) { StatKey = "MetaStrength";				RawValue = SD.MetaStrength * 5; }
+	else if (HoveredButton == B_AGI) { StatKey = "MetaAgility";					RawValue = SD.MetaAgility * 5; }
+	else if (HoveredButton == B_INT) { StatKey = "MetaIntelligence";			RawValue = SD.MetaIntelligence * 5; }
 	else if (HoveredButton == B_Efficiency) { StatKey = "MetaPurity";			RawValue = SD.MetaPotionEfficiency * 5; }
 	else if (HoveredButton == B_LUCK) { StatKey = "MetaLuck";					RawValue = SD.MetaLuck * 1; }
 	else if (HoveredButton == B_Regen) { StatKey = "MetaMana";					RawValue = SD.MetaResourceRegen * 1; }
