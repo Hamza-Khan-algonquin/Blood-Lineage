@@ -84,16 +84,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Accessibility")
 	void ApplyColorblindMode();
 
-
-	enum class EObjectiveType { None, Flag, Payload, Enemies, Pandora };
-	struct FPendingObjective {
-		int FlagCount = 0;
-		int EnemyCount = 0;
-		float PandoraTime = 0.0f;
-		EObjectiveType Type = EObjectiveType::None;
-	};
-
-
 	FTimerHandle TimerHandle_UIWait;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ObjectiveBuffer)

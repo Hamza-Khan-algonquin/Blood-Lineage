@@ -12,12 +12,13 @@
 #include <RelicRunners/Menu/SettingsWidget.h>
 #include "RelicRunnersGameInstance.generated.h"
 
-UENUM(BlueprintType)
+/*UENUM(BlueprintType)
 enum class EGameLanguage : uint8
 {
     English UMETA(DisplayName = "English"),
     French  UMETA(DisplayName = "French")
 };
+*/
 USTRUCT()
 struct FPendingClientTravel
 {
@@ -234,7 +235,7 @@ public:
 
 
     //language accessibility
-    UPROPERTY(BlueprintReadWrite, Category = "Localization")
+    /*UPROPERTY(BlueprintReadWrite, Category = "Localization")
     EGameLanguage CurrentLanguage = EGameLanguage::English;
 
     UFUNCTION(BlueprintCallable, Category = "Localization")
@@ -245,6 +246,7 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Localization")
     FString GetCultureCodeFromLanguage(EGameLanguage Language) const;
+    */
 private:
 
 

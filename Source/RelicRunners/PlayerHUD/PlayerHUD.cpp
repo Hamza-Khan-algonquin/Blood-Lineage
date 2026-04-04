@@ -359,10 +359,6 @@ void UPlayerHUD::StartUtilityCooldown(float CooldownTime)
 
 void UPlayerHUD::StartUltimateCooldown(float CooldownTime)
 {
-
-	RunCooldown(TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
-}
-
 	RunCooldown(I_Ability4, TB_UltimateCooldown, UltimateRemainingTime, UltimateCooldownHandle, CooldownTime);
 	I_Ability4->SetOpacity(0.3f);
 }

@@ -59,7 +59,7 @@ void URelicRunnersGameInstance::Init()
     InitializeSaveSlots();
 
     //language
-    ApplyLanguage();
+    //ApplyLanguage();
 }
 
 void URelicRunnersGameInstance::ResetToDefaults()
@@ -253,7 +253,7 @@ FUIColorblindStyle URelicRunnersGameInstance::GetCurrentUIStyle() const
     }
 }
 
-void URelicRunnersGameInstance::ApplyLanguage()
+/*void URelicRunnersGameInstance::ApplyLanguage()
 {
     const FString CultureCode = GetCultureCodeFromLanguage(CurrentLanguage);
     UKismetInternationalizationLibrary::SetCurrentLanguageAndLocale(CultureCode, true);
@@ -276,7 +276,7 @@ FString URelicRunnersGameInstance::GetCultureCodeFromLanguage(EGameLanguage Lang
         return TEXT("en");
     }
 }
-
+*/
 
 
 void URelicRunnersGameInstance::Shutdown()

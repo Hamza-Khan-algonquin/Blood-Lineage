@@ -277,7 +277,7 @@ void USettingsWidget::NativeConstruct()
 		}
 
 	}
-	if (LanguageDropDown)
+	/*if (LanguageDropDown)
 	{
 		LanguageDropDown->ClearOptions();
 		LanguageDropDown->AddOption("English");
@@ -305,7 +305,7 @@ void USettingsWidget::NativeConstruct()
 
 		LanguageDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleLanguageChanged);
 	}
-
+	*/
 	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 	{
 		InitializeDefaultKeybindings();
@@ -829,7 +829,7 @@ void USettingsWidget::OnAutoLootChanged(bool bIsChecked)
 		}
 	}
 }
-void USettingsWidget::HandleLanguageChanged(FString Item, ESelectInfo::Type SelectionType)
+/*void USettingsWidget::HandleLanguageChanged(FString Item, ESelectInfo::Type SelectionType)
 {
 	if (SelectionType == ESelectInfo::Direct) return;
 
@@ -845,6 +845,7 @@ void USettingsWidget::HandleLanguageChanged(FString Item, ESelectInfo::Type Sele
 		GI->SetLanguage(EGameLanguage::French);
 	}
 }
+*/
 void USettingsWidget::BackButtonClicked()
 {
 	if (MainParentMenu)

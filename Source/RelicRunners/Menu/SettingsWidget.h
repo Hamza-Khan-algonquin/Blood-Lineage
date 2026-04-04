@@ -263,11 +263,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RefreshBrightnessUI();
 
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	/*UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UComboBoxString* LanguageDropDown = nullptr;
 
 	UFUNCTION()
 	void HandleLanguageChanged(FString Item, ESelectInfo::Type SelectionType);
+	*/
 
 protected:
 	UFUNCTION()

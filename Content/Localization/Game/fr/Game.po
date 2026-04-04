@@ -1,4 +1,4 @@
-# Game French translation.
+﻿# Game French translation.
 # Fill out your copyright notice in the Description page of Project Settings.
 # 
 msgid ""
@@ -560,7 +560,7 @@ msgstr "Périphérique de Sortie"
 #. Key:	5F078D5F446869E49A1A1FA1C532FC64
 msgctxt ",5F078D5F446869E49A1A1FA1C532FC64"
 msgid "Motion Blur"
-msgstr "Flou de Mouvement"
+msgstr "Flou Cinetique"
 
 #. Key:	0BF7D0D6469C823CDD9A06988DB48EB5
 msgctxt ",0BF7D0D6469C823CDD9A06988DB48EB5"
