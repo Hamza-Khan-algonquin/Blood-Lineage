@@ -81,6 +81,9 @@ public:
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
+	UFUNCTION(BlueprintCallable, Category = "Accessibility")
+	void ApplyColorblindMode();
+
 	FTimerHandle TimerHandle_UIWait;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ObjectiveBuffer)
@@ -298,6 +301,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
 	int GetCalculatedManaCost(float BaseMana);
 
+	
+
 	FVector CinematicTargetLocation;
 
 	//Timers
@@ -376,6 +381,8 @@ protected:
 	UPROPERTY()
 	class UTitleData* ObjectiveStageTitle;
 
+	UFUNCTION(BlueprintCallable)
+	void ApplySavedFOV();
 	//Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputMappingContext* InputMappingContext;

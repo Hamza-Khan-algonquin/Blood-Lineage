@@ -24,6 +24,7 @@
 #include "Components/Border.h"
 #include "Components/VerticalBox.h"
 #include "Components/Image.h"
+#include "EngineUtils.h"
 #include "Components/Throbber.h"
 #include "Components/CanvasPanel.h"
 #include "InventoryToolTip.h"
@@ -78,6 +79,18 @@ void UInventory::NativeConstruct()
     if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
+
+
+    for (TActorIterator<APostProcessVolume> It(GetWorld()); It; ++It)
+    {
+        if (It->bUnbound)
+        {
+            CachedPPV = *It;
+            break;
+        }
+    }
+
+    ApplyColorblindStyle();
 }
 
 void UInventory::OnAutoEquip()
@@ -708,7 +721,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     if (InventoryComponent) Stats = InventoryComponent->GetCachedEquippedStats();
 
     FString StatKey = "";
-    int RawValue = 0;
+    float RawValue = 0;
     FString AbilityName;
     FString AbilityDesc;
 
@@ -960,8 +973,7 @@ bool UInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
         EquipItem(DraggedItem);
     }
     else if (InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Inventory || 
-            InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Equipped ||
-            InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Forge)
+            InsideForge && ForgeCanvas->IsVisible() && DragOp->FromWhere == UInventoryDragOperation::Locations::Equipped)
     {
         ForgeItem(DraggedItem);
     }
@@ -1431,4 +1443,99 @@ UInventory* UInventory::Get(UObject* ContextObject)
         }
     }
     return nullptr;
+}
+
+void UInventory::ApplyColorLUT(UTexture* LUT)
+{
+    if (!CachedPPV) return;
+
+    FPostProcessSettings& PPS = CachedPPV->Settings;
+
+    PPS.bOverride_ColorGradingLUT = true;
+    PPS.ColorGradingLUT = LUT;
+
+    PPS.bOverride_ColorGradingIntensity = true;
+
+    if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+    {
+        PPS.ColorGradingIntensity = (GI->ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.5f;
+    }
+    else
+    {
+        PPS.ColorGradingIntensity = 0.0f;
+    }
+
+    CachedPPV->BlendWeight = 1.0f;
+}
+
+void UInventory::ApplyColorblindStyle()
+{
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+    if (!GI) return;
+
+    FLinearColor PrimaryAccent;
+
+    switch (GI->ColorblindMode)
+    {
+    case EColorblindMode::Protanopia:
+        PrimaryAccent = FLinearColor(1.0f, 0.55f, 0.0f, 1.0f);
+        
+        break;
+
+    case EColorblindMode::Deuteranopia:
+        PrimaryAccent = FLinearColor(1.0f, 0.6f, 0.0f, 1.0f);
+        
+        break;
+
+    case EColorblindMode::Tritanopia:
+        PrimaryAccent = FLinearColor(0.1f, 1.0f, 0.35f, 1.0f);
+        
+        break;
+
+    case EColorblindMode::Normal:
+    default:
+        PrimaryAccent = FLinearColor::White;
+        
+        break;
+    }
+
+    if (B_Forge)
+    {
+        B_Forge->SetBrushColor(PrimaryAccent);
+    }
+    if (B_Armory)
+    {
+        B_Armory->SetBrushColor(PrimaryAccent);
+    }
+    if (B_Inventory)
+    {
+        B_Inventory->SetBrushColor(PrimaryAccent);
+    }
+}
+
+void UInventory::HandleColorModeChanged()
+{
+    URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+    if (!GI) return;
+
+    switch (GI->ColorblindMode)
+    {
+    case EColorblindMode::Protanopia:
+        ApplyColorLUT(LUT_Protanopia);
+        break;
+
+    case EColorblindMode::Deuteranopia:
+        ApplyColorLUT(LUT_Deuternopia);
+        break;
+
+    case EColorblindMode::Tritanopia:
+        ApplyColorLUT(LUT_Tritanopia);
+        break;
+
+    case EColorblindMode::Normal:
+    default:
+        ApplyColorLUT(LUT_Normal);
+        break;
+    }
+
 }

@@ -17,6 +17,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/Image.h"
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUD.generated.h"
 
@@ -200,4 +201,5 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartUltimateCooldown(float CooldownTime);
+
 };

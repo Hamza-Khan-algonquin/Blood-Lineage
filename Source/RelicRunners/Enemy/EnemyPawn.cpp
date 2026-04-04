@@ -103,9 +103,11 @@ void AEnemyPawn::UpdateEmissiveHealth()
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
-	//GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
 	GetWorld()->GetTimerManager().ClearTimer(KnockBackFallBackHandle);
 	GetWorld()->GetTimerManager().ClearTimer(HitStunTimer);
+	GetWorld()->GetTimerManager().ClearTimer(ActiveChangeTimerHandle);
+
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -692,25 +694,27 @@ bool AEnemyPawn::GetShouldTick()
 
 void AEnemyPawn::SetIsActive(bool newIsActive)
 {
-	if (IsActive == newIsActive)
+	if (IsActive == newIsActive || !IsValid(this))
 	{
 		return;
 	}
 
-	FTimerHandle tempHandle;
+	TWeakObjectPtr<AEnemyPawn> weakThis = this;
 	if (!newIsActive)
 	{
 		NetMultSetIsActive(newIsActive);
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [weakThis, newIsActive]()
 			{
-				this->IsActive = newIsActive;
+				if(weakThis.IsValid())
+					weakThis.Get()->IsActive = newIsActive;
 			}, 2.f, false);
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [this, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [weakThis, newIsActive]()
 			{
-				this->NetMultSetIsActive(newIsActive);
+				if (weakThis.IsValid())
+					weakThis.Get()->NetMultSetIsActive(newIsActive);
 			}, 2.f, false);
 		IsActive = newIsActive;
 	}

@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/PostProcessVolume.h"
+#include "Components/Image.h"
+#include <Components/Border.h>
+
 #include "JoinUserWidget.generated.h"
 
 class USoundBase;

@@ -15,6 +15,7 @@ ASpawnPoint::ASpawnPoint()
 		Radius = 100;
 		HeightToCheckFrom = 200;
 		DepthToCheckFrom = 100;
+		SpawnInfinitely = false;
 		PrimaryActorTick.bCanEverTick = false;
 	}
 }

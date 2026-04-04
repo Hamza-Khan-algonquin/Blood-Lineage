@@ -265,6 +265,14 @@ public:
 	UFUNCTION()
 	FEventReply  OnForgeItemResultClicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
 
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorLUT(UTexture* LUT);
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorblindStyle();
+
+
 	//UI Elements
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTileView* InventorySlots;
@@ -541,6 +549,35 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Class")
 	class UClassInfo* ClassDataAsset = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Forge;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Armory;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Inventory;
+
+	UPROPERTY()
+	APostProcessVolume* CachedPPV = nullptr;
+
+	UFUNCTION()
+	void HandleColorModeChanged();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Normal = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Protanopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Deuternopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Tritanopia = nullptr;
+
+	
 protected:
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

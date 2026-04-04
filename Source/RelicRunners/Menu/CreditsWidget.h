@@ -20,6 +20,11 @@ public:
 	class UButton* BackButton = nullptr;
 	UPROPERTY()
 	class UMainMenuWidget* ParentMenu;
+
+	void BlendToCreditsCamera();
+	void BlendToMainMenuCamera();
+	AActor* FindActorByTag(FName TargetTag);
+
 protected:
 	UFUNCTION()
 	void BackButtonClicked();

@@ -73,8 +73,17 @@ public:
 	UFUNCTION()
 	void PassiveResourceRegen();
 	void OnStartingLevelUp();
+	void HandleRarityUpgrade(class UItemObject* Item);
+	FString GetStartingWeaponName();
 	virtual void OnLevelUp();
 	void AddExperience(int Amount);
+	UPROPERTY(BlueprintReadOnly, Category = "Leveling")
+	float RarityPityCounter = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Leveling")
+	TArray<FString> RarityOrder = {
+		"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic"
+	};
 
 	UFUNCTION(Client, Reliable)
 	void PlayHealPotionSound();
@@ -182,7 +191,7 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingLuck;
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
-	int PlayerStartingResourceRegen;
+	float PlayerStartingResourceRegen;
 	UPROPERTY(ReplicatedUsing = OnRep_StatsChanged)
 	int PlayerStartingPotionEfficiency;
 
@@ -226,6 +235,12 @@ public:
 	UFUNCTION()
 	void OnRep_DeathState();
 
+	UPROPERTY(Replicated)
+	int MetaXPAtStart = 0;
+	UPROPERTY(Replicated)
+	int MetaLevelAtStart = 0;
+	UPROPERTY(Replicated)
+	bool bMetaStatsInitialized = false;
 	UPROPERTY(Replicated)
 	int MetaLevel;
 	UPROPERTY(Replicated)
@@ -273,7 +288,7 @@ public:
 	UFUNCTION()
 	int GetPlayerStartingLuck() const { return PlayerStartingLuck; }
 	UFUNCTION()
-	int GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
+	float GetPlayerStartingResourceRegen() const { return PlayerStartingResourceRegen; }
 	UFUNCTION()
 	int GetPlayerStartingPotionEfficiency() const { return PlayerStartingPotionEfficiency; }
 

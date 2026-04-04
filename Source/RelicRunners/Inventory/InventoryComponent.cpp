@@ -353,6 +353,8 @@ void UInventoryComponent::Server_AutoEquip_Implementation()
     OnEquipmentChanged.Broadcast();
     OnInventoryChanged.Broadcast();
 
+    Char->SyncEquippedVisuals(EquippedItems);
+
     if (RPC) RPC->UpdatePreviewWithEquippedItems();
 }
 

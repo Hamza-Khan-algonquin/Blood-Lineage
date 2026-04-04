@@ -4,7 +4,9 @@
 #include "PauseMenuWidget.h"
 #include "PauseMenu.h"
 #include "SettingsWidget.h"
+#include "Keybinds.h"
 #include "Components/WidgetSwitcher.h"
+#include <RelicRunners/Game/RelicRunnersGameInstance.h>
 
 void UPauseMenuWidget::NativeConstruct()
 {

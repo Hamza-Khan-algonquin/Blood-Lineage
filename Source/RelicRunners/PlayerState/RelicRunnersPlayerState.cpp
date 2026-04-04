@@ -149,6 +149,11 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerDeaths = this->PlayerDeaths;
 		PS->EnemiesKilled = this->EnemiesKilled;
 		PS->MetaXPGainInRun = this->MetaXPGainInRun;
+		PS->MetaXPToNextLevel = this->MetaXPToNextLevel;
+		PS->MetaLevel = this->MetaLevel;
+		PS->bMetaStatsInitialized = this->bMetaStatsInitialized;
+		PS->MetaLevelAtStart = this->MetaLevelAtStart;
+		PS->MetaXPAtStart = this->MetaXPAtStart;
 
 		PS->InventoryComponent->InventoryItems = this->InventoryComponent->InventoryItems;
 		for (UItemObject* Item : PS->InventoryComponent->InventoryItems)
@@ -267,7 +272,7 @@ void ARelicRunnersPlayerState::InitializeMetaStats(FSaveData MetaData)
 	PlayerStartingDexterity = MetaData.MetaAgility * 5;
 	PlayerStartingIntelligence = MetaData.MetaIntelligence * 5;
 	PlayerStartingPotionEfficiency = 30 + MetaData.MetaPotionEfficiency * 5;
-	PlayerStartingResourceRegen = 5 + MetaData.MetaResourceRegen;
+	PlayerStartingResourceRegen = 5 + (MetaData.MetaResourceRegen / 2.0);
 	PlayerStartingLevel = 1 + MetaData.MetaStartingLevel;
 }
 
@@ -480,80 +485,55 @@ void ARelicRunnersPlayerState::OnStartingLevelUp()
 {
 	PlayerLevel++;
 	PlayerXPToLevel = PlayerLevel * 100;
-
-	//Ability points
 	PlayerAbilityPoints++;
 
-	//Weapon Upgrade
-	int HealthIncrease = 0;
-	int ArmorIncrease = 0;
-	int DexterityIncrease = 0;
-	int StrengthIncrease = 0;
-	int IntelligenceIncrease = 0;
-	FString StartingWeapon = "";
-	if (SelectedClass == "Ares")
+	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(GetStartingWeaponName());
+	if (!Item) return;
+
+	Item->ItemData.Level++;
+
+	//Handle Rarity Upgrade
+	HandleRarityUpgrade(Item);
+
+	//Scale Stats based on Rarity
+	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;
+	float Multiplier = 1.0f + (RarityIndex * 0.3f); //Each rarity tier adds 30% more potential
+
+	Item->ItemData.Health += FMath::RandRange(2, FMath::RoundToInt(10 * Multiplier));
+	Item->ItemData.Armor += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Dexterity += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Strength += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Intelligence += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+}
+
+void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
+{
+	int CurrentIndex = RarityOrder.Find(Item->ItemData.Rarity);
+
+	//Don't upgrade if already at max rarity
+	if (CurrentIndex == INDEX_NONE || CurrentIndex >= RarityOrder.Num() - 1) return;
+
+	float SuccessChance = 10.0f + RarityPityCounter;
+	float Roll = FMath::FRandRange(0.0f, 100.0f);
+
+	if (Roll <= SuccessChance)
 	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
-	}
-	else if (SelectedClass == "Artemis")
-	{
-		StartingWeapon = "Bow";
-		DexterityIncrease = 3;
-	}
-	else if (SelectedClass == "Aphrodite")
-	{
-		StartingWeapon = "Staff";
-		IntelligenceIncrease = 3;
-	}
-	else if (SelectedClass == "Nemesis")
-	{
-		StartingWeapon = "Sword";
-		DexterityIncrease = 3;
+		//Upgrade!
+		Item->ItemData.Rarity = RarityOrder[CurrentIndex + 1];
+		RarityPityCounter = 0.0f; //Reset pity
 	}
 	else
 	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
+		RarityPityCounter += 3.0f; //Increase odds for next level
 	}
+}
 
-	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(StartingWeapon);
-	if (!Item) return;
-	Item->ItemData.Level++;
-
-	if (Item->ItemData.Level >= 3 && Item->ItemData.Rarity == "Common")
-	{
-		Item->ItemData.Rarity = "Uncommon";
-	}
-	else if (Item->ItemData.Level >= 6 && Item->ItemData.Rarity == "Uncommon")
-	{
-		Item->ItemData.Rarity = "Rare";
-	}
-	else if (Item->ItemData.Level >= 9 && Item->ItemData.Rarity == "Rare")
-	{
-		Item->ItemData.Rarity = "Epic";
-	}
-	else if (Item->ItemData.Level >= 12 && Item->ItemData.Rarity == "Epic")
-	{
-		Item->ItemData.Rarity = "Legendary";
-	}
-	else if (Item->ItemData.Level >= 15 && Item->ItemData.Rarity == "Legendary")
-	{
-		Item->ItemData.Rarity = "Mythic";
-	}
-	else if (Item->ItemData.Level >= 18 && Item->ItemData.Rarity == "Mythic")
-	{
-		Item->ItemData.Rarity = "Relic";
-	}
-	Item->ItemData.Health += FMath::RandRange(2, 5 + HealthIncrease);
-	Item->ItemData.Armor += FMath::RandRange(0, 1 + ArmorIncrease);
-	Item->ItemData.Dexterity += FMath::RandRange(0, 1 + DexterityIncrease);
-	Item->ItemData.Strength += FMath::RandRange(0, 1 + StrengthIncrease);
-	Item->ItemData.Intelligence += FMath::RandRange(0, 1 + IntelligenceIncrease);
+FString ARelicRunnersPlayerState::GetStartingWeaponName()
+{
+	if (SelectedClass == "Artemis")   return "Bow";
+	if (SelectedClass == "Aphrodite") return "Staff";
+	if (SelectedClass == "Nemesis")   return "Sword";
+	return "Greatsword"; //Default for Ares
 }
 
 int CalculateXPForNextLevel(int CurrentLevel) {
@@ -577,78 +557,23 @@ void ARelicRunnersPlayerState::OnLevelUp()
 	//Ability points
 	PlayerAbilityPoints++;
 
-	//Weapon Upgrade
-	int HealthIncrease = 0;
-	int ArmorIncrease = 0;
-	int DexterityIncrease = 0;
-	int StrengthIncrease = 0;
-	int IntelligenceIncrease = 0;
-	FString StartingWeapon = "";
-	if (SelectedClass == "Ares")
-	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
-	}
-	else if (SelectedClass == "Artemis")
-	{
-		StartingWeapon = "Bow";
-		DexterityIncrease = 3;
-		StrengthIncrease = 2;
-	}
-	else if (SelectedClass == "Aphrodite")
-	{
-		StartingWeapon = "Staff";
-		IntelligenceIncrease = 3;
-		StrengthIncrease = 1;
-	}
-	else if (SelectedClass == "Nemesis")
-	{
-		StartingWeapon = "Sword";
-		DexterityIncrease = 3;
-		StrengthIncrease = 6;
-	}
-	else
-	{
-		StartingWeapon = "Greatsword";
-		HealthIncrease = 5;
-		ArmorIncrease = 2;
-		StrengthIncrease = 1;
-	}
+	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(GetStartingWeaponName());
+	if (!Item) return;
 
-	UItemObject*& Item = InventoryComponent->GetEquippedItemReference(StartingWeapon);
 	Item->ItemData.Level++;
 
-	if (Item->ItemData.Level >= 3 && Item->ItemData.Rarity == "Common")
-	{
-		Item->ItemData.Rarity = "Uncommon";
-	}
-	else if (Item->ItemData.Level >= 6 && Item->ItemData.Rarity == "Uncommon")
-	{
-		Item->ItemData.Rarity = "Rare";
-	}
-	else if (Item->ItemData.Level >= 9 && Item->ItemData.Rarity == "Rare")
-	{
-		Item->ItemData.Rarity = "Epic";
-	}
-	else if (Item->ItemData.Level >= 12 && Item->ItemData.Rarity == "Epic")
-	{
-		Item->ItemData.Rarity = "Legendary";
-	}
-	else if (Item->ItemData.Level >= 15 && Item->ItemData.Rarity == "Legendary")
-	{
-		Item->ItemData.Rarity = "Mythic";
-	}
-	else if (Item->ItemData.Level >= 18 && Item->ItemData.Rarity == "Mythic")
-	{
-		Item->ItemData.Rarity = "Relic";
-	}
-	Item->ItemData.Health += FMath::RandRange(2, 5 + HealthIncrease);
-	Item->ItemData.Armor += FMath::RandRange(0, 1 + ArmorIncrease);
-	Item->ItemData.Dexterity += FMath::RandRange(0, 1 + DexterityIncrease);
-	Item->ItemData.Strength += FMath::RandRange(0, 1 + StrengthIncrease);
-	Item->ItemData.Intelligence += FMath::RandRange(0, 1 + IntelligenceIncrease);
+	//Handle Rarity Upgrade
+	HandleRarityUpgrade(Item);
+
+	//Scale Stats based on Rarity
+	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;
+	float Multiplier = 1.0f + (RarityIndex * 0.3f); //Each rarity tier adds 20% more potential
+
+	Item->ItemData.Health += FMath::RandRange(2, FMath::RoundToInt(10 * Multiplier));
+	Item->ItemData.Armor += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Dexterity += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Strength += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
+	Item->ItemData.Intelligence += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
 
 	InventoryComponent->UpdateTotalEquippedStats(GetPawn());
 
@@ -692,12 +617,7 @@ void ARelicRunnersPlayerState::AddExperience(int Amount)
 		}
 	}
 
-	if (ARelicRunnersPlayerController* PC = Cast<ARelicRunnersPlayerController>(GetOwner()))
-	{
-		PC->Client_RegisterMetaXPGain(AddedMeta);
-	}
-
-	float Chance = 10.0f;
+	float Chance = 5.0f;
 	if (FMath::FRandRange(0.0f, 100.0f) < Chance)
 	{
 		AddGold(1);
@@ -843,7 +763,6 @@ void ARelicRunnersPlayerState::OnRep_DeathState()
 			RPC->CleanUI();
 			RPC->ChangeState(NAME_Spectating);
 			RPC->SpectatingUI();
-			RPC->Client_RequestSaveStats();
 		}
 	}
 }
@@ -902,6 +821,13 @@ void ARelicRunnersPlayerState::Server_UnequipItemByID_Implementation(FGuid ID)
 void ARelicRunnersPlayerState::OnRep_SelectedClass()
 {
     OnSelectedClassChanged.Broadcast(SelectedClass);
+	if (APlayerController* PC = GetPlayerController())
+	{
+		if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(PC))
+		{
+			if(RPC->PlayerHUD) RPC->PlayerHUD->InitializeHUDIcons();
+		}
+	}
 }
 
 void ARelicRunnersPlayerState::OnRep_PlayerGold()
@@ -1088,6 +1014,8 @@ void ARelicRunnersPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaXPGainInRun);
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaLevel);
 	DOREPLIFETIME(ARelicRunnersPlayerState, MetaXPToNextLevel);
+	DOREPLIFETIME(ARelicRunnersPlayerState, MetaLevelAtStart);
+	DOREPLIFETIME(ARelicRunnersPlayerState, bMetaStatsInitialized);
 	DOREPLIFETIME(ARelicRunnersPlayerState, IncreasedMovementSpeedFromAbility);
 }
 

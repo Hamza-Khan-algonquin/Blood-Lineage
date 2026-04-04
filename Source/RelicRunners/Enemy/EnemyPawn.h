@@ -71,8 +71,19 @@ public:
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
+
 	
 	UPROPERTY()
+	FTimeline HitFlashTimeline;
+	UPROPERTY()
+	FTimerHandle ActiveChangeTimerHandle;
+	UPROPERTY()
+	FTimerHandle AttackHandle;
+	UPROPERTY()
+	FTimerHandle KnockBackFallBackHandle;
+	UPROPERTY()
+	FTimerHandle HitStunTimer;
+
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
 	
 
@@ -96,8 +107,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
 	USoundBase* AttackHitPlayerSound = nullptr;
 
-	UPROPERTY()
-	FTimerHandle AttackHandle;
+	
 
 
 protected:
@@ -115,10 +125,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
 	
-	UPROPERTY()
-	FTimerHandle KnockBackFallBackHandle;
-	UPROPERTY()
-	FTimerHandle HitStunTimer;
+	
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();

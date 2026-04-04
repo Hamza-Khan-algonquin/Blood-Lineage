@@ -130,18 +130,20 @@ void ARelicRunnersGameMode::TriggerPostGameForAll()
             {
                 FPlayerPostGameData Stats;
                 Stats.Username = PS->GetPlayerName();
+
+                Stats.MetaLevel = PS->MetaLevelAtStart;
+                Stats.MetaXP = PS->MetaXPAtStart;
+                Stats.MetaXPGainInRun = PS->MetaXPGainInRun;
                 Stats.LevelsEarned = PS->GetLevelsEarned();
                 Stats.EnemiesKilled = PS->GetEnemiesKilled();
                 Stats.Deaths = PS->GetDeaths();
-                Stats.MetaLevel = PS->MetaLevel;
-                Stats.MetaXP = PS->MetaXP;
-                Stats.MetaXPToNextLevel = PS->MetaXPToNextLevel;
-                Stats.MetaXPGainInRun = PS->MetaXPGainInRun;
+
                 AllPlayersStats.Add(Stats);
             }
         }
     }
 
+    // RPC to show the UI
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
         if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(It->Get()))
