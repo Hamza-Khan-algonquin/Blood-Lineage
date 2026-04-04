@@ -21,6 +21,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "RelicRunners/Enemy/HitFlashComponent.h"
 #include "RelicRunners/Enemy/HitStunComponent.h"
+#include "RelicRunners/Inventory/InventoryComponent.h"
+#include <RelicRunners/RelicRunnersGameState.h>
 
 void AEnemyCharacter::Destroy()
 {
@@ -154,15 +156,16 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 {
 	if (HasAuthority() && IsActive && !IsHidden())
 	{
-		SpawnItem();
-
 		if (EventInstigator)
 		{
 			ARelicRunnersPlayerState* PS = EventInstigator->GetPlayerState<ARelicRunnersPlayerState>();
 
 			if (PS)
 			{
-				PS->AddExperience(CalculateXP());
+				PS->AddExperience(CalculateXP() * (EnemyStatsComponent->GetLevel()));
+				PS->EnemiesKilled++;
+				float PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
+				SpawnItem(PlayerLuck);
 			}
 		}
 
@@ -193,6 +196,127 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 			SetLifeSpan(DeathDelay);
 		}
 	}
+}
+
+void AEnemyCharacter::SpawnItem(float Luck)
+{
+	if (!IsValid(EnemyStatsComponent)) return;
+	if (!canDropItems) return;
+
+	//Difficulty
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	FDifficultyInfo diffInfo = FDifficultyInfo();
+	if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+	{
+		diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+	}
+
+	float chance = FMath::FRandRange(0.f, 100.f);
+	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
+	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
+	if (EnemyStatsComponent->IsGold) chance = 0;
+
+	if (chance <= chanceToDropOverall)
+	{
+		if (ItemMeshDataClass)
+		{
+			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
+		}
+
+		UIconLibrary* Lib = GI->GlobalIconLibrary;
+
+		float GoldLuck = 0;
+		float UsedLuck = Luck;
+		if (EnemyStatsComponent->IsGold) GoldLuck = 95; UsedLuck = GoldLuck;
+
+		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(UsedLuck), ItemMeshData, Lib),
+			this
+		);
+
+		if (!DroppedItem) return;
+
+		FVector InitialSpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FVector FinalLoc = CalculateValidDropLocation(InitialSpawnLoc);
+
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Instigator = this;
+
+		//Use Deferred Spawning
+		AItemActor* Dropped = GetWorld()->SpawnActorDeferred<AItemActor>(
+			ItemActorClass,
+			FTransform(FRotator::ZeroRotator, FinalLoc),
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+		);
+
+		if (Dropped)
+		{
+			//This ensures Auto-Loot can't trigger until the data is valid!
+			Dropped->ItemData = DroppedItem->ItemData;
+			Dropped->Initialize(DroppedItem->ItemData);
+			Dropped->FinishSpawning(FTransform(FRotator::ZeroRotator, FinalLoc));
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}
+	}
+}
+
+FVector AEnemyCharacter::CalculateValidDropLocation(FVector DesiredLoc) const
+{
+	const float MinDistance = 50.f;
+	TArray<AActor*> FoundItems;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundItems);
+
+	//If no items exist, the desired location is perfectly fine
+	if (FoundItems.Num() == 0) return DesiredLoc;
+
+	FVector CurrentBestLoc = DesiredLoc;
+	bool NeedsRepositioning = false;
+
+	//Check if our desired spot is blocked
+	for (AActor* Item : FoundItems)
+	{
+		if (IsValid(Item) && FVector::Dist(Item->GetActorLocation(), DesiredLoc) < MinDistance)
+		{
+			NeedsRepositioning = true;
+			break;
+		}
+	}
+
+	if (!NeedsRepositioning) return DesiredLoc;
+
+	//Spiral search
+	for (int Radius = 60; Radius <= 300; Radius += 60)
+	{
+		for (int Angle = 0; Angle < 360; Angle += 45)
+		{
+			const float Radians = FMath::DegreesToRadians(Angle);
+			FVector Offset(FMath::Cos(Radians) * Radius, FMath::Sin(Radians) * Radius, 0.f);
+			FVector CandidateLoc = DesiredLoc + Offset;
+
+			//Check candidate against all world items
+			bool CollisionFound = false;
+			for (AActor* Item : FoundItems)
+			{
+				if (FVector::Dist(CandidateLoc, Item->GetActorLocation()) < MinDistance)
+				{
+					CollisionFound = true;
+					break;
+				}
+			}
+
+			if (!CollisionFound)
+			{
+				return CandidateLoc;
+			}
+		}
+	}
+
+	return DesiredLoc;
 }
 
 inline bool AEnemyCharacter::IsDead()

@@ -127,7 +127,8 @@ protected:
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
 	virtual void SpawnItem();
-
+	void SpawnItem(float Luck);
+	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Calculates the amount of XP the enemy should give on death.", ShortToolTip = "Calculates the amount of XP the enemy should giveS."))
 	//Calculates the amount of XP the enemy should give on death.
 	virtual float CalculateXP() const;
@@ -142,7 +143,8 @@ protected:
 	void NetMultSetIsActive(bool newIsActive);
 
 	void Destroy();
-
+	UPROPERTY(Category = "Drop items", EditAnywhere, BlueprintReadWrite)
+	bool canDropItems = true;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

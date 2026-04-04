@@ -268,8 +268,6 @@ void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirectio
 	{
 		BoidComp->Deactivate();
 	}
-	
-
 
 	if (IsValid(DeathEffect))
 	{
@@ -430,7 +428,7 @@ float AEnemyPawn::CalculateXP() const
 	return FMath::RandRange(5, 20);
 }
 
-void AEnemyPawn::SpawnItem(int Luck)
+void AEnemyPawn::SpawnItem(float Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
