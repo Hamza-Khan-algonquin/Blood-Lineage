@@ -721,7 +721,7 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     if (InventoryComponent) Stats = InventoryComponent->GetCachedEquippedStats();
 
     FString StatKey = "";
-    int RawValue = 0;
+    float RawValue = 0;
     FString AbilityName;
     FString AbilityDesc;
 

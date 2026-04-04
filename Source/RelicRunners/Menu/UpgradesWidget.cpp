@@ -75,7 +75,7 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 	}
 
 	FString StatKey = "";
-	int RawValue = 0;
+	float RawValue = 0;
 	FString AbilityName = "";
 	FString AbilityDesc = "";
 
@@ -86,7 +86,7 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 	else if (HoveredButton == B_INT) { StatKey = "MetaIntelligence";			RawValue = SD.MetaIntelligence * 5; }
 	else if (HoveredButton == B_Efficiency) { StatKey = "MetaPurity";			RawValue = SD.MetaPotionEfficiency * 5; }
 	else if (HoveredButton == B_LUCK) { StatKey = "MetaLuck";					RawValue = SD.MetaLuck * 1; }
-	else if (HoveredButton == B_Regen) { StatKey = "MetaMana";					RawValue = SD.MetaResourceRegen * 1; }
+	else if (HoveredButton == B_Regen) { StatKey = "MetaMana";					RawValue = SD.MetaResourceRegen * 0.5; }
 	else if (HoveredButton == B_Level) { StatKey = "MetaStartingLevel";			RawValue = SD.MetaStartingLevel + 1; }
 
 	FTooltipData TD;
@@ -94,7 +94,7 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 	{
 		if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
 		{
-			TD = ItemStats::GetStatTooltipData(StatKey, RawValue, SD.MetaResourceRegen * 1, PS->PassiveResourceTime, "", "");
+			TD = ItemStats::GetStatTooltipData(StatKey, RawValue, RawValue, PS->PassiveResourceTime, "", "");
 		}
 	}
 	else

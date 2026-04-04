@@ -20,6 +20,7 @@
 #include "ItemData.h"
 #include "ItemMeshData.h"
 #include "IconLibrary.h"
+#include "Internationalization/Text.h"
 
 struct FTooltipData
 {
@@ -85,13 +86,18 @@ class RELICRUNNERS_API ItemStats
 {
 public:
 
-    static FTooltipData GetStatTooltipData(FString BorderType, int StatValue, int StatValue2, int StatValue3, const FString& AbilityName, const FString& AbilityDesc)
+    static FTooltipData GetStatTooltipData(FString BorderType, float StatValue, float StatValue2, float StatValue3, const FString& AbilityName, const FString& AbilityDesc)
     {
         FTooltipData Data;
 
         if (!BorderType.Contains("Ability") && !BorderType.Contains("Difficulty") && !BorderType.Contains("HealthPotion"))
         {
-            Data.Value = FText::AsNumber(StatValue);
+            FNumberFormattingOptions Options;
+            Options.MinimumFractionalDigits = 0; 
+            Options.MaximumFractionalDigits = 1; 
+            Options.RoundingMode = ERoundingMode::HalfToEven;
+
+            Data.Value = FText::AsNumber(StatValue, &Options);
         }
 
         if (BorderType == "Health")
@@ -254,7 +260,7 @@ public:
             Data.Icon = LoadIcon("ResourceIcon");
             Data.IconColor = GetIconColor("Mana");
             Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
-            Data.Descriptions.Add(FText::FromString("<Green>+1%</> <Default>Mana regen per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+0.5%</> <Default>Mana regen per meta point.</>"));
         }
         else if (BorderType == "BoarDifficulty")
         {
@@ -588,7 +594,7 @@ public:
     }
     static float GetLootChance(int Value)
     {
-        float Percent = Value * 1.45;
+        float Percent = Value * 1.45f;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -602,7 +608,7 @@ public:
 
     static float GetChanceToNotConsume(int Value)
     {
-        float Percent = Value / 2.9;
+        float Percent = Value / 3;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -611,8 +617,8 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 300.0f;
-        const float MaxPercent = 60.0f;
+        const float K = 500.0f;
+        const float MaxPercent = 50.0f;
 
         if (Value <= 0) return 0.0f;
 
@@ -636,7 +642,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 300.0f;
+        const float K = 400.0f;
         const float MaxPercent = 75.0f;
         
         if (Value <= 0) return 0.0f;
@@ -650,7 +656,7 @@ public:
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
-        const float K = 200.0f;
+        const float K = 300.0f;
         const float MaxPercent = 80.0f;
         
         if (Value <= 0) return 0.0f;
@@ -662,14 +668,14 @@ public:
 
     static float GetCritDmgPerc(int Value)
     {
-        float Percent = 1.5 + (Value / 100.0f);
+        float Percent = 1.5 + (Value / 150.0f);
 
         return RoundToDecimal(Percent, 1);
     }
 
     static int GetManaPoolIncrease(int Value)
     {
-        int Integer = Value / 2.1;
+        int Integer = Value / 2.7;
 
         return Integer;
     }
@@ -679,7 +685,7 @@ public:
         //The constant K determines how fast the curve climbs.
         //At Value = 100, the result will be half of max.
         const float K = 250.0f;
-        const float MaxPercent = 70.0f;
+        const float MaxPercent = 40.0f;
 
         if (Value <= 0) return 0.0f;
 
@@ -691,7 +697,7 @@ public:
     static FForgeResultOdds CalculateForgeOdds(const FString& LeftRarity, const FString& RightRarity)
     {
         static const TArray<FString> RarityOrder = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic" };
-        static const float UpgradeSameTier[7] = { 90.f, 80.f, 70.f, 60.f, 50.f, 40.f, 0.f };
+        static const float UpgradeSameTier[7] = { 95.f, 85.f, 75.f, 65.f, 55.f, 45.f, 0.f };
 
         auto GetIndex = [&](const FString& R) {
             int FoundIndex = RarityOrder.IndexOfByKey(R);
