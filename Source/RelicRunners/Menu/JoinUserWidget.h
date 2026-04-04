@@ -477,32 +477,4 @@ public:
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 
 	void RefreshMenu();
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DamageIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DefenceIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* UtilityIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* UltimateIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* HealthIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* StrengthIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* AgilityIcon;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* IntelligenceIcon;
-
 };
