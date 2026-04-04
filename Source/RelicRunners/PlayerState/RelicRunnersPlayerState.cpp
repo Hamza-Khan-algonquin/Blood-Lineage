@@ -123,6 +123,7 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 	{
 		PS->PlayerGold = this->PlayerGold;
 		PS->PlayerLevel = this->PlayerLevel;
+		PS->PlayerXPToLevel = this->PlayerXPToLevel;
 		PS->PlayerXP = this->PlayerXP;
 		PS->PlayerAbilityPoints = this->PlayerAbilityPoints;
 		PS->HasReceivedStarterItems = this->HasReceivedStarterItems;
@@ -145,6 +146,7 @@ void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->PlayerStartingIntelligence = this->PlayerStartingIntelligence;
 		PS->PlayerStartingPotionEfficiency = this->PlayerStartingPotionEfficiency;
 		PS->PlayerStartingResourceRegen = this->PlayerStartingResourceRegen;
+		PS->PlayerStartingLuck = this->PlayerStartingLuck;
 		PS->LevelsEarned = this->LevelsEarned;
 		PS->PlayerDeaths = this->PlayerDeaths;
 		PS->EnemiesKilled = this->EnemiesKilled;
