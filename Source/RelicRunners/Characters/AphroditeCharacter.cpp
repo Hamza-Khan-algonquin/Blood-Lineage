@@ -27,6 +27,7 @@ AAphroditeCharacter::AAphroditeCharacter()
     ProjectileSpeed = 1200.f;
     ProjectileLifetime = 2.f;
     ProjectileDamage = 50.0f;
+    Tags.Add("Ranage");
 }
 
 void AAphroditeCharacter::BeginPlay()

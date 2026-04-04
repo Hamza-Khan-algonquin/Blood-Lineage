@@ -26,6 +26,7 @@ AArtemisCharacter::AArtemisCharacter()
 	ProjectileSpeed = 5000.f;
 	ProjectileLifetime = 2.f;
 	ProjectileDamage = 120.0f;
+	Tags.Add("Ranage");
 }
 
 void AArtemisCharacter::BeginPlay()

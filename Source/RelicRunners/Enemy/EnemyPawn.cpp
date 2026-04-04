@@ -17,13 +17,15 @@
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/Item/ItemMeshData.h"
-
+#include "NavigationSystem.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
 #include "Components/SphereComponent.h"
 #include "NiagaraComponent.h"
+#include "RelicRunners/Enemy/HitFlashComponent.h"
+#include "RelicRunners/Enemy/HitStunComponent.h"
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -63,7 +65,9 @@ AEnemyPawn::AEnemyPawn()
 	EnemyStatsComponent->SetMaxHealth(100.f);
 	EnemyStatsComponent->SetCurrentHealth(100.f);
 
-	HitFlashTimeline.SetLooping(false);
+	HitFlashComponent = CreateDefaultSubobject<UHitFlashComponent>(TEXT("Hit Flash Component"));
+	
+	HitStunComponent = CreateDefaultSubobject<UHitStunComponent>(TEXT("Hit Stun Component"));
 
 	bReplicates = true;
 	SetReplicateMovement(false);
@@ -78,6 +82,7 @@ AEnemyPawn::AEnemyPawn()
 
 	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
+	HitStunTime = 0.3f;
 	Tags.Add("Enemy");
 }
 
@@ -98,13 +103,15 @@ void AEnemyPawn::UpdateEmissiveHealth()
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
-	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	//GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	GetWorld()->GetTimerManager().ClearTimer(KnockBackFallBackHandle);
+	GetWorld()->GetTimerManager().ClearTimer(HitStunTimer);
 	Super::EndPlay(EndPlayReason);
 }
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() || DamageAmount <= 0 || !IsActive || !MovementComponent || !MovementComponent->Commander)
+	if (!HasAuthority() || DamageAmount <= 0 || !IsActive || !MovementComponent || !MovementComponent->Commander || !GetWorld())
 	{
 		return 0;
 	}
@@ -131,16 +138,42 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//if we are not dead check the damage events for stun
 	else
 	{
-		HitFlash();
+		bool shouldKnockBack = false;
+		const FAttackDamageEvent* AttackDamageEvent = nullptr;
 
 		if (DamageEvent.IsOfType(FAttackDamageEvent::ClassID))
 		{
-			const FAttackDamageEvent* AttackDamageEvent = static_cast<const FAttackDamageEvent*>(&DamageEvent);
-			if (AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT))
+			AttackDamageEvent = static_cast<const FAttackDamageEvent*>(&DamageEvent);
+			shouldKnockBack = AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT);
+		}
+
+		if (HitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+		}
+
+		if(HitFlashComponent)
+		{
+			HitFlashComponent->Multicast_StartHitFlash();
+		}
+
+		if (HitStunComponent)
+		{
+			HitStunComponent->Multicast_StartHitStun(HitStunTime);
+
+			if (AttackDamageEvent && shouldKnockBack)
 			{
 				FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-				KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
+				FTimerDelegate HitSunDel;
+
+				HitSunDel.BindUObject(this, &AEnemyPawn::KnockBack, Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
+				GetWorld()->GetTimerManager().SetTimer(HitStunTimer, HitSunDel, HitStunTime, false);
 			}
+		}
+		else if (AttackDamageEvent && shouldKnockBack)
+		{
+			FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+			KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
 		}
 
 		UpdateEmissiveHealth();
@@ -153,38 +186,6 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	}
 
 	return DamageAmount;
-}
-
-void AEnemyPawn::HitFlash_Implementation()
-{
-	if (HitSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
-	}
-
-	HitFlashTimeline.PlayFromStart();
-	SetActorTickEnabled(true);
-}
-
-void AEnemyPawn::UpdateHitFlash(float strength)
-{
-	for (UMaterialInstanceDynamic* element : DynamicMaterials)
-	{
-		if (element)
-		{
-			element->SetScalarParameterValue("HitFlashValue", strength);
-		}
-	}
-}
-
-void AEnemyPawn::EndHitFlash()
-{
-	HitFlashTimeline.Stop();
-	UpdateHitFlash(0);
-	if (!IsAttacking)
-	{
-		SetActorTickEnabled(false);
-	}
 }
 
 void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
@@ -239,14 +240,12 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirection)
 {
-	
-
 	if (UEnemyBoidMovementComponent* BoidComp = FindComponentByClass<UEnemyBoidMovementComponent>())
 	{
 		BoidComp->Deactivate();
 	}
 	
-	EndHitFlash();
+
 
 	if (IsValid(DeathEffect))
 	{
@@ -265,25 +264,11 @@ void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirectio
 			GetActorRotation(),
 			GetActorScale()
 		);
-
-		//if (deathEffect)
-		//{
-		//	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
-		//}
 	}
 }
 
 void AEnemyPawn::Multicast_GoldStuff_Implementation()
 {
-	/*if (EnemyStatsComponent->IsGold)
-	{
-		SetActorScale3D(GetActorScale3D() * 1.25);
-	}
-	else
-	{
-		SetActorScale3D(GetActorScale3D());
-	}*/
-
 	for (UMaterialInstanceDynamic* element : DynamicMaterials)
 	{
 		if (element)
@@ -342,6 +327,11 @@ void AEnemyPawn::StartAttack()
 
 void AEnemyPawn::AttackTick()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	if (MovementComponent->IsAtTarget())
 	{
 		if (!AttackMontage.IsNull())
@@ -355,30 +345,29 @@ void AEnemyPawn::AttackTick()
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
 
-			FTimerDelegate attackCallBack;
-			attackCallBack.BindLambda([this]()
-				{
-					if (this)
-					{
-						this->IsAttacking = false;
-						if(this->MovementComponent)
-							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
-					}
-				});
-			GetWorldTimerManager().SetTimer(AttackHandle, attackCallBack, montage->GetPlayLength(), false);
+			float time = montage->GetPlayLength();
+			if (!GetWorldTimerManager().IsTimerActive(AttackHandle))
+			{
+				GetWorldTimerManager().SetTimer(AttackHandle, this, &AEnemyPawn::EndAttackTick, time, false);
+			}
+			SetActorTickEnabled(false);
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Attack Animation Missing"));
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 		}
-
-		
-		if (!HitFlashTimeline.IsPlaying())
-		{
-			SetActorTickEnabled(false);
-		}
 	}
+}
+
+void AEnemyPawn::EndAttackTick()
+{
+	IsAttacking = false;
+	if (MovementComponent)
+	{
+		MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+	}
+	
 }
 
 void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -485,6 +474,11 @@ void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 		CapsuleComponent->SetNotifyRigidBodyCollision(true);
 
 		MovementComponent->IsKnockedBack = true;
+
+		if (GetWorld())
+		{
+			GetWorld()->GetTimerManager().SetTimer(KnockBackFallBackHandle, this, &AEnemyPawn::KnockBackFallBack, 20.f, false);
+		}
 	}
 }
 
@@ -509,11 +503,16 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
-		ResetKnockBackStuff();
+		ResetKnock();
+
+		if (GetWorld() && GetWorld()->GetTimerManager().IsTimerActive(KnockBackFallBackHandle))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(KnockBackFallBackHandle);
+		}
 	}
 }
 
-void AEnemyPawn::ResetKnockBackStuff_Implementation()
+void AEnemyPawn::ResetKnock_Implementation()
 {
 	if (!MovementComponent || !CapsuleComponent)
 	{
@@ -525,6 +524,21 @@ void AEnemyPawn::ResetKnockBackStuff_Implementation()
 	CapsuleComponent->SetSimulatePhysics(false);
 	CapsuleComponent->SetNotifyRigidBodyCollision(false);
 }
+
+void AEnemyPawn::KnockBackFallBack()
+{
+	FNavLocation navLocation;
+
+	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+
+	if (navSys->ProjectPointToNavigation(GetActorLocation(), navLocation, {5000,5000,5000}))
+	{
+		SetActorLocation(navLocation.Location);
+	}
+
+	ResetKnock();
+}
+
 
 
 FVector AEnemyPawn::CalculateValidDropLocation(FVector DesiredLoc) const
@@ -592,7 +606,7 @@ void AEnemyPawn::BeginPlay()
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
 
-	
+
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();
@@ -604,23 +618,14 @@ void AEnemyPawn::BeginPlay()
 	IsAttacking = false;
 	SetActorTickEnabled(false);
 
-	if (HitFlashCurve)
-	{
-		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-		FOnTimelineFloat inProgressFunc;
-		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
-		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
-
-		//FOnTimelineEvent endFunc;
-		//endFunc.BindUFunction(this, FName("EndHitFlash"));
-		//HitFlashTimeline.SetTimelineFinishedFunc(endFunc);
-	}
+	
 
 	
 
 	if (HasAuthority())
 	{
+		HitFlashComponent->InitializeNewDynamicMaterials(SkeletalMesh);
+		HitFlashComponent->InitializeNewDynamicMaterials(StaticMesh);
 		ResetEnemy();
 		MovementComponent->InitializeNavMeshPointer();
 	}
@@ -651,9 +656,8 @@ void AEnemyPawn::Tick(float DeltaTime)
 	{
 		AttackTick();
 	}
-
-	HitFlashTimeline.TickTimeline(DeltaTime);
 }
+
 
 void AEnemyPawn::OnRep_IsActive()
 {
