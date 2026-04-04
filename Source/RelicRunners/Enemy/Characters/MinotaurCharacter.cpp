@@ -19,6 +19,13 @@ AMinotaurCharacter::AMinotaurCharacter()
 	OverrideCollisionType = true;
 }
 
+void AMinotaurCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(SpikeTimer);
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void AMinotaurCharacter::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor->Tags.Contains("Player"))
@@ -34,11 +41,15 @@ void AMinotaurCharacter::DelaySpikeCheck(float delay, float raduis, float damage
 		return;
 	}
 
-	FTimerHandle temp;
+	
 	TArray<FVector> newLocations = locations;
 
-	GetWorld()->GetTimerManager().SetTimer(temp, [&, newLocations, delay, raduis, damageMult]() {
-			if (!GetWorld() && !this && !EnemyStatsComponent)
+	TWeakObjectPtr<AMinotaurCharacter> weakThis = this;
+	TWeakObjectPtr<UWorld> weakWorld = GetWorld();
+
+	GetWorld()->GetTimerManager().SetTimer(SpikeTimer, [weakThis, weakWorld, newLocations, delay, raduis, damageMult]()
+		{
+			if (!weakWorld.IsValid() && !weakThis.IsValid())
 			{
 				return;
 			}
@@ -46,19 +57,19 @@ void AMinotaurCharacter::DelaySpikeCheck(float delay, float raduis, float damage
 			for (int i = 0; i < newLocations.Num(); i++)
 			{
 #if WITH_EDITOR
-				DrawDebugSphere(GetWorld(), newLocations[i], raduis, 12, FColor::Red, false, 2, 1);
+				DrawDebugSphere(weakWorld.Get(), newLocations[i], raduis, 12, FColor::Red, false, 2, 1);
 #endif
 				TArray<AActor*> actorToIngore;
 				TArray<AActor*> hitActors;
 				TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 				ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-				UKismetSystemLibrary::SphereOverlapActors(GetWorld(), newLocations[i], raduis, ObjectTypes, nullptr, actorToIngore, hitActors);
+				UKismetSystemLibrary::SphereOverlapActors(weakWorld.Get(), newLocations[i], raduis, ObjectTypes, nullptr, actorToIngore, hitActors);
 
 				for (AActor* hit : hitActors)
 				{
 					if (hit->Tags.Contains("Player"))
 					{
-						UGameplayStatics::ApplyDamage(hit, damageMult * EnemyStatsComponent->GetAttackDamage(), GetController(), this, nullptr);
+						UGameplayStatics::ApplyDamage(hit, damageMult * weakThis->EnemyStatsComponent->GetAttackDamage(), weakThis->GetController(), weakThis.Get(), nullptr);
 					}
 				}
 			}
