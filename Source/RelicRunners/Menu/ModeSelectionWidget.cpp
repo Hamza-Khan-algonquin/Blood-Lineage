@@ -1,6 +1,7 @@
 #include "ModeSelectionWidget.h"
 #include "MainMenuWidget.h"
 #include "Components/Button.h"
+#include "Components/HorizontalBox.h"
 #include "Components/TileView.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
@@ -48,7 +49,27 @@ void UModeSelectionWidget::NativeConstruct()
 		}
 	}, 0.05f, false);
 
+	ShowUpgradesAvailable();
+}
 
+void UModeSelectionWidget::ShowUpgradesAvailable()
+{
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	if (GI->SelectedSaveSlot)
+	{
+		if (GI->SelectedSaveSlot->SaveData.MetaPoints > 0)
+		{
+			UpgradeAvailable1->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+			UpgradeAvailable2->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+		else
+		{
+			UpgradeAvailable1->SetVisibility(ESlateVisibility::Collapsed);
+			UpgradeAvailable2->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
 }
 
 void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelection)
@@ -65,6 +86,8 @@ void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelecti
 		GI->SelectedSaveSlot = CurrentSelectedSlot->SaveFileData;
 		GI->PlayerName = CurrentSelectedSlot->SaveFileData ? CurrentSelectedSlot->SaveFileData->GetName() : "";
 	}
+
+	ShowUpgradesAvailable();
 }
 
 void UModeSelectionWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
