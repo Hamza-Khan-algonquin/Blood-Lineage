@@ -27,6 +27,7 @@ UEnemyStats::UEnemyStats()
 	AttackDamage = 3;
 	BaseAttackDamage = 3;
 	AttackDamagePerLevel = 1;
+	PercentChanceToBeGold = 1;
 	IsGold = false;
 	CanBeGold = false;
 	SetIsReplicatedByDefault(true);
@@ -62,7 +63,7 @@ void UEnemyStats::ResetStats()
 		if (CanBeGold)
 		{
 			float goldChance = FMath::FRandRange(0.f, 100.0f);
-			IsGold = goldChance <= 1.f;
+			IsGold = goldChance <= PercentChanceToBeGold;
 		}
 
 		for (APawn* playerCharacter : director->GetPlayers())

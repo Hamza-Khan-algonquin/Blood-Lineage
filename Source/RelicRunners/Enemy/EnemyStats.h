@@ -42,6 +42,8 @@ protected:
 	float BaseAttackDamage;
 	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated)
 	float AttackDamagePerLevel;	
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite)
+	float PercentChanceToBeGold;
 
 	
 

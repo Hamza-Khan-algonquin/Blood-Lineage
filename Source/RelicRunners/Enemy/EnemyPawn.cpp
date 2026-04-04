@@ -291,13 +291,13 @@ void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirectio
 	}
 }
 
-void AEnemyPawn::Multicast_GoldStuff_Implementation()
+void AEnemyPawn::Multicast_GoldStuff_Implementation(bool IsGold)
 {
 	for (UMaterialInstanceDynamic* element : DynamicMaterials)
 	{
 		if (element)
 		{
-			element->SetScalarParameterValue("IsGold", EnemyStatsComponent->IsGold);
+			element->SetScalarParameterValue("IsGold", IsGold);
 		}
 	}
 }
@@ -309,9 +309,14 @@ inline bool AEnemyPawn::IsDead()
 
 void AEnemyPawn::ResetEnemy()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	EnemyStatsComponent->ResetStats();
 
-	Multicast_GoldStuff();
+	Multicast_GoldStuff(EnemyStatsComponent->IsGold);
 
 	if (IsValid(MovementComponent))
 	{

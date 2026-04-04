@@ -153,7 +153,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlayDeathEffect(FVector impactDirection);
 	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
-	void Multicast_GoldStuff();
+	void Multicast_GoldStuff(bool IsGold);
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Check if the enemy is dead.", ShortToolTip = "Check if the enemy is dead."))
 	//Check if the enemy is dead
