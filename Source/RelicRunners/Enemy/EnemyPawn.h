@@ -131,6 +131,8 @@ public:
 	AEnemyPawn();
 
 	void UpdateEmissiveHealth();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticast_UpdateEmissiveHealth();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
 
