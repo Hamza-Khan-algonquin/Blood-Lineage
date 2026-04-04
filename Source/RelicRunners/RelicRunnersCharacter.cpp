@@ -229,6 +229,7 @@ void ARelicRunnersCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ARelicRunnersCharacter, ReplicatedVisuals);	
+	DOREPLIFETIME(ARelicRunnersCharacter, AimDirection);	
 }
 
 void ARelicRunnersCharacter::PossessedBy(AController* NewController)

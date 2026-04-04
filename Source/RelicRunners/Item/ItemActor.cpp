@@ -171,6 +171,7 @@ void AItemActor::Initialize(const FItemData& InItemData)
 
 void AItemActor::OnRep_ItemData()
 {
+    Initialize(ItemData);
     SetupVisuals();
 }
 

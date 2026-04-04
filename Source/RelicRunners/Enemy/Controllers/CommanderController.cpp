@@ -324,7 +324,7 @@ void ACommanderController::SpawnPawnEnemy()
 	/*FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;*/
 
-	AEnemyPawn* newEnemy = Cast<AEnemyPawn>(pool->GetActor(PawnEnemyToSpawn));//Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
+	TWeakObjectPtr<AEnemyPawn> newEnemy = Cast<AEnemyPawn>(pool->GetActor(PawnEnemyToSpawn));//Cast<AEnemyPawn>(GetWorld()->SpawnActor<AEnemyPawn>(PawnEnemyToSpawn, spawnPosition, FRotator::ZeroRotator, SpawnParams));
 	FVector origin;
 	FVector bounds;
 
@@ -333,18 +333,22 @@ void ACommanderController::SpawnPawnEnemy()
 	finalPoint += FVector(0, 0, bounds.Z);
 
 	newEnemy->SetActorLocation(finalPoint);
-	
+
+
+	TWeakObjectPtr<ACommanderController> weakThis = this;
 
 	//giving time for the enemy to set
-	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy, finalPoint]()
+	GetWorldTimerManager().SetTimerForNextTick([weakThis, newEnemy, finalPoint]()
 		{
-			if (newEnemy && newEnemy->MovementComponent)
+			if (weakThis.IsValid() && newEnemy.IsValid() && newEnemy->MovementComponent)
 			{
-				AddPawnEnemy(newEnemy);
+				weakThis->AddPawnEnemy(newEnemy.Get());
 				newEnemy->MovementComponent->Multicast_SetLocation(finalPoint);
 			}
 			
 		});
+
+
 }
 
 void ACommanderController::SpawmLoop()

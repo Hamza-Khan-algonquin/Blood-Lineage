@@ -53,7 +53,6 @@ protected:
 	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
 	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
 
-    virtual void PlayRandomAttackAnimation() override;
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	void SpawnProjectile();
 	virtual void PerformSwingTrace() override;

@@ -141,6 +141,8 @@ AActor* AObjectPoolManager::CreateActor(TSubclassOf<AActor> actorType)
 		return nullptr;
 	}
 
+	//NetMultiCast_OnCreateActor(newActor);
+
 	AddActor(newActor, actorType);
 	return newActor;
 	
@@ -253,6 +255,16 @@ void AObjectPoolManager::CleanUpPools()
 bool AObjectPoolManager::IsActorClassPooled(TSubclassOf<AActor> actorType)
 {
 	return PooledObjects.Contains(actorType);
+}
+
+void AObjectPoolManager::NetMultiCast_OnCreateActor_Implementation(AActor* newActor)
+{
+	if (newActor && IsValid(newActor))
+	{
+		newActor->SetActorHiddenInGame(true);
+
+
+	}
 }
 
 // Called when the game starts or when spawned
