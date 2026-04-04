@@ -469,7 +469,7 @@ public:
 
         if (Rarity == "Relic")
         {
-            float RandomValue = FMath::FRandRange(0.1f, 1.0f);
+            float RandomValue = FMath::FRandRange(0.3f, 2.0f);
             RandomValue = FMath::RoundToFloat(RandomValue * 10.0f) / 10.0f;
 
             int StatIndex = FMath::RandRange(0, 2);
@@ -484,7 +484,7 @@ public:
             }
             else
             {
-                ItemData.Regen = RandomValue;
+                ItemData.Regen = RandomValue / 3.0f;
             }
         }
 
