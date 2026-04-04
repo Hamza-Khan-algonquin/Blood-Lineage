@@ -330,14 +330,20 @@ void ACommanderController::SpawnPawnEnemy()
 
 	newEnemy->GetActorBounds(true, origin, bounds);
 
-	newEnemy->SetActorLocation(finalPoint + FVector(0, 0, bounds.Z/2));
+	finalPoint += FVector(0, 0, bounds.Z);
+
+	newEnemy->SetActorLocation(finalPoint);
 	
 
 	//giving time for the enemy to set
-	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy]()
+	GetWorldTimerManager().SetTimerForNextTick([this, newEnemy, finalPoint]()
 		{
-			//newEnemy->SetActorLocation(spawnPosition);
-			AddPawnEnemy(newEnemy);
+			if (newEnemy && newEnemy->MovementComponent)
+			{
+				AddPawnEnemy(newEnemy);
+				newEnemy->MovementComponent->Multicast_SetLocation(finalPoint);
+			}
+			
 		});
 }
 

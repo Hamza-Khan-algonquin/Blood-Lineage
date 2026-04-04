@@ -24,6 +24,8 @@ class UWidgetComponent;
 class UAnimMontage;
 class UEnemyStats;
 class UNiagaraSystem;
+class UHitFlashComponent;
+class UHitStunComponent;
 
 UCLASS(Blueprintable, Abstract)
 class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
@@ -41,6 +43,11 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyStats> EnemyStatsComponent;
+	UPROPERTY(EditAnywhere)
+	bool ShouldTakeDamage;
+
+	UPROPERTY(EditAnywhere)
+	float HitStunTime;
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -61,6 +68,12 @@ protected:
 	UWidgetComponent* EnemyHUDWorld;
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitFlashComponent> HitFlashComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitStunComponent> HitStunComponent;
 
 	UPROPERTY(EditAnywhere)
 	bool OverrideCollisionType = false;
@@ -101,8 +114,6 @@ public:
 	void ResetEnemy();
 
 	void AddEnemyToDirector();
-
-	
 
 	//Need to be netmulticast to play on all clients as client does own the actor their for client rpc won't work
 	//Runs a montage client side

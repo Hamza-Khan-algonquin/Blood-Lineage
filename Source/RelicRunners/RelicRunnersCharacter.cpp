@@ -64,6 +64,7 @@
 #include "RelicRunners/RelicRunnersGameState.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "RelicRunners/Enemy/HitStunComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -172,6 +173,7 @@ ARelicRunnersCharacter::ARelicRunnersCharacter()
 	OffhandItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	OffhandItemMesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 
+	HitStunComponent = CreateDefaultSubobject<UHitStunComponent>(TEXT("Hit Stun Component"));
 	
 	//UI
 	PlayerHUDWorld = CreateDefaultSubobject<UWidgetComponent>(TEXT("TooltipWidgetComponent"));
@@ -573,6 +575,11 @@ void ARelicRunnersCharacter::Server_HitEnemy_Implementation(AActor* TargetActor,
 
 	TargetActor->TakeDamage(FinalDamage, DamageEvent, InstigatorController, this);
 	//UGameplayStatics::ApplyDamage(TargetActor, FinalDamage, InstigatorController, this);
+
+/*	if (!Tags.Contains("Ranage") && HitStunComponent)
+	{
+		HitStunComponent->Multicast_StartHitStun(0.0005f);
+	}*/
 }
 
 bool ARelicRunnersCharacter::HasValidWeaponEquipped(UInventoryComponent* InvComp) const

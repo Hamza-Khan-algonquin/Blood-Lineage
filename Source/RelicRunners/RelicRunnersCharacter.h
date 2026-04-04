@@ -47,6 +47,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class AAbilityBase;
+class UHitStunComponent;
 struct FInputActionValue;
 
 USTRUCT(BlueprintType)
@@ -261,6 +262,8 @@ protected:
 	UInputMappingContext* DefaultMappingContext;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector respawnPoint;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitStunComponent> HitStunComponent;
 
 	UPROPERTY()
 	AActor* CurrentFocusedActor = nullptr;

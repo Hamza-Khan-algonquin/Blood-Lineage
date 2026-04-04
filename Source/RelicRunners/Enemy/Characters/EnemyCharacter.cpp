@@ -19,6 +19,8 @@
 #include "RelicRunners/Enemy/Controllers/CommanderController.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "RelicRunners/Enemy/HitFlashComponent.h"
+#include "RelicRunners/Enemy/HitStunComponent.h"
 
 void AEnemyCharacter::Destroy()
 {
@@ -46,13 +48,20 @@ AEnemyCharacter::AEnemyCharacter() : ACharacter()
 	EnemyHUDWorld->SetVisibility(true);
 	EnemyHUDWorld->CastShadow = false;
 
-	ShouldDieIfCommanderIsDone = false;
+	HitFlashComponent = CreateDefaultSubobject<UHitFlashComponent>(TEXT("Hit Flash Component"));
 
+	HitStunComponent = CreateDefaultSubobject<UHitStunComponent>(TEXT("Hit Stun Component"));
+
+	ShouldDieIfCommanderIsDone = false;
+	ShouldTakeDamage = false;
 	//tick moment :O
 	PrimaryActorTick.bCanEverTick = false;
 	//Setting up networking for the actor
 	bReplicates = true;
 	SetReplicateMovement(true);
+
+	HitStunTime = 0.1f;
+
 	//add the holy tag
 	Tags.Add("Enemy");
 }
@@ -74,7 +83,7 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() && !IsActive && IsHidden())
+	if (!HasAuthority() && !IsActive && IsHidden() && !ShouldTakeDamage)
 	{
 		return 0;
 	}
@@ -109,6 +118,16 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 		TArray<FHitResult> HitResult;
 		FCollisionObjectQueryParams objCollParams;
 		objCollParams.AddObjectTypesToQuery(ECC_GameTraceChannel1);
+
+		if (HitFlashComponent)
+		{
+			HitFlashComponent->Multicast_StartHitFlash();
+		}
+
+		if (HitStunComponent)
+		{
+			HitStunComponent->Multicast_StartHitStun(HitStunTime);
+		}
 
 		
 		bool hit = GetWorld()->LineTraceMultiByObjectType(HitResult, DamageCauser->GetActorLocation(), GetActorLocation(), objCollParams);
@@ -221,6 +240,8 @@ void AEnemyCharacter::BeginPlay()
 
 	if (HasAuthority())
 	{
+		HitFlashComponent->InitializeNewDynamicMaterials(GetMesh());
+
 		//get refernce to objects that we need to get the director
 		UWorld* World = GetWorld();
 		APawn* enemy = static_cast<APawn*>(this);
