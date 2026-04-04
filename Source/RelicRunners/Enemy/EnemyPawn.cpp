@@ -546,8 +546,6 @@ void AEnemyPawn::KnockBackFallBack()
 	ResetKnock();
 }
 
-
-
 FVector AEnemyPawn::CalculateValidDropLocation(FVector DesiredLoc) const
 {
 	const float MinDistance = 50.f;
@@ -612,8 +610,6 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-
-
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();
@@ -625,14 +621,22 @@ void AEnemyPawn::BeginPlay()
 	IsAttacking = false;
 	SetActorTickEnabled(false);
 
-	
+	SetActorHiddenInGame(true);
 
-	
+	TWeakObjectPtr<AEnemyPawn> weakThis = this;
+	FTimerHandle temp;
+	GetWorld()->GetTimerManager().SetTimer(temp,[weakThis]()
+		{
+			if (weakThis.IsValid())
+			{
+				weakThis->SetActorHiddenInGame(false);
+			}
+		}, 2.f, false);
 
 	if (HasAuthority())
 	{
-		HitFlashComponent->InitializeNewDynamicMaterials(SkeletalMesh);
-		HitFlashComponent->InitializeNewDynamicMaterials(StaticMesh);
+		HitFlashComponent->Multicast_InitializeNewDynamicMaterials(SkeletalMesh);
+		HitFlashComponent->Multicast_InitializeNewDynamicMaterials(StaticMesh);
 		ResetEnemy();
 		MovementComponent->InitializeNavMeshPointer();
 	}
