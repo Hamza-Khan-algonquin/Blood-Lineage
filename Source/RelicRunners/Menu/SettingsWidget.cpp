@@ -277,6 +277,34 @@ void USettingsWidget::NativeConstruct()
 		}
 
 	}
+	if (LanguageDropDown)
+	{
+		LanguageDropDown->ClearOptions();
+		LanguageDropDown->AddOption("English");
+		LanguageDropDown->AddOption("French");
+		LanguageDropDown->RefreshOptions();
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			FString SelectedOption = "English";
+
+			switch (GI->CurrentLanguage)
+			{
+			case EGameLanguage::French:
+				SelectedOption = "French";
+				break;
+
+			case EGameLanguage::English:
+			default:
+				SelectedOption = "English";
+				break;
+			}
+
+			LanguageDropDown->SetSelectedOption(SelectedOption);
+		}
+
+		LanguageDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleLanguageChanged);
+	}
 
 	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 	{
@@ -799,6 +827,22 @@ void USettingsWidget::OnAutoLootChanged(bool bIsChecked)
 			GI->bAutoLoot = bIsChecked;
 
 		}
+	}
+}
+void USettingsWidget::HandleLanguageChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType == ESelectInfo::Direct) return;
+
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	if (Item == "English")
+	{
+		GI->SetLanguage(EGameLanguage::English);
+	}
+	else if (Item == "French")
+	{
+		GI->SetLanguage(EGameLanguage::French);
 	}
 }
 void USettingsWidget::BackButtonClicked()

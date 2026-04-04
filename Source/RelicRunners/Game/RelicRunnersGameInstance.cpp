@@ -29,6 +29,8 @@
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
+
+#include "Kismet/KismetInternationalizationLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Item/IconLibrary.h"
 
@@ -55,6 +57,9 @@ void URelicRunnersGameInstance::Init()
 
     //Savefiles
     InitializeSaveSlots();
+
+    //language
+    ApplyLanguage();
 }
 
 void URelicRunnersGameInstance::ResetToDefaults()
@@ -245,6 +250,30 @@ FUIColorblindStyle URelicRunnersGameInstance::GetCurrentUIStyle() const
     case EColorblindMode::Normal:
     default:
         return NormalUIStyle;
+    }
+}
+
+void URelicRunnersGameInstance::ApplyLanguage()
+{
+    const FString CultureCode = GetCultureCodeFromLanguage(CurrentLanguage);
+    UKismetInternationalizationLibrary::SetCurrentLanguageAndLocale(CultureCode, true);
+}
+
+void URelicRunnersGameInstance::SetLanguage(EGameLanguage NewLanguage)
+{
+    CurrentLanguage = NewLanguage;
+    ApplyLanguage();
+}
+
+FString URelicRunnersGameInstance::GetCultureCodeFromLanguage(EGameLanguage Language) const
+{
+    switch (Language)
+    {
+    case EGameLanguage::French:
+        return TEXT("fr");
+    case EGameLanguage::English:
+    default:
+        return TEXT("en");
     }
 }
 
