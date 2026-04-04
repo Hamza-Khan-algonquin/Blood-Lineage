@@ -170,11 +170,16 @@ void UEarthquakeAbility::LaunchShockwave()
         FTimerHandle StepTimer;
         FVector StepLocation = StartLocation + Forward * StepDistance * i;
 
+        TWeakObjectPtr<UEarthquakeAbility> weakThis = this;
+
         World->GetTimerManager().SetTimer(
             StepTimer,
-            [this, StepLocation, Forward, World]()
+            [weakThis, StepLocation, Forward, World]()
             {
-                ApplyShockwaveStep(StepLocation, Forward, World);
+                if (weakThis.IsValid())
+                {
+                    weakThis->ApplyShockwaveStep(StepLocation, Forward, World);
+                }
             },
             StepInterval * i,
             false

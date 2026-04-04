@@ -451,43 +451,13 @@ void AArtemisCharacter::SpawnProjectile()
 {
 	if (!HasAuthority()) return;
 
+	AimDirection = GetControlRotation().Vector();
+
 	FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 50.f + FVector(0, 0, 50.f);
 	FVector Velocity = GetActorForwardVector() * ProjectileSpeed;
 
 	Multicast_SpawnProjectile(SpawnLocation, Velocity);
 }
-
-void AArtemisCharacter::HeavyAttack()
-{
-	bIsAiming = true;
-
-}
-
-void AArtemisCharacter::ProjectileHeavyAttack()
-{
-	bIsAiming = false;
-}
-
-void AArtemisCharacter::PlayRandomAttackAnimation()
-{
-	if (!BasicAnim)
-		return;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (!AnimInstance)
-		return;
-
-	float Duration = AnimInstance->Montage_Play(BasicAnim, 3.5f);
-
-	if (Duration > 0.f)
-	{
-		FOnMontageEnded EndDelegate;
-		EndDelegate.BindUObject(this, &AArtemisCharacter::OnAttackMontageEnded);
-
-		AnimInstance->Montage_SetEndDelegate(EndDelegate, BasicAnim);
-	}
-}
-
 
 void AArtemisCharacter::Tick(float DeltaTime)
 {
@@ -499,11 +469,10 @@ void AArtemisCharacter::Tick(float DeltaTime)
 
 		P.Elapsed += DeltaTime;
 
-		// Update velocity based on player view
 		if (P.OwnerCharacter.IsValid())
 		{
-			FVector PlayerForward = P.OwnerCharacter->GetControlRotation().Vector();
-			float Speed = P.Velocity.Size(); // preserve original speed
+			FVector PlayerForward = P.OwnerCharacter->AimDirection;
+			float Speed = P.Velocity.Size();
 			P.Velocity = PlayerForward * Speed;
 		}
 
@@ -578,5 +547,20 @@ void AArtemisCharacter::Tick(float DeltaTime)
 		}
 	}
 }
+
+
+void AArtemisCharacter::HeavyAttack()
+{
+	bIsAiming = true;
+
+}
+
+void AArtemisCharacter::ProjectileHeavyAttack()
+{
+	bIsAiming = false;
+}
+
+
+
 
 

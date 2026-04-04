@@ -51,7 +51,7 @@ public:
     float Brightness = 0.0f;
 
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-    bool motionBlurEnabled = true;
+    bool motionBlurEnabled = false;
 
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     float MasterVolume = 1.0f;
