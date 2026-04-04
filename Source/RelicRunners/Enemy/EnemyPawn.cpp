@@ -100,6 +100,11 @@ void AEnemyPawn::UpdateEmissiveHealth()
 	}
 }
 
+void AEnemyPawn::NetMulticast_UpdateEmissiveHealth_Implementation()
+{
+	UpdateEmissiveHealth();
+}
+
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
@@ -178,7 +183,7 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 			KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
 		}
 
-		UpdateEmissiveHealth();
+		NetMulticast_UpdateEmissiveHealth();
 
 		IsAttacking = false;
 		if (MovementComponent)

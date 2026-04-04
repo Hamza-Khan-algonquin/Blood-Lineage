@@ -83,7 +83,7 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() || !IsActive || IsHidden() || !ShouldNotTakeDamage)
+	if (!HasAuthority() || !IsActive || IsHidden() || ShouldNotTakeDamage)
 	{
 		return 0;
 	}
