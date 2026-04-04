@@ -318,10 +318,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")
 	float BounceSpeed = 6.f;
 
-
 	FVector CurrentLookAhead;
 
-	
+	UPROPERTY(Replicated)
+	FVector AimDirection;
 
 };
 
