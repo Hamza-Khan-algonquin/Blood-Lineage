@@ -123,38 +123,54 @@ void UPiercingArrow::TickArrow()
         return;
 
     const float DeltaTime = World->GetDeltaSeconds();
-
-    // Current position 
     FVector CurrentLocation = SpawnedProjectile->GetActorLocation();
 
-    // Apply gravity
+    if (APawn* Pawn = Cast<APawn>(AvatarActor))
+    {
+        if (APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
+        {
+            FVector PlayerForward = PC->GetControlRotation().Vector();
+            float Speed = ProjectileVelocity.Size(); // preserve original speed
+            ProjectileVelocity = PlayerForward * Speed;
+        }
+    }
+
+    // Apply gravity 
     ProjectileVelocity.Z += Gravity * DeltaTime;
 
     // Predict next position
     FVector NewLocation = CurrentLocation + ProjectileVelocity * DeltaTime;
 
-    // Collision setup
+    // -----------------------------
+    // Collision
+    // -----------------------------
     FHitResult Hit;
     FCollisionQueryParams Params;
-
-    // Ignore important actors
     Params.AddIgnoredActor(SpawnedProjectile);
-    Params.AddIgnoredActor(SpawnedProjectile->GetOwner());
+    Params.AddIgnoredActor(AvatarActor);
 
-    // Sweep
-    bool bHit = World->SweepSingleByChannel(Hit, CurrentLocation, NewLocation,FQuat::Identity, ECC_GameTraceChannel1,FCollisionShape::MakeSphere(ProjectileRadius), Params);
+    bool bHit = World->SweepSingleByChannel(
+        Hit,
+        CurrentLocation,
+        NewLocation,
+        FQuat::Identity,
+        ECC_GameTraceChannel1,
+        FCollisionShape::MakeSphere(ProjectileRadius),
+        Params
+    );
 
     if (bHit)
     {
         UE_LOG(LogTemp, Warning, TEXT("Projectile hit: %s"), *GetNameSafe(Hit.GetActor()));
-
         DrawDebugSphere(World, Hit.ImpactPoint, AreaRadius, 16, FColor::Red, false, 2.f);
 
         Explode(Hit.ImpactPoint);
         return;
     }
 
+    // -----------------------------
     // Move projectile
+    // -----------------------------
     SpawnedProjectile->SetActorLocation(NewLocation);
     SpawnedProjectile->SetActorRotation(ProjectileVelocity.Rotation());
 

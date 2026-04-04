@@ -420,7 +420,7 @@ void AArtemisCharacter::Multicast_SpawnProjectile_Implementation(FVector Locatio
 	NewProj.Velocity = Velocity;
 	NewProj.Elapsed = 0.f;
 	NewProj.CurrentPierces = 0;
-
+	NewProj.OwnerCharacter = this;
 	if (ProjectileMeshAsset)
 	{
 		UStaticMeshComponent* ProjectileMesh = NewObject<UStaticMeshComponent>(this);
@@ -437,6 +437,7 @@ void AArtemisCharacter::Multicast_SpawnProjectile_Implementation(FVector Locatio
 	ActiveProjectiles.Add(NewProj);
 
 }
+
 void AArtemisCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == BasicAnim)
@@ -497,7 +498,15 @@ void AArtemisCharacter::Tick(float DeltaTime)
 
 		P.Elapsed += DeltaTime;
 
-		// Apply gravi
+		// Update velocity based on player view
+		if (P.OwnerCharacter.IsValid())
+		{
+			FVector PlayerForward = P.OwnerCharacter->GetControlRotation().Vector();
+			float Speed = P.Velocity.Size(); // preserve original speed
+			P.Velocity = PlayerForward * Speed;
+		}
+
+		// Apply gravity
 		P.Velocity.Z -= ProjectileGravity * DeltaTime;
 
 		FVector PreviousLocation = P.Location;
@@ -514,7 +523,7 @@ void AArtemisCharacter::Tick(float DeltaTime)
 		TArray<FHitResult> Hits;
 		FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-		bool bHit = GetWorld()->SweepMultiByChannel(Hits,PreviousLocation,P.Location,FQuat::Identity,ECC_GameTraceChannel1,Sphere);
+		bool bHit = GetWorld()->SweepMultiByChannel(Hits, PreviousLocation, P.Location, FQuat::Identity, ECC_GameTraceChannel1, Sphere);
 
 		for (const FHitResult& Hit : Hits)
 		{
@@ -551,9 +560,8 @@ void AArtemisCharacter::Tick(float DeltaTime)
 					{
 						P.Mesh->DestroyComponent();
 					}
-
 					ActiveProjectiles.RemoveAt(i);
-					break;
+					break; // stop checking hits for this projectile
 				}
 			}
 		}
@@ -565,7 +573,6 @@ void AArtemisCharacter::Tick(float DeltaTime)
 			{
 				P.Mesh->DestroyComponent();
 			}
-
 			ActiveProjectiles.RemoveAt(i);
 		}
 	}

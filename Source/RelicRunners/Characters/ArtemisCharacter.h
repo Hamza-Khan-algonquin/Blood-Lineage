@@ -16,7 +16,7 @@ struct FProjectileData
 
 	int32 CurrentPierces = 0;
 	TArray<AActor*> HitActors;
-
+	TWeakObjectPtr<AArtemisCharacter> OwnerCharacter;
 	UStaticMeshComponent* Mesh = nullptr;
 };
 
