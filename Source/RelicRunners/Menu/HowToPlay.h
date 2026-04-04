@@ -43,6 +43,7 @@ public:
 	void BlendToEnemiesCamera();
 	void BlendToClassesCamera();
 	void BlendToMainMenuCamera();
+	void BlendToUpgradesCamera();
 protected:
 
 	UFUNCTION()
@@ -67,5 +68,6 @@ private:
 	class UMainMenuWidget* ParentMenu;
 
 	void SwitchToPage(int Index);
+	void ExecuteCameraBlend(FName TargetTag);
 	AActor* FindActorByTag(FName TargetTag);
 };
