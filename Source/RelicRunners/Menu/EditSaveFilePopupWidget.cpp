@@ -57,7 +57,7 @@ void UEditSaveFilePopupWidget::OnDeleteClicked()
     }
 
     TargetSlot->SpawnEmptySlot();
-
+    TargetSlot->ParentWidget->ShowUpgradesAvailable();
     RemoveFromParent();
 }
 

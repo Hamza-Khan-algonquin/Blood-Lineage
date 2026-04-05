@@ -70,6 +70,11 @@ void UModeSelectionWidget::ShowUpgradesAvailable()
 			UpgradeAvailable2->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
+	else
+	{
+		UpgradeAvailable1->SetVisibility(ESlateVisibility::Collapsed);
+		UpgradeAvailable2->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 void UModeSelectionWidget::HighlightSelectedSlot(USaveFileListWidget* NewSelection)

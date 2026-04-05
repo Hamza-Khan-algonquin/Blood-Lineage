@@ -61,6 +61,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
 	TObjectPtr<USoundBase> UpgradePickSound = nullptr;
 
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	void ShowTooltipForWidget(UWidget* HoveredWidget, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+	class UWidget* CurrentHoveredWidget;
+	UPROPERTY()
+	class UStandardTooltip* StandardTooltip;
+	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
+	TSubclassOf<class UStandardTooltip> StandardTooltipClass;
 	UFUNCTION()
 	void Upgrade1Clicked();
 
@@ -91,12 +99,9 @@ public:
 		FLinearColor Color;
 	};
 
-
-	StatBuff RandomStatBuff();
+	StatBuff RandomStatBuff(const TArray<EStats>& ExcludedStats);
 	void RefreshUpgrades();
 	void BuffStatValue(StatBuff Buff);
-
-
 
 	enum class EAbilityUpgrades : uint8
 	{
@@ -115,7 +120,6 @@ public:
 		class UImage* AbilityImage;
 		FString AbilityText;
 	};
-
 
 	StatBuff Buff1;
 	StatBuff Buff2;

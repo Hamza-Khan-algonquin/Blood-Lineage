@@ -640,7 +640,7 @@ public:
     static float GetDefencePerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
+        //At Value = 500, the result will be half of max.
         const float K = 500.0f;
         const float MaxPercent = 50.0f;
 
@@ -665,7 +665,7 @@ public:
     static float GetSpeedPerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
+        //At Value = 400, the result will be half of max.
         const float K = 400.0f;
         const float MaxPercent = 75.0f;
         
@@ -679,7 +679,7 @@ public:
     static float GetCritPerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
+        //At Value = 300, the result will be half of max.
         const float K = 300.0f;
         const float MaxPercent = 80.0f;
         
@@ -692,9 +692,15 @@ public:
 
     static float GetCritDmgPerc(int Value)
     {
-        float Percent = 1.5 + (Value / 150.0f);
+        const float K = 250.0f;
+        const float MaxBonus = 1.5f; 
+        const float BaseCrit = 1.5f; 
 
-        return RoundToDecimal(Percent, 1);
+        if (Value <= 0) return BaseCrit;
+
+        float Bonus = (static_cast<float>(Value) / (Value + K)) * MaxBonus;
+
+        return RoundToDecimal(BaseCrit + Bonus, 1);
     }
 
     static int GetManaPoolIncrease(int Value)
@@ -707,7 +713,7 @@ public:
     static float GetAbilityCostPerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
+        //At Value = 250, the result will be half of max.
         const float K = 250.0f;
         const float MaxPercent = 40.0f;
 
