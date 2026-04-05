@@ -186,7 +186,7 @@ public:
     FIntPoint Resolution = FIntPoint(1920, 1080);
 
     UPROPERTY(BlueprintReadWrite)
-    TEnumAsByte<EWindowMode::Type> WindowMode = EWindowMode::WindowedFullscreen;
+    TEnumAsByte<EWindowMode::Type> WindowMode = EWindowMode::Windowed;
 
     UFUNCTION()
     void ApplyAllSettings(APlayerController* PC);
