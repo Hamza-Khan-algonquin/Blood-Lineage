@@ -931,11 +931,11 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 
 		Inventory->ToggleShopUI(false);
 		Inventory->ToggleForgeUI(false);
+		Inventory->CloseTooltip();
+		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 		float AnimDelay = 0.25f;
 		GetWorld()->GetTimerManager().SetTimer(DisableUITimer, this, &ARelicRunnersPlayerController::DisableInventoryUIFromTimer, AnimDelay, false);
-
-		if (Inventory->StandardTooltip) Inventory->StandardTooltip->RemoveFromParent(); Inventory->StandardTooltip = nullptr;
 	}
 	else
 	{
@@ -953,7 +953,6 @@ void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
 {
 	if (Inventory)
 	{
-		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
 		Inventory->SetIsEnabled(true);
 		Inventory->CloseTooltip();
 		GetWorld()->GetTimerManager().ClearTimer(DisableUITimer);
