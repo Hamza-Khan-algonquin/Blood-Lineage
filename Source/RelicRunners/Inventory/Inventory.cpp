@@ -637,7 +637,11 @@ FReply UInventory::NativeOnMouseMove(const FGeometry& InGeometry, const FPointer
 {
     Super::NativeOnMouseMove(InGeometry, InMouseEvent);
 
-    if (!IsVisible()) return FReply::Handled();
+    if (GetVisibility() != ESlateVisibility::Visible)
+    {
+        CloseTooltip();
+        return FReply::Unhandled();
+    }
 
     FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
 
@@ -790,6 +794,16 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
     StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
+}
+
+void UInventory::CloseTooltip()
+{
+    if (StandardTooltip)
+    {
+        StandardTooltip->RemoveFromParent();
+    }
+    StandardTooltip = nullptr;
+    CurrentHoveredBorder = nullptr;
 }
 
 void UInventory::PlayUISound(USoundBase* Sound)

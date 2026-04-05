@@ -199,6 +199,7 @@ public:
 	USoundBase* ForgeSuccessSound = nullptr;
 
 	//Functions
+	void CloseTooltip();
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
 	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);

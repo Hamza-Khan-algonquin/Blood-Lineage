@@ -866,6 +866,9 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 {
 	if (!UIWidget) return;
 
+	if (Inventory) Inventory->CloseTooltip();
+	if (AbilitySelection) AbilitySelection->CloseTooltip();
+
 	bool IsOpening = !UIWidget->IsVisible();
 	if (UIWidget == Inventory && Inventory->GetVisibility() == ESlateVisibility::HitTestInvisible) IsOpening = true;
 
@@ -914,7 +917,7 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 	SetInputMode(FInputModeGameOnly());
 	SetShowMouseCursor(false);
 
-	if (UIWidget == Inventory)
+	if (UIWidget == Inventory && Inventory->GetVisibility() == ESlateVisibility::Visible)
 	{
 		UInventoryItemOptions::CloseAnyOpenPopup();
 		UInventorySortingOptions::CloseAnyOpenPopup();
@@ -952,7 +955,7 @@ void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
 	{
 		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
 		Inventory->SetIsEnabled(true);
-
+		Inventory->CloseTooltip();
 		GetWorld()->GetTimerManager().ClearTimer(DisableUITimer);
 	}
 }
@@ -974,6 +977,7 @@ void ARelicRunnersPlayerController::InventoryUI()
 {
 	if (!Inventory) return;
 	FSlateApplication::Get().CancelDragDrop();
+	Inventory->CloseTooltip();
 	Inventory->ToggleShopUI(false);
 	Inventory->ToggleForgeUI(false);
 	ToggleUI(Inventory);

@@ -35,64 +35,69 @@ void UAbilitySelection::NativeConstruct()
     RefreshUpgrades();
 }
 
-void UAbilitySelection::Upgrade1Clicked()
+void UAbilitySelection::CloseTooltip()
 {
+    if (StandardTooltip)
+    {
+        StandardTooltip->RemoveFromParent();
+    }
+    StandardTooltip = nullptr;
+    CurrentHoveredWidget = nullptr;
+}
+
+void UAbilitySelection::ClickUpgrade()
+{
+    CloseTooltip();
+ 
     ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
     if (!PS) return;
 
+    PS->Server_SpendAbilityPoints();
+    RefreshUpgrades();
+}
+
+void UAbilitySelection::Upgrade1Clicked()
+{
     if (UpgradePickSound)
     {
         UGameplayStatics::PlaySound2D(this, UpgradePickSound);
     }
 
-    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff1);
-    RefreshUpgrades();
+    ClickUpgrade();
 }
 
 void UAbilitySelection::Upgrade2Clicked()
 {
-    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
-    if (!PS) return;
-
     if (UpgradePickSound)
     {
         UGameplayStatics::PlaySound2D(this, UpgradePickSound);
     }
 
-    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff2);
-    RefreshUpgrades();
+    ClickUpgrade();
 }
 
 void UAbilitySelection::Upgrade3Clicked()
 {
-    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
-    if (!PS) return;
-
     if (UpgradePickSound)
     {
         UGameplayStatics::PlaySound2D(this, UpgradePickSound);
     }
 
-    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff3);
-    RefreshUpgrades();
+    ClickUpgrade();
 }
 
 void UAbilitySelection::Upgrade4Clicked()
 {
-    ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>();
-    if (!PS) return;
-
     if (UpgradePickSound)
     {
         UGameplayStatics::PlaySound2D(this, UpgradePickSound);
     }
 
-    PS->Server_SpendAbilityPoints();
     BuffStatValue(Buff4);
-    RefreshUpgrades();
+    ClickUpgrade();
 }
 
 void UAbilitySelection::BuffStatValue(StatBuff Buff)

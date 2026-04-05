@@ -19,6 +19,10 @@ public:
 
 	virtual void NativeConstruct() override;
 
+	void CloseTooltip();
+
+	void ClickUpgrade();
+
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_Upgrade1;
 
