@@ -145,7 +145,7 @@ void USettingsWidget::NativeConstruct()
 		ResolutionDropDown->ClearOptions();
 		ResMap.Empty();
 
-		TArray<FIntPoint> Resolutions = { {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440} };
+		TArray<FIntPoint> Resolutions = { {1280, 720}, {1600, 900}, {1440, 1080}, { 1920, 1080 }, {2560, 1440}, {3840, 2160}, { 5120, 1440 } };
 
 		for (const FIntPoint& Res : Resolutions)
 		{
@@ -559,7 +559,7 @@ void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESe
 			{
 				FIntPoint NewRes(2560, 1440);
 				GS->SetFullscreenMode(EWindowMode::Fullscreen);
-				GS->SetScreenResolution(NewRes);
+				
 			}
 			else if (SelectedItem == "WindowedFullscreen")
 			{
