@@ -38,6 +38,11 @@ void AShockwaveRing::InitializeRing(int Diff, float Speed)
         {
             Slice->RegisterComponent();
             Slice->SetStaticMesh(SliceMesh);
+            UMaterialInstanceDynamic* DynMat = Slice->CreateDynamicMaterialInstance(0);
+            if (DynMat)
+            {
+                SliceMaterials.Add(DynMat);
+            }
             Slice->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
             Slice->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
             Slice->SetCollisionResponseToAllChannels(ECR_Overlap);
@@ -69,10 +74,23 @@ void AShockwaveRing::Tick(float DeltaTime)
 
     MoveSpeed += Acceleration * DeltaTime;
 
+    float CurrentScaleX = GetActorScale3D().X;
+    float MaxScale = 30.0f;
+
     FVector NewScale = GetActorScale3D() + FVector(MoveSpeed * DeltaTime);
     SetActorScale3D(NewScale);
 
-    if (GetActorScale3D().X > 40.0f)
+    float OpacityAlpha = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, MaxScale), FVector2D(1.0f, 0.0f), CurrentScaleX);
+
+    for (UMaterialInstanceDynamic* Mat : SliceMaterials)
+    {
+        if (Mat)
+        {
+            Mat->SetScalarParameterValue(FName("Opacity"), OpacityAlpha);
+        }
+    }
+
+    if (CurrentScaleX > MaxScale)
     {
         Destroy();
     }

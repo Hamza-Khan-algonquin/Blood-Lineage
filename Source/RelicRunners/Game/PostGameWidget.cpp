@@ -15,6 +15,9 @@ void UPostGameWidget::UpdateScoreboard(const TArray<FPlayerPostGameData>& Player
     AnimationTimer = 0.0f;
     bIsAnimating = true;
 
+    BarScaleTimers.Empty();
+    BarScaleTimers.Init(0.0f, PlayersData.Num());
+
     TArray<FPlayerColumn> Columns;
     Columns.Add({ Player1Box, TB_Username1, TB_MetaLevel1, TB_MetaNextLevel1, TB_MetaXP1, TB_LevelsEarned1, TB_EnemiesKilled1, TB_PlayerDeaths1, MetaExperienceBar1 });
     Columns.Add({ Player2Box, TB_Username2, TB_MetaLevel2, TB_MetaNextLevel2, TB_MetaXP2, TB_LevelsEarned2, TB_EnemiesKilled2, TB_PlayerDeaths2, MetaExperienceBar2 });
@@ -28,6 +31,8 @@ void UPostGameWidget::UpdateScoreboard(const TArray<FPlayerPostGameData>& Player
             if (Columns[i].Box) Columns[i].Box->SetVisibility(ESlateVisibility::Collapsed);
             continue;
         }
+
+        if (Columns[i].XPBar) Columns[i].XPBar->SetRenderScale(FVector2D(1.0f, 1.0f));
 
         const FPlayerPostGameData& Data = PlayersData[i];
 

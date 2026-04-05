@@ -121,9 +121,9 @@ void UInventoryToolTip::Setup(UItemObject* HoveredItem, const FLinearColor& Hove
             else if (Stat.Label == "AGI") EquippedValue = EquippedItem->ItemData.Dexterity;
             else if (Stat.Label == "STR") EquippedValue = EquippedItem->ItemData.Strength;
             else if (Stat.Label == "INT") EquippedValue = EquippedItem->ItemData.Intelligence;
-            else if (Stat.Label == "LUK") EquippedValue = EquippedItem->ItemData.Luck;
-            else if (Stat.Label == "REG") EquippedValue = EquippedItem->ItemData.Regen;
-            else if (Stat.Label == "PUR") EquippedValue = EquippedItem->ItemData.Purity;
+            else if (Stat.Label == "LUCK") EquippedValue = EquippedItem->ItemData.Luck;
+            else if (Stat.Label == "REGEN") EquippedValue = EquippedItem->ItemData.Regen;
+            else if (Stat.Label == "PURITY") EquippedValue = EquippedItem->ItemData.Purity;
             else if (Stat.Label == "Gold") EquippedValue = EquippedItem->ItemData.Gold;
 
             const float Diff = Stat.Value - EquippedValue;
