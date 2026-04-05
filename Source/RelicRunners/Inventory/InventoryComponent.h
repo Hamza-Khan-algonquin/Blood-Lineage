@@ -100,6 +100,8 @@ public:
     class UClassInfo* ClassInfo;
 
     //Functions
+    UFUNCTION(Server, Reliable)
+    void Server_SellAllByRarity(const FString& RarityToSell);
     UFUNCTION(BlueprintCallable, Category = "Inventory")
     void RequestAutoEquip();
     UFUNCTION(Server, Reliable, WithValidation)

@@ -80,6 +80,9 @@ void UInventory::NativeConstruct()
     if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
 
+    if (B_SellCommon) B_SellCommon->OnClicked.AddDynamic(this, &UInventory::OnSellCommonClicked);
+    if (B_SellUncommon) B_SellUncommon->OnClicked.AddDynamic(this, &UInventory::OnSellUncommonClicked);
+    if (B_SellRare) B_SellRare->OnClicked.AddDynamic(this, &UInventory::OnSellRareClicked);
 
     for (TActorIterator<APostProcessVolume> It(GetWorld()); It; ++It)
     {
@@ -92,6 +95,10 @@ void UInventory::NativeConstruct()
 
     ApplyColorblindStyle();
 }
+
+void UInventory::OnSellCommonClicked() { SellAllByRarity("Common"); }
+void UInventory::OnSellUncommonClicked() { SellAllByRarity("Uncommon"); }
+void UInventory::OnSellRareClicked() { SellAllByRarity("Rare"); }
 
 void UInventory::OnAutoEquip()
 {
@@ -794,6 +801,13 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
     StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
     StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
+}
+
+void UInventory::SellAllByRarity(FString RarityToSell)
+{
+    if (!InventoryComponent || !GetOwningPlayer()) return;
+
+    InventoryComponent->Server_SellAllByRarity(RarityToSell);
 }
 
 void UInventory::CloseTooltip()

@@ -219,6 +219,7 @@ public:
 	void ToggleShopUI(bool value);
 	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+	void SellAllByRarity(FString RarityToSell);
 	void PlayUISound(USoundBase* Sound);
 	struct FSlotResult GetSlotUnderCursor(FVector2D CursorPos);
 	void SetEquippedTooltip(UBorder* BorderWidget, FString ItemType);
@@ -560,6 +561,15 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UBorder* B_Inventory;
 
+	UPROPERTY(meta = (BindWidget))
+	UButton* B_SellCommon;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* B_SellUncommon;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* B_SellRare;
+
 	UPROPERTY()
 	APostProcessVolume* CachedPPV = nullptr;
 
@@ -581,6 +591,12 @@ public:
 	
 protected:
 	virtual void NativeConstruct() override;
+	UFUNCTION()
+	void OnSellCommonClicked();
+	UFUNCTION()
+	void OnSellUncommonClicked();
+	UFUNCTION()
+	void OnSellRareClicked();
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
