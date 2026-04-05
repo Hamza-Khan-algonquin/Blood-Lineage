@@ -146,14 +146,18 @@ void AVendor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ItemMeshDataClass)
-	{
-		ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
-	}
+	ItemMeshData = ItemMeshDataAsset;
 
 	if (HasAuthority())
 	{
-		GenerateStock();
+		if (ItemMeshData)
+		{
+			GenerateStock();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Vendor %s has no ItemMeshDataAsset assigned!"), *GetName());
+		}
 	}
 
 	InitializeTooltipWidget();
@@ -211,6 +215,11 @@ void AVendor::GenerateStock()
 			ItemMeshData,
 			Lib
 		));
+
+		if (Stock.Last().ItemStaticMesh == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Item created with NULL Mesh in Vendor Stock!"));
+		}
 	}
 }
 
