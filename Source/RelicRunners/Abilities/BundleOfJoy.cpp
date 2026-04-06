@@ -231,7 +231,6 @@ void UBundleOfJoy::Attract()
 
     FVector Center = AttractionCenter; // Set the attraction center 
 
-   
     TArray<AActor*> OverlappingActors; // Array to store actors within the radius
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Only check for pawns

@@ -218,7 +218,10 @@ void UBackStab::ExecuteBackStabSequence()
         return;
     }
 
-    Char->GetCharacterMovement()->DisableMovement();
+    if (APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get()))
+    {
+        PC->DisableInput(PC);
+    }
 
     if (AvatarActor->HasAuthority())
     {
@@ -282,13 +285,9 @@ void UBackStab::ReturnPlayerToOriginalPosition()
     AvatarActor->SetActorLocation(OriginalLocation, false, nullptr, ETeleportType::TeleportPhysics);
     AvatarActor->SetActorRotation(OriginalRotation);
 
-    if (ACharacter* Char = Cast<ACharacter>(AvatarActor))
+    if (APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get()))
     {
-        if (Char->GetCharacterMovement())
-        {
-            Char->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-            Char->GetCharacterMovement()->Velocity = FVector::ZeroVector;
-        }
+        PC->EnableInput(PC);
     }
 }
 
@@ -304,6 +303,11 @@ void UBackStab::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGamep
         if (ActorInfo->PlayerController.IsValid())
         {
             PS = ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>();
+        }
+
+        if (RPC)
+        {
+            RPC->EnableInput(RPC);
         }
 
         PS->SetInvincible(false);
