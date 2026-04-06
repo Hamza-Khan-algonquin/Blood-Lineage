@@ -13,6 +13,7 @@
 #include "NavFilters/NavigationQueryFilter.h"
 #include "RelicRunners/Enemy/Characters/EnemyCharacter.h"
 #include <Net/UnrealNetwork.h>
+#include "RelicRunners/RelicRunnersGameMode.h"
 
 
 TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
@@ -21,6 +22,7 @@ TWeakObjectPtr<ADirector> ADirector::Instance = nullptr;
 ADirector::ADirector() 
 {  
 	MaxSpawnPointActivisionDistance = 10000;
+	SpawnDelayAfterWorldStart = 5;
 	SpawnWait = 1;
 	PrimaryActorTick.bCanEverTick = true;
 	bAlwaysRelevant = true;
@@ -174,6 +176,13 @@ void ADirector::RemovePlayer(AActor* player)
 
 void ADirector::SpawnCheck()
 {
+	ARelicRunnersGameMode* GM = Cast<ARelicRunnersGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
+	if (!GetWorld() || !GM || GM->LastTimeStamp == -1 || GetWorld()->GetTimeSeconds() <= GM->LastTimeStamp + SpawnDelayAfterWorldStart)
+	{
+		return;
+	}
+
 	//Setting up the array
 	TArray<AActor*> spawnPoints;
 
@@ -195,7 +204,7 @@ void ADirector::SpawnCheck()
 			}
 
 			//check to see if the player is close enough and the spawn point is not at max capacity
-			if (FVector::Dist2D(Players[j]->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
+			if (FVector::Dist(Players[j]->GetActorLocation(), point->GetActorLocation()) < MaxSpawnPointActivisionDistance && !point->IsAtMaxCapacity())
 			{
 				point->SpawnEnemies();
 			}

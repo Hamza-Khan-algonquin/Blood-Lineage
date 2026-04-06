@@ -42,7 +42,7 @@ public:
 protected:
 	static TWeakObjectPtr<ADirector> Instance;
 
-
+	float SpawnDelayAfterWorldStart;
 	//The max distance away a spawn point can be to be used
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn Stats", meta = (AllowPrivateAccess = "true", ToolTip = "The max distance away a spawn point can be to be used"))
 	float MaxSpawnPointActivisionDistance;

@@ -27,14 +27,14 @@ protected:
     float HealInterval = 1.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "KissOfLife")
-    float HealPercentPerTick = 0.05f; // +5%/HP of healing cuz why not
+    float HealPercentPerTick = 0.05f; // +5%/HP 
 
 private:
     FTimerHandle HealTickTimer;
     FTimerHandle EndTimer;
 
     void ApplyHealTick();
-
+    bool bIsInvincible = false;
     UPROPERTY()
     USphereComponent* DebugHealSphere; 
 };

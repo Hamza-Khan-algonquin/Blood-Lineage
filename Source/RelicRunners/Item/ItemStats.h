@@ -20,6 +20,7 @@
 #include "ItemData.h"
 #include "ItemMeshData.h"
 #include "IconLibrary.h"
+#include "Internationalization/Text.h"
 
 struct FTooltipData
 {
@@ -85,13 +86,18 @@ class RELICRUNNERS_API ItemStats
 {
 public:
 
-    static FTooltipData GetStatTooltipData(FString BorderType, int StatValue, int StatValue2, int StatValue3, const FString& AbilityName, const FString& AbilityDesc)
+    static FTooltipData GetStatTooltipData(FString BorderType, float StatValue, float StatValue2, float StatValue3, const FString& AbilityName, const FString& AbilityDesc)
     {
         FTooltipData Data;
 
         if (!BorderType.Contains("Ability") && !BorderType.Contains("Difficulty") && !BorderType.Contains("HealthPotion"))
         {
-            Data.Value = FText::AsNumber(StatValue);
+            FNumberFormattingOptions Options;
+            Options.MinimumFractionalDigits = 0; 
+            Options.MaximumFractionalDigits = 1; 
+            Options.RoundingMode = ERoundingMode::HalfToEven;
+
+            Data.Value = FText::AsNumber(StatValue, &Options);
         }
 
         if (BorderType == "Health")
@@ -107,7 +113,7 @@ public:
             Data.Icon = LoadIcon("HealthIcon");
             Data.IconColor = GetIconColor("Health");
             Data.Descriptions.Add(FText::FromString("<Default>Health pool.</>"));
-            Data.Descriptions.Add(FText::FromString("<Blue>+10</> <Default>Health per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+15</> <Default>Health per meta point.</>"));
         }
         else if (BorderType == "Defence")
         {
@@ -121,8 +127,8 @@ public:
             Data.Name = FText::FromString("Defence");
             Data.Icon = LoadIcon("DefenceIcon");
             Data.IconColor = GetIconColor("Defence");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Damage reduction.</>"), FText::AsNumber(GetDefencePerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Defence per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Damage reduction.</>"), FText::AsNumber(GetDefencePerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Defence per meta point.</>"));
         }
         else if (BorderType == "Strength")
         {
@@ -136,8 +142,8 @@ public:
             Data.Name = FText::FromString("Strength");
             Data.Icon = LoadIcon("StrengthIcon");
             Data.IconColor = GetIconColor("Strength");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Attack & ability damage.</>"), FText::AsNumber(GetStrengthPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Strength per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Attack & ability damage.</>"), FText::AsNumber(GetStrengthPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Strength per meta point.</>"));
         }
         else if (BorderType == "Agility")
         {
@@ -153,10 +159,10 @@ public:
             Data.Name = FText::FromString("Agility");
             Data.Icon = LoadIcon("AgilityIcon");
             Data.IconColor = GetIconColor("Agility");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Crit chance.</>"), FText::AsNumber(GetCritPerc(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>{0}x</> <Default>Damage on crit.</>"), FText::AsNumber(GetCritDmgPerc(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Movement speed.</>"), FText::AsNumber(GetSpeedPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Agility per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Crit chance.</>"), FText::AsNumber(GetCritPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}x</> <Default>Damage on crit.</>"), FText::AsNumber(GetCritDmgPerc(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Movement speed.</>"), FText::AsNumber(GetSpeedPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Agility per meta point.</>"));
         }
         else if (BorderType == "Intelligence")
         {
@@ -171,9 +177,9 @@ public:
             Data.Name = FText::FromString("Intelligence");
             Data.Icon = LoadIcon("IntelligenceIcon");
             Data.IconColor = GetIconColor("Intelligence");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}</> <Default>Mana pool.</>"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Ability cost reduction.</>"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+3</> <Default>Intelligence per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>Mana pool.</>"), FText::AsNumber(GetManaPoolIncrease(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Ability cost reduction.</>"), FText::AsNumber(GetAbilityCostPerc(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Intelligence per meta point.</>"));
         }
         else if (BorderType == "Luck")
         {
@@ -188,9 +194,9 @@ public:
             Data.Name = FText::FromString("Luck");
             Data.Icon = LoadIcon("LuckIcon");
             Data.IconColor = GetIconColor("Luck");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Luck per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot chance.</>"), FText::AsNumber(GetLootChance(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Loot quality.</>"), FText::AsNumber(GetLootQuality(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Luck per meta point.</>"));
         }
         else if (BorderType == "HealthPotion")
         {
@@ -212,9 +218,9 @@ public:
             Data.Name = FText::FromString("Purity");
             Data.Icon = LoadIcon("PotionIcon");
             Data.IconColor = GetIconColor("Purity");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Health potion heal.</>"), FText::AsNumber(GetHealPercent(StatValue))));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Chance to not consume.</>"), FText::AsNumber(GetChanceToNotConsume(StatValue))));
-            Data.Descriptions.Add(FText::FromString("<Blue>+5</> <Default>Purity per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Health potion heal.</>"), FText::AsNumber(GetHealPercent(StatValue))));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Chance to not consume.</>"), FText::AsNumber(GetChanceToNotConsume(StatValue))));
+            Data.Descriptions.Add(FText::FromString("<Green>+5</> <Default>Purity per meta point.</>"));
         }
         else if (BorderType == "Level")
         {
@@ -222,7 +228,7 @@ public:
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("Level");
             Data.Descriptions.Add(FText::FromString("<Default>Current Level.</>"));
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}</> <Default>From Meta-Upgrade.</>"), FText::AsNumber(StatValue2)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>From Meta-Upgrade.</>"), FText::AsNumber(StatValue2)));
         }
         else if (BorderType == "MetaLevel")
         {
@@ -230,7 +236,7 @@ public:
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("MetaLevel");
             Data.Descriptions.Add(FText::FromString("<Default>Current Meta Level.</>"));
-            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Meta point per meta level.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Meta point per meta level.</>"));
             Data.Descriptions.Add(FText::FromString("<Default>Meta points are spent in the upgrades menu.</>"));
             }
         else if (BorderType == "MetaStartingLevel")
@@ -238,7 +244,7 @@ public:
             Data.Name = FText::FromString("Starting Level");
             Data.Icon = LoadIcon("StartingLevelIcon");
             Data.IconColor = GetIconColor("Level");
-            Data.Descriptions.Add(FText::FromString("<Blue>+1</> <Default>Starting level per meta point.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Starting level per meta point.</>"));
         }
         else if (BorderType == "Mana")
         {
@@ -253,8 +259,8 @@ public:
             Data.Name = FText::FromString("Mana Regen");
             Data.Icon = LoadIcon("ResourceIcon");
             Data.IconColor = GetIconColor("Mana");
-            Data.Descriptions.Add(FText::Format(FText::FromString("<Blue>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
-            Data.Descriptions.Add(FText::FromString("<Blue>+1%</> <Default>Mana regen per meta point.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>Mana / {1}s.</>"), FText::AsNumber(StatValue2), FText::AsNumber(StatValue3)));
+            Data.Descriptions.Add(FText::FromString("<Green>+0.5%</> <Default>Mana regen per meta point.</>"));
         }
         else if (BorderType == "BoarDifficulty")
         {
@@ -360,6 +366,167 @@ public:
             Data.Descriptions.Add(FText::FromString("<Default>Spend points to get additional stats.</>"));
         }
 
+        else if (BorderType == "AbilityThunderousPunch")
+        {
+            Data.Name = FText::FromString("Thunderous Punch");
+            Data.Icon = LoadIcon("ThunderousPunch");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Heavy punch with</>\n<Default>thunderous shockwaves.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+}
+        else if (BorderType == "AbilityBloodRush")
+        {
+            Data.Name = FText::FromString("Blood Rush");
+            Data.Icon = LoadIcon("BloodRush");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Charge through enemies</>\n<Default>dealing damage & knockback.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(10)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(12)));
+            }
+        else if (BorderType == "AbilityWarBanner")
+        {
+            Data.Name = FText::FromString("War Banner");
+            Data.Icon = LoadIcon("WarBanner");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Buffs nearby allies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>STR / LEVEL</>"), FText::AsNumber(20)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(15)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityRageOfTheGods")
+        {
+            Data.Name = FText::FromString("Rage of the Gods");
+            Data.Icon = LoadIcon("RageOfTheGods");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Fury pulses that</>\n<Default>annihilate all enemies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityFireArrow")
+        {
+            Data.Name = FText::FromString("Fire Arrow");
+            Data.Icon = LoadIcon("FireArrow");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Shoot a flaming arrow that</>\n<Default>ignites the ground on impact.</>"));
+            // FIX: Added FText::AsNumber to satisfy the Format requirement
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(3)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityNaturesBlessing")
+        {
+            Data.Name = FText::FromString("Nature's Blessing");
+            Data.Icon = LoadIcon("NaturesBlessing");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Increase movement speed, leaving</>\n<Default>spectral trails in your path.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityMultiShot")
+        {
+            Data.Name = FText::FromString("Multi Shot");
+            Data.Icon = LoadIcon("MultiShot");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Shoot a spread of arrows to</>\n<Default>shred approaching hordes.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityMoonbeam")
+        {
+            Data.Name = FText::FromString("Moonbeam");
+            Data.Icon = LoadIcon("Moonbeam");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Channel lunar energy through</>\n<Default>your bow in a piercing beam.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(6)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityBackstab")
+        {
+            Data.Name = FText::FromString("Backstab");
+            Data.Icon = LoadIcon("Backstab");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Dash between foes with</>\n<Default>lethal strikes.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityImpunity")
+        {
+            Data.Name = FText::FromString("Impunity");
+            Data.Icon = LoadIcon("Impunity");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Strengthen your resolve to become</>\n<Default>immune to all incoming damage.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityVengefulDance")
+        {
+            Data.Name = FText::FromString("Vengeful Dance");
+            Data.Icon = LoadIcon("VengefulDance");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>A heavy slash that cuts</>\n<Default>down and knocks back all foes.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityDivinePunishment")
+        {
+            Data.Name = FText::FromString("Divine Punishment");
+            Data.Icon = LoadIcon("DivinePunishment");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Kneel and summon holy light</>\n<Default>to scour all nearby enemies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityBundleOfJoy")
+        {
+            Data.Name = FText::FromString("Bundle of Joy");
+            Data.Icon = LoadIcon("BundleOfJoy");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Throw a heart that lures foes</>\n<Default>before detonating in a burst.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(12)));
+            }
+        else if (BorderType == "AbilityMirrorOfDesire")
+        {
+            Data.Name = FText::FromString("Mirror of Desire");
+            Data.Icon = LoadIcon("MirrorOfDesire");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Manifest a shield that</>\n<Default>punishes foes, reflecting damage.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(6)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityKissOfLife")
+        {
+            Data.Name = FText::FromString("Kiss of Life");
+            Data.Icon = LoadIcon("KissOfLife");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Release pulses of life</>\n<Default>healing self and nearby allies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>HP / S</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(10)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityGoddessOfLove")
+        {
+            Data.Name = FText::FromString("Goddess of Love");
+            Data.Icon = LoadIcon("GoddessOfLove");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Release lightning bolts that</>\n<Default>strike nearby foes and heal self.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>HP / S</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(10)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+
         return Data;
     }
 
@@ -457,6 +624,30 @@ public:
         ItemData.ItemType = ItemType;
         ItemData.Name = ItemData.ItemType;
         ItemData.Level = Level;
+        ItemData.Purity = 0;
+        ItemData.Luck = 0;
+        ItemData.Regen = 0;
+
+        if (Rarity == "Relic")
+        {
+            float RandomValue = FMath::FRandRange(0.3f, 2.0f);
+            RandomValue = FMath::RoundToFloat(RandomValue * 10.0f) / 10.0f;
+
+            int StatIndex = FMath::RandRange(0, 2);
+
+            if (StatIndex == 0)
+            {
+                ItemData.Luck = RandomValue;
+            }
+            else if (StatIndex == 1)
+            {
+                ItemData.Purity = RandomValue;
+            }
+            else
+            {
+                ItemData.Regen = RandomValue / 3.0f;
+            }
+        }
 
         float BaseMin = 0.1f;
         float BaseMax = 1.f;
@@ -469,9 +660,13 @@ public:
         float LevelBaseValue = ItemData.Level * 0.8f;
         float RarityFloor = RarityMult * 1.3f;
 
-        //Gold
-        int CalculatedGold = FMath::RoundToInt((LevelBaseValue + RarityFloor) * FMath::FRandRange(0.9f, 1.1f));
-        ItemData.Gold = FMath::Max(1, CalculatedGold);
+        float GoldPerLevel = 0.1f; 
+        float RawGold = (ItemData.Level * GoldPerLevel) * RarityMult;
+
+        float Variance = FMath::FRandRange(0.9f, 1.1f);
+        int FinalGold = FMath::RoundToInt(RawGold * Variance);
+
+        ItemData.Gold = FMath::Max(1, FinalGold);
 
         TSet<FString> ArmorTypes = { "Helmet", "Upper", "Lower", "Arms" };
         TSet<FString> MixedTypes = { "Necklace" };
@@ -580,29 +775,29 @@ public:
         return FMath::RoundToFloat(Value * Multiplier) / Multiplier;
     }
 
-    static float GetLootQuality(int Value)
+    static float GetLootQuality(float Value)
     {
-        float Percent = Value * 2.3f;
+        float Percent = Value * 1.75f;
 
         return RoundToDecimal(Percent, 1);
     }
-    static float GetLootChance(int Value)
+    static float GetLootChance(float Value)
     {
-        float Percent = Value * 1.45;
-
-        return RoundToDecimal(Percent, 1);
-    }
-
-    static float GetHealPercent(int Value)
-    {
-        float Percent = Value;
+        float Percent = Value * 0.8;
 
         return RoundToDecimal(Percent, 1);
     }
 
-    static float GetChanceToNotConsume(int Value)
+    static float GetHealPercent(float Value)
     {
-        float Percent = Value / 2.9;
+        float Percent = Value * 1.0f;
+
+        return RoundToDecimal(Percent, 1);
+    }
+
+    static float GetChanceToNotConsume(float Value)
+    {
+        float Percent = Value / 3.0f;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -610,9 +805,9 @@ public:
     static float GetDefencePerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
-        const float MaxPercent = 60.0f;
+        //At Value = 500, the result will be half of max.
+        const float K = 500.0f;
+        const float MaxPercent = 50.0f;
 
         if (Value <= 0) return 0.0f;
 
@@ -625,9 +820,8 @@ public:
     {
         if (Value <= 0) return 0.0f;
 
-        //Base of 1.5 with a 0.9 exponent.
         //This grows infinitely but slows down over time.
-        float Percent = 1.5f * pow(static_cast<float>(Value), 0.9f);
+        float Percent = 1.1f * pow(static_cast<float>(Value), 0.87f);
 
         return RoundToDecimal(Percent, 1);
     }
@@ -635,10 +829,10 @@ public:
     static float GetSpeedPerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
-        const float MaxPercent = 75.0f;
-
+        //At Value = 400, the result will be half of max.
+        const float K = 400.0f;
+        const float MaxPercent = 45.0f;
+        
         if (Value <= 0) return 0.0f;
 
         float Percent = (Value / (Value + K)) * MaxPercent;
@@ -649,10 +843,10 @@ public:
     static float GetCritPerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
-        const float MaxPercent = 80.0f;
-
+        //At Value = 300, the result will be half of max.
+        const float K = 300.0f;
+        const float MaxPercent = 50.0f;
+        
         if (Value <= 0) return 0.0f;
 
         float Percent = (Value / (Value + K)) * MaxPercent;
@@ -662,24 +856,33 @@ public:
 
     static float GetCritDmgPerc(int Value)
     {
-        float Percent = 1.5 + (Value / 100.0f);
+        const float K = 250.0f;
+        const float MaxBonus = 1.5f; 
+        const float BaseCrit = 1.5f; 
 
-        return RoundToDecimal(Percent, 1);
+        if (Value <= 0) return BaseCrit;
+
+        float Bonus = (static_cast<float>(Value) / (Value + K)) * MaxBonus;
+
+        return RoundToDecimal(BaseCrit + Bonus, 1);
     }
 
     static int GetManaPoolIncrease(int Value)
     {
-        int Integer = Value / 2.1;
+        const float MaxIncrease = 100.0f;
+        const float ScalingFactor = 400.0f; 
 
-        return Integer;
+        float Result = (MaxIncrease * Value) / (Value + ScalingFactor);
+
+        return FMath::FloorToInt(Result);
     }
 
     static float GetAbilityCostPerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
-        //At Value = 100, the result will be half of max.
-        const float K = 100.0f;
-        const float MaxPercent = 70.0f;
+        //At Value = 250, the result will be half of max.
+        const float K = 400.0f;
+        const float MaxPercent = 40.0f;
 
         if (Value <= 0) return 0.0f;
 
@@ -691,7 +894,7 @@ public:
     static FForgeResultOdds CalculateForgeOdds(const FString& LeftRarity, const FString& RightRarity)
     {
         static const TArray<FString> RarityOrder = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic" };
-        static const float UpgradeSameTier[7] = { 90.f, 80.f, 70.f, 60.f, 50.f, 40.f, 0.f };
+        static const float UpgradeSameTier[7] = { 95.f, 85.f, 75.f, 65.f, 55.f, 45.f, 0.f };
 
         auto GetIndex = [&](const FString& R) {
             int FoundIndex = RarityOrder.IndexOfByKey(R);

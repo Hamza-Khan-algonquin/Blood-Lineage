@@ -349,6 +349,13 @@ void UInventoryComponent::Server_AutoEquip_Implementation()
         }
     }
     UpdateTotalEquippedStats(Char);
+
+    OnEquipmentChanged.Broadcast();
+    OnInventoryChanged.Broadcast();
+
+    Char->SyncEquippedVisuals(EquippedItems);
+
+    if (RPC) RPC->UpdatePreviewWithEquippedItems();
 }
 
 void UInventoryComponent::UnequipItem(UItemObject* Item, ARelicRunnersPlayerController* RPC)
@@ -584,6 +591,30 @@ void UInventoryComponent::Server_FuseItems_Implementation()
     OnRep_ForgeItems();
 }
 
+void UInventoryComponent::Server_SellAllByRarity_Implementation(const FString& RarityToSell)
+{
+    ARelicRunnersPlayerState* PS = Cast<ARelicRunnersPlayerState>(GetOwner());
+    if (!PS) return;
+
+    float TotalGoldGained = 0.0f;
+
+    for (int i = InventoryItems.Num() - 1; i >= 0; --i)
+    {
+        if (InventoryItems[i] && InventoryItems[i]->ItemData.Rarity == RarityToSell)
+        {
+            TotalGoldGained += InventoryItems[i]->ItemData.Gold;
+            InventoryItems.RemoveAt(i);
+        }
+    }
+
+    if (TotalGoldGained > 0)
+    {
+        PS->AddGold(TotalGoldGained);
+    }
+
+    OnInventoryChanged.Broadcast();
+}
+
 void UInventoryComponent::RemoveItemByID(FGuid ItemID)
 {
     for (int i = 0; i < InventoryItems.Num(); ++i)
@@ -642,6 +673,9 @@ FEquippedStatsSummary UInventoryComponent::CalculateEquippedStats(const ARelicRu
             Summary.TotalDexterity += Item->ItemData.Dexterity;
             Summary.TotalStrength += Item->ItemData.Strength;
             Summary.TotalIntelligence += Item->ItemData.Intelligence;
+            Summary.TotalPotionEfficiency += Item->ItemData.Purity;
+            Summary.TotalLuck += Item->ItemData.Luck;
+            Summary.TotalResourceRegen += Item->ItemData.Regen;
         }
     }
 

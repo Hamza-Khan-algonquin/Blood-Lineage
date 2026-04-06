@@ -13,18 +13,24 @@
 #include "Engine/Engine.h"
 #include "RelicRunners/Menu/Keybinds.h"
 #include <RelicRunners/Menu/LobbyGameMode.h>
+#include <RelicRunners/Menu/SettingsWidget.h>
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
-#include "InputMappingContext.h"
+#include "Camera/CameraComponent.h"
 #include <RelicRunners/PlayerHUD/PlayerHUD.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
+#include "GameFramework/GameUserSettings.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/GameUserSettings.h"
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
+
+#include "Kismet/KismetInternationalizationLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Item/IconLibrary.h"
 
@@ -51,6 +57,9 @@ void URelicRunnersGameInstance::Init()
 
     //Savefiles
     InitializeSaveSlots();
+
+    //language
+    //ApplyLanguage();
 }
 
 void URelicRunnersGameInstance::ResetToDefaults()
@@ -61,6 +70,7 @@ void URelicRunnersGameInstance::ResetToDefaults()
 
 void URelicRunnersGameInstance::ApplyKeybindings()
 {
+
     APlayerController* PC = GetFirstLocalPlayerController();
     if (!PC) return;
 
@@ -76,7 +86,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 
     if (!Subsystem) return;
-   
+
     if (ActiveMappingContext)
     {
         Subsystem->RemoveMappingContext(ActiveMappingContext);
@@ -90,11 +100,11 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, EKeys::Mouse2D);
 
-       UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
-       NegateModifier->bX = Keys->InvertedXMouse;
-       //NegateModifier->bY = Keys->InvertedYMouse;
+        UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
+        NegateModifier->bX = Keys->InvertedXMouse;
+        //NegateModifier->bY = Keys->InvertedYMouse;
 
-       Mapping.Modifiers.Add(NegateModifier);
+        Mapping.Modifiers.Add(NegateModifier);
     }
 
     for (auto& Binding : Keys->KeyBinds)
@@ -134,9 +144,10 @@ void URelicRunnersGameInstance::ApplyKeybindings()
         UE_LOG(LogTemp, Warning, TEXT("PlayerController or PlayerHUD is null"));
     }
 
+    if (!Keys) return;
+    if (PC->PlayerCameraManager)
+        PC->PlayerCameraManager->SetFOV(SavedFOV > 0.f ? SavedFOV : Keys->FOV);
 }
-
-
 
 USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)
 {
@@ -153,7 +164,7 @@ USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData
 
 void URelicRunnersGameInstance::InitializeSaveSlots()
 {
-    if (HasInitializedSlots) return; 
+    if (HasInitializedSlots) return;
     HasInitializedSlots = true;
 
     //Create starting data
@@ -161,6 +172,110 @@ void URelicRunnersGameInstance::InitializeSaveSlots()
     FirstSlot->IsEmptySlot = true;
     SaveSlots.Add(FirstSlot);
 }
+
+void URelicRunnersGameInstance::ApplyAllSettings(APlayerController* PC)
+{
+    if (!PC) return;
+
+    //screen settings
+    if (UGameUserSettings* Settings = UGameUserSettings::GetGameUserSettings())
+    {
+        Settings->SetScreenResolution(Resolution);
+        Settings->SetFullscreenMode(WindowMode);
+        Settings->ApplySettings(false);
+        Settings->SaveSettings();
+    }
+
+    //FOV
+    if (PC->PlayerCameraManager)
+    {
+        float FinalFOV = SavedFOV;
+
+        if (FinalFOV <= 0.f)
+        {
+            FinalFOV = (Keys ? Keys->FOV : 90.f);
+        }
+
+        PC->PlayerCameraManager->SetFOV(FinalFOV);
+    }
+
+    if (APawn* Pawn = PC->GetPawn())
+    {
+        TArray<UCameraComponent*> CameraComponents;
+        Pawn->GetComponents<UCameraComponent>(CameraComponents);
+
+        for (UCameraComponent* Cam : CameraComponents)
+        {
+            if (!Cam) continue;
+
+            FPostProcessSettings& PPS = Cam->PostProcessSettings;
+
+            // Brightness
+            PPS.bOverride_AutoExposureBias = true;
+            PPS.AutoExposureBias = SavedBrightness;
+
+            // Motion blur
+            PPS.bOverride_MotionBlurAmount = true;
+            PPS.MotionBlurAmount = bSavedMotionBlur ? 2.0f : 0.0f;
+
+            // Colorblind LUT
+            PPS.bOverride_ColorGradingLUT = true;
+            PPS.ColorGradingLUT = GetLUTForMode(ColorblindMode);
+
+            PPS.bOverride_ColorGradingIntensity = true;
+            PPS.ColorGradingIntensity = (ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.4f;
+
+            Cam->PostProcessBlendWeight = 1.0f;
+        }
+    }
+
+    ApplyKeybindings();
+}
+
+FUIColorblindStyle URelicRunnersGameInstance::GetCurrentUIStyle() const
+{
+    switch (ColorblindMode)
+    {
+    case EColorblindMode::Protanopia:
+        return ProtanopiaUIStyle;
+
+    case EColorblindMode::Deuteranopia:
+        return DeuteranopiaUIStyle;
+
+    case EColorblindMode::Tritanopia:
+        return TritanopiaUIStyle;
+
+    case EColorblindMode::Normal:
+    default:
+        return NormalUIStyle;
+    }
+}
+
+/*void URelicRunnersGameInstance::ApplyLanguage()
+{
+    const FString CultureCode = GetCultureCodeFromLanguage(CurrentLanguage);
+    UKismetInternationalizationLibrary::SetCurrentLanguageAndLocale(CultureCode, true);
+}
+
+void URelicRunnersGameInstance::SetLanguage(EGameLanguage NewLanguage)
+{
+    CurrentLanguage = NewLanguage;
+    ApplyLanguage();
+}
+
+FString URelicRunnersGameInstance::GetCultureCodeFromLanguage(EGameLanguage Language) const
+{
+    switch (Language)
+    {
+    case EGameLanguage::French:
+        return TEXT("fr");
+    case EGameLanguage::English:
+    default:
+        return TEXT("en");
+    }
+}
+*/
+
 
 void URelicRunnersGameInstance::Shutdown()
 {
@@ -220,16 +335,25 @@ void URelicRunnersGameInstance::CreateNewSession()
         //Setup parameters
         int LobbySize = 4;
         FOnlineSessionSettings SessionSettings;
+        SessionSettings.bIsLANMatch = true; 
+        SessionSettings.bShouldAdvertise = true;
         SessionSettings.NumPublicConnections = LobbySize;
+        SessionSettings.bUsesPresence = false;
+        SessionSettings.bAllowJoinInProgress = true;
+        SessionSettings.bAllowJoinViaPresence = true;
+        SessionSettings.bUseLobbiesIfAvailable = false;
+        SessionSettings.bIsDedicated = false;
+        SessionSettings.bUsesStats = false;
+       /* SessionSettings.NumPublicConnections = LobbySize;
         SessionSettings.bIsLANMatch = false;
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.bUsesPresence = true;
         SessionSettings.bAllowInvites = true;
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.bAllowJoinViaPresence = true;
-        SessionSettings.bAllowJoinInProgress = true;
+        SessionSettings.bAllowJoinInProgress = true;*/
         FString LobbyTitle = FString::Printf(TEXT("%s's Lobby"), *PlayerName);
-        SessionSettings.Set(SETTING_MAPNAME, LobbyTitle, EOnlineDataAdvertisementType::ViaOnlineService);
+        SessionSettings.Set(SETTING_MAPNAME, LobbyTitle, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
         Sess->OnCreateSessionCompleteDelegates.RemoveAll(this);
         Sess->OnCreateSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnCreateSessionComplete);
@@ -242,7 +366,8 @@ void URelicRunnersGameInstance::OnCreateSessionComplete(FName SessionName, bool 
     UE_LOG(LogTemp, Log, TEXT("OnCreateSessionComplete: %s success=%d"), *SessionName.ToString(), bWasSuccessful);
     if (bWasSuccessful)
     {
-        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, TEXT("listen"));
+        FString Options = TEXT("listen?lan?bIsLanMatch=1?GameStarted=0");
+        UGameplayStatics::OpenLevel(this, TEXT("Lobby"), true, Options);
     }
 
     //Unbind delegate 
@@ -254,22 +379,46 @@ void URelicRunnersGameInstance::OnCreateSessionComplete(FName SessionName, bool 
 
 void URelicRunnersGameInstance::FindGames(UJoinUserWidget* UserWidget)
 {
+    //if (TSharedPtr<IOnlineSession> Session = SessionInterface.Pin())
+    //{
+    //    //Search parameters
+    //    int NumResults = 20;
+    //    SessionSearch = MakeShareable(new FOnlineSessionSearch());
+    //    SessionSearch->MaxSearchResults = NumResults;
+    //    SessionSearch->bIsLanQuery = false;
+    //    SessionSearch->QuerySettings.Set(FName("PRESENCESEARCH"), true, EOnlineComparisonOp::Equals);
+
+    //    Session->OnFindSessionsCompleteDelegates.RemoveAll(this);
+    //    Session->OnFindSessionsCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnFindSessionsComplete);
+    //    Session->FindSessions(0, SessionSearch.ToSharedRef());
+
+    //    TextRenderWidget = UserWidget;
+    //    TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
+    //}
+    
     if (TSharedPtr<IOnlineSession> Session = SessionInterface.Pin())
     {
-        //Search parameters
-        int NumResults = 20;
         SessionSearch = MakeShareable(new FOnlineSessionSearch());
-        SessionSearch->MaxSearchResults = NumResults;
-        SessionSearch->bIsLanQuery = false;
-        SessionSearch->QuerySettings.Set(FName("PRESENCESEARCH"), true, EOnlineComparisonOp::Equals);
+        SessionSearch->MaxSearchResults = 20;
 
+        SessionSearch->bIsLanQuery = true;
         Session->OnFindSessionsCompleteDelegates.RemoveAll(this);
         Session->OnFindSessionsCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnFindSessionsComplete);
+
         Session->FindSessions(0, SessionSearch.ToSharedRef());
 
         TextRenderWidget = UserWidget;
         TextRenderWidget->SessionsBorder->SetVisibility(ESlateVisibility::Collapsed);
     }
+}
+
+void URelicRunnersGameInstance::JoinGameByIP(FString IPAddress)
+{
+    //APlayerController* PC = GetFirstLocalPlayerController();
+    //if (PC)
+    //{
+    //    PC->ClientTravel(IPAddress, ETravelType::TRAVEL_Absolute);
+    //}
 }
 
 void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
@@ -279,8 +428,12 @@ void URelicRunnersGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
     bool AddedAnyResults = false;
 
+    UE_LOG(LogTemp, Warning, TEXT("FindSessions Complete. Success: %d"), bWasSuccessful);
+
     if (bWasSuccessful && SessionSearch.IsValid())
     {
+        UE_LOG(LogTemp, Warning, TEXT("Found %d total sessions"), SessionSearch->SearchResults.Num());
+
         TSharedPtr<IOnlineSession> Session = SessionInterface.Pin();
         if (!Session.IsValid()) return;
 
@@ -438,44 +591,67 @@ void URelicRunnersGameInstance::OnSessionDestroyedThenJoin(FName SessionName, bo
         return;
     }
 
-    if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
-    {
-        Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
-        Sess->OnJoinSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnJoinSessionComplete);
-        Sess->JoinSession(0, NAME_GameSession, SessionSearch->SearchResults[PendingJoinIndex]);
-    }
-
-    PendingJoinIndex = -1;
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+        {
+            if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
+            {
+                Sess->OnJoinSessionCompleteDelegates.AddUObject(this, &URelicRunnersGameInstance::OnJoinSessionComplete);
+                Sess->JoinSession(0, NAME_GameSession, SessionSearch->SearchResults[PendingJoinIndex]);
+                PendingJoinIndex = -1;
+            }
+        });
 }
 
 void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
     if (Result != EOnJoinSessionCompleteResult::Success)
     {
-        UE_LOG(LogTemp, Error, TEXT("Join failed at the network level. Result: %d"), (int32)Result);
+        UE_LOG(LogTemp, Error, TEXT("Join failed. Result: %d"), (int32)Result);
         return;
     }
 
     if (TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin())
     {
-        Sess->OnJoinSessionCompleteDelegates.RemoveAll(this);
-
         FString ConnectInfo;
-        if (!Sess->GetResolvedConnectString(SessionName, ConnectInfo, NAME_GamePort) || ConnectInfo.IsEmpty())
-        {
-            if (!Sess->GetResolvedConnectString(SessionName, ConnectInfo) || ConnectInfo.IsEmpty())
-            {
-                FString NoConnect = FString::Printf(TEXT("Failed to resolve connect string for session %s"), *SessionName.ToString());
-                UE_LOG(LogTemp, Error, TEXT("%s"), *NoConnect);
-                return;
-            }
-        }
 
-        if (APlayerController* PC = GetFirstLocalPlayerController())
+        if (Sess->GetResolvedConnectString(SessionName, ConnectInfo))
         {
-            PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+            UE_LOG(LogTemp, Log, TEXT("Resolved Connect String: %s"), *ConnectInfo);
+        }
+        FNamedOnlineSession* NamedSession = Sess->GetNamedSession(SessionName);
+        if (Sess->GetResolvedConnectString(SessionName, ConnectInfo))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Resolved Connect String: %s"), *ConnectInfo);
+        }
+        else if (NamedSession && NamedSession->SessionInfo.IsValid())
+        {
+            ConnectInfo = NamedSession->SessionInfo->ToString();
+
+            UE_LOG(LogTemp, Warning, TEXT("Manual Fallback Resolution: %s"), *ConnectInfo);
+        }
+        if (!ConnectInfo.IsEmpty())
+        {
+            FTimerHandle TimerHandl;
+            GetWorld()->GetTimerManager().SetTimer(TimerHandl, [this, ConnectInfo]()
+                {
+                    if (APlayerController* PC = GetFirstLocalPlayerController())
+                    {
+                        PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+                    }
+                }, 0.2f, false);
         }
     }
+}
+
+
+UTexture* URelicRunnersGameInstance::GetLUTForMode(EColorblindMode ColorBlind)
+{
+    if (ColorBlind == EColorblindMode::Protanopia ) return LUT_Protanopia;
+    if (ColorBlind == EColorblindMode::Deuteranopia) return LUT_Deuteranopia;
+    if (ColorBlind == EColorblindMode::Tritanopia) return LUT_Tritanopia;
+    if (ColorBlind == EColorblindMode::Normal) return LUT_Normal;
+
+    return LUT_Normal;
 }
 
 void URelicRunnersGameInstance::StartSessionGame()
@@ -487,7 +663,8 @@ void URelicRunnersGameInstance::StartSessionGame()
     UE_LOG(LogTemp, Warning, TEXT("NetDriver: %s"), NetDriver ? *NetDriver->GetName() : TEXT("NULL"));
     UE_LOG(LogTemp, Warning, TEXT("World Purpose: %d"), (int32)World->WorldType);
 
-    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen?GameStarted=1");
+    //?GameStarted=1 Makes it so you can't join mid game
+    FString TravelURL = TEXT("/Game/ThirdPerson/Maps/IslandTest?listen?lan?GameStarted=1");
     UE_LOG(LogTemp, Warning, TEXT("[GameInstance] Host starting travel to %s"), *TravelURL);
 
     TSharedPtr<IOnlineSession> Sess = SessionInterface.Pin();

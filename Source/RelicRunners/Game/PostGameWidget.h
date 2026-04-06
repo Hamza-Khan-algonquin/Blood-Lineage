@@ -11,15 +11,18 @@ struct FPlayerPostGameData
 {
     GENERATED_BODY()
 
-    UPROPERTY() FString Username;
-    UPROPERTY() int MetaLevel;
-    UPROPERTY() int MetaXP;
-    UPROPERTY() int MetaXPToNextLevel;
+    UPROPERTY() FString Username = "";
 
-    UPROPERTY() int MetaXPGainInRun;
-    UPROPERTY() int LevelsEarned;
-    UPROPERTY() int EnemiesKilled;
-    UPROPERTY() int Deaths;
+    //Before Run
+    UPROPERTY() int MetaLevel = 0;
+    UPROPERTY() int MetaXP = 0;
+    UPROPERTY() int MetaXPToNextLevel = 0;
+
+    //Gains in Run
+    UPROPERTY() int MetaXPGainInRun = 0;
+    UPROPERTY() int LevelsEarned = 0;
+    UPROPERTY() int EnemiesKilled = 0;
+    UPROPERTY() int Deaths = 0;
 };
 
 UCLASS()
@@ -28,11 +31,11 @@ class RELICRUNNERS_API UPostGameWidget : public UUserWidget
     GENERATED_BODY()
 
 public:
-    // Call this from your PlayerController after creating the widget
     UFUNCTION(BlueprintCallable, Category = "PostGame")
     void UpdateScoreboard(const TArray<FPlayerPostGameData>& PlayersData);
 
 protected:
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
     struct FPlayerColumn
     {
@@ -40,12 +43,23 @@ protected:
         class UTextBlock* Username;
         class UTextBlock* MetaLevel;
         class UTextBlock* MetaNextLevel;
-        class UTextBlock* MetaXP;
+        class UTextBlock* MetaXPText;   
         class UTextBlock* LevelsEarned;
         class UTextBlock* EnemiesKilled;
         class UTextBlock* PlayerDeaths;
         class UProgressBar* XPBar;
     };
+
+    TArray<FPlayerPostGameData> CachedStats;
+    TArray<float> AnimatingXP;
+    TArray<int32> AnimatingLevel;
+
+    float AnimationTimer = 0.0f;
+    const float MaxAnimTime = 2.0f;
+    bool bIsAnimating = false;
+
+    float MaxPopTime = 0.3f;
+    TArray<float> BarScaleTimers = { 0.f, 4 };
 
     UPROPERTY(meta = (BindWidget)) class UVerticalBox* Player1Box;
     UPROPERTY(meta = (BindWidget)) class UVerticalBox* Player2Box;

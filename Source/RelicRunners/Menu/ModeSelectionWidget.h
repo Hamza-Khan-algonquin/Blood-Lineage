@@ -13,6 +13,7 @@ class RELICRUNNERS_API UModeSelectionWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	void NativeConstruct() override;
+	void ShowUpgradesAvailable();
 	UFUNCTION(BlueprintCallable)
 	void HighlightSelectedSlot(class USaveFileListWidget* NewSelection);
 	UPROPERTY(BlueprintReadWrite)
@@ -41,6 +42,10 @@ public:
 
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UHorizontalBox* UpgradeAvailable1 = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UHorizontalBox* UpgradeAvailable2 = nullptr;
 	void ResetUI();
 	UFUNCTION(BlueprintCallable)
 	void OpenSaveFilePopupWidget(class USaveFileListWidget* TargetSlot);

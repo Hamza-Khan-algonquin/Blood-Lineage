@@ -141,6 +141,8 @@ AActor* AObjectPoolManager::CreateActor(TSubclassOf<AActor> actorType)
 		return nullptr;
 	}
 
+	//NetMultiCast_OnCreateActor(newActor);
+
 	AddActor(newActor, actorType);
 	return newActor;
 	
@@ -150,7 +152,9 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 {
 	if (!HasAuthority())
 	{
+#if WITH_EDITOR
 		UE_LOG(LogTemp, Error, TEXT("ObjectPoolManager GetActor called on client! This should only be called on the server!"));
+#endif
 		return nullptr;
 	}
 
@@ -164,6 +168,7 @@ AActor* AObjectPoolManager::GetActor(TSubclassOf<AActor> actorType, float lifeSp
 			if (pointer.IsValid() && ((isInterface && !Cast<IPoolActorInterface>(pointer.Get())->GetIsActive()) || (!isInterface && pointer->IsHidden())))
 			{
 				returnActor = pointer.Get();
+				break;
 			}
 		}
 	}
@@ -250,6 +255,16 @@ void AObjectPoolManager::CleanUpPools()
 bool AObjectPoolManager::IsActorClassPooled(TSubclassOf<AActor> actorType)
 {
 	return PooledObjects.Contains(actorType);
+}
+
+void AObjectPoolManager::NetMultiCast_OnCreateActor_Implementation(AActor* newActor)
+{
+	if (newActor && IsValid(newActor))
+	{
+		newActor->SetActorHiddenInGame(true);
+
+
+	}
 }
 
 // Called when the game starts or when spawned

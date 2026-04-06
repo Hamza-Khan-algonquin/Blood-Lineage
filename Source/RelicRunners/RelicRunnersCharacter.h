@@ -47,6 +47,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class AAbilityBase;
+class UHitStunComponent;
 struct FInputActionValue;
 
 USTRUCT(BlueprintType)
@@ -106,6 +107,7 @@ public:
 	void DefenceAbility();
 	void UtilityAbility();
 	void UltimateAbility();
+	void EndAllAbilities();
 	virtual void ActivateDamageAbilities();
 	virtual void ActivateDefenceAbilities();
 	virtual void ActivateUtilityAbilities();
@@ -201,16 +203,41 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minimap")
 	USpringArmComponent* MinimapSpringArm;
 
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> HitCameraShake;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAbilityAnimation(UAnimMontage* Montage, float AnimSpeed);
+
+	UFUNCTION(Server, Reliable)
+	void Server_PlayAbilityAnimation(UAnimMontage* Montage, float AnimSpeed);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnBeam(AActor* Target, UNiagaraSystem* VFX);
+
+	TMap<TWeakObjectPtr<AActor>, TWeakObjectPtr<UNiagaraComponent>> ActiveBeams;
+
 protected:
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	UAbilitySystemComponent* AbilitySystem;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* BasicAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* HealPotionAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* SideStepLeftAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* SideStepRightAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* BackStepAnim;
 
 	//Functions
 	void Tick(float DeltaTime);
@@ -235,7 +262,10 @@ protected:
 	UInputMappingContext* DefaultMappingContext;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FVector respawnPoint;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitStunComponent> HitStunComponent;
 
+	UPROPERTY()
 	AActor* CurrentFocusedActor = nullptr;
 
 	//Timers
@@ -288,8 +318,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera|Bounce")
 	float BounceSpeed = 6.f;
 
-
 	FVector CurrentLookAhead;
+
+	UPROPERTY(Replicated)
+	FVector AimDirection;
 
 };
 

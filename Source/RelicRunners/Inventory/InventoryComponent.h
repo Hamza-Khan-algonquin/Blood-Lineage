@@ -44,7 +44,7 @@ struct FEquippedStatsSummary
     UPROPERTY(BlueprintReadOnly) 
     int TotalIntelligence = 0;
     UPROPERTY(BlueprintReadOnly)
-    int TotalLuck = 0;
+    float TotalLuck = 0;
     UPROPERTY(BlueprintReadOnly)
     float TotalResourceRegen = 0.0f;
     UPROPERTY(BlueprintReadOnly)
@@ -100,6 +100,8 @@ public:
     class UClassInfo* ClassInfo;
 
     //Functions
+    UFUNCTION(Server, Reliable)
+    void Server_SellAllByRarity(const FString& RarityToSell);
     UFUNCTION(BlueprintCallable, Category = "Inventory")
     void RequestAutoEquip();
     UFUNCTION(Server, Reliable, WithValidation)

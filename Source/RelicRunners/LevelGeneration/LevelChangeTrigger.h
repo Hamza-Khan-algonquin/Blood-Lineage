@@ -39,6 +39,9 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Default Values")
 	FString TargetLevel; //Level name players will be sent to. Recieved from the level generator.
 
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Default Values")
+	FString BossLevel; //Boss Level name players will be sent to. Recieved from the level generator.
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
 	TObjectPtr<USoundBase> PortalEnterSound = nullptr;
 
@@ -58,4 +61,7 @@ public:
 
 	UPROPERTY(Replicated)
 	bool IsActive = false;
+
+	UPROPERTY(EditAnywhere)
+	bool CanGoToBoss = false;
 };

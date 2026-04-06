@@ -13,14 +13,13 @@ class RELICRUNNERS_API UMainMenuWidget : public UUserWidget
     GENERATED_BODY()
 protected:
     virtual void NativeConstruct() override;
+public:
     class UModeSelectionWidget* ModeSelectionWidget;
     class UJoinUserWidget* JoinGameWidget;
     class USettingsWidget* SettingsWidget;
     class UUpgradesWidget* UpgradesWidget;
     class UCreditsWidget* CreditsWidget;
-
-    //need to be fixed later 
-    class UJoinUserWidget* TutorialWidget;
+    class UHowToPlay* HowToPlayWidget;
 
 public:
     UPROPERTY(meta = (BindWidget))
@@ -50,6 +49,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Audio")
     void PlayButtonClickSound();
 
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> ModeSelectionUserWidgetClass;
 
@@ -65,7 +65,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> SettingsWidgetClass;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<UUserWidget> HowToPlayWidgetClass;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
     USoundBase* ButtonClickSound = nullptr;
+
 
 };

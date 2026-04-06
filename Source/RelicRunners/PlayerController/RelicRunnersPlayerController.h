@@ -37,7 +37,7 @@ USTRUCT(BlueprintType)
 struct FPendingObjective {
 	GENERATED_BODY()
 
-		UPROPERTY()
+	UPROPERTY()
 	int FlagCount = 0;
 
 	UPROPERTY()
@@ -45,6 +45,12 @@ struct FPendingObjective {
 
 	UPROPERTY()
 	float PandoraTime = 0.0f;
+
+	UPROPERTY()
+	FGuid ObjectiveGUID;
+
+	UPROPERTY()
+	bool Completed = false;
 
 	UPROPERTY()
 	EObjectiveType Type = EObjectiveType::None;
@@ -75,13 +81,8 @@ public:
 	void UpdateEnemiesObjective(int EnemiesLeft);
 	void UpdatePandoraObjective(float NewPercent, FString NewTimeText);
 
-	enum class EObjectiveType { None, Flag, Payload, Enemies, Pandora };
-	struct FPendingObjective {
-		int FlagCount = 0;
-		int EnemyCount = 0;
-		float PandoraTime = 0.0f;
-		EObjectiveType Type = EObjectiveType::None;
-	};
+	UFUNCTION(BlueprintCallable, Category = "Accessibility")
+	void ApplyColorblindMode();
 
 	FTimerHandle TimerHandle_UIWait;
 
@@ -140,6 +141,8 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePandoraUI(float NewPercent, const FString& NewTimeText);
+	UFUNCTION(Server, Reliable)
+	void Server_RecordPawnReadyTime();
 
 	//UFUNCTION(Client, Reliable)
 	//void Client_UpdateEnemiesUI(int EnemiesLeft);
@@ -298,6 +301,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
 	int GetCalculatedManaCost(float BaseMana);
 
+	
+
 	FVector CinematicTargetLocation;
 
 	//Timers
@@ -376,6 +381,8 @@ protected:
 	UPROPERTY()
 	class UTitleData* ObjectiveStageTitle;
 
+	UFUNCTION(BlueprintCallable)
+	void ApplySavedFOV();
 	//Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputMappingContext* InputMappingContext;

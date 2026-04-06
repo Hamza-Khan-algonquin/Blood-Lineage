@@ -16,9 +16,8 @@ struct FBasicProjectile
 	FVector Velocity;
 	FVector PreviousLocation;
 	float ElapsedTime = 0.f;
-
+	UNiagaraComponent* VFXComponent;
 	TSet<AActor*> AlreadyHitActors;
-	UStaticMeshComponent* Mesh = nullptr;
 };
 
 UCLASS()
@@ -42,6 +41,22 @@ protected:
 	virtual void ActivateUtilityAbilities() override;
 	virtual void ActivateUltimateAbilities() override;
 
+	UFUNCTION(Server, Reliable)
+	void Server_BasicAttack();
+
+	void HandleBasicAttack();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAttack();
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnProjectile(FVector Location, FVector Velocity);
+
+	void SpawnProjectile();
+
 	void GiveBundleOfJoy();
 	void GiveMirrorOfDesire();
 	void GiveKissOfLife();
@@ -56,7 +71,6 @@ protected:
 	virtual void PlayRandomAttackAnimation() override;
 	virtual void PerformSwingTrace() override;
 	virtual void BasicAttack() override;
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	virtual void HeavyAttack() override;
 	virtual void ProjectileHeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
@@ -119,4 +133,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
 	TObjectPtr<USoundBase> BasicAttackSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+	TObjectPtr<UNiagaraSystem> AbilityVFX = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VFX")
+	TObjectPtr<UNiagaraSystem> AbilityVFX1 = nullptr;
+
+	bool bRemoved = false;
 };

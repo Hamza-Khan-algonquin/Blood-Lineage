@@ -22,6 +22,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Vendor|Stock")
 	TSubclassOf<UItemMeshData> ItemMeshDataClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vendor")
+	UItemMeshData* ItemMeshDataAsset;
+
 	UFUNCTION(BlueprintCallable, Category = "Vendor")
 	void RerollStock();
 

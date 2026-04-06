@@ -171,6 +171,7 @@ void AItemActor::Initialize(const FItemData& InItemData)
 
 void AItemActor::OnRep_ItemData()
 {
+    Initialize(ItemData);
     SetupVisuals();
 }
 
@@ -266,6 +267,8 @@ FItemData AItemActor::GetItemData_Implementation()
 
 void AItemActor::OnAutoLootSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+    if (IsPendingKillPending() || !IsValid(this)) return;
+
     URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
     ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(OtherActor);
 

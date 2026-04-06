@@ -16,6 +16,18 @@
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/Enemy/EnemyStats.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
+#include "RelicRunners/Enemy/Controllers/CommanderController.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "RelicRunners/Enemy/HitFlashComponent.h"
+#include "RelicRunners/Enemy/HitStunComponent.h"
+#include "RelicRunners/Inventory/InventoryComponent.h"
+#include <RelicRunners/RelicRunnersGameState.h>
+
+void AEnemyCharacter::Destroy()
+{
+	Super::Destroy();
+}
 
 AEnemyCharacter::AEnemyCharacter() : ACharacter()
 {
@@ -38,13 +50,20 @@ AEnemyCharacter::AEnemyCharacter() : ACharacter()
 	EnemyHUDWorld->SetVisibility(true);
 	EnemyHUDWorld->CastShadow = false;
 
-	ShouldDieIfCommanderIsDone = false;
+	HitFlashComponent = CreateDefaultSubobject<UHitFlashComponent>(TEXT("Hit Flash Component"));
 
+	HitStunComponent = CreateDefaultSubobject<UHitStunComponent>(TEXT("Hit Stun Component"));
+
+	ShouldDieIfCommanderIsDone = false;
+	ShouldNotTakeDamage = false;
 	//tick moment :O
 	PrimaryActorTick.bCanEverTick = false;
 	//Setting up networking for the actor
 	bReplicates = true;
 	SetReplicateMovement(true);
+
+	HitStunTime = 0.1f;
+
 	//add the holy tag
 	Tags.Add("Enemy");
 }
@@ -66,7 +85,7 @@ void AEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority())
+	if (!HasAuthority() || !IsActive || IsHidden() || ShouldNotTakeDamage)
 	{
 		return 0;
 	}
@@ -97,6 +116,37 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 				EnemyStatsComponent->SetRemainingStunTime(AttackDamageEvent->StunDuration);
 			}
 		}
+
+		TArray<FHitResult> HitResult;
+		FCollisionObjectQueryParams objCollParams;
+		objCollParams.AddObjectTypesToQuery(ECC_GameTraceChannel1);
+
+		if (HitFlashComponent)
+		{
+			HitFlashComponent->Multicast_StartHitFlash();
+		}
+
+		if (HitStunComponent)
+		{
+			HitStunComponent->Multicast_StartHitStun(HitStunTime);
+		}
+
+		
+		bool hit = GetWorld()->LineTraceMultiByObjectType(HitResult, DamageCauser->GetActorLocation(), GetActorLocation(), objCollParams);
+
+		if (hit)
+		{
+			for (FHitResult result : HitResult)
+			{
+				AActor* hitActor = result.GetActor();
+				if (hitActor == this)
+				{
+					NetMultPlayParticleEffect(DamageEffect, result.Location);
+					break;
+				}
+			}
+		}
+		
 	}
 
 	return DamageAmount;
@@ -104,25 +154,28 @@ float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 void AEnemyCharacter::Die(AController* EventInstigator)
 {
-	if (HasAuthority())
+	if (HasAuthority() && IsActive && !IsHidden())
 	{
-		SpawnItem();
-
 		if (EventInstigator)
 		{
 			ARelicRunnersPlayerState* PS = EventInstigator->GetPlayerState<ARelicRunnersPlayerState>();
 
 			if (PS)
 			{
-				PS->AddExperience(CalculateXP());
+				PS->AddExperience(CalculateXP() * (EnemyStatsComponent->GetLevel()));
+				PS->EnemiesKilled++;
+				float PlayerLuck = PS->GetInventoryComponent()->CachedEquippedStats.TotalLuck;
+				SpawnItem(PlayerLuck);
 			}
 		}
 
 		OnDied.Broadcast(this);
 		OnDied.Clear();
 
-		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+		NetMultPlayParticleEffect(DeathEffect, GetActorLocation());
 
+		AObjectPoolManager* PoolManager = AObjectPoolManager::GetInstance(this);
+		
 		if (PoolManager && PoolManager->IsActorClassPooled(this->GetClass()))
 		{
 			SetIsActive(false);
@@ -134,9 +187,136 @@ void AEnemyCharacter::Die(AController* EventInstigator)
 				EnemyHUDWorld->DestroyComponent();
 			}
 
-			Destroy();
+			//Gives enough time to multicast effect
+			float DeathDelay = 0.2f;
+			FTimerHandle TearOffTimer;
+			GetWorldTimerManager().SetTimer(TearOffTimer, this, &AEnemyCharacter::TearOff, DeathDelay, false);
+
+			//Calls destory
+			SetLifeSpan(DeathDelay);
 		}
 	}
+}
+
+void AEnemyCharacter::SpawnItem(float Luck)
+{
+	if (!IsValid(EnemyStatsComponent)) return;
+	if (!canDropItems) return;
+
+	//Difficulty
+	URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	FDifficultyInfo diffInfo = FDifficultyInfo();
+	if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+	{
+		diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+	}
+
+	float chance = FMath::FRandRange(0.f, 100.f);
+	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
+	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
+	if (EnemyStatsComponent->IsGold) chance = 0;
+
+	if (chance <= chanceToDropOverall)
+	{
+		if (ItemMeshDataClass)
+		{
+			ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
+		}
+
+		UIconLibrary* Lib = GI->GlobalIconLibrary;
+
+		float GoldLuck = 0;
+		float UsedLuck = Luck;
+		if (EnemyStatsComponent->IsGold) GoldLuck = 95; UsedLuck = GoldLuck;
+
+		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
+			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(UsedLuck), ItemMeshData, Lib),
+			this
+		);
+
+		if (!DroppedItem) return;
+
+		FVector InitialSpawnLoc = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FVector FinalLoc = CalculateValidDropLocation(InitialSpawnLoc);
+
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Instigator = this;
+
+		//Use Deferred Spawning
+		AItemActor* Dropped = GetWorld()->SpawnActorDeferred<AItemActor>(
+			ItemActorClass,
+			FTransform(FRotator::ZeroRotator, FinalLoc),
+			this,
+			this,
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+		);
+
+		if (Dropped)
+		{
+			//This ensures Auto-Loot can't trigger until the data is valid!
+			Dropped->ItemData = DroppedItem->ItemData;
+			Dropped->Initialize(DroppedItem->ItemData);
+			Dropped->FinishSpawning(FTransform(FRotator::ZeroRotator, FinalLoc));
+			Dropped->SetReplicates(true);
+			Dropped->SetReplicateMovement(true);
+		}
+	}
+}
+
+FVector AEnemyCharacter::CalculateValidDropLocation(FVector DesiredLoc) const
+{
+	const float MinDistance = 50.f;
+	TArray<AActor*> FoundItems;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AItemActor::StaticClass(), FoundItems);
+
+	//If no items exist, the desired location is perfectly fine
+	if (FoundItems.Num() == 0) return DesiredLoc;
+
+	FVector CurrentBestLoc = DesiredLoc;
+	bool NeedsRepositioning = false;
+
+	//Check if our desired spot is blocked
+	for (AActor* Item : FoundItems)
+	{
+		if (IsValid(Item) && FVector::Dist(Item->GetActorLocation(), DesiredLoc) < MinDistance)
+		{
+			NeedsRepositioning = true;
+			break;
+		}
+	}
+
+	if (!NeedsRepositioning) return DesiredLoc;
+
+	//Spiral search
+	for (int Radius = 60; Radius <= 300; Radius += 60)
+	{
+		for (int Angle = 0; Angle < 360; Angle += 45)
+		{
+			const float Radians = FMath::DegreesToRadians(Angle);
+			FVector Offset(FMath::Cos(Radians) * Radius, FMath::Sin(Radians) * Radius, 0.f);
+			FVector CandidateLoc = DesiredLoc + Offset;
+
+			//Check candidate against all world items
+			bool CollisionFound = false;
+			for (AActor* Item : FoundItems)
+			{
+				if (FVector::Dist(CandidateLoc, Item->GetActorLocation()) < MinDistance)
+				{
+					CollisionFound = true;
+					break;
+				}
+			}
+
+			if (!CollisionFound)
+			{
+				return CandidateLoc;
+			}
+		}
+	}
+
+	return DesiredLoc;
 }
 
 inline bool AEnemyCharacter::IsDead()
@@ -174,6 +354,18 @@ void AEnemyCharacter::BeginPlay()
 		}
 	}
 
+	SetActorHiddenInGame(true);
+
+	TWeakObjectPtr<AEnemyCharacter> weakThis = this;
+	FTimerHandle temp;
+	GetWorld()->GetTimerManager().SetTimer(temp, [weakThis]()
+		{
+			if (weakThis.IsValid())
+			{
+				weakThis->SetActorHiddenInGame(false);
+			}
+		}, 2.f, false);
+
 
 	//mesh data
 	if (ItemMeshDataClass)
@@ -184,6 +376,8 @@ void AEnemyCharacter::BeginPlay()
 
 	if (HasAuthority())
 	{
+		HitFlashComponent->Multicast_InitializeNewDynamicMaterials(GetMesh());
+
 		//get refernce to objects that we need to get the director
 		UWorld* World = GetWorld();
 		APawn* enemy = static_cast<APawn*>(this);
@@ -278,19 +472,33 @@ void AEnemyCharacter::UpdateEnemyHUDWorldFacing()
 	}
 }
 
+void AEnemyCharacter::NetMultPlayParticleEffect_Implementation(UNiagaraSystem* effect, FVector position)
+{
+	if (effect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), effect, position, GetActorRotation(), GetActorScale());
+	}
+}
+
 void AEnemyCharacter::NetMultSetIsActive_Implementation(bool newIsActive)
 {
 	if (newIsActive)
 	{
 		this->SetActorHiddenInGame(false);
-		this->SetActorEnableCollision(true);
-		this->SetActorTickEnabled(this->GetShouldTick());
+		if (OverrideCollisionType)
+		{
+			this->GetCapsuleComponent()->SetCollisionProfileName("Enemy");
+		}
+		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
-		this->SetActorEnableCollision(false);
-		this->SetActorTickEnabled(false);
+		if (OverrideCollisionType)
+		{
+			this->GetCapsuleComponent()->SetCollisionProfileName("MinotaurDisable");
+		}
+		//this->SetActorTickEnabled(false);
 	}
 }
 
@@ -307,6 +515,7 @@ void AEnemyCharacter::ResetEnemy()
 {
 	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
 	EnemyStatsComponent->SetRemainingStunTime(0.f);
+	
 }
 
 void AEnemyCharacter::AddEnemyToDirector()
@@ -332,6 +541,13 @@ void AEnemyCharacter::AddEnemyToDirector()
 
 bool AEnemyCharacter::GetIsActive()
 {
+
+	if (ACommanderController* commander = Cast<ACommanderController>(Controller))
+	{
+		//both need to be false for it to be inactive
+		return !commander->InactiveCheck() || IsActive;
+	}
+
 	return IsActive;
 }
 
@@ -350,18 +566,47 @@ void AEnemyCharacter::SetIsActive(bool newIsActive)
 	IsActive = newIsActive;
 	NetMultSetIsActive(newIsActive);
 
-	if (!newIsActive)
+	ACommanderController* commander = nullptr;
+
+	if (IsValid(Controller))
 	{
-		OnDeactivated.Broadcast(this);
-		ResetEnemy();
+		commander = Cast<ACommanderController>(Controller);
 	}
 
-	AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+	if (newIsActive)
+	{
+		ResetEnemy();
 
-	if (pool && SetControllerActiveStatus && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
+		if (IsValid(commander))
+		{
+			commander->ResetController();
+		}
+	}
+	else 
+	{
+		if (IsValid(commander))
+		{
+			commander->StopMovement();
+			GetCharacterMovement()->StopMovementImmediately();
+			//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+
+			UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(commander->BrainComponent);
+
+			if (IsValid(BTComp))
+			{
+				BTComp->StopTree(EBTStopMode::Forced);
+			}
+		}
+		
+		OnDeactivated.Broadcast(this);
+	}
+
+	/*AObjectPoolManager* pool = AObjectPoolManager::GetInstance(this);
+
+	if (pool && SetControllerActiveStatus && GetController() && GetController()->GetClass()->ImplementsInterface(UPoolActorInterface::StaticClass()))
 	{
 		pool->SetActorActive(GetController(), newIsActive);
-	}
+	}*/
 }
 
 FTimerHandle& AEnemyCharacter::GetLifeSpanTimerHandle()

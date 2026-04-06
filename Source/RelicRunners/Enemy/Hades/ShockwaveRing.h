@@ -27,6 +27,9 @@ public:
 	float Acceleration = 0.15f;
 	int Difficulty = 1;
 	TMap<USceneComponent*, FVector> SliceDirections;
+
+	UPROPERTY()
+	TArray<UMaterialInstanceDynamic*> SliceMaterials;
 protected:
 
 public:	

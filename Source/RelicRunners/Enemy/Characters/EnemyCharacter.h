@@ -23,6 +23,9 @@ To Do:
 class UWidgetComponent;
 class UAnimMontage;
 class UEnemyStats;
+class UNiagaraSystem;
+class UHitFlashComponent;
+class UHitStunComponent;
 
 UCLASS(Blueprintable, Abstract)
 class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
@@ -40,7 +43,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyStats> EnemyStatsComponent;
+	UPROPERTY(EditAnywhere)
+	bool ShouldNotTakeDamage;
+
+	UPROPERTY(EditAnywhere)
+	float HitStunTime;
 protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UNiagaraSystem> DamageEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UNiagaraSystem> DeathEffect;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<struct FItemData> ItemLootPool;
@@ -50,38 +64,19 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Item Generation")
 	TSubclassOf<class UItemMeshData> ItemMeshDataClass;
 
-	//UPROPERTY(DisplayName = "Name", Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
-	//FName EnemyName = "Enemy";
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetCurrentHealth, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
-	//float CurrentHealth;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintSetter = SetMaxHealth, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
-	//float MaxHealth;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 0.1))
-	//float RemainingStunTime = 0;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, BlueprintReadWrite, Replicated, meta = (Delta = 1))
-	//int Level = 1;
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, Delta = 10))
-	////A Stand in for mana, energy, or stamina
-	//int EnemyResource = 100;
-
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, UIMin = 0, UIMax = 10000, Delta = 10))
-	////A Stand in for mana, energy, or stamina
-	//int EnemyMaxResource = 100;
-
-	//UPROPERTY(Category = "Enemy|Stats", EditAnywhere, Replicated, BlueprintReadWrite, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.05, ToolTip = "The Chance the enemy has to drop an item on death from 0.0 to 1.0."))
-	////The Chance the enemy has to drop an item on death from 0.0 to 1.0
-	//float ChanceToDropItem = 0.2f;
-
-	
-
-	//UPROPERTY(Category = "Enemy", EditAnywhere, BlueprintReadWrite, Replicated, meta = (ExposeOnSpawn = true, NoResetToDefault, DisplayPriority = 0))
-	//EEnemyType TypeOfEnemy;
 	UPROPERTY(Category = "Enemy|Component", VisibleAnywhere, Replicated, NoClear, meta = (DisplayThumbnail = true))
 	UWidgetComponent* EnemyHUDWorld;
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitFlashComponent> HitFlashComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitStunComponent> HitStunComponent;
+
+	UPROPERTY(EditAnywhere)
+	bool OverrideCollisionType = false;
 	
 
 	//interface implementation variable
@@ -120,8 +115,6 @@ public:
 
 	void AddEnemyToDirector();
 
-	
-
 	//Need to be netmulticast to play on all clients as client does own the actor their for client rpc won't work
 	//Runs a montage client side
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, meta = (ToolTip = "Runs a montage client side. Need to be netmulticast to play on all clients as client does own the actor their for client rpc won't work.", ShortToolTip = "Runs a montage client side"))
@@ -134,7 +127,8 @@ protected:
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
 	virtual void SpawnItem();
-
+	void SpawnItem(float Luck);
+	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Calculates the amount of XP the enemy should give on death.", ShortToolTip = "Calculates the amount of XP the enemy should giveS."))
 	//Calculates the amount of XP the enemy should give on death.
 	virtual float CalculateXP() const;
@@ -142,9 +136,15 @@ protected:
 	//rotates hud to face camera, courtesy of Mr big T him self Tristan
 	void UpdateEnemyHUDWorldFacing();
 
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void NetMultPlayParticleEffect(UNiagaraSystem* effect, FVector position);
+
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMultSetIsActive(bool newIsActive);
 
+	void Destroy();
+	UPROPERTY(Category = "Drop items", EditAnywhere, BlueprintReadWrite)
+	bool canDropItems = true;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

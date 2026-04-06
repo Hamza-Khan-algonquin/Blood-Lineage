@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/PostProcessVolume.h"
+#include "Components/Image.h"
+#include <Components/Border.h>
+
 #include "JoinUserWidget.generated.h"
 
 class USoundBase;
@@ -143,6 +147,8 @@ public:
 
 	void SetSelectedClass(FName ClassKey);
 	void HandleEntryGenerated(UUserWidget& EntryWidget);
+
+
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TB_BoarHealth;
@@ -316,6 +322,18 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UImage* I_Nemesis = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability1 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability2 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability3 = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UImage* I_Ability4 = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UButton* BackButton = nullptr;

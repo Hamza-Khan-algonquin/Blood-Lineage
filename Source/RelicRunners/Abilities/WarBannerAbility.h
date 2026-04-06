@@ -24,14 +24,13 @@ private:
     void UpdateBuffs();
     void ApplyBuffToActor(AActor* Actor);
     void RemoveBuffFromActor(AActor* Actor);
-    FVector GetBannerLocation() const;
 
     // War Banner properties
     UPROPERTY(EditDefaultsOnly, Category = "War Banner")
     float SpawnDistance = 200.f;
 
     float ElapsedTime = 0.f;
-    const float BuffAmount = 50.f;
+    const float BuffAmount = 20.f;
 
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Banner")
@@ -39,7 +38,11 @@ protected:
 
     TSet<TWeakObjectPtr<AActor>> BuffedActors;
 
+    UPROPERTY()
+    FVector CachedBannerLocation;
     
+    UPROPERTY()
+    bool bBannerActive = false;
 
-
+    int PlayerLevel;
 };

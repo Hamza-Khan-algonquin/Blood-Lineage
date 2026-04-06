@@ -14,7 +14,9 @@
 #include <RelicRunners/RelicRunnersCharacter.h>
 #include <Kismet/GameplayStatics.h>
 #include "Components/Slider.h"
+#include "EngineUtils.h"
 #include <Camera/CameraComponent.h>
+#include "Camera/CameraActor.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "Components/ComboBoxString.h"
 #include "PauseMenuWidget.h"
@@ -25,7 +27,6 @@
 void USettingsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
 
 	if (BackButton)
 	{
@@ -39,18 +40,18 @@ void USettingsWidget::NativeConstruct()
 
 	if (FOVSlider)
 	{
-		FOVSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnFOVSliderChanged);
+		
+		FOVSlider->OnValueChanged.RemoveDynamic(this, &USettingsWidget::OnFOVSliderChanged);
 
-		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
-			if (PC->PlayerCameraManager)
-			{
-				const float CurrentFOV = PC->PlayerCameraManager->GetFOVAngle();
-				float T = (CurrentFOV - MinFOV) / (MaxFOV - MinFOV);
-				FOVSlider->SetValue(FMath::Clamp(T, 0.f, 1.f));
-
-			}
+			const float CurrentFOV = GI->SavedFOV > 0.f ? GI->SavedFOV : 85.f;
+			float FOVNorm = FMath::Clamp((CurrentFOV - MinFOV) / (MaxFOV - MinFOV), 0.f, 1.f);
+			FOVSlider->SetValue(FOVNorm);
+			UpdateFOVText(CurrentFOV);
 		}
+		FOVSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnFOVSliderChanged);
 	}
 
 	if (B_InvertedXMouse)
@@ -76,18 +77,16 @@ void USettingsWidget::NativeConstruct()
 			{
 				B_InvertedYMouse->SetIsChecked(GI->Keys->InvertedYMouse);
 			}
-			
+
 		}
 	}
 
 	if (XSlider)
 	{
-		XSlider->SetValue(0.5f);
 		XSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensXChanged);
 	}
 	if (YSlider)
 	{
-		YSlider->SetValue(0.5f);
 		YSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnSensYChanged);
 	}
 
@@ -113,12 +112,12 @@ void USettingsWidget::NativeConstruct()
 	if (BrightnessSlider)
 	{
 		BrightnessSlider->OnValueChanged.RemoveDynamic(this, &USettingsWidget::OnBrightnessChanged);
-		
+
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
 		{
 			if (GI->Keys)
 			{
-				const float B = GI->Keys->Brightness;
+				const float B = GI->SavedBrightness;
 				const float T = FMath::Clamp((B - MinBrightness) / (MaxBrightnes - MinBrightness), 0.f, 1.f);
 				BrightnessSlider->SetValue(T);
 				ApplyBrightness(B);
@@ -146,8 +145,7 @@ void USettingsWidget::NativeConstruct()
 		ResolutionDropDown->ClearOptions();
 		ResMap.Empty();
 
-		TArray<FIntPoint> Resolutions =
-		{ {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440} };
+		TArray<FIntPoint> Resolutions = { {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440} };
 
 		for (const FIntPoint& Res : Resolutions)
 		{
@@ -171,15 +169,38 @@ void USettingsWidget::NativeConstruct()
 		ColourModeDropDown->ClearOptions();
 		ColourModeDropDown->AddOption("Normal");
 		ColourModeDropDown->AddOption("Protanopia");
-		ColourModeDropDown->AddOption("Deutranopia");
+		ColourModeDropDown->AddOption("Deuteranopia");
 		ColourModeDropDown->AddOption("Tritanopia");
 		ColourModeDropDown->RefreshOptions();
+		URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
 
+
+		if (GI)
+		{
+			FString SelectedOption = "Normal";
+
+			switch (GI->ColorblindMode)
+			{
+			case EColorblindMode::Normal:
+				SelectedOption = "Normal";
+				break;
+			case EColorblindMode::Protanopia:
+				SelectedOption = "Protanopia";
+				break;
+			case EColorblindMode::Deuteranopia:
+				SelectedOption = "Deuteranopia";
+				break;
+			case EColorblindMode::Tritanopia:
+				SelectedOption = "Tritanopia";
+				break;
+			}
+
+			ColourModeDropDown->SetSelectedOption(SelectedOption);
+		}
 		ColourModeDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleColorModeChanged);
 
-		ColourModeDropDown->SetSelectedOption("Normal");
-
 	}
+
 
 	if (OutputDeviceDropDown)
 	{
@@ -243,7 +264,7 @@ void USettingsWidget::NativeConstruct()
 
 	if (AutoLoot)
 	{
-		
+
 		AutoLoot->OnCheckStateChanged.AddDynamic(this, &USettingsWidget::OnAutoLootChanged);
 
 		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
@@ -251,11 +272,45 @@ void USettingsWidget::NativeConstruct()
 			if (GI->Keys)
 			{
 				AutoLoot->SetIsChecked(GI->Keys->bAutoLoot);
+				AutoLoot->SetIsChecked(GI->bAutoLoot);
 			}
 		}
 
 	}
-	InitializeDefaultKeybindings();
+	/*if (LanguageDropDown)
+	{
+		LanguageDropDown->ClearOptions();
+		LanguageDropDown->AddOption("English");
+		LanguageDropDown->AddOption("French");
+		LanguageDropDown->RefreshOptions();
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			FString SelectedOption = "English";
+
+			switch (GI->CurrentLanguage)
+			{
+			case EGameLanguage::French:
+				SelectedOption = "French";
+				break;
+
+			case EGameLanguage::English:
+			default:
+				SelectedOption = "English";
+				break;
+			}
+
+			LanguageDropDown->SetSelectedOption(SelectedOption);
+		}
+
+		LanguageDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleLanguageChanged);
+	}
+	*/
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		InitializeDefaultKeybindings();
+	}
+
 }
 
 void USettingsWidget::OnRestoreDefaultsClicked()
@@ -278,6 +333,7 @@ void USettingsWidget::OnSensXChanged(float Value)
 		if (GI->Keys)
 		{
 			GI->Keys->HorizSens = NewSens;
+			GI->SavedSensX = NewSens;
 		}
 	}
 
@@ -293,6 +349,7 @@ void USettingsWidget::OnSensYChanged(float Value)
 		if (GI->Keys)
 		{
 			GI->Keys->VertSens = NewSens;
+			GI->SavedSensY = NewSens;
 		}
 	}
 
@@ -314,8 +371,9 @@ void USettingsWidget::OnBrightnessChanged(float Value)
 		if (GI->Keys)
 		{
 			GI->Keys->Brightness = NewExposure;
+			
 		}
-
+		GI->SavedBrightness = NewExposure;
 	}
 
 	ApplyBrightness(NewExposure);
@@ -324,18 +382,18 @@ void USettingsWidget::OnBrightnessChanged(float Value)
 
 void USettingsWidget::ApplyBrightness(float ExposureComp)
 {
-	if (ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+	for (TObjectIterator<UCameraComponent> CamItr; CamItr; ++CamItr)
 	{
-		if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
-		{
-			FPostProcessSettings& PPS = Camera->PostProcessSettings;
+		if (CamItr->GetWorld() != GetWorld()) continue;
 
-			PPS.bOverride_AutoExposureBias = true;
-			PPS.AutoExposureBias = ExposureComp;
+		FPostProcessSettings& PPS = CamItr->PostProcessSettings;
 
-			Camera->PostProcessBlendWeight = 1.0f;
-		}
+		PPS.bOverride_AutoExposureBias = true;
+		PPS.AutoExposureBias = ExposureComp;
+
+		CamItr->PostProcessBlendWeight = 1.0f;
 	}
+	
 }
 
 void USettingsWidget::UpdateBrightnessText(float Gamma)
@@ -449,6 +507,7 @@ void USettingsWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
 		if (TB_BackButton)
 		{
 			TB_BackButton->SetText(FText::FromString("Main Menu"));
+
 		}
 		MainParentMenu->ShowModeSelectionWidget();
 		return;
@@ -473,17 +532,20 @@ void USettingsWidget::SetParentMenu(UPauseMenuWidget* InParentMenu)
 void USettingsWidget::HandleResolutionSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
 	if (SelectionType == ESelectInfo::Direct) return;
-	
 	if (!ResMap.Contains(SelectedItem)) return;
 
 	if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
 	{
 		const FIntPoint NewRes = ResMap[SelectedItem];
 
-		GS->SetFullscreenMode(EWindowMode::Windowed);
 		GS->SetScreenResolution(NewRes);
 		GS->ApplyResolutionSettings(false);
 		GS->SaveSettings();
+
+		if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+		{
+			GI->Resolution = NewRes;
+		}
 	}
 }
 
@@ -495,9 +557,10 @@ void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESe
 			EWindowMode::Type Mode = EWindowMode::Windowed;
 			if (SelectedItem == "FullScreen")
 			{
-				FIntPoint NewRes(2560, 1440);
+				//FIntPoint NewRes(1920, 1080);
+				//GS->SetScreenResolution(NewRes);
 				GS->SetFullscreenMode(EWindowMode::Fullscreen);
-				GS->SetScreenResolution(NewRes);
+
 			}
 			else if (SelectedItem == "WindowedFullscreen")
 			{
@@ -507,10 +570,13 @@ void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESe
 			{
 				GS->SetFullscreenMode(EWindowMode::Windowed);
 			}
-
+			
 			GS->ApplySettings(false);
 			GS->SaveSettings();
-
+			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+			{
+				GI->WindowMode = GS->GetFullscreenMode();
+			}
 		}
 }
 
@@ -553,18 +619,33 @@ void USettingsWidget::SetWindowMode()
 void USettingsWidget::OnFOVSliderChanged(float Value)
 {
 
-	const float NewFOV = FMath::Lerp(MinFOV, MaxFOV, Value);
-	ApplyFOV(NewFOV);
-	UpdateFOVText(NewFOV);
+	float NewFOV = FMath::Lerp(MinFOV, MaxFOV, Value);
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		GI->SavedFOV = NewFOV;
+		ApplyFOV(GI->SavedFOV);
+		UpdateFOVText(GI->SavedFOV);
+
+	}
+	
 }
 
 void USettingsWidget::ApplyFOV(float NewFOV)
 {
+
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 	{
 		if (PC->PlayerCameraManager)
 		{
 			PC->PlayerCameraManager->SetFOV(NewFOV);
+		}
+		if (ARelicRunnersCharacter* RRCharacter = Cast<ARelicRunnersCharacter>(PC->GetPawn()))
+		{
+			if (RRCharacter->GetFollowCamera())
+			{
+				RRCharacter->GetFollowCamera()->SetFieldOfView(NewFOV);
+			}
 		}
 	}
 }
@@ -583,6 +664,8 @@ void USettingsWidget::OnMotionBlurClicked(bool isChecked)
 		if (GI->Keys)
 		{
 			GI->Keys->motionBlurEnabled = isChecked;
+			GI->bSavedMotionBlur = isChecked;
+
 		}
 	}
 	ApplyMotionBlur(isChecked);
@@ -596,7 +679,7 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 			FPostProcessSettings& PPS = Camera->PostProcessSettings;
 
 			PPS.bOverride_MotionBlurAmount = true;
-			PPS.MotionBlurAmount = bEnabled ? 0.8f : 0.0f;
+			PPS.MotionBlurAmount = bEnabled ? 1.5f : 0.0f;
 
 			Camera->PostProcessBlendWeight = 1.0f;
 		}
@@ -604,45 +687,41 @@ void USettingsWidget::ApplyMotionBlur(bool bEnabled)
 }
 void USettingsWidget::HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType)
 {
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GI) return;
+
 	if (Item == "Normal")
 	{
-		ApplyColorLUT(LUT_Normal);
+		GI->ColorblindMode = EColorblindMode::Normal;
 	}
 	else if (Item == "Protanopia")
 	{
-		ApplyColorLUT(LUT_Protanopia);
+		GI->ColorblindMode = EColorblindMode::Protanopia;
 	}
-	else if (Item == "Deutranopia")
+	else if (Item == "Deuteranopia")
 	{
-		ApplyColorLUT(LUT_Deuternopia);
+		GI->ColorblindMode = EColorblindMode::Deuteranopia;
 	}
 	else if (Item == "Tritanopia")
 	{
-		ApplyColorLUT(LUT_Tritanopia);
+		GI->ColorblindMode = EColorblindMode::Tritanopia;
 	}
-}
+	else
+	{
+		return;
+	}
+	if (ARelicRunnersPlayerController* RPC =
+		Cast<ARelicRunnersPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		RPC->ApplyColorblindMode();
+	}
+	if (GI->Keys)
+	{
+		GI->Keys->ColorBlindMode = Item;
+	}
 
-void USettingsWidget::ApplyColorLUT(UTexture* LUT)
-{
-	ARelicRunnersCharacter* Character = Cast<ARelicRunnersCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
-	if (!Character) return;
-
-	UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>();
-	if (!Camera) return;
 	
-	Camera->PostProcessBlendWeight = 1.0f;
-
-	FPostProcessSettings& PPS = Camera->PostProcessSettings;
-
-	PPS.bOverride_ColorGradingLUT = true;
-	PPS.ColorGradingLUT = LUT;
-
-	PPS.bOverride_ColorGradingIntensity = true;
-	PPS.ColorGradingIntensity = 0.3f;
 }
-
-
-
 
 void USettingsWidget::HandleOutputDeviceChanged(FString Item, ESelectInfo::Type SelectionType)
 {
@@ -746,10 +825,28 @@ void USettingsWidget::OnAutoLootChanged(bool bIsChecked)
 		if (GI->Keys)
 		{
 			GI->Keys->bAutoLoot = bIsChecked;
+			GI->bAutoLoot = bIsChecked;
 
 		}
 	}
 }
+/*void USettingsWidget::HandleLanguageChanged(FString Item, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType == ESelectInfo::Direct) return;
+
+	URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	if (!GI) return;
+
+	if (Item == "English")
+	{
+		GI->SetLanguage(EGameLanguage::English);
+	}
+	else if (Item == "French")
+	{
+		GI->SetLanguage(EGameLanguage::French);
+	}
+}
+*/
 void USettingsWidget::BackButtonClicked()
 {
 	if (MainParentMenu)
@@ -801,6 +898,7 @@ void USettingsWidget::ToggleInvertedXMouse(bool isChecked)
 	{
 		GI->Keys->InvertedXMouse = isChecked;
 		GI->ApplyKeybindings();
+		GI->bInvertX = isChecked;
 	}
 }
 
@@ -811,5 +909,40 @@ void USettingsWidget::ToggleInvertedYMouse(bool isChecked)
 	{
 		GI->Keys->InvertedYMouse = isChecked;
 		GI->ApplyKeybindings();
+		GI->bInvertY = isChecked;
+	}
+}
+
+
+
+void USettingsWidget::RefreshFOVUI()
+{
+	if (!FOVSlider) return;
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		const float CurrentFOV = GI->SavedFOV > 0.f ? GI->SavedFOV : 90.f;
+		const float FOVNorm = FMath::Clamp((CurrentFOV - MinFOV) / (MaxFOV - MinFOV), 0.f, 1.f);
+
+		FOVSlider->OnValueChanged.RemoveDynamic(this, &USettingsWidget::OnFOVSliderChanged);
+		FOVSlider->SetValue(FOVNorm);
+		UpdateFOVText(CurrentFOV);
+		FOVSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnFOVSliderChanged);
+	}
+}
+
+void USettingsWidget::RefreshBrightnessUI()
+{
+	if (!BrightnessSlider) return;
+
+	if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
+	{
+		const float CurrentBrightness = GI->SavedBrightness;
+		const float BrightnessNorm = FMath::Clamp((CurrentBrightness - MinBrightness) / (MaxBrightnes - MinBrightness), 0.f, 1.f);
+
+		BrightnessSlider->OnValueChanged.RemoveDynamic(this, &USettingsWidget::OnBrightnessChanged);
+		BrightnessSlider->SetValue(BrightnessNorm);
+		UpdateBrightnessText(CurrentBrightness);
+		BrightnessSlider->OnValueChanged.AddDynamic(this, &USettingsWidget::OnBrightnessChanged);
 	}
 }

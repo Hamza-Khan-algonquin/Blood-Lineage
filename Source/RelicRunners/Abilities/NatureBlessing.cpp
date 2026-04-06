@@ -91,6 +91,11 @@ void UNaturesBlessing::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 		{
 			LastUseTime = ActorInfo->AvatarActor->GetWorld()->GetTimeSeconds();
 
+			if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+			{
+				return;
+			}
+
 			if (ActorInfo->IsLocallyControlled())
 			{
 				if (ARelicRunnersPlayerController* RPC = Cast<ARelicRunnersPlayerController>(ActorInfo->PlayerController.Get()))

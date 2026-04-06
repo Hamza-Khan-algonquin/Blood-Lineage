@@ -4,13 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "AdvancedFriendsGameInstance.h"
+//#include "AdvancedFriendsGameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSubsystem.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "OnlineSubsystemUtils.h"
+#include <RelicRunners/Menu/SettingsWidget.h>
 #include "RelicRunnersGameInstance.generated.h"
 
+/*UENUM(BlueprintType)
+enum class EGameLanguage : uint8
+{
+    English UMETA(DisplayName = "English"),
+    French  UMETA(DisplayName = "French")
+};
+*/
 USTRUCT()
 struct FPendingClientTravel
 {
@@ -34,6 +42,7 @@ public:
     //Sessions
     UFUNCTION(BlueprintCallable)
     void CreateNewSession();
+    UTexture* GetLUTForMode(EColorblindMode Colorblind);
     UFUNCTION(BlueprintCallable)
     void StartSessionGame();
     UFUNCTION(BlueprintCallable)
@@ -42,6 +51,9 @@ public:
     void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
     UFUNCTION(BlueprintCallable)
     void BackToMainMenu();
+
+    UFUNCTION(BlueprintCallable, Category = "Network")
+    void JoinGameByIP(FString IPAddress);
     UFUNCTION(BlueprintCallable)
     void FindGames(class UJoinUserWidget* UserWidget);
     UFUNCTION(BlueprintCallable)
@@ -55,6 +67,21 @@ public:
     UFUNCTION(BlueprintCallable)
     void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
     void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
+
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Normal;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Protanopia;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Deuteranopia;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Color")
+    UTexture* LUT_Tritanopia;
+
 
     //Getters and Setters
     UFUNCTION(BlueprintCallable)
@@ -129,6 +156,97 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Session")
     bool bIsMatchLocked = false;
 
+
+
+    UPROPERTY(BlueprintReadWrite)
+    float MasterVolume = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float MusicVolume = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SFXVolume = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float Brightness = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float FOV = 90.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float MouseSensitivityX = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    float MouseSensitivityY = 1.0f;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bMotionBlurEnabled = true;
+
+    UPROPERTY(BlueprintReadWrite)
+    FIntPoint Resolution = FIntPoint(1920, 1080);
+
+    UPROPERTY(BlueprintReadWrite)
+    TEnumAsByte<EWindowMode::Type> WindowMode = EWindowMode::WindowedFullscreen;
+
+    UFUNCTION()
+    void ApplyAllSettings(APlayerController* PC);
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedFOV;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedBrightness;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bSavedMotionBlur;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedSensX;
+
+    UPROPERTY(BlueprintReadWrite)
+    float SavedSensY;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bInvertX;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bInvertY;
+
+    UPROPERTY(BlueprintReadWrite)
+    EColorblindMode ColorblindMode = EColorblindMode::Normal;
+
+    UPROPERTY(BlueprintReadWrite)
+    bool bAutoLoot;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle NormalUIStyle;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle ProtanopiaUIStyle;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle DeuteranopiaUIStyle;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Accessibility")
+    FUIColorblindStyle TritanopiaUIStyle;
+
+    UFUNCTION(BlueprintCallable)
+    FUIColorblindStyle GetCurrentUIStyle() const;
+
+
+    //language accessibility
+    /*UPROPERTY(BlueprintReadWrite, Category = "Localization")
+    EGameLanguage CurrentLanguage = EGameLanguage::English;
+
+    UFUNCTION(BlueprintCallable, Category = "Localization")
+    void ApplyLanguage();
+
+    UFUNCTION(BlueprintCallable, Category = "Localization")
+    void SetLanguage(EGameLanguage NewLanguage);
+
+    UFUNCTION(BlueprintCallable, Category = "Localization")
+    FString GetCultureCodeFromLanguage(EGameLanguage Language) const;
+    */
 private:
 
 

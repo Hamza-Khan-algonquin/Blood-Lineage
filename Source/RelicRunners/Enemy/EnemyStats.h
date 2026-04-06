@@ -12,6 +12,11 @@ UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RELICRUNNERS_API UEnemyStats : public UActorComponent
 {
 	GENERATED_BODY()
+public:
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated)
+	bool IsGold;
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated)
+	bool CanBeGold;
 protected:
 	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated, BlueprintGetter = GetName, BlueprintSetter = SetName)
 	FName EnemyName;
@@ -37,6 +42,10 @@ protected:
 	float BaseAttackDamage;
 	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite, Replicated)
 	float AttackDamagePerLevel;	
+	UPROPERTY(Category = "Stats", EditAnywhere, BlueprintReadWrite)
+	float PercentChanceToBeGold;
+
+	
 
 public:	
 	// Sets default values for this component's properties

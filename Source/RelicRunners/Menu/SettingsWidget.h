@@ -8,13 +8,40 @@
 #include <Components/TextBlock.h>
 #include <Components/CheckBox.h>
 #include "AudioMixerBlueprintLibrary.h"
+#include <Components/Border.h>
 #include "SettingsWidget.generated.h"
 
+UENUM(BlueprintType)
+enum class EColorblindMode : uint8
+{
+	Normal,
+	Protanopia,
+	Deuteranopia,
+	Tritanopia
+};
+USTRUCT(BlueprintType)
+struct FUIColorblindStyle
+{
+	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor PrimaryTextColor = FLinearColor::White;
 
-/**
- * 
- */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor SecondaryTextColor = FLinearColor::Gray;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor PositiveColor = FLinearColor::Green;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor DangerColor = FLinearColor::Red;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor AccentColor = FLinearColor::Yellow;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor BackgroundTint = FLinearColor::Black;
+};
 UCLASS()
 class RELICRUNNERS_API USettingsWidget : public UUserWidget
 {
@@ -29,6 +56,7 @@ public:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	void SetParentMenu(class UMainMenuWidget* InParentMenu);
 	void SetParentMenu(class UPauseMenuWidget* InParentMenu);
+
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	class UTextBlock* TB_BackButton = nullptr;
@@ -71,10 +99,10 @@ public:
 	UTextBlock* TB_YSensValue = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
-	float MinSens = 0.1f;
+	float MinSens = 1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
-	float MaxSens = 1.0f;
+	float MaxSens = 3.f;
 
 	UFUNCTION()
 	void OnSensXChanged(float Value);
@@ -92,7 +120,7 @@ public:
 	UTextBlock* TB_BrightnessValue = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
-	float MinBrightness = -2.0f;
+	float MinBrightness = -0.5f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Brightness")
 	float MaxBrightnes = 0.f;
@@ -175,23 +203,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UComboBoxString* ColourModeDropDown = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess="true"))
-	UTexture2D* LUT_Normal = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Protanopia = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Deuternopia = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Settings|Colour", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* LUT_Tritanopia = nullptr;
-
 	UFUNCTION()
 	void HandleColorModeChanged(FString Item, ESelectInfo::Type SelectionType);
 	
-	void ApplyColorLUT(UTexture* LUT);
-
 	//Output devices
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UComboBoxString* OutputDeviceDropDown = nullptr;
@@ -242,6 +256,19 @@ public:
 
 	UFUNCTION()
 	void OnAutoLootChanged(bool bIsChecked);
+
+	UFUNCTION(BlueprintCallable)
+	void RefreshFOVUI();
+
+	UFUNCTION(BlueprintCallable)
+	void RefreshBrightnessUI();
+
+	/*UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	class UComboBoxString* LanguageDropDown = nullptr;
+
+	UFUNCTION()
+	void HandleLanguageChanged(FString Item, ESelectInfo::Type SelectionType);
+	*/
 
 protected:
 	UFUNCTION()
