@@ -150,8 +150,6 @@ void UPiercingArrow::TickArrow()
 
     if (bHit)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Projectile hit: %s"), *GetNameSafe(Hit.GetActor()));
-        DrawDebugSphere(World, Hit.ImpactPoint, AreaRadius, 16, FColor::Red, false, 2.f);
 
         Explode(Hit.ImpactPoint);
         return;
