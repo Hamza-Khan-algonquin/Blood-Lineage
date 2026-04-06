@@ -494,8 +494,15 @@ void ARelicRunnersPlayerState::OnStartingLevelUp()
 
 	Item->ItemData.Level++;
 
-	//Handle Rarity Upgrade
-	HandleRarityUpgrade(Item);
+	//Check if the item is already a Relic
+	if (Item->ItemData.Rarity == "Relic")
+	{
+		ApplyRelicSpecialStat(Item);
+	}
+	else
+	{
+		HandleRarityUpgrade(Item);
+	}
 
 	//Scale Stats based on Rarity
 	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;
@@ -508,6 +515,31 @@ void ARelicRunnersPlayerState::OnStartingLevelUp()
 	Item->ItemData.Intelligence += FMath::RandRange(0, FMath::RoundToInt(5 * Multiplier));
 }
 
+void ARelicRunnersPlayerState::ApplyRelicSpecialStat(UItemObject* Item)
+{
+	if (!Item) return;
+
+	int RandomStat = FMath::RandRange(0, 2);
+
+	switch (RandomStat)
+	{
+	case 0:
+		Item->ItemData.Purity += 0.1f;
+		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Purity"));
+		break;
+	case 1:
+		Item->ItemData.Luck += 0.1f;
+		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Luck"));
+		break;
+	case 2:
+		Item->ItemData.Regen += 0.1f;
+		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Regen"));
+		break;
+	default:
+		break;
+	}
+}
+
 void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
 {
 	int CurrentIndex = RarityOrder.Find(Item->ItemData.Rarity);
@@ -515,7 +547,7 @@ void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
 	//Don't upgrade if already at max rarity
 	if (CurrentIndex == INDEX_NONE || CurrentIndex >= RarityOrder.Num() - 1) return;
 
-	float SuccessChance = 10.0f + RarityPityCounter;
+	float SuccessChance = 0.0f + RarityPityCounter;
 	float Roll = FMath::FRandRange(0.0f, 100.0f);
 
 	if (Roll <= SuccessChance)
@@ -526,7 +558,7 @@ void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
 	}
 	else
 	{
-		RarityPityCounter += 3.0f; //Increase odds for next level
+		RarityPityCounter += 6.0f; //Increase odds for next level
 	}
 }
 
@@ -564,8 +596,15 @@ void ARelicRunnersPlayerState::OnLevelUp()
 
 	Item->ItemData.Level++;
 
-	//Handle Rarity Upgrade
-	HandleRarityUpgrade(Item);
+	//Check if the item is already a Relic
+	if (Item->ItemData.Rarity == "Relic")
+	{
+		ApplyRelicSpecialStat(Item);
+	}
+	else
+	{
+		HandleRarityUpgrade(Item);
+	}
 
 	//Scale Stats based on Rarity
 	int RarityIndex = RarityOrder.Find(Item->ItemData.Rarity) + 1;

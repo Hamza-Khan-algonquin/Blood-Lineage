@@ -73,6 +73,7 @@ public:
 	UFUNCTION()
 	void PassiveResourceRegen();
 	void OnStartingLevelUp();
+	void ApplyRelicSpecialStat(class UItemObject* Item);
 	void HandleRarityUpgrade(class UItemObject* Item);
 	FString GetStartingWeaponName();
 	virtual void OnLevelUp();
