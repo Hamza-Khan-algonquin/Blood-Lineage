@@ -57,7 +57,7 @@ void AMinotaurCharacter::DelaySpikeCheck(float delay, float raduis, float damage
 			for (int i = 0; i < newLocations.Num(); i++)
 			{
 #if WITH_EDITOR
-				DrawDebugSphere(weakWorld.Get(), newLocations[i], raduis, 12, FColor::Red, false, 2, 1);
+				//DrawDebugSphere(weakWorld.Get(), newLocations[i], raduis, 12, FColor::Red, false, 2, 1);
 #endif
 				TArray<AActor*> actorToIngore;
 				TArray<AActor*> hitActors;
