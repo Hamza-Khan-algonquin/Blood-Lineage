@@ -24,8 +24,8 @@ public:
 protected:
 
 	int MaxValue = 5;
-	void ShowTooltipForBorder(class UButton* HoveredButton, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
-	class UButton* CurrentHoveredButton;
+	void ShowTooltipForBorder(UWidget* HoveredWidget, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+	class UWidget* CurrentHovered;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
@@ -156,6 +156,12 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_ResetEfficiency;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_MetaLevel;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* B_MetaPoints;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio")
 	TObjectPtr<USoundBase> UpgradeSound = nullptr;

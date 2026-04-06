@@ -238,7 +238,15 @@ public:
             Data.Descriptions.Add(FText::FromString("<Default>Current Meta Level.</>"));
             Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Meta point per meta level.</>"));
             Data.Descriptions.Add(FText::FromString("<Default>Meta points are spent in the upgrades menu.</>"));
-            }
+        }
+        else if (BorderType == "MetaLevelMenu")
+        {
+            Data.Name = FText::FromString("Meta Level");
+            Data.Icon = LoadIcon("StartingLevelIcon");
+            Data.IconColor = GetIconColor("MetaLevel");
+            Data.Descriptions.Add(FText::FromString("<Default>Current Meta Level.</>"));
+            Data.Descriptions.Add(FText::FromString("<Green>+1</> <Default>Meta point per meta level.</>"));
+        }
         else if (BorderType == "MetaStartingLevel")
         {
             Data.Name = FText::FromString("Starting Level");
@@ -365,7 +373,13 @@ public:
             Data.IconColor = GetIconColor("EnemyDamage");
             Data.Descriptions.Add(FText::FromString("<Default>Spend points to get additional stats.</>"));
         }
-
+        else if (BorderType == "MetaPoints")
+        {
+            Data.Name = FText::FromString("Meta Points");
+            Data.Icon = LoadIcon("AbilityIcon");
+            Data.IconColor = GetIconColor("EnemyDamage");
+            Data.Descriptions.Add(FText::FromString("<Default>Spend points to get additional stats!</>"));
+        }
         else if (BorderType == "AbilityThunderousPunch")
         {
             Data.Name = FText::FromString("Thunderous Punch");
