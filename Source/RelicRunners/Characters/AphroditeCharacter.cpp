@@ -561,9 +561,13 @@ void AAphroditeCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
     for (FBasicProjectile& Projectile : ActiveProjectiles)
     {
-        if (Projectile.VFXComponent)
+        if (IsValid(Projectile.VFXComponent))
         {
-            Projectile.VFXComponent->DestroyComponent();
+            if (!Projectile.VFXComponent->IsBeingDestroyed())
+            {
+                Projectile.VFXComponent->Deactivate();
+                Projectile.VFXComponent->DestroyComponent();
+            }
         }
     }
 
