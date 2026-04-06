@@ -927,6 +927,9 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 {
 	if (!UIWidget || !UIWidget->IsVisible()) return;
 
+	if (Inventory) Inventory->CloseTooltip();
+	if (AbilitySelection) AbilitySelection->CloseTooltip();
+
 	SetInputMode(FInputModeGameOnly());
 	SetShowMouseCursor(false);
 
@@ -944,7 +947,6 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 
 		Inventory->ToggleShopUI(false);
 		Inventory->ToggleForgeUI(false);
-		Inventory->CloseTooltip();
 		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 		float AnimDelay = 0.25f;
@@ -954,7 +956,6 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 	{
 		if (UIWidget == AbilitySelection && AbilitySelectionCloseSound)
 		{
-			AbilitySelection->CloseTooltip();
 			UGameplayStatics::PlaySound2D(this, AbilitySelectionCloseSound);
 		}
 
