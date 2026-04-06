@@ -117,7 +117,10 @@ public:
 
 	static float GetRequiredMetaXP(int Level)
 	{
-		return (Level * 100.0f);
+		// Simple version: 100 * (Level ^ 1.5)
+		// Level 1: 100
+		// Level 36: ~21,600
+		return 100.0f * FMath::Pow((float)Level, 1.5f);
 	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)

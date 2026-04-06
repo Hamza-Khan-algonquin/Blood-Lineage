@@ -499,9 +499,13 @@ public:
         float LevelBaseValue = ItemData.Level * 0.8f;
         float RarityFloor = RarityMult * 1.3f;
 
-        //Gold
-        int CalculatedGold = FMath::RoundToInt((LevelBaseValue + RarityFloor) * FMath::FRandRange(0.9f, 1.1f));
-        ItemData.Gold = FMath::Max(1, CalculatedGold);
+        float GoldPerLevel = 0.1f; 
+        float RawGold = (ItemData.Level * GoldPerLevel) * RarityMult;
+
+        float Variance = FMath::FRandRange(0.9f, 1.1f);
+        int FinalGold = FMath::RoundToInt(RawGold * Variance);
+
+        ItemData.Gold = FMath::Max(1, FinalGold);
 
         TSet<FString> ArmorTypes = { "Helmet", "Upper", "Lower", "Arms" };
         TSet<FString> MixedTypes = { "Necklace" };
@@ -612,13 +616,13 @@ public:
 
     static float GetLootQuality(float Value)
     {
-        float Percent = Value * 2.3f;
+        float Percent = Value * 1.75f;
 
         return RoundToDecimal(Percent, 1);
     }
     static float GetLootChance(float Value)
     {
-        float Percent = Value * 1.45f;
+        float Percent = Value * 0.8;
 
         return RoundToDecimal(Percent, 1);
     }
@@ -655,9 +659,8 @@ public:
     {
         if (Value <= 0) return 0.0f;
 
-        //Base of 1.1 with a 0.9 exponent.
         //This grows infinitely but slows down over time.
-        float Percent = 1.1f * pow(static_cast<float>(Value), 0.9f);
+        float Percent = 1.1f * pow(static_cast<float>(Value), 0.87f);
 
         return RoundToDecimal(Percent, 1);
     }
@@ -667,7 +670,7 @@ public:
         //The constant K determines how fast the curve climbs.
         //At Value = 400, the result will be half of max.
         const float K = 400.0f;
-        const float MaxPercent = 75.0f;
+        const float MaxPercent = 45.0f;
         
         if (Value <= 0) return 0.0f;
 
@@ -681,7 +684,7 @@ public:
         //The constant K determines how fast the curve climbs.
         //At Value = 300, the result will be half of max.
         const float K = 300.0f;
-        const float MaxPercent = 80.0f;
+        const float MaxPercent = 50.0f;
         
         if (Value <= 0) return 0.0f;
 
@@ -705,16 +708,19 @@ public:
 
     static int GetManaPoolIncrease(int Value)
     {
-        int Integer = Value / 2.7;
+        const float MaxIncrease = 100.0f;
+        const float ScalingFactor = 400.0f; 
 
-        return Integer;
+        float Result = (MaxIncrease * Value) / (Value + ScalingFactor);
+
+        return FMath::FloorToInt(Result);
     }
 
     static float GetAbilityCostPerc(int Value)
     {
         //The constant K determines how fast the curve climbs.
         //At Value = 250, the result will be half of max.
-        const float K = 250.0f;
+        const float K = 400.0f;
         const float MaxPercent = 40.0f;
 
         if (Value <= 0) return 0.0f;
