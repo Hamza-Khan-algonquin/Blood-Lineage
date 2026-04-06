@@ -37,6 +37,7 @@
 #include <ClassInfo.h>
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include <RelicRunners/RelicRunnersGameState.h>
+#include <NiagaraFunctionLibrary.h>
 
 ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 {

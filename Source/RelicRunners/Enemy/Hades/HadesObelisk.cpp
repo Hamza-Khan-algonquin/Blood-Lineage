@@ -4,6 +4,7 @@
 #include "Engine/DamageEvents.h"
 #include "Net/UnrealNetwork.h"
 #include <Kismet/GameplayStatics.h>
+#include <NiagaraFunctionLibrary.h>
 
 AHadesObelisk::AHadesObelisk()
 {
@@ -121,7 +122,9 @@ float AHadesObelisk::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
             UGameplayStatics::PlaySoundAtLocation(this, ExplosionSound, GetActorLocation());
         }
 
-        Destroy();
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CrystalExplosion, GetActorLocation() + FVector(0,0,600));
+
+        SetLifeSpan(0.2);
     }
 
     return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
