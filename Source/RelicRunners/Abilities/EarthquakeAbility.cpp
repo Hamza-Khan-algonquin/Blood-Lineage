@@ -106,18 +106,34 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
         float AnimDuration = AbilityAnim->GetPlayLength() * 0.5f;
 
         FTimerHandle ShockwaveTimerHandle;
+
+        TWeakObjectPtr<UEarthquakeAbility> WeakThis(this);
+
         World->GetTimerManager().SetTimer(
             ShockwaveTimerHandle,
-            [this]()
+            [WeakThis]()
             {
-                LaunchShockwave();
+                if (!WeakThis.IsValid())
+                {
+                    return;
+                }
+
+                UEarthquakeAbility* Ability = WeakThis.Get();
+
+                UWorld* World = Ability->GetWorld();
+                if (!World || World->bIsTearingDown)
+                {
+                    return;
+                }
+
+                Ability->LaunchShockwave();
             },
             AnimDuration,
             false
         );
     }
 
-
+    
     PlayAbilityCastSound(ActorInfo);
 
     LastUseTime = World->GetTimeSeconds();
@@ -150,6 +166,10 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
 
 void UEarthquakeAbility::LaunchShockwave()
 {
+    if (!GetAbilitySystemComponentFromActorInfo())
+    {
+        return;
+    }
 
     const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
 
