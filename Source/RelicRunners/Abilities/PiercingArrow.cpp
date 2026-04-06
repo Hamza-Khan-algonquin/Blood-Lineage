@@ -141,23 +141,12 @@ void UPiercingArrow::TickArrow()
     // Predict next position
     FVector NewLocation = CurrentLocation + ProjectileVelocity * DeltaTime;
 
-    // -----------------------------
-    // Collision
-    // -----------------------------
     FHitResult Hit;
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(SpawnedProjectile);
     Params.AddIgnoredActor(AvatarActor);
 
-    bool bHit = World->SweepSingleByChannel(
-        Hit,
-        CurrentLocation,
-        NewLocation,
-        FQuat::Identity,
-        ECC_GameTraceChannel1,
-        FCollisionShape::MakeSphere(ProjectileRadius),
-        Params
-    );
+    bool bHit = World->SweepSingleByChannel(Hit,CurrentLocation,NewLocation,FQuat::Identity, ECC_GameTraceChannel1,FCollisionShape::MakeSphere(ProjectileRadius), Params);
 
     if (bHit)
     {
@@ -168,9 +157,6 @@ void UPiercingArrow::TickArrow()
         return;
     }
 
-    // -----------------------------
-    // Move projectile
-    // -----------------------------
     SpawnedProjectile->SetActorLocation(NewLocation);
     SpawnedProjectile->SetActorRotation(ProjectileVelocity.Rotation());
 

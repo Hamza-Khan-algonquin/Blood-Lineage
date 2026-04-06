@@ -18,6 +18,7 @@ UGoddessOfLove::UGoddessOfLove()
 
 	Damage = 400.f;
 	AreaRadius = 1000.f;
+    Duration = 10.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 15.f;
     ElapsedDOTTime = 0.f;
@@ -152,6 +153,10 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     World->GetTimerManager().SetTimer(DOTTimerHandle, this,&UGoddessOfLove::TickDamage,DOTTickInterval,true);
 
     World->GetTimerManager().SetTimer(PassiveRegenTimerHandle,this, &UGoddessOfLove::ApplyPassiveHealthRegen,PassiveRegenTickInterval, true);
+
+    World->GetTimerManager().SetTimer(DurationHandle, this, &UGoddessOfLove::HandleDurationEnd, Duration, false);
+
+
 }
 
 void UGoddessOfLove::ApplyPassiveHealthRegen()
@@ -297,6 +302,11 @@ void UGoddessOfLove::TickDamage()
     }
 }
 
+void UGoddessOfLove::HandleDurationEnd()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
 
 void UGoddessOfLove::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
@@ -322,8 +332,7 @@ void UGoddessOfLove::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
             }
 
             OverlayMID = nullptr;
-            World->GetTimerManager().ClearTimer(DOTTimerHandle);
-            World->GetTimerManager().ClearTimer(PassiveRegenTimerHandle);
+            World->GetTimerManager().ClearAllTimersForObject(this);
 
             if (!bWasCancelled)
             {

@@ -354,6 +354,12 @@ void UBundleOfJoy::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGa
             World->GetTimerManager().ClearTimer(AttractTimer);
             World->GetTimerManager().ClearTimer(ExplosionTimer);
 
+            if (SpawnedProjectile && IsValid(SpawnedProjectile))
+            {
+                SpawnedProjectile->Destroy();
+                SpawnedProjectile = nullptr;
+            }
+
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();
