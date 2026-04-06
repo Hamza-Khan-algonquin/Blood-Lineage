@@ -260,7 +260,7 @@ void ADirector::GenerateFlowField(FVector targetLocation, float radius)
 
 		FVector direction = (parentPolyCentre - polyCentre).GetSafeNormal();
 		FlowField.Add(polys[i], direction);
-		DrawDebugDirectionalArrow(GetWorld(), polyCentre, polyCentre + direction * 100, 100, FColor::Red, true, 5.f, 0, 20.f);
+		//DrawDebugDirectionalArrow(GetWorld(), polyCentre, polyCentre + direction * 100, 100, FColor::Red, true, 5.f, 0, 20.f);
 	}
 }
 

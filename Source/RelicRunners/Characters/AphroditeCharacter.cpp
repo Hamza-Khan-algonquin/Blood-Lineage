@@ -471,6 +471,18 @@ void AAphroditeCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    if (!GEngine || !GetWorld()) return;
+
+    if (GetWorld()->bIsTearingDown || GetWorld()->GetBegunPlay() == false)
+    {
+        return;
+    }
+
+    if (IsLocallyControlled() && !GetController())
+    {
+        return;
+    }
+
     for (int32 i = ActiveProjectiles.Num() - 1; i >= 0; --i)
     {
         FBasicProjectile& Projectile = ActiveProjectiles[i];
@@ -557,21 +569,18 @@ void AAphroditeCharacter::Tick(float DeltaTime)
 
 void AAphroditeCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    Super::EndPlay(EndPlayReason);
-
     for (FBasicProjectile& Projectile : ActiveProjectiles)
     {
-        if (IsValid(Projectile.VFXComponent))
+        if (Projectile.VFXComponent && IsValid(Projectile.VFXComponent))
         {
-            if (!Projectile.VFXComponent->IsBeingDestroyed())
-            {
-                Projectile.VFXComponent->Deactivate();
-                Projectile.VFXComponent->DestroyComponent();
-            }
+            Projectile.VFXComponent->Deactivate();
+            Projectile.VFXComponent->UnregisterComponent();
+            Projectile.VFXComponent = nullptr;
         }
     }
-
     ActiveProjectiles.Empty();
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)
