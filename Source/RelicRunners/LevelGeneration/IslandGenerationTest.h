@@ -94,6 +94,9 @@ public:
 	// Sets default values for this actor's properties
 	AIslandGenerationTest();
 
+	UPROPERTY()
+	FGuid IslandObjectiveGUID;
+
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UIslandSpawningValuesComponent* GenerationValuesComponent;
 
@@ -149,15 +152,15 @@ public:
 
 	void CreateSplinePathStartToEnd(int startingIndex, int targetIndex, int width, class ANewPayloadObjective* payloadActor);
 
-	void AddFlagObjectiveToAll(int NumFlags);
-
 	void DecrementFlagObjectiveForAll();
 
 	void AddEnemiesObjectiveToAll(int TotalEnemies);
 
-	void AddPandoraObjectiveToAll(float Time);
+	void AddPandoraObjectiveToAll(float Time, FGuid AssignedID);
 
-	void AddPayloadObjectiveToAll();
+	void AddFlagObjectiveToAll(int NumFlags, FGuid AssignedID);
+
+	void AddPayloadObjectiveToAll(FGuid AssignedID);
 
 	//Initializes the objective
 	void InitializeObjectives(int startingIndex, int endingIndex);

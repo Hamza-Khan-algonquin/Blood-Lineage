@@ -146,14 +146,18 @@ void AVendor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ItemMeshDataClass)
-	{
-		ItemMeshData = ItemMeshDataClass->GetDefaultObject<UItemMeshData>();
-	}
+	ItemMeshData = ItemMeshDataAsset;
 
 	if (HasAuthority())
 	{
-		GenerateStock();
+		if (ItemMeshData)
+		{
+			GenerateStock();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Vendor %s has no ItemMeshDataAsset assigned!"), *GetName());
+		}
 	}
 
 	InitializeTooltipWidget();
@@ -192,7 +196,7 @@ void AVendor::GenerateStock()
 	}
 
 	//Force no common items in shop
-	int LootQualityIncrease = 70;
+	int LootQualityIncrease = 75;
 
 	UIconLibrary* Lib = nullptr;
 	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
@@ -200,7 +204,7 @@ void AVendor::GenerateStock()
 		Lib = GI->GlobalIconLibrary;
 	}
 
-	for (int i = 0; i < 20; ++i)
+	for (int i = 0; i < 50; ++i)
 	{
 		int ItemLevel = FMath::RandRange(MinLevel, MaxLevel);
 
@@ -211,6 +215,11 @@ void AVendor::GenerateStock()
 			ItemMeshData,
 			Lib
 		));
+
+		if (Stock.Last().ItemStaticMesh == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Item created with NULL Mesh in Vendor Stock!"));
+		}
 	}
 }
 

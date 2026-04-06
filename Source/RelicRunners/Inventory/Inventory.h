@@ -199,6 +199,7 @@ public:
 	USoundBase* ForgeSuccessSound = nullptr;
 
 	//Functions
+	void CloseTooltip();
 	void DisplaySelectedVendorItems(const TArray<struct FItemData>& Items, class AVendor* Vendor);
 	void ForgeItem(UItemObject* Item);
 	void SetForgeTooltip(class UImage* IconWidget, class UBorder* BorderWidget, class UItemObject* Item);
@@ -218,6 +219,7 @@ public:
 	void ToggleShopUI(bool value);
 	void ToggleForgeUI(bool value);
 	void ShowTooltipForBorder(class UBorder* HoveredBorder, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
+	void SellAllByRarity(FString RarityToSell);
 	void PlayUISound(USoundBase* Sound);
 	struct FSlotResult GetSlotUnderCursor(FVector2D CursorPos);
 	void SetEquippedTooltip(UBorder* BorderWidget, FString ItemType);
@@ -264,6 +266,14 @@ public:
 
 	UFUNCTION()
 	FEventReply  OnForgeItemResultClicked(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
+
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorLUT(UTexture* LUT);
+
+	UFUNCTION(BlueprintCallable)
+	void ApplyColorblindStyle();
+
 
 	//UI Elements
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -541,8 +551,52 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Class")
 	class UClassInfo* ClassDataAsset = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Forge;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Armory;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* B_Inventory;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* B_SellCommon;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* B_SellUncommon;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* B_SellRare;
+
+	UPROPERTY()
+	APostProcessVolume* CachedPPV = nullptr;
+
+	UFUNCTION()
+	void HandleColorModeChanged();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Normal = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Protanopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Deuternopia = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Colour", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* LUT_Tritanopia = nullptr;
+
+	
 protected:
 	virtual void NativeConstruct() override;
+	UFUNCTION()
+	void OnSellCommonClicked();
+	UFUNCTION()
+	void OnSellUncommonClicked();
+	UFUNCTION()
+	void OnSellRareClicked();
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

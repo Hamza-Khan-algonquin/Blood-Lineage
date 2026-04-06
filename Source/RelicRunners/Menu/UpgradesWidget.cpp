@@ -6,6 +6,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/RadialSlider.h"
 #include "RelicRunners/Item/ItemStats.h"
+#include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFileListWidget.h"
 #include "RelicRunners/Menu/StandardTooltip.h"
@@ -48,6 +49,7 @@ void UUpgradesWidget::NativeConstruct()
 	if (B_ResetRegen)      B_ResetRegen->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetRegenClicked);
 	if (B_ResetLevel)      B_ResetLevel->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetLevelClicked);
 	if (B_ResetEfficiency) B_ResetEfficiency->OnClicked.AddDynamic(this, &UUpgradesWidget::OnResetEfficiencyClicked);
+	
 }
 
 void UUpgradesWidget::InitializeUpgradeData(USaveFileListData* InSaveData)
@@ -56,14 +58,13 @@ void UUpgradesWidget::InitializeUpgradeData(USaveFileListData* InSaveData)
 	RefreshUI();
 }
 
-void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
+void UUpgradesWidget::ShowTooltipForBorder(UWidget* HoveredWidget, const FVector2D& CursorPos, const FGeometry& ParentGeometry)
 {
-	if (!StandardTooltipClass || !HoveredButton) return;
+	if (!StandardTooltipClass || !HoveredWidget) return;
 
 	APlayerController* PC = GetOwningPlayer();
-	if (!PC) return;
+	if (!PC || !CurrentSaveData) return;
 
-	if (!CurrentSaveData) return;
 	FSaveData& SD = CurrentSaveData->SaveData;
 
 	if (!StandardTooltip)
@@ -73,26 +74,41 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 	}
 
 	FString StatKey = "";
-	int RawValue = 0;
-	FString AbilityName = "";
-	FString AbilityDesc = "";
+	float RawValue = 0;
 
-	if (HoveredButton == B_HP) { StatKey = "MetaHealth";						RawValue = SD.MetaHealth * 10; }
-	else if (HoveredButton == B_DEF) { StatKey = "MetaDefence";					RawValue = SD.MetaDefence * 3; }
-	else if (HoveredButton == B_STR) { StatKey = "MetaStrength";				RawValue = SD.MetaStrength * 3; }
-	else if (HoveredButton == B_AGI) { StatKey = "MetaAgility";					RawValue = SD.MetaAgility * 3; }
-	else if (HoveredButton == B_INT) { StatKey = "MetaIntelligence";			RawValue = SD.MetaIntelligence * 3; }
-	else if (HoveredButton == B_Efficiency) { StatKey = "MetaPurity";			RawValue = SD.MetaPotionEfficiency * 5; }
-	else if (HoveredButton == B_LUCK) { StatKey = "MetaLuck";					RawValue = SD.MetaLuck * 1; }
-	else if (HoveredButton == B_Regen) { StatKey = "MetaMana";					RawValue = SD.MetaResourceRegen * 1; }
-	else if (HoveredButton == B_Level) { StatKey = "MetaStartingLevel";			RawValue = SD.MetaStartingLevel + 1; }
+	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
+	StandardTooltip->SetAnchor(FVector2D(0.f, 1.f));
+	StandardTooltip->SetPositionInViewport(ViewportPosition + FVector2D(5.0f, 5.0f), false);
+
+	if (HoveredWidget == B_HP) { StatKey = "MetaHealth"; RawValue = SD.MetaHealth * 15; }
+	else if (HoveredWidget == B_DEF) { StatKey = "MetaDefence"; RawValue = SD.MetaDefence * 5; }
+	else if (HoveredWidget == B_STR) { StatKey = "MetaStrength"; RawValue = SD.MetaStrength * 5; }
+	else if (HoveredWidget == B_AGI) { StatKey = "MetaAgility"; RawValue = SD.MetaAgility * 5; }
+	else if (HoveredWidget == B_INT) { StatKey = "MetaIntelligence"; RawValue = SD.MetaIntelligence * 5; }
+	else if (HoveredWidget == B_Efficiency) { StatKey = "MetaPurity"; RawValue = SD.MetaPotionEfficiency * 5; }
+	else if (HoveredWidget == B_LUCK) { StatKey = "MetaLuck"; RawValue = SD.MetaLuck * 1; }
+	else if (HoveredWidget == B_Regen) { StatKey = "MetaMana"; RawValue = SD.MetaResourceRegen * 0.5; }
+	else if (HoveredWidget == B_Level) { StatKey = "MetaStartingLevel"; RawValue = SD.MetaStartingLevel + 1; }
+
+	else if (HoveredWidget == B_MetaLevel)
+	{
+		StatKey = "MetaLevelMenu";
+		RawValue = SD.MetaLevel;
+		StandardTooltip->SetAnchor(FVector2D(0.f, 0.f));
+	}
+	else if (HoveredWidget == B_MetaPoints)
+	{
+		StatKey = "MetaPoints";
+		RawValue = SD.MetaPoints;
+		StandardTooltip->SetAnchor(FVector2D(0.f, 0.f));
+	}
 
 	FTooltipData TD;
-	if (HoveredButton == B_Regen)
+	if (HoveredWidget == B_Regen)
 	{
 		if (ARelicRunnersPlayerState* PS = GetOwningPlayerState<ARelicRunnersPlayerState>())
 		{
-			TD = ItemStats::GetStatTooltipData(StatKey, RawValue, SD.MetaResourceRegen * 1, PS->PassiveResourceTime, "", "");
+			TD = ItemStats::GetStatTooltipData(StatKey, RawValue, RawValue, PS->PassiveResourceTime, "", "");
 		}
 	}
 	else
@@ -102,13 +118,6 @@ void UUpgradesWidget::ShowTooltipForBorder(UButton* HoveredButton, const FVector
 
 	StandardTooltip->SetIcon(TD.Icon, TD.IconColor, 0);
 	StandardTooltip->Setup(TD.Name, TD.Value, TD.Descriptions);
-
-	FVector2D ViewportPosition = ParentGeometry.AbsoluteToLocal(CursorPos);
-	const FVector2D Offset(5.0f, 5.0f);
-	const FVector2D Anchor(0.f, 1.f);
-
-	StandardTooltip->SetAnchor(Anchor);
-	StandardTooltip->SetPositionInViewport(ViewportPosition + Offset, false);
 }
 
 void UUpgradesWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
@@ -121,45 +130,44 @@ void UUpgradesWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 		StandardTooltip = nullptr;
 	}
 
-	CurrentHoveredButton = nullptr;
+	CurrentHovered = nullptr;
 }
 
 FReply UUpgradesWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnMouseMove(InGeometry, InMouseEvent);
-
 	FVector2D CursorPos = InMouseEvent.GetScreenSpacePosition();
 
-	TArray<UButton*> Buttons = { B_HP, B_DEF, B_STR, B_AGI, B_INT, B_Efficiency, B_Level, B_LUCK, B_Regen};
+	TArray<UWidget*> Hoverables = {
+		B_HP, B_DEF, B_STR, B_AGI, B_INT, B_Efficiency, B_Level, B_LUCK, B_Regen,
+		B_MetaLevel, B_MetaPoints 
+	};
 
-	UButton* HoveredButton = nullptr;
-	for (UButton* Button : Buttons)
+	UWidget* FoundHovered = nullptr;
+	for (UWidget* Widget : Hoverables)
 	{
-		if (!Button) continue;
+		if (!Widget) continue;
 
-		FGeometry BorderGeom = Button->GetCachedGeometry();
-		if (BorderGeom.IsUnderLocation(CursorPos))
+		if (Widget->GetCachedGeometry().IsUnderLocation(CursorPos))
 		{
-			HoveredButton = Button;
+			FoundHovered = Widget;
 			break;
 		}
 	}
 
-	if (HoveredButton != CurrentHoveredButton)
+	if (FoundHovered != CurrentHovered)
 	{
-
-		if (StandardTooltip && CurrentHoveredButton)
+		if (StandardTooltip)
 		{
 			StandardTooltip->RemoveFromParent();
 			StandardTooltip = nullptr;
 		}
-
-		CurrentHoveredButton = HoveredButton;
+		CurrentHovered = FoundHovered;
 	}
 
-	if (CurrentHoveredButton)
+	if (CurrentHovered)
 	{
-		ShowTooltipForBorder(CurrentHoveredButton, CursorPos, InGeometry);
+		ShowTooltipForBorder(CurrentHovered, CursorPos, InGeometry);
 	}
 
 	return FReply::Handled();

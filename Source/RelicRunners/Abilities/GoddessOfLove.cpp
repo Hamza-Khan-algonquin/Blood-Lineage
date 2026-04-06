@@ -18,6 +18,7 @@ UGoddessOfLove::UGoddessOfLove()
 
 	Damage = 400.f;
 	AreaRadius = 1000.f;
+    Duration = 10.f;
 	LastUseTime = -100.f;
 	CooldownTimer = 15.f;
     ElapsedDOTTime = 0.f;
@@ -71,7 +72,6 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     PS->UpdateRemoteHUDResource();
 
     if (ActorInfo->IsLocallyControlled())
-
     {
         APlayerController* PC = Cast<APlayerController>(ActorInfo->PlayerController.Get());
         if (PC)
@@ -84,22 +84,19 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
             float AnimDuration = AbilityAnim->GetPlayLength();
 
             PlayAbilityAnimation(CurrentActorInfo, AbilityAnim, 1.f);
-             
+
             if (PC)
             {
                 TWeakObjectPtr<APlayerController> WeakPC = PC;
                 TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+                TWeakObjectPtr<ARelicRunnersPlayerState> WeakPS = PS;
 
                 FTimerHandle InputTimerHandle;
-
                 GetWorld()->GetTimerManager().SetTimer(
                     InputTimerHandle,
                     [WeakPC, WeakWorld]()
                     {
-                        if (!WeakWorld.IsValid())
-                            return;
-
-                        if (!WeakPC.IsValid())
+                        if (!WeakWorld.IsValid() || !WeakPC.IsValid())
                             return;
 
                         if (!WeakPC->GetPawn())
@@ -110,6 +107,23 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
                     AnimDuration,
                     false
                 );
+
+                if (PS)
+                {
+                    PS->SetInvincible(true); 
+
+                    FTimerHandle InvincibleTimerHandle;
+                    GetWorld()->GetTimerManager().SetTimer(
+                        InvincibleTimerHandle,
+                        [WeakPS]()
+                        {
+                            if (!WeakPS.IsValid()) return;
+                            WeakPS->SetInvincible(false); 
+                        },
+                        AnimDuration,
+                        false
+                    );
+                }
             }
         }
     }
@@ -139,11 +153,27 @@ void UGoddessOfLove::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     World->GetTimerManager().SetTimer(DOTTimerHandle, this,&UGoddessOfLove::TickDamage,DOTTickInterval,true);
 
     World->GetTimerManager().SetTimer(PassiveRegenTimerHandle,this, &UGoddessOfLove::ApplyPassiveHealthRegen,PassiveRegenTickInterval, true);
+
+    World->GetTimerManager().SetTimer(DurationHandle, this, &UGoddessOfLove::HandleDurationEnd, Duration, false);
+
+
 }
 
 void UGoddessOfLove::ApplyPassiveHealthRegen()
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = GetWorld();
     if (!World)
@@ -162,7 +192,6 @@ void UGoddessOfLove::ApplyPassiveHealthRegen()
 
         PS->PassiveHealthRegen();
     }
-
 }
 
 void UGoddessOfLove::ApplyInitialOverlap()
@@ -209,13 +238,20 @@ void UGoddessOfLove::ApplyInitialOverlap()
 
 void UGoddessOfLove::TickDamage()
 {
-    if (!CurrentActorInfo || !CurrentActorInfo->AvatarActor.IsValid())
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
     {
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
 
-    AActor* OwnerActor = CurrentActorInfo->AvatarActor.Get();
+    AActor* OwnerActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(OwnerActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
     DamageOrigin = OwnerActor->GetActorLocation();
 
     UWorld* World = GetWorld();
@@ -266,6 +302,11 @@ void UGoddessOfLove::TickDamage()
     }
 }
 
+void UGoddessOfLove::HandleDurationEnd()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
 
 void UGoddessOfLove::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
@@ -291,8 +332,7 @@ void UGoddessOfLove::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
             }
 
             OverlayMID = nullptr;
-            World->GetTimerManager().ClearTimer(DOTTimerHandle);
-            World->GetTimerManager().ClearTimer(PassiveRegenTimerHandle);
+            World->GetTimerManager().ClearAllTimersForObject(this);
 
             if (!bWasCancelled)
             {

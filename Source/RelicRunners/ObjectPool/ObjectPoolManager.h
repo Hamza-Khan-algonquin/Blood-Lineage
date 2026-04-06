@@ -56,6 +56,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	bool IsActorClassPooled(TSubclassOf<AActor> actorType);
+
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void NetMultiCast_OnCreateActor(AActor* newActor);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

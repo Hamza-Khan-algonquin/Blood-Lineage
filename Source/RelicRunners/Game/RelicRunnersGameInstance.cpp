@@ -13,17 +13,21 @@
 #include "Engine/Engine.h"
 #include "RelicRunners/Menu/Keybinds.h"
 #include <RelicRunners/Menu/LobbyGameMode.h>
+#include <RelicRunners/Menu/SettingsWidget.h>
 #include <RelicRunners/RelicRunnersGameMode.h>
 #include <InputMappingContext.h>
 #include <EnhancedInputSubsystems.h>
+#include "Camera/CameraComponent.h"
 #include <RelicRunners/PlayerHUD/PlayerHUD.h>
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
+#include "GameFramework/GameUserSettings.h"
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
+#include "Kismet/KismetInternationalizationLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Item/IconLibrary.h"
 
@@ -50,6 +54,9 @@ void URelicRunnersGameInstance::Init()
 
     //Savefiles
     InitializeSaveSlots();
+
+    //language
+    //ApplyLanguage();
 }
 
 void URelicRunnersGameInstance::ResetToDefaults()
@@ -60,6 +67,7 @@ void URelicRunnersGameInstance::ResetToDefaults()
 
 void URelicRunnersGameInstance::ApplyKeybindings()
 {
+
     APlayerController* PC = GetFirstLocalPlayerController();
     if (!PC) return;
 
@@ -75,7 +83,7 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 
     if (!Subsystem) return;
-   
+
     if (ActiveMappingContext)
     {
         Subsystem->RemoveMappingContext(ActiveMappingContext);
@@ -89,11 +97,11 @@ void URelicRunnersGameInstance::ApplyKeybindings()
     {
         FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, EKeys::Mouse2D);
 
-       UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
-       NegateModifier->bX = Keys->InvertedXMouse;
-       //NegateModifier->bY = Keys->InvertedYMouse;
+        UInputModifierNegate* NegateModifier = NewObject<UInputModifierNegate>(MappingContext);
+        NegateModifier->bX = Keys->InvertedXMouse;
+        //NegateModifier->bY = Keys->InvertedYMouse;
 
-       Mapping.Modifiers.Add(NegateModifier);
+        Mapping.Modifiers.Add(NegateModifier);
     }
 
     for (auto& Binding : Keys->KeyBinds)
@@ -133,9 +141,10 @@ void URelicRunnersGameInstance::ApplyKeybindings()
         UE_LOG(LogTemp, Warning, TEXT("PlayerController or PlayerHUD is null"));
     }
 
+    if (!Keys) return;
+    if (PC->PlayerCameraManager)
+        PC->PlayerCameraManager->SetFOV(SavedFOV > 0.f ? SavedFOV : Keys->FOV);
 }
-
-
 
 USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)
 {
@@ -152,7 +161,7 @@ USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData
 
 void URelicRunnersGameInstance::InitializeSaveSlots()
 {
-    if (HasInitializedSlots) return; 
+    if (HasInitializedSlots) return;
     HasInitializedSlots = true;
 
     //Create starting data
@@ -160,6 +169,135 @@ void URelicRunnersGameInstance::InitializeSaveSlots()
     FirstSlot->IsEmptySlot = true;
     SaveSlots.Add(FirstSlot);
 }
+
+void URelicRunnersGameInstance::ApplyAllSettings(APlayerController* PC)
+{
+    if (!PC) return;
+
+    //screen settings
+    if (!PC) return;
+
+    if (UGameUserSettings* Settings = UGameUserSettings::GetGameUserSettings())
+    {
+
+        Settings->SetFullscreenMode(EWindowMode::Fullscreen);
+        Settings->SetScreenResolution(Settings->GetDesktopResolution());
+
+        Settings->ConfirmVideoMode();
+
+        Settings->ApplySettings(false);
+        Settings->SaveSettings();
+
+        if (GEngine && GEngine->GameViewport)
+        {
+            if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
+            {
+                FViewport::ViewportResizedEvent.Broadcast(GEngine->GameViewport->Viewport, 0);
+            }
+
+            if (UWorld* World = GetWorld())
+            {
+                World->GetTimerManager().SetTimerForNextTick([this]()
+                    {
+                        if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
+                        {
+                            FViewport::ViewportResizedEvent.Broadcast(GEngine->GameViewport->Viewport, 0);
+                        }
+                    });
+            }
+        }
+    }
+
+    //FOV
+    if (PC->PlayerCameraManager)
+    {
+        float FinalFOV = SavedFOV;
+
+        if (FinalFOV <= 0.f)
+        {
+            FinalFOV = (Keys ? Keys->FOV : 85.f);
+        }
+
+        PC->PlayerCameraManager->SetFOV(FinalFOV);
+    }
+
+    if (APawn* Pawn = PC->GetPawn())
+    {
+        TArray<UCameraComponent*> CameraComponents;
+        Pawn->GetComponents<UCameraComponent>(CameraComponents);
+
+        for (UCameraComponent* Cam : CameraComponents)
+        {
+            if (!Cam) continue;
+
+            FPostProcessSettings& PPS = Cam->PostProcessSettings;
+
+            // Brightness
+            PPS.bOverride_AutoExposureBias = true;
+            PPS.AutoExposureBias = SavedBrightness;
+
+            // Motion blur
+            PPS.bOverride_MotionBlurAmount = true;
+            PPS.MotionBlurAmount = bSavedMotionBlur ? 2.0f : 0.0f;
+
+            // Colorblind LUT
+            PPS.bOverride_ColorGradingLUT = true;
+            PPS.ColorGradingLUT = GetLUTForMode(ColorblindMode);
+
+            PPS.bOverride_ColorGradingIntensity = true;
+            PPS.ColorGradingIntensity = (ColorblindMode == EColorblindMode::Normal) ? 0.0f : 0.4f;
+
+            Cam->PostProcessBlendWeight = 1.0f;
+        }
+    }
+
+    ApplyKeybindings();
+}
+
+FUIColorblindStyle URelicRunnersGameInstance::GetCurrentUIStyle() const
+{
+    switch (ColorblindMode)
+    {
+    case EColorblindMode::Protanopia:
+        return ProtanopiaUIStyle;
+
+    case EColorblindMode::Deuteranopia:
+        return DeuteranopiaUIStyle;
+
+    case EColorblindMode::Tritanopia:
+        return TritanopiaUIStyle;
+
+    case EColorblindMode::Normal:
+    default:
+        return NormalUIStyle;
+    }
+}
+
+/*void URelicRunnersGameInstance::ApplyLanguage()
+{
+    const FString CultureCode = GetCultureCodeFromLanguage(CurrentLanguage);
+    UKismetInternationalizationLibrary::SetCurrentLanguageAndLocale(CultureCode, true);
+}
+
+void URelicRunnersGameInstance::SetLanguage(EGameLanguage NewLanguage)
+{
+    CurrentLanguage = NewLanguage;
+    ApplyLanguage();
+}
+
+FString URelicRunnersGameInstance::GetCultureCodeFromLanguage(EGameLanguage Language) const
+{
+    switch (Language)
+    {
+    case EGameLanguage::French:
+        return TEXT("fr");
+    case EGameLanguage::English:
+    default:
+        return TEXT("en");
+    }
+}
+*/
+
 
 void URelicRunnersGameInstance::Shutdown()
 {
@@ -525,6 +663,17 @@ void URelicRunnersGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoin
                 }, 0.2f, false);
         }
     }
+}
+
+
+UTexture* URelicRunnersGameInstance::GetLUTForMode(EColorblindMode ColorBlind)
+{
+    if (ColorBlind == EColorblindMode::Protanopia ) return LUT_Protanopia;
+    if (ColorBlind == EColorblindMode::Deuteranopia) return LUT_Deuteranopia;
+    if (ColorBlind == EColorblindMode::Tritanopia) return LUT_Tritanopia;
+    if (ColorBlind == EColorblindMode::Normal) return LUT_Normal;
+
+    return LUT_Normal;
 }
 
 void URelicRunnersGameInstance::StartSessionGame()

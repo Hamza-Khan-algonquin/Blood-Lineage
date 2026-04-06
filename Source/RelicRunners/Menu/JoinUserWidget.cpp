@@ -13,6 +13,8 @@
 #include "Components/Image.h"
 #include "Components/Border.h"
 #include "Components/ProgressBar.h"
+#include <Camera/CameraComponent.h>
+#include "EngineUtils.h"
 #include "MainMenuWidget.h"
 #include "Components/CircularThrobber.h"
 #include <Kismet/GameplayStatics.h>
@@ -83,11 +85,11 @@ void UJoinUserWidget::NativeConstruct()
 	}
 	else
 	{
-		DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 100, 100, 0 });
-		DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 140, 125, 1 });
-		DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 180, 150, 2 });
-		DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 220, 175, 3 });
-		DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 300, 250, 5 });
+		DifficultyMap.Add("Boar", { I_Boar, BoarBorder, B_Boar, B_BoarSection, 0, 0, 0 });
+		DifficultyMap.Add("Bull", { I_Bull, BullBorder, B_Bull, B_BullSection, 0, 0, 1 });
+		DifficultyMap.Add("Lion", { I_Lion, LionBorder, B_Lion, B_LionSection, 0, 0, 2 });
+		DifficultyMap.Add("Hydra", { I_Hydra, HydraBorder, B_Hydra, B_HydraSection, 0, 0, 3 });
+		DifficultyMap.Add("Cerberus", { I_Cerberus, CerberusBorder, B_Cerberus, B_CerberusSection, 0, 0, 5 });
 	}
 	UpdateDifficultyNumbers();
 
@@ -114,6 +116,7 @@ void UJoinUserWidget::NativeConstruct()
 
 	PlayAnimation(LeftPanelOpen);
 	PlayAnimation(RightPanelOpen);
+	SetSelectedClass(CurrentClass);
 }
 
 FReply UJoinUserWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -211,10 +214,21 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 	else if (HoveredBorder == B_Agility)		{ StatKey = "Agility";      RawValue = Info.Dexterity; }
 	else if (HoveredBorder == B_Intelligence)	{ StatKey = "Intelligence"; RawValue = Info.Intelligence; }
 
-	else if (HoveredBorder == B_Ability1)		{ StatKey = "Ability1"; AbilityName = Info.Ability1; AbilityDesc = Info.Ability1Description1; }
-	else if (HoveredBorder == B_Ability2)		{ StatKey = "Ability2"; AbilityName = Info.Ability2; AbilityDesc = Info.Ability2Description1; }
-	else if (HoveredBorder == B_Ability3)		{ StatKey = "Ability3"; AbilityName = Info.Ability3; AbilityDesc = Info.Ability3Description1; }
-	else if (HoveredBorder == B_Ability4)		{ StatKey = "Ability4"; AbilityName = Info.Ability4; AbilityDesc = Info.Ability4Description1; }
+	else if (HoveredBorder == B_Ability1 || HoveredBorder == B_Ability2 || HoveredBorder == B_Ability3 || HoveredBorder == B_Ability4)
+	{
+		FString HoveredName = "";
+		if (HoveredBorder == B_Ability1) { HoveredName = Info.Ability1; }
+		else if (HoveredBorder == B_Ability2) { HoveredName = Info.Ability2; }
+		else if (HoveredBorder == B_Ability3) { HoveredName = Info.Ability3; }
+		else if (HoveredBorder == B_Ability4) { HoveredName = Info.Ability4; }
+
+		// This converts "ThunderousPunch" into "AbilityThunderousPunch" 
+		// to match your 'if (BorderType == "AbilityThunderousPunch")' logic
+		StatKey = "Ability" + HoveredName;
+		AbilityName = HoveredName;
+
+		RawValue = 0;
+	}
 
 	else if (HoveredBorder == B_BoarSection1) { StatKey = "BoarDifficulty"; Difficulty = true; DifficultyName = "Boar"; }
 	else if (HoveredBorder == B_BullSection1) { StatKey = "BullDifficulty"; Difficulty = true; DifficultyName = "Bull";}
@@ -423,8 +437,8 @@ void UJoinUserWidget::UpdateClientDifficultyUI()
 
 	FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(ActualDifficulty);
 	TB_CurrentDifficulty->SetText(FText::FromName(ActualDifficulty));
-	TB_CurrentEnemyDamage->SetText(FText::AsNumber(diffInfo.HealthPercent));
-	TB_CurrentEnemyHealth->SetText(FText::AsNumber(diffInfo.DamagePercent));
+	TB_CurrentEnemyDamage->SetText(FText::AsNumber(diffInfo.DamagePercent));
+	TB_CurrentEnemyHealth->SetText(FText::AsNumber(diffInfo.HealthPercent));
 	TB_CurrentLuck->SetText(FText::AsNumber(diffInfo.LuckAmount));
 
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_DifficultyUpdate);
@@ -446,6 +460,12 @@ void UJoinUserWidget::OnNemesisClicked() { PlayButtonClickSound(); SetSelectedCl
 
 void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 {
+	UIconLibrary* Lib = nullptr;
+	if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
+	{
+		Lib = GI->GlobalIconLibrary;
+	}
+
 	CurrentClass = ClassKey;
 	FLinearColor Gold(1.f, 0.5f, 0, 1.f);
 	FLinearColor Cyan(0, 1, 0.714, 1.f);
@@ -466,32 +486,6 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	SetImageColor(I_Artemis, White);
 	SetImageColor(I_Aphrodite, White);
 	SetImageColor(I_Nemesis, White);
-
-	//Highlight the selected one gold
-	if (ClassKey == "Ares")
-	{
-		SetButtonColor(AresButton, Gold);
-		SetBorderColor(B_Ares, Black);
-		SetImageColor(I_Ares, Black);
-	}
-	else if (ClassKey == "Artemis")
-	{
-		SetButtonColor(ArtemisButton, Gold);
-		SetBorderColor(B_Artemis, Black);
-		SetImageColor(I_Artemis, Black);
-	}
-	else if (ClassKey == "Aphrodite")
-	{
-		SetButtonColor(AphroditeButton, Gold);
-		SetBorderColor(B_Aphrodite, Black);
-		SetImageColor(I_Aphrodite, Black);
-	}
-	else if (ClassKey == "Nemesis")
-	{
-		SetButtonColor(NemesisButton, Gold);
-		SetBorderColor(B_Nemesis, Black);
-		SetImageColor(I_Nemesis, Black);
-	}
 
 	if (!ClassDataAsset || !ClassDataAsset->Classes.Contains(ClassKey))
 	{
@@ -534,6 +528,52 @@ void UJoinUserWidget::SetSelectedClass(FName ClassKey)
 	if (GameInstance)
 	{
 		GameInstance->SetSelectedClass(ClassKey);
+	}
+
+	//Highlight the selected one gold
+	if (ClassKey == "Ares")
+	{
+		SetButtonColor(AresButton, Gold);
+		SetBorderColor(B_Ares, Black);
+		SetImageColor(I_Ares, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("ThunderousPunch"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("BloodRush"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("WarBanner"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("RageOfTheGods"));
+	}
+	else if (ClassKey == "Artemis")
+	{
+		SetButtonColor(ArtemisButton, Gold);
+		SetBorderColor(B_Artemis, Black);
+		SetImageColor(I_Artemis, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("FireArrow"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("Impunity"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("SplitShot"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("Moonbeam"));
+	}
+	else if (ClassKey == "Aphrodite")
+	{
+		SetButtonColor(AphroditeButton, Gold);
+		SetBorderColor(B_Aphrodite, Black);
+		SetImageColor(I_Aphrodite, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("BundleOfJoy"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("MirrorOfDesire"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("KissOfLife"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("GoddessOfLove"));
+	}
+	else if (ClassKey == "Nemesis")
+	{
+		SetButtonColor(NemesisButton, Gold);
+		SetBorderColor(B_Nemesis, Black);
+		SetImageColor(I_Nemesis, Black);
+		if (!Lib) return;
+		I_Ability1->SetBrushFromTexture(*Lib->IconMap.Find("Backstab"));
+		I_Ability2->SetBrushFromTexture(*Lib->IconMap.Find("NaturesBlessing"));
+		I_Ability3->SetBrushFromTexture(*Lib->IconMap.Find("VengefulDance"));
+		I_Ability4->SetBrushFromTexture(*Lib->IconMap.Find("DivinePunishment"));
 	}
 }
 

@@ -75,7 +75,7 @@ void ACapturableFlag::HandleInteracted(ARelicRunnersCharacter* Char)
 	TextComponent->SetText(FText::FromString("Complete!"));
 
 	FString text = HasAuthority() ? "Server: " : "Client: ";
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, text + FString::Printf(TEXT("Interacted with Flag")));
 
 	BeaconMesh->SetVisibility(false);
 }

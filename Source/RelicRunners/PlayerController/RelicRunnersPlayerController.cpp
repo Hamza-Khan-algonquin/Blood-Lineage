@@ -43,6 +43,8 @@
 #include "RelicRunners/Inventory/Inventory.h"
 #include "RelicRunners/Vendor/Vendor.h"
 
+#include "Camera/CameraComponent.h"
+
 #include "RelicRunners/AbilitySystem/AbilitySelection.h"
 
 #include "RelicRunners/Menu/MainMenuWidget.h"
@@ -62,7 +64,7 @@
 #include "RelicRunners/Objective/ObjectiveLog.h"
 
 #include "RelicRunners/Enemy/Hades/Hades.h"
-
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/TreeView.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
@@ -79,11 +81,19 @@
 #include "NavigationPath.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include <RelicRunners/LevelGeneration/IslandSpawner.h>
+#include <Runtime/SlateRHIRenderer/Private/SlateRHIRenderer.h>
+
 #include <RelicRunners/RelicRunnersGameMode.h>
+
 
 ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
 	static ConstructorHelpers::FClassFinder<ULoadingScreen> BP_LoadingScreen(TEXT("/Game/Blueprints/Menu/BP_LoadingScreen"));
+
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GI->ApplyAllSettings(this);
+	}
 
 	if (BP_LoadingScreen.Class)
 	{
@@ -178,7 +188,33 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		InitLocalUI();
 		GetWorldTimerManager().SetTimer(SyncDataTimerHandle, this, &ARelicRunnersPlayerController::SyncUI, 0.2f, true);
 		TrySetupMinimap();
+		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::ApplySavedFOV);
+		ApplyColorblindMode();
+
+	}
+
+}
+void ARelicRunnersPlayerController::ApplySavedFOV()
+{
+	URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	const float FinalFOV = (GI->SavedFOV > 0.f) ? GI->SavedFOV : 90.f;
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetFOV(FinalFOV);
+	}
+
+	if (ARelicRunnersCharacter* RCharacter = Cast<ARelicRunnersCharacter>(GetPawn()))
+	{
+		if (RCharacter->GetFollowCamera())
+		{
+			RCharacter->GetFollowCamera()->SetFieldOfView(FinalFOV);
+		}
+
 		Server_RecordPawnReadyTime();
+
 	}
 
 	if (HasAuthority())
@@ -189,7 +225,6 @@ void ARelicRunnersPlayerController::AcknowledgePossession(APawn* aPawn)
 		}
 	}
 }
-
 void ARelicRunnersPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 {
 	Super::ClientRestart_Implementation(NewPawn);
@@ -239,13 +274,28 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 
 	PlayerPreviewInstance = nullptr;
 
-	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+	if (IsLocalController())
+	{
+		FInputModeGameOnly InputMode;
+		SetInputMode(InputMode);
 
+		FSlateApplication::Get().SetAllUserFocusToGameViewport();
+
+		RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+	}
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+			GetWorldTimerManager().SetTimerForNextTick([this, GI]()
+				{
+					GI->ApplyAllSettings(this);
+				});
+	}
 	if (HasAuthority())
 	{
 		FTimerHandle RefreshTimer;
 		GetWorldTimerManager().SetTimer(RefreshTimer, this, &ARelicRunnersPlayerController::OnTravelRefreshDelay, 0.2f, false);
 	}
+
 
 	EnableInput(this);
 }
@@ -265,10 +315,19 @@ void ARelicRunnersPlayerController::PreClientTravel(const FString& PendingURL, E
 
 void ARelicRunnersPlayerController::CleanUI()
 {
+
+	ARelicRunnersCharacter* Char = Cast<ARelicRunnersCharacter>(GetPawn());
+	if (Char)
+	{
+		Char->EndAllAbilities();
+	}
+
 	//Clean up UI
 	if (UWorld* World = GetWorld())
 	{
+
 		if (!IsLocalController()) return;
+
 
 		DisableInput(this);
 
@@ -705,7 +764,7 @@ void ARelicRunnersPlayerController::Client_UpdateStage_Implementation(int StageN
 {
 	if (MinimapWidget)
 	{
-		FText FinalText = FText::Format(FText::FromString("Stage {0}"), StageNumber);
+		FText FinalText = FText::Format(FText::FromString("Olympus {0}"), StageNumber);
 		MinimapWidget->SetLevelTitle(FinalText);
 	}
 }
@@ -820,6 +879,9 @@ void ARelicRunnersPlayerController::ToggleUI(UUserWidget* UIWidget)
 {
 	if (!UIWidget) return;
 
+	if (Inventory) Inventory->CloseTooltip();
+	if (AbilitySelection) AbilitySelection->CloseTooltip();
+
 	bool IsOpening = !UIWidget->IsVisible();
 	if (UIWidget == Inventory && Inventory->GetVisibility() == ESlateVisibility::HitTestInvisible) IsOpening = true;
 
@@ -865,10 +927,13 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 {
 	if (!UIWidget || !UIWidget->IsVisible()) return;
 
+	if (Inventory) Inventory->CloseTooltip();
+	if (AbilitySelection) AbilitySelection->CloseTooltip();
+
 	SetInputMode(FInputModeGameOnly());
 	SetShowMouseCursor(false);
 
-	if (UIWidget == Inventory)
+	if (UIWidget == Inventory && Inventory->GetVisibility() == ESlateVisibility::Visible)
 	{
 		UInventoryItemOptions::CloseAnyOpenPopup();
 		UInventorySortingOptions::CloseAnyOpenPopup();
@@ -882,11 +947,10 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 
 		Inventory->ToggleShopUI(false);
 		Inventory->ToggleForgeUI(false);
+		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 		float AnimDelay = 0.25f;
 		GetWorld()->GetTimerManager().SetTimer(DisableUITimer, this, &ARelicRunnersPlayerController::DisableInventoryUIFromTimer, AnimDelay, false);
-
-		if (Inventory->StandardTooltip) Inventory->StandardTooltip->RemoveFromParent(); Inventory->StandardTooltip = nullptr;
 	}
 	else
 	{
@@ -904,9 +968,8 @@ void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
 {
 	if (Inventory)
 	{
-		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
 		Inventory->SetIsEnabled(true);
-
+		Inventory->CloseTooltip();
 		GetWorld()->GetTimerManager().ClearTimer(DisableUITimer);
 	}
 }
@@ -928,6 +991,7 @@ void ARelicRunnersPlayerController::InventoryUI()
 {
 	if (!Inventory) return;
 	FSlateApplication::Get().CancelDragDrop();
+	Inventory->CloseTooltip();
 	Inventory->ToggleShopUI(false);
 	Inventory->ToggleForgeUI(false);
 	ToggleUI(Inventory);
@@ -1017,10 +1081,11 @@ void ARelicRunnersPlayerController::SetupObjectives()
 		if (MapName.Contains(TEXT("IslandTest")))
 		{
 			ObjectiveStageTitle->TotalZones = 5;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Visible);
 		}
 		else if (MapName.Contains(TEXT("ShopDemo")) || MapName.Contains(TEXT("ThirdPersonMap")) || MapName.Contains(TEXT("BossLevel")))
 		{
-			ObjectiveStageTitle->TotalZones = 0;
+			ObjectiveLog->SetVisibility(ESlateVisibility::Collapsed);
 		}
 
 		if (ObjectiveLog)
@@ -1129,7 +1194,7 @@ void ARelicRunnersPlayerController::Internal_SetPayloadUI(float NewProgress)
 
 			PayloadGoal->ProgressFraction = NewProgress;
 
-			if (PayloadGoal->ProgressFraction >= 0.98f && !PayloadGoal->Completed)
+			if (PayloadGoal->ProgressFraction >= 0.99f && !PayloadGoal->Completed)
 			{
 				PayloadGoal->Completed = true;
 				PayloadGoal->ProgressFraction = 1.0f;
@@ -1177,6 +1242,47 @@ void ARelicRunnersPlayerController::UpdatePandoraObjective(float NewPercent, FSt
 	}
 }
 
+void ARelicRunnersPlayerController::ApplyColorblindMode()
+{
+	if (!IsLocalController()) return;
+
+	URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>();
+	if (!GI) return;
+
+	EColorVisionDeficiency Type = EColorVisionDeficiency::NormalVision;
+	float Severity = 0.0f;
+	bool CorrectDeficiency = false;
+
+	switch (GI->ColorblindMode)
+	{
+	case EColorblindMode::Normal:
+		Type = EColorVisionDeficiency::NormalVision;
+		Severity = 0.0f;
+		CorrectDeficiency = false;
+		break;
+
+	case EColorblindMode::Protanopia:
+		Type = EColorVisionDeficiency::Protanope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+
+	case EColorblindMode::Deuteranopia:
+		Type = EColorVisionDeficiency::Deuteranope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+
+	case EColorblindMode::Tritanopia:
+		Type = EColorVisionDeficiency::Tritanope;
+		Severity = 1.0f;
+		CorrectDeficiency = true;
+		break;
+	}
+
+	UWidgetBlueprintLibrary::SetColorVisionDeficiencyType(Type, Severity, CorrectDeficiency, false);
+}
+
 void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 {
 	if (!ObjectiveLog || !ObjectiveStageTitle || !ObjectiveLog->ObjectiveTreeView) return;
@@ -1185,47 +1291,53 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 	{
 		GetWorldTimerManager().ClearTimer(TimerHandle_UIWait);
 
-		for (int i = 0; i < ObjectiveBuffer.Num(); ++i)
+		for (const FPendingObjective& PendingData : ObjectiveBuffer)
 		{
-			const FPendingObjective& PendingData = ObjectiveBuffer[i];
-
-			bool bAlreadyExists = false;
+			// 1. Check if we already have this ID
+			bool bAlreadyInUI = false;
 			for (UObjectiveItemData* Existing : ObjectiveStageTitle->SubObjectives)
 			{
-				if (Existing->IsA<UPayloadData>() && PendingData.Type == EObjectiveType::Payload) bAlreadyExists = true;
-				else if (Existing->IsA<UPandoraData>() && PendingData.Type == EObjectiveType::Pandora) bAlreadyExists = true;
-				else if (Existing->IsA<UEnemiesData>() && PendingData.Type == EObjectiveType::Enemies) bAlreadyExists = true;
-				else if (Existing->IsA<UFlagData>() && PendingData.Type == EObjectiveType::Flag) bAlreadyExists = true;
-
-				if (bAlreadyExists) break;
+				if (Existing && Existing->UniqueID == PendingData.ObjectiveGUID)
+				{
+					bAlreadyInUI = true;
+					Existing->Completed = PendingData.Completed;
+					break;
+				}
 			}
 
-			if (!bAlreadyExists)
+			// 2. Add if it's new
+			if (!bAlreadyInUI)
 			{
 				UObjectiveItemData* NewGoal = Internal_AddObjectiveFromBuffer(PendingData);
-				if (NewGoal && i < ObjectiveBuffer.Num() - 1)
+				if (NewGoal)
 				{
-					NewGoal->Completed = true;
+					NewGoal->Completed = PendingData.Completed;
 				}
 			}
 		}
 
-		for (int i = 1; i < ObjectiveStageTitle->SubObjectives.Num(); ++i)
+		// 3. HISTORY CLEANUP (Protect Index 0)
+		// We only mark as "Done" starting from the SECOND item (Index 1)
+		if (ObjectiveStageTitle->SubObjectives.Num() > 1)
 		{
-			UObjectiveItemData* SubObj = ObjectiveStageTitle->SubObjectives[i];
-			if (SubObj && !SubObj->Completed)
+			for (int32 i = 1; i < ObjectiveStageTitle->SubObjectives.Num(); ++i)
 			{
-				SubObj->Completed = true;
-				if (UPayloadData* PL = Cast<UPayloadData>(SubObj)) PL->ProgressFraction = 1.0f;
-				else if (UPandoraData* PD = Cast<UPandoraData>(SubObj)) { PD->Percent = 1.0f; PD->TimeRemainingText = TEXT(""); }
+				UObjectiveItemData* OldObj = ObjectiveStageTitle->SubObjectives[i];
+				if (OldObj)
+				{
+					OldObj->Completed = true; // Mark old history as done
+
+					// Force visual "Finished" state for old history items
+					if (UPayloadData* PL = Cast<UPayloadData>(OldObj)) PL->ProgressFraction = 1.0f;
+					else if (UPandoraData* PD = Cast<UPandoraData>(OldObj)) { PD->Percent = 1.0f; PD->TimeRemainingText = TEXT(""); }
+				}
 			}
 		}
 
 		ObjectiveLog->ObjectiveTreeView->RequestRefresh();
+		ObjectiveLog->ObjectiveTreeView->SetItemExpansion(ObjectiveStageTitle, true);
 
 		ObjectiveBuffer.Empty();
-
-		UE_LOG(LogTemp, Warning, TEXT("CLIENT: Buffer synced with permanent objective list."));
 	}
 }
 
@@ -1267,6 +1379,7 @@ UObjectiveItemData* ARelicRunnersPlayerController::Internal_AddObjectiveFromBuff
 
 	if (NewGoal)
 	{
+		NewGoal->UniqueID = Data.ObjectiveGUID;
 		ObjectiveLog->AddObjective(ObjectiveStageTitle, NewGoal);
 	}
 
@@ -1275,17 +1388,25 @@ UObjectiveItemData* ARelicRunnersPlayerController::Internal_AddObjectiveFromBuff
 
 void ARelicRunnersPlayerController::AddObjectiveToBuffer(FPendingObjective NewObjective)
 {
-	if (HasAuthority())
+	if (!HasAuthority()) return;
+
+	for (const FPendingObjective& Existing : ObjectiveBuffer)
 	{
-		ObjectiveBuffer.Add(NewObjective);
+		if (Existing.ObjectiveGUID == NewObjective.ObjectiveGUID) return;
+	}
 
-		MARK_PROPERTY_DIRTY_FROM_NAME(ARelicRunnersPlayerController, ObjectiveBuffer, this);
-
-		if (IsLocalController())
+	if (ObjectiveStageTitle)
+	{
+		for (UObjectiveItemData* UIItem : ObjectiveStageTitle->SubObjectives)
 		{
-			FlushObjectiveBuffer();
+			if (UIItem && UIItem->UniqueID == NewObjective.ObjectiveGUID) return;
 		}
 	}
+
+	ObjectiveBuffer.Add(NewObjective);
+	MARK_PROPERTY_DIRTY_FROM_NAME(ARelicRunnersPlayerController, ObjectiveBuffer, this);
+
+	if (IsLocalController()) FlushObjectiveBuffer();
 }
 
 void ARelicRunnersPlayerController::Server_DecrementFlagObjective_Implementation()
@@ -1373,16 +1494,22 @@ void ARelicRunnersPlayerController::PostGameUI()
 		if (PostGameWidget)
 		{
 			PostGameWidget->AddToViewport();
-
 			SetInputMode(FInputModeUIOnly());
 			bShowMouseCursor = true;
 
 			FTimerHandle UnusedHandle;
-			GetWorldTimerManager().SetTimer(UnusedHandle, [this]()
+			TWeakObjectPtr<ARelicRunnersPlayerController> WeakThis(this);
+
+
+			GetWorldTimerManager().SetTimer(UnusedHandle, [WeakThis]()
 				{
-					if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+					if (ARelicRunnersPlayerController* StrongThis = WeakThis.Get())
 					{
-						GI->BackToMainMenu();
+						if (URelicRunnersGameInstance* GI = StrongThis->GetGameInstance<URelicRunnersGameInstance>())
+						{
+
+							GI->BackToMainMenu();
+						}
 					}
 				}, 5.0f, false);
 		}
@@ -1396,6 +1523,25 @@ void ARelicRunnersPlayerController::Client_ShowPostGame_Implementation(const TAr
 		SpectatingWidget->RemoveFromParent();
 	}
 
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		if (GI->SelectedSaveSlot)
+		{
+			FString LocalName = GetPlayerState<APlayerState>()->GetPlayerName();
+
+			for (const FPlayerPostGameData& Data : FinalStats)
+			{
+				if (Data.Username == LocalName)
+				{
+					GI->SelectedSaveSlot->AddMetaExp(Data.MetaXPGainInRun);
+
+					UE_LOG(LogTemp, Log, TEXT("Local Save Updated: Added %d Meta XP."), Data.MetaXPGainInRun);
+					break;
+				}
+			}
+		}
+	}
+
 	PostGameUI();
 	if (PostGameWidget) PostGameWidget->UpdateScoreboard(FinalStats);
 }
@@ -1404,9 +1550,16 @@ void ARelicRunnersPlayerController::Server_UpdateMetaFromSave_Implementation(int
 {
 	if (ARelicRunnersPlayerState* PS = GetPlayerState<ARelicRunnersPlayerState>())
 	{
-		PS->MetaLevel = MetaLevel;
-		PS->MetaXP = MetaXP;
-		PS->MetaXPToNextLevel = MetaXPToNextLevel;
+		if (!PS->bMetaStatsInitialized)
+		{
+			PS->MetaLevel = MetaLevel;              
+			PS->MetaLevelAtStart = MetaLevel;       
+			PS->MetaXP = MetaXP;
+			PS->MetaXPAtStart = MetaXP;
+			PS->MetaXPToNextLevel = MetaXPToNextLevel;
+			PS->bMetaStatsInitialized = true;
+			PS->ForceNetUpdate();
+		}
 	}
 }
 
@@ -1425,7 +1578,7 @@ void ARelicRunnersPlayerController::Client_RequestSaveStats_Implementation()
 
 void ARelicRunnersPlayerController::InitLocalUI()
 {
-	if (!IsLocalController()) return; 
+	if (!IsLocalController()) return;
 
 	UWorld* World = GetWorld();
 	if (!World) return;
@@ -1551,7 +1704,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 
 		Server_SendPlayerInfo(GI->PlayerName, GI->SelectedClass);
 	}
-
+	
 	TryBindUI();
 
 }
@@ -1640,6 +1793,7 @@ void ARelicRunnersPlayerController::BeginPlay()
 	{
 		SetupMainMenuView();
 	}
+
 	else
 	{
 		if (URelicRunnersGameInstance* GI = GetWorld()->GetGameInstance<URelicRunnersGameInstance>())
@@ -1656,12 +1810,21 @@ void ARelicRunnersPlayerController::BeginPlay()
 				Server_InitializePlayerData(DefaultData);
 			}
 		}
+		if (IsLocalController())
+		{
+			Client_RequestSaveStats();
+		}
 	}
 
 	if (PlayerCameraManager)
 	{
 		PlayerCameraManager->ViewPitchMin = -60.f;
 		PlayerCameraManager->ViewPitchMax = 10.f;
+	}
+
+	if (IsLocalController())
+	{
+		ApplyColorblindMode();
 	}
 }
 

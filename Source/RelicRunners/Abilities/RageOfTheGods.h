@@ -40,7 +40,7 @@ protected:
 	float StartRadius = 200.f;
 	float MaxRadius = 1000.f;
 
-	float KnockbackStrength = 5000.f;
+	float KnockbackStrength = 1000.f;
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* OverlayMID = nullptr;

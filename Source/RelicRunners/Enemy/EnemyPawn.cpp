@@ -17,13 +17,15 @@
 #include "RelicRunners/Item/ItemStats.h"
 #include "RelicRunners/ObjectPool/ObjectPoolManager.h"
 #include "RelicRunners/Item/ItemMeshData.h"
-
+#include "NavigationSystem.h"
 #include "RelicRunners/PlayerState/RelicRunnersPlayerState.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <Kismet/GameplayStatics.h>
 #include <Net/UnrealNetwork.h>
 #include "Components/SphereComponent.h"
 #include "NiagaraComponent.h"
+#include "RelicRunners/Enemy/HitFlashComponent.h"
+#include "RelicRunners/Enemy/HitStunComponent.h"
 
 #include "RelicRunners/Inventory/InventoryComponent.h"
 #include <RelicRunners/Game/RelicRunnersGameInstance.h>
@@ -63,7 +65,9 @@ AEnemyPawn::AEnemyPawn()
 	EnemyStatsComponent->SetMaxHealth(100.f);
 	EnemyStatsComponent->SetCurrentHealth(100.f);
 
-	HitFlashTimeline.SetLooping(false);
+	HitFlashComponent = CreateDefaultSubobject<UHitFlashComponent>(TEXT("Hit Flash Component"));
+	
+	HitStunComponent = CreateDefaultSubobject<UHitStunComponent>(TEXT("Hit Stun Component"));
 
 	bReplicates = true;
 	SetReplicateMovement(false);
@@ -78,6 +82,7 @@ AEnemyPawn::AEnemyPawn()
 
 	KnockBackStrength = 5000;
 	AdditionalUpwardsKnockBackForces = 50;
+	HitStunTime = 0.3f;
 	Tags.Add("Enemy");
 }
 
@@ -95,16 +100,41 @@ void AEnemyPawn::UpdateEmissiveHealth()
 	}
 }
 
+void AEnemyPawn::UpdateMaterialIsAttacking()
+{
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("IsAttacking", IsAttacking);
+		}
+	}
+}
+
+void AEnemyPawn::NetMulticast_UpdateMaterialIsAttacking_Implementation()
+{
+	UpdateMaterialIsAttacking();
+}
+
+void AEnemyPawn::NetMulticast_UpdateEmissiveHealth_Implementation()
+{
+	UpdateEmissiveHealth();
+}
+
 void AEnemyPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(AttackHandle);
+	GetWorld()->GetTimerManager().ClearTimer(KnockBackFallBackHandle);
+	GetWorld()->GetTimerManager().ClearTimer(HitStunTimer);
+	GetWorld()->GetTimerManager().ClearTimer(ActiveChangeTimerHandle);
+
 	Super::EndPlay(EndPlayReason);
 }
 
 float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!HasAuthority() || DamageAmount <= 0 || !IsActive)
+	if (!HasAuthority() || DamageAmount <= 0 || !IsActive || !MovementComponent || !MovementComponent->Commander || !GetWorld())
 	{
 		return 0;
 	}
@@ -112,6 +142,14 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//call the super for important stuff
 	DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
+	if (APawn* pawn = EventInstigator ? EventInstigator->GetPawn() : nullptr)
+	{
+		if (ARelicRunnersCharacter* PlayerCharacter = Cast<ARelicRunnersCharacter>(pawn))
+		{
+			//MovementComponent->Commander->ResetTimeToAttackForPlayer(pawn);
+		}
+	}
+	
 	//add the damage
 	EnemyStatsComponent->AddToCurrentHealth(-DamageAmount);
 
@@ -123,54 +161,55 @@ float AEnemyPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	//if we are not dead check the damage events for stun
 	else
 	{
-		HitFlash();
+		bool shouldKnockBack = false;
+		const FAttackDamageEvent* AttackDamageEvent = nullptr;
 
 		if (DamageEvent.IsOfType(FAttackDamageEvent::ClassID))
 		{
-			const FAttackDamageEvent* AttackDamageEvent = static_cast<const FAttackDamageEvent*>(&DamageEvent);
-			if (AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT))
-			{
-				FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
-				KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
-			}
+			AttackDamageEvent = static_cast<const FAttackDamageEvent*>(&DamageEvent);
+			shouldKnockBack = AttackDamageEvent && ((AttackDamageEvent->AttackType == EAttackType::LIGHT_ATTACK || AttackDamageEvent->AttackType == EAttackType::HEAVY_ATTACK) && EnemyStatsComponent->GetEnemyType() == EEnemyType::LIGHT);
 		}
 
-		UpdateEmissiveHealth();
+		if (HitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+		}
+
+		if(HitFlashComponent)
+		{
+			HitFlashComponent->Multicast_StartHitFlash();
+		}
+
+		if (HitStunComponent)
+		{
+			HitStunComponent->Multicast_StartHitStun(HitStunTime);
+
+			if (AttackDamageEvent && shouldKnockBack)
+			{
+				FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+				FTimerDelegate HitSunDel;
+
+				HitSunDel.BindUObject(this, &AEnemyPawn::KnockBack, Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
+				GetWorld()->GetTimerManager().SetTimer(HitStunTimer, HitSunDel, HitStunTime, false);
+			}
+		}
+		else if (AttackDamageEvent && shouldKnockBack)
+		{
+			FVector Direction = (GetActorLocation() - DamageCauser->GetActorLocation()).GetSafeNormal();
+			KnockBack(Direction * AttackDamageEvent->KnockBackStrength + FVector(0, 0, AttackDamageEvent->AdditionalUpwardsKnockBackForces));
+		}
+
+		NetMulticast_UpdateEmissiveHealth();
+
+		IsAttacking = false;
+		NetMulticast_UpdateMaterialIsAttacking();
+		if (MovementComponent)
+		{
+			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+		}
 	}
 
 	return DamageAmount;
-}
-
-void AEnemyPawn::HitFlash_Implementation()
-{
-	if (HitSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
-	}
-
-	HitFlashTimeline.PlayFromStart();
-	SetActorTickEnabled(true);
-}
-
-void AEnemyPawn::UpdateHitFlash(float strength)
-{
-	for (UMaterialInstanceDynamic* element : DynamicMaterials)
-	{
-		if (element)
-		{
-			element->SetScalarParameterValue("HitFlashValue", strength);
-		}
-	}
-}
-
-void AEnemyPawn::EndHitFlash()
-{
-	HitFlashTimeline.Stop();
-	UpdateHitFlash(0);
-	if (!IsAttacking)
-	{
-		SetActorTickEnabled(false);
-	}
 }
 
 void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
@@ -225,14 +264,10 @@ void AEnemyPawn::Die(AController* EventInstigator, FVector hitDirection)
 
 void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirection)
 {
-	
-
 	if (UEnemyBoidMovementComponent* BoidComp = FindComponentByClass<UEnemyBoidMovementComponent>())
 	{
 		BoidComp->Deactivate();
 	}
-	
-	EndHitFlash();
 
 	if (IsValid(DeathEffect))
 	{
@@ -251,11 +286,17 @@ void AEnemyPawn::Multicast_PlayDeathEffect_Implementation(FVector impactDirectio
 			GetActorRotation(),
 			GetActorScale()
 		);
+	}
+}
 
-		//if (deathEffect)
-		//{
-		//	deathEffect->SetVectorParameter(TEXT("HitDirection"), -impactDirection.GetSafeNormal());
-		//}
+void AEnemyPawn::Multicast_GoldStuff_Implementation(bool IsGold)
+{
+	for (UMaterialInstanceDynamic* element : DynamicMaterials)
+	{
+		if (element)
+		{
+			element->SetScalarParameterValue("IsGold", IsGold);
+		}
 	}
 }
 
@@ -266,7 +307,14 @@ inline bool AEnemyPawn::IsDead()
 
 void AEnemyPawn::ResetEnemy()
 {
-	EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	EnemyStatsComponent->ResetStats();
+
+	Multicast_GoldStuff(EnemyStatsComponent->IsGold);
 
 	if (IsValid(MovementComponent))
 	{
@@ -301,11 +349,17 @@ void AEnemyPawn::StartAttack()
 {
 	MovementComponent->SetMovementMode(EBoidMovementMode::DirectMoveTo);
 	IsAttacking = true;
+	NetMulticast_UpdateMaterialIsAttacking();
 	SetActorTickEnabled(true);
 }
 
 void AEnemyPawn::AttackTick()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	if (MovementComponent->IsAtTarget())
 	{
 		if (!AttackMontage.IsNull())
@@ -319,30 +373,30 @@ void AEnemyPawn::AttackTick()
 			UAnimMontage* montage = AttackMontage.Get();
 			PlayMontage(montage);
 
-			FTimerDelegate attackCallBack;
-			attackCallBack.BindLambda([this]()
-				{
-					if (this)
-					{
-						this->IsAttacking = false;
-						if(this->MovementComponent)
-							MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
-					}
-				});
-			GetWorldTimerManager().SetTimer(AttackHandle, attackCallBack, montage->GetPlayLength(), false);
+			float time = montage->GetPlayLength();
+			if (!GetWorldTimerManager().IsTimerActive(AttackHandle))
+			{
+				GetWorldTimerManager().SetTimer(AttackHandle, this, &AEnemyPawn::EndAttackTick, time, false);
+			}
+			SetActorTickEnabled(false);
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Attack Animation Missing"));
 			MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
 		}
-
-		
-		if (!HitFlashTimeline.IsPlaying())
-		{
-			SetActorTickEnabled(false);
-		}
 	}
+}
+
+void AEnemyPawn::EndAttackTick()
+{
+	IsAttacking = false;
+	NetMulticast_UpdateMaterialIsAttacking();
+	if (MovementComponent)
+	{
+		MovementComponent->SetMovementMode(EBoidMovementMode::Boid);
+	}
+	
 }
 
 void AEnemyPawn::BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -374,7 +428,7 @@ float AEnemyPawn::CalculateXP() const
 	return FMath::RandRange(5, 20);
 }
 
-void AEnemyPawn::SpawnItem(int Luck)
+void AEnemyPawn::SpawnItem(float Luck)
 {
 	if (!IsValid(EnemyStatsComponent)) return;
 
@@ -390,7 +444,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 	float chance = FMath::FRandRange(0.f, 100.f);
 	float chanceToDropWithDifficulty = EnemyStatsComponent->GetChanceToDropItem() - diffInfo.ItemDropReduction;
 	float chanceToDropOverall = chanceToDropWithDifficulty + ItemStats::GetLootChance(Luck);
-	if (GoldEnemy) chance = 0;
+	if (EnemyStatsComponent->IsGold) chance = 0;
 
 	if (chance <= chanceToDropOverall)
 	{
@@ -403,7 +457,7 @@ void AEnemyPawn::SpawnItem(int Luck)
 
 		float GoldLuck = 0;
 		float UsedLuck = Luck;
-		if (GoldEnemy) GoldLuck = 95; UsedLuck = GoldLuck;
+		if (EnemyStatsComponent->IsGold) GoldLuck = 95; UsedLuck = GoldLuck;
 
 		UItemObject* DroppedItem = ItemStats::CreateItemFromData(
 			ItemStats::CreateSpecificItemData(EnemyStatsComponent->GetLevel(), ItemStats::GetRandomItemType(), ItemStats::GetRandomRarityWithLuck(UsedLuck), ItemMeshData, Lib),
@@ -442,11 +496,19 @@ void AEnemyPawn::SpawnItem(int Luck)
 
 void AEnemyPawn::ApplyForceToEnemy(FVector forces)
 {
-	CapsuleComponent->SetSimulatePhysics(true);
-	CapsuleComponent->AddImpulse(forces, NAME_None, true);
-	CapsuleComponent->SetNotifyRigidBodyCollision(true);
+	if (CapsuleComponent->GetCollisionEnabled() == ECollisionEnabled::PhysicsOnly || CapsuleComponent->GetCollisionEnabled() == ECollisionEnabled::QueryAndPhysics)
+	{
+		CapsuleComponent->SetSimulatePhysics(true);
+		CapsuleComponent->AddImpulse(forces, NAME_None, true);
+		CapsuleComponent->SetNotifyRigidBodyCollision(true);
 
-	MovementComponent->IsKnockedBack = true;
+		MovementComponent->IsKnockedBack = true;
+
+		if (GetWorld())
+		{
+			GetWorld()->GetTimerManager().SetTimer(KnockBackFallBackHandle, this, &AEnemyPawn::KnockBackFallBack, 20.f, false);
+		}
+	}
 }
 
 void AEnemyPawn::KnockBack_Implementation(FVector forces)
@@ -470,11 +532,16 @@ void AEnemyPawn::GroundCheck(UPrimitiveComponent* HitComponent, AActor* OtherAct
 
 	if (MovementComponent->IsKnockedBack && otherChannel == ECollisionChannel::ECC_GameTraceChannel3/*(otherChannel == ECollisionChannel::ECC_WorldStatic || otherChannel == ECollisionChannel::ECC_WorldDynamic)*/)
 	{
-		ResetKnockBackStuff();
+		ResetKnock();
+
+		if (GetWorld() && GetWorld()->GetTimerManager().IsTimerActive(KnockBackFallBackHandle))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(KnockBackFallBackHandle);
+		}
 	}
 }
 
-void AEnemyPawn::ResetKnockBackStuff_Implementation()
+void AEnemyPawn::ResetKnock_Implementation()
 {
 	if (!MovementComponent || !CapsuleComponent)
 	{
@@ -487,6 +554,24 @@ void AEnemyPawn::ResetKnockBackStuff_Implementation()
 	CapsuleComponent->SetNotifyRigidBodyCollision(false);
 }
 
+void AEnemyPawn::KnockBackFallBack()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	FNavLocation navLocation;
+
+	UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+
+	if (navSys->ProjectPointToNavigation(GetActorLocation(), navLocation, {5000,5000,5000}))
+	{
+		SetActorLocation(navLocation.Location);
+	}
+
+	ResetKnock();
+}
 
 FVector AEnemyPawn::CalculateValidDropLocation(FVector DesiredLoc) const
 {
@@ -552,26 +637,6 @@ void AEnemyPawn::BeginPlay()
 	{
 		DynamicMaterials.Add(SkeletalMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
-
-	float hueOffset = FMath::FRand();
-	float goldChance = FMath::FRandRange(0.f, 100.0f);
-	if (goldChance <= 1.f) GoldEnemy = true;
-
-	if (GoldEnemy)
-	{
-		EnemyStatsComponent->SetMaxHealth(EnemyStatsComponent->GetMaxHealth() * 4);
-		EnemyStatsComponent->SetCurrentHealth(EnemyStatsComponent->GetMaxHealth());
-		SetActorScale3D(GetActorScale3D() * 1.25);
-	}
-
-	for (UMaterialInstanceDynamic* element : DynamicMaterials)
-	{
-		if (element)
-		{
-			//element->SetScalarParameterValue("HueOffset", hueOffset);
-			element->SetScalarParameterValue("IsGold", GoldEnemy);
-		}
-	}
 	
 	//get refernce to objects that we need to get the director
 	UWorld* World = GetWorld();
@@ -581,25 +646,26 @@ void AEnemyPawn::BeginPlay()
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AEnemyPawn::AddEnemyToDirector);
 
 	IsAttacking = false;
+	NetMulticast_UpdateMaterialIsAttacking();
 	SetActorTickEnabled(false);
 
-	if (HitFlashCurve)
-	{
-		HitFlashTimeline.SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+	SetActorHiddenInGame(true);
 
-		FOnTimelineFloat inProgressFunc;
-		inProgressFunc.BindUFunction(this, FName("UpdateHitFlash"));
-		HitFlashTimeline.AddInterpFloat(HitFlashCurve, inProgressFunc);
-
-		//FOnTimelineEvent endFunc;
-		//endFunc.BindUFunction(this, FName("EndHitFlash"));
-		//HitFlashTimeline.SetTimelineFinishedFunc(endFunc);
-	}
-
-	
+	TWeakObjectPtr<AEnemyPawn> weakThis = this;
+	FTimerHandle temp;
+	GetWorld()->GetTimerManager().SetTimer(temp, [weakThis]()
+		{
+			if (weakThis.IsValid())
+			{
+				weakThis->SetActorHiddenInGame(false);
+			}
+		}, 2.f, false);
 
 	if (HasAuthority())
 	{
+		HitFlashComponent->Multicast_InitializeNewDynamicMaterials(SkeletalMesh);
+		HitFlashComponent->Multicast_InitializeNewDynamicMaterials(StaticMesh);
+		ResetEnemy();
 		MovementComponent->InitializeNavMeshPointer();
 	}
 }
@@ -629,9 +695,8 @@ void AEnemyPawn::Tick(float DeltaTime)
 	{
 		AttackTick();
 	}
-
-	HitFlashTimeline.TickTimeline(DeltaTime);
 }
+
 
 void AEnemyPawn::OnRep_IsActive()
 {
@@ -661,32 +726,33 @@ bool AEnemyPawn::GetShouldTick()
 
 void AEnemyPawn::SetIsActive(bool newIsActive)
 {
-	if (IsActive == newIsActive)
+	if (IsActive == newIsActive || !IsValid(this))
 	{
 		return;
 	}
 
-	
-
-	FTimerHandle tempHandle;
+	TWeakObjectPtr<AEnemyPawn> weakThis = this;
 	if (!newIsActive)
 	{
 		NetMultSetIsActive(newIsActive);
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [&, newIsActive]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [weakThis, newIsActive]()
 			{
-				IsActive = newIsActive;
+				if(weakThis.IsValid())
+					weakThis.Get()->IsActive = newIsActive;
 			}, 2.f, false);
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(tempHandle, [&]()
+		GetWorld()->GetTimerManager().SetTimer(ActiveChangeTimerHandle, [weakThis, newIsActive]()
 			{
-				NetMultSetIsActive(newIsActive);
+				if (weakThis.IsValid())
+					weakThis.Get()->NetMultSetIsActive(newIsActive);
 			}, 2.f, false);
 		IsActive = newIsActive;
 	}
 	
-	
+/*	NetMultSetIsActive(newIsActive);
+	IsActive = newIsActive;*/
 
 	if (!newIsActive)
 	{
@@ -695,6 +761,9 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 		{
 			MovementComponent->SetActive(false);
 		}
+
+		IsAttacking = false;
+		NetMulticast_UpdateMaterialIsAttacking();
 
 		/*this->SetActorHiddenInGame(true);
 		this->SetActorEnableCollision(false);*/
@@ -717,8 +786,9 @@ void AEnemyPawn::SetIsActive(bool newIsActive)
 void AEnemyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AEnemyPawn, GoldEnemy);
+	//DOREPLIFETIME(AEnemyPawn, GoldEnemy);
 	//DOREPLIFETIME(AEnemyPawn, IsActive);
+	DOREPLIFETIME(AEnemyPawn, IsAttacking);
 }
 
 FTimerHandle& AEnemyPawn::GetLifeSpanTimerHandle()
@@ -732,12 +802,14 @@ void AEnemyPawn::NetMultSetIsActive_Implementation(bool newIsActive)
 	{
 		this->SetActorHiddenInGame(false);
 		this->SetActorEnableCollision(true);
+		this->CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		//this->SetActorTickEnabled(this->GetShouldTick());
 	}
 	else
 	{
 		this->SetActorHiddenInGame(true);
 		this->SetActorEnableCollision(false);
+		this->CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		//this->SetActorTickEnabled(false);
 	}
 }

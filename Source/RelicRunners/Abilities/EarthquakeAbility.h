@@ -19,12 +19,14 @@ public:
 
     virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
+    void LaunchShockwave();
+
+    void ApplyShockwaveStep(FVector Location, FVector Forward, UWorld* World);
+
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
     virtual FName GetAbilityName() const override { return FName("Earthquake"); }
 
 protected:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Earthquake")
-    float Radius = 800.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Earthquake|Knockback")
     float KnockbackStrength = 600.f;
@@ -37,11 +39,10 @@ protected:
 
     FGameplayAbilityActivationInfo CachedActivationInfo;
 
+    float WaveSpeed = 1200.f;
+    float StepInterval1 = 0.75f;
 
-
-private:
     bool bIsOnCooldown = false;
     FTimerHandle CooldownTimerHandle;
 
-    void ApplyDamageAndStun();
 };

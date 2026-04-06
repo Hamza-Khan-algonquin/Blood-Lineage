@@ -43,6 +43,8 @@ void UMainMenuWidget::NativeConstruct()
             ShowModeSelectionWidget();
         }
     }
+
+    
 }
 
 void UMainMenuWidget::ShowModeSelectionWidget()
@@ -53,6 +55,7 @@ void UMainMenuWidget::ShowModeSelectionWidget()
     {
         WidgetSwitcher->SetActiveWidget(ModeSelectionWidget);
     }
+    ModeSelectionWidget->ShowUpgradesAvailable();
 }
 
 void UMainMenuWidget::ShowSessionsWidget()
@@ -85,6 +88,8 @@ void UMainMenuWidget::ShowSettingsWidget()
     if (WidgetSwitcher && SettingsWidget)
     {
         WidgetSwitcher->SetActiveWidget(SettingsWidget);
+        SettingsWidget->RefreshFOVUI();
+        SettingsWidget->RefreshBrightnessUI();
     }
 }
 
@@ -95,6 +100,7 @@ void UMainMenuWidget::ShowTutorialWidget()
     if (WidgetSwitcher && HowToPlayWidget)
     {
         WidgetSwitcher->SetActiveWidget(HowToPlayWidget);
+        HowToPlayWidget->BlendToForgeCamera();
     }
 }
 
@@ -105,6 +111,7 @@ void UMainMenuWidget::ShowCreditsWidget()
     if (WidgetSwitcher && CreditsWidget)
     {
         WidgetSwitcher->SetActiveWidget(CreditsWidget);
+        CreditsWidget->BlendToCreditsCamera();
     }
 }
 

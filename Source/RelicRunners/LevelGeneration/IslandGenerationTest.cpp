@@ -17,6 +17,7 @@
 #include "RelicRunners/Director System/SpawnZone.h"
 #include "RelicRunners/Game/RelicRunnersGameInstance.h"
 #include "CullingToggleInterface.h"
+#include <RelicRunners/RelicRunnersGameState.h>
 
 /* Maybe TODO
 
@@ -65,6 +66,8 @@ void AIslandGenerationTest::Generate()
 {
 	if (HasAuthority())
 	{
+		IslandObjectiveGUID = FGuid::NewGuid();
+
 		//Initialize the starting and ending tiles.
 		int startingIndex = 0, endingIndex = (IslandDepth * IslandWidth) - 1;
 
@@ -193,9 +196,7 @@ void AIslandGenerationTest::Generate()
 						ICullingToggleInterface::Execute_ToggleVisibility(LevelTrigger, false);
 					}
 
-					FString TargetLevel = gameInstance->StageNumber >= NumStages ?
-						GenerationValuesComponent->IslandValues.BossLevel :
-						GenerationValuesComponent->IslandValues.TargetLevel;
+					FString TargetLevel = GenerationValuesComponent->IslandValues.TargetLevel;
 
 					LevelTrigger->Server_SetTargetLevel(FName(TargetLevel));
 				}
@@ -225,14 +226,15 @@ void AIslandGenerationTest::ActivateIsland()
 	switch (IslandObjective)
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
-		AddFlagObjectiveToAll(CurrentObjectives);
+		AddFlagObjectiveToAll(CurrentObjectives, IslandObjectiveGUID);
 		break;
 	case EIslandObjectiveType::MoveThePayload:
-		AddPayloadObjectiveToAll();
+		AddPayloadObjectiveToAll(IslandObjectiveGUID);
 		break;
 	case EIslandObjectiveType::Survival:
 		auto& Survival = GenerationValuesComponent->SurvivalZoneObjectiveValues;
-		AddPandoraObjectiveToAll(Survival.SurvivalDuration);
+		AddPandoraObjectiveToAll(Survival.SurvivalDuration, IslandObjectiveGUID);
+		break;
 	}
 
 	if (Bridge)
@@ -620,21 +622,6 @@ void AIslandGenerationTest::CreateSplinePathStartToEnd(int startingIndex, int ta
 	}
 }
 
-void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags)
-{
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
-		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Flag;
-			NewObjective.FlagCount = NumFlags;
-
-			TargetPC->AddObjectiveToBuffer(NewObjective);
-		}
-	}
-}
-
 void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 {
 	int TotalFlags = ObjectiveAmount;
@@ -644,7 +631,6 @@ void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			//Update the Server's local UI for this PC
 			TargetPC->Internal_SetFlagUI(CapturedCount);
 
 			TargetPC->Client_UpdateFlagUI(CapturedCount);
@@ -654,42 +640,66 @@ void AIslandGenerationTest::DecrementFlagObjectiveForAll()
 
 void AIslandGenerationTest::AddEnemiesObjectiveToAll(int TotalEnemies)
 {
+	FGuid NewID = FGuid::NewGuid();
+
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Enemies;
+			FPendingObjective NewObjective;
+			NewObjective.Type = EObjectiveType::Enemies;
 			NewObjective.EnemyCount = TotalEnemies;
 
+			NewObjective.ObjectiveGUID = NewID;
+
 			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
 
-void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time)
+void AIslandGenerationTest::AddPandoraObjectiveToAll(float Time, FGuid AssignedID)
 {
+	// We use the ID passed from ActivateIsland (IslandObjectiveGUID)
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Pandora;
+			FPendingObjective NewObjective;
+
+			NewObjective.Type = EObjectiveType::Pandora;
 			NewObjective.PandoraTime = Time;
+			NewObjective.ObjectiveGUID = AssignedID;
 
 			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
 	}
 }
 
-void AIslandGenerationTest::AddPayloadObjectiveToAll()
+void AIslandGenerationTest::AddFlagObjectiveToAll(int NumFlags, FGuid AssignedID)
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
 		{
-			ARelicRunnersPlayerController::FPendingObjective NewObjective;
-			NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Payload;
+			FPendingObjective NewObjective;
+			NewObjective.Type = EObjectiveType::Flag;
+			NewObjective.FlagCount = NumFlags;
+			NewObjective.ObjectiveGUID = AssignedID;
+
+			TargetPC->AddObjectiveToBuffer(NewObjective);
+		}
+	}
+}
+
+void AIslandGenerationTest::AddPayloadObjectiveToAll(FGuid AssignedID)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ARelicRunnersPlayerController* TargetPC = Cast<ARelicRunnersPlayerController>(It->Get()))
+		{
+			FPendingObjective NewObjective;
+			NewObjective.Type = EObjectiveType::Payload;
+			NewObjective.ObjectiveGUID = AssignedID;
 
 			TargetPC->AddObjectiveToBuffer(NewObjective);
 		}
@@ -698,8 +708,28 @@ void AIslandGenerationTest::AddPayloadObjectiveToAll()
 
 void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIndex)
 {
+
+	FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
+	int flagAmount = 1;
+
+	//Difficulty
+	if (UWorld* world = GetWorld())
+	{
+		URelicRunnersGameInstance* GI = world->GetGameInstance<URelicRunnersGameInstance>();
+		AGameStateBase* GameState = world->GetGameState();
+		if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+		{
+			//Flag
+			FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+			flagAmount = diffInfo.Index; 
+			if (flagAmount > 3) flagAmount = 3;
+
+			//Payload
+			float MaxIndexPlusOne = 6;
+			val.PayloadSpeed = (MaxIndexPlusOne - diffInfo.Index) * 200;
+		}
+	}
 	auto& Flag = GenerationValuesComponent->FlagObjectiveValues;
-	int flagAmount = FMath::RandRange(Flag.FlagAmountMin, Flag.FlagAmountMax);
 	int enemyZoneAmount = 1;
 	int survivalZoneAmount = 1;
 
@@ -754,8 +784,6 @@ void AIslandGenerationTest::InitializeObjectives(int startingIndex, int endingIn
 					ANewPayloadObjective* payload = GetWorld()->SpawnActor<ANewPayloadObjective>(GenerationValuesComponent->PayloadObjectiveValues.Payload, posOffset, FRotator::ZeroRotator);
 
 					CreateSplinePathStartToEnd(startingIndex, endingIndex, IslandWidth, payload);
-
-					FObjectivePayloadValues val = GenerationValuesComponent->PayloadObjectiveValues;
 
 					payload->Initialize(val.PayloadSpeed, val.Acceleration, val.Deceleration, SplinePath);
 					payload->Multicast_Initialize(val.PayloadSpeed, SplinePath);
@@ -1780,7 +1808,20 @@ void AIslandGenerationTest::SpawnFloorObstacles(int x, int y, int width)
 
 			newZone->OnObjectiveCreated.AddDynamic(this, &AIslandGenerationTest::IncrementObjective);
 			newZone->OnObjectiveActivated.AddDynamic(this, &AIslandGenerationTest::DecrementObjective);
-			newZone->Duration = GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
+
+			//Difficulty
+			if (UWorld* world = GetWorld())
+			{
+				URelicRunnersGameInstance* GI = world->GetGameInstance<URelicRunnersGameInstance>();
+				AGameStateBase* GameState = world->GetGameState();
+				if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+				{
+					FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(GI->CurrentDifficulty);
+					newZone->Duration = diffInfo.Index * 3;
+					GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration = newZone->Duration;
+				}
+			}
+			//GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
 			newZone->SetActorHiddenInGame(true);
 
 			ObjectiveArrays.Add(newZone);

@@ -16,7 +16,7 @@ UMarkOfTheHunt::UMarkOfTheHunt()
     LastUseTime = -100.f;
     CooldownTimer = 10.f;
 	ConeAngle = 40.f;
-    Damage = 200.f;
+    Damage = 300.f;
 }
 
 void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -100,23 +100,9 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 	PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
 	PS->UpdateRemoteHUDResource();
 
-	World->GetTimerManager().SetTimer(
-		ProjectileTickTimer,
-		this,
-		&UMarkOfTheHunt::ProjectileTick,
-		0.02f,
-		true
-	);
+	World->GetTimerManager().SetTimer(ProjectileTickTimer,this,&UMarkOfTheHunt::ProjectileTick,0.02f,true);
 
-	World->GetTimerManager().SetTimer(
-		DurationTimer,
-		[this, Handle, ActorInfo, ActivationInfo]()
-		{
-			EndAbility(Handle, ActorInfo, ActivationInfo, false, false);
-		},
-		Duration,
-		false
-	);
+	World->GetTimerManager().SetTimer(DurationTimer,[this, Handle, ActorInfo, ActivationInfo](){EndAbility(Handle, ActorInfo, ActivationInfo, false, false);},Duration,false);
 
 	if (AbilityAnim)
 	{
@@ -128,6 +114,20 @@ void UMarkOfTheHunt::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UMarkOfTheHunt::ProjectileTick()
 {
+	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+	if (!ActorInfo)
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+
+	AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+	if (!IsValid(AvatarActor))
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+
 	UWorld* World = GetWorld();
 	if (!World) return;
 
@@ -153,14 +153,7 @@ void UMarkOfTheHunt::ProjectileTick()
 		TArray<FHitResult> Hits;
 		FCollisionShape Sphere = FCollisionShape::MakeSphere(15.f);
 
-		bool bHit = World->SweepMultiByChannel(
-			Hits,
-			P.PreviousLocation,
-			P.Location,
-			FQuat::Identity,
-			ECC_GameTraceChannel1,
-			Sphere
-		);
+		bool bHit = World->SweepMultiByChannel(Hits,P.PreviousLocation,P.Location,FQuat::Identity,ECC_GameTraceChannel1,Sphere);
 
 		for (const FHitResult& Hit : Hits)
 		{

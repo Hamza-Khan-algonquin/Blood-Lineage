@@ -50,7 +50,19 @@ void AIslandSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	URelicRunnersGameInstance* gameInstance = Cast<URelicRunnersGameInstance>(GetGameInstance());
+	URelicRunnersGameInstance* gameInstance = GetWorld()->GetGameInstance<URelicRunnersGameInstance>();
+
+	//Difficulty
+	if (UWorld* world = GetWorld())
+	{
+		AGameStateBase* GameState = world->GetGameState();
+		if (ARelicRunnersGameState* RunnersGameState = Cast<ARelicRunnersGameState>(GameState))
+		{
+			//Flag
+			FDifficultyInfo diffInfo = RunnersGameState->GetDifficultyInfo(gameInstance->CurrentDifficulty);
+			NumStages = diffInfo.Index;
+		}
+	}
 
 	if (HasAuthority())
 	{
@@ -59,7 +71,7 @@ void AIslandSpawner::BeginPlay()
 			if (gameInstance)
 			{
 				gameInstance->StageNumber += 1;
-
+				NumIslands = gameInstance->StageNumber + 1;
 				int NewStage = gameInstance->StageNumber;
 
 				TWeakObjectPtr<AIslandSpawner> WeakSelf(this);
@@ -194,19 +206,20 @@ void AIslandSpawner::SyncObjectiveToSinglePlayer(ARelicRunnersPlayerController* 
 
 	AIslandGenerationTest* ActiveIsland = Islands[CurrentSpawnedIsland];
 
-	ARelicRunnersPlayerController::FPendingObjective NewObjective;
+	FPendingObjective NewObjective;
+	NewObjective.ObjectiveGUID = ActiveIsland->IslandObjectiveGUID;
 
 	switch (ActiveIsland->IslandObjective)
 	{
 	case EIslandObjectiveType::CaptureTheFlag:
-		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Flag;
+		NewObjective.Type = EObjectiveType::Flag;
 		NewObjective.FlagCount = ActiveIsland->ObjectiveAmount;
 		break;
 	case EIslandObjectiveType::MoveThePayload:
-		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Payload;
+		NewObjective.Type = EObjectiveType::Payload;
 		break;
 	case EIslandObjectiveType::Survival:
-		NewObjective.Type = ARelicRunnersPlayerController::EObjectiveType::Pandora;
+		NewObjective.Type = EObjectiveType::Pandora;
 		NewObjective.PandoraTime = ActiveIsland->GenerationValuesComponent->SurvivalZoneObjectiveValues.SurvivalDuration;
 		break;
 	}

@@ -30,21 +30,15 @@ protected:
     FTimerHandle BackStabDamageTimerHandle;
     int CurrentBackStabCount;
     float SweepRadius = 300.f;
-    float DamageDelay = 0.3f;
+    float DamageDelay = 0.2f;
 	float DashDistance = 200.f;
     float BehindOffset;
-    int MaxBackstabSteps = 4;
+    int MaxBackstabSteps = 6;
     UPROPERTY()
     FVector OriginalLocation;
 
     UPROPERTY()
     FRotator OriginalRotation;
-    
-  /*  UPROPERTY(EditAnywhere, Category = "Combat")
-    UStaticMesh* BackStabMeshAsset;
-
-    UPROPERTY()
-    AStaticMeshActor* ActiveMeshActor;*/
 
 };
 

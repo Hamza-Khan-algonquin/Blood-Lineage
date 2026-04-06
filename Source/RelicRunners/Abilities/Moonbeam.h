@@ -16,6 +16,9 @@ public:
     virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
     virtual FName GetAbilityName() const override { return FName("Moonbeam"); }
 
+    UFUNCTION()
+    void HandleDurationEnd();
+
 protected:
     FTimerHandle BeamTickHandle;
     FTimerHandle DurationHandle;

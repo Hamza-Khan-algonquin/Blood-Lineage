@@ -56,7 +56,7 @@ public:
 	class UBorder* B_Edit;
 
 	UPROPERTY(meta = (BindWidget))
-	class UImage* EditIcon;
+	class UTextBlock* EditText;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UButton* SaveFileButton;

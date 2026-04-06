@@ -8,6 +8,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "RelicRunners/Enemy/EnemyPawn.h"
 URageOfTheGods::URageOfTheGods()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
@@ -24,19 +25,19 @@ void URageOfTheGods::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+    if (!ActorInfo)
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
 
-    AActor* AvatarActor = GetAvatarActorFromActorInfo();
-    if (!AvatarActor)
+    AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+    if (!IsValid(AvatarActor))
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
-
     }
+
     UWorld* World = GetWorld();
     if (!World) return;
 
@@ -144,11 +145,19 @@ void URageOfTheGods::StartPulse()
 {
     if (!CurrentActorInfo) return;
 
-    TWeakObjectPtr<AActor> WeakAvatar = GetAvatarActorFromActorInfo();
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    TWeakObjectPtr<AActor> WeakAvatar = ActorInfo->AvatarActor.Get();
     if (!WeakAvatar.IsValid())
     {
-        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, false, false);
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
+
     }
 
     PulsesExecuted++;
@@ -187,7 +196,18 @@ void URageOfTheGods::StartPulse()
 
 void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 {
-    if (!CurrentActorInfo) return;
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+    if (!ActorInfo)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+
+    if (!IsValid(AvatarActor))
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
 
     UWorld* World = GetWorld();
     if (!World || !AvatarActor)
@@ -224,10 +244,15 @@ void URageOfTheGods::ExpandPulse(AActor* AvatarActor)
 
         CalculateAbilityDamage(AvatarActor, Actor, Damage);
 
+        FVector KnockDir = (Actor->GetActorLocation() - Center).GetSafeNormal();
+
         if (ACharacter* EnemyChar = Cast<ACharacter>(Actor))
         {
-            FVector KnockDir = (EnemyChar->GetActorLocation() - Center).GetSafeNormal();
             EnemyChar->LaunchCharacter(KnockDir * KnockbackStrength, true, true);
+        }
+        else if (AEnemyPawn* enemyPawn = Cast<AEnemyPawn>(Actor))
+        {
+            enemyPawn->ApplyForceToEnemy(KnockDir * KnockbackStrength);
         }
     }
 

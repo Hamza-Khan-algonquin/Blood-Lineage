@@ -55,6 +55,15 @@ public:
     int Intelligence = 0;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    float Purity = 0;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    float Luck = 0;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    float Regen = 0;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int Gold = 0;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)

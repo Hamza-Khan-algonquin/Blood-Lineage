@@ -16,7 +16,7 @@ struct FProjectileData
 
 	int32 CurrentPierces = 0;
 	TArray<AActor*> HitActors;
-
+	TWeakObjectPtr<AArtemisCharacter> OwnerCharacter;
 	UStaticMeshComponent* Mesh = nullptr;
 };
 
@@ -53,8 +53,8 @@ protected:
 	void UpdateCameraPosition(float DeltaTime, const FVector& Velocity, float Speed, bool bEnemiesNearby);
 	void UpdateCameraRotation(float DeltaTime, const FVector& Velocity, float Speed);
 
-    virtual void PlayRandomAttackAnimation() override;
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void SpawnProjectile();
 	virtual void PerformSwingTrace() override;
 	void ShowReticle();
 	void HideReticle();
@@ -62,6 +62,17 @@ protected:
 	virtual void HeavyAttack() override;
 	virtual void ProjectileHeavyAttack() override;
 	virtual void UpdateCamera(float DeltaTime) override;
+
+	UFUNCTION(Server, Reliable)
+	void Server_BasicAttack();
+
+	void HandleBasicAttack();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayAttack();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnProjectile(FVector Location, FVector Velocity);
 
 	UPROPERTY()
 	bool bCanFire = true;
@@ -92,11 +103,12 @@ protected:
 
 	bool bCanBasicAttack = true;
 
+	UPROPERTY()
+	TArray<FProjectileData> ActiveProjectiles;
+
 	FVector PreviousProjectileLocation;
 
 	FTimerHandle TimerHandle_AttackCooldown;
-
-	TArray<FProjectileData> ActiveProjectiles;
 
 	float ProjectileGravity = 400.f;
 

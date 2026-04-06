@@ -19,6 +19,8 @@ class UEnemyStats;
 class USphereComponent;
 class UNiagaraSystem;
 class USoundBase;
+class UHitFlashComponent;
+class UHitStunComponent;
 
 UCLASS()
 class RELICRUNNERS_API AEnemyPawn : public APawn, public IPoolActorInterface
@@ -58,23 +60,41 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyStats> EnemyStatsComponent;
 
-	UPROPERTY(EditAnywhere, Category = "Hit Effect")
-	UCurveFloat* HitFlashCurve;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitFlashComponent> HitFlashComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitStunComponent> HitStunComponent;
+
+	
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* BasicAttackCollider;*/
 
-	UPROPERTY(Replicated)
-	bool GoldEnemy = false;
 
+	
+	UPROPERTY()
 	FTimeline HitFlashTimeline;
+	UPROPERTY()
+	FTimerHandle ActiveChangeTimerHandle;
+	UPROPERTY()
+	FTimerHandle AttackHandle;
+	UPROPERTY()
+	FTimerHandle KnockBackFallBackHandle;
+	UPROPERTY()
+	FTimerHandle HitStunTimer;
 
+	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstanceDynamic*> DynamicMaterials;
+	
 
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float KnockBackStrength;
 	UPROPERTY(EditAnywhere, Category = "Hit Effect")
 	float AdditionalUpwardsKnockBackForces;
+	UPROPERTY(EditAnywhere, Category = "Hit Effect")
+	float HitStunTime;
+	UPROPERTY(Replicated)
 	bool IsAttacking = false;
 
 	UPROPERTY(EditAnywhere)
@@ -88,6 +108,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
 	USoundBase* AttackHitPlayerSound = nullptr;
+
+	
+
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
@@ -102,32 +126,34 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
-	FTimerHandle AttackHandle;
-
-
+	
+	
 public:
 	// Sets default values for this pawn's properties
 	AEnemyPawn();
 
+	UFUNCTION()
 	void UpdateEmissiveHealth();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticast_UpdateEmissiveHealth();
+	UFUNCTION()
+	void UpdateMaterialIsAttacking();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticast_UpdateMaterialIsAttacking();
 	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	//method to make sure we are setting up replication properly
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Override of AActor's TakeDamage function to handle damage to the enemy."))
 	//Override of AActor's TakeDamage function to handle damage to the enemy
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
-	void HitFlash();
-	UFUNCTION(BlueprintCallable)
-	void UpdateHitFlash(float strength);
-	UFUNCTION(BlueprintCallable)
-	void EndHitFlash();
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle dieing and what happens when the enemy dies.", ShortToolTip = "A method to handle dieing."))
 	//A method to handle dieing and what happens when the enemy dies
 	virtual void Die(AController* EventInstigator, FVector hitDirection = FVector(0,0,0));
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_PlayDeathEffect(FVector impactDirection);
+	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
+	void Multicast_GoldStuff(bool IsGold);
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Check if the enemy is dead.", ShortToolTip = "Check if the enemy is dead."))
 	//Check if the enemy is dead
@@ -140,6 +166,7 @@ public:
 
 	void StartAttack();
 	void AttackTick();
+	void EndAttackTick();
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Method that is set for the OnOverlap delegate of a collider, that handles dealing damage to the player.", ShortToolTip = "OnOverlap delegate."))
 	void BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -147,7 +174,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
-	virtual void SpawnItem(int KillersLuck);
+	virtual void SpawnItem(float KillersLuck);
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyForceToEnemy(FVector forces);
@@ -160,7 +187,10 @@ public:
 
 	//best method name ever
 	UFUNCTION(BlueprintCallable, Reliable, NetMulticast)
-	void ResetKnockBackStuff();
+	void ResetKnock();
+
+	UFUNCTION(BlueprintCallable)
+	void KnockBackFallBack();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMultSetIsActive(bool newIsActive);

@@ -13,8 +13,6 @@ class UFlockComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetChangeSignature, APawn*, target);
 
-
-
 UCLASS()
 class RELICRUNNERS_API ACommanderController : public AAIController
 {
@@ -94,6 +92,9 @@ public:
 	void ResetController();
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION()
+	void ResetTimeToAttackForPlayer(APawn* player);
 	
 	UFUNCTION()
 	bool InactiveCheck();
@@ -109,6 +110,7 @@ public:
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void SpawnPawnEnemy();
 	void SpawmLoop();
+
 
 	UFUNCTION(BlueprintCallable)
 	void AddPlayerToTimeToAttack(APawn* player);

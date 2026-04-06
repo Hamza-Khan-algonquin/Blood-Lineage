@@ -24,6 +24,8 @@ class UWidgetComponent;
 class UAnimMontage;
 class UEnemyStats;
 class UNiagaraSystem;
+class UHitFlashComponent;
+class UHitStunComponent;
 
 UCLASS(Blueprintable, Abstract)
 class RELICRUNNERS_API AEnemyCharacter : public ACharacter, public IPoolActorInterface
@@ -41,6 +43,11 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UEnemyStats> EnemyStatsComponent;
+	UPROPERTY(EditAnywhere)
+	bool ShouldNotTakeDamage;
+
+	UPROPERTY(EditAnywhere)
+	float HitStunTime;
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -62,7 +69,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemActor")
 	TSubclassOf<class AItemActor> ItemActorClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitFlashComponent> HitFlashComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UHitStunComponent> HitStunComponent;
+
+	UPROPERTY(EditAnywhere)
+	bool OverrideCollisionType = false;
 	
 
 	//interface implementation variable
@@ -101,8 +115,6 @@ public:
 
 	void AddEnemyToDirector();
 
-	
-
 	//Need to be netmulticast to play on all clients as client does own the actor their for client rpc won't work
 	//Runs a montage client side
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, meta = (ToolTip = "Runs a montage client side. Need to be netmulticast to play on all clients as client does own the actor their for client rpc won't work.", ShortToolTip = "Runs a montage client side"))
@@ -115,7 +127,8 @@ protected:
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "A method to handle spawning an item on death using infromation from the provided loot pool.", ShortToolTip = "A method to handle spawning an item on death."))
 	//A method to handle spawning an item on death using infromation from the provided loot pool
 	virtual void SpawnItem();
-
+	void SpawnItem(float Luck);
+	FVector CalculateValidDropLocation(FVector DesiredLoc) const;
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Calculates the amount of XP the enemy should give on death.", ShortToolTip = "Calculates the amount of XP the enemy should giveS."))
 	//Calculates the amount of XP the enemy should give on death.
 	virtual float CalculateXP() const;
@@ -130,7 +143,8 @@ protected:
 	void NetMultSetIsActive(bool newIsActive);
 
 	void Destroy();
-
+	UPROPERTY(Category = "Drop items", EditAnywhere, BlueprintReadWrite)
+	bool canDropItems = true;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

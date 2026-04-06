@@ -26,10 +26,13 @@ protected:
     void ApplyPassiveHealthRegen();
     void TickDamage();
 
+    void HandleDurationEnd();
+
 
     FTimerHandle DOTTimerHandle;
     FTimerHandle OverlapTimer;
     FTimerHandle PassiveRegenTimerHandle;
+    FTimerHandle DurationHandle;
 
     TArray<TWeakObjectPtr<AActor>> AffectedEnemies;
 

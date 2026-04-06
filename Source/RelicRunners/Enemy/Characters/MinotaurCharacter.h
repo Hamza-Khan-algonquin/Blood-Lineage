@@ -16,8 +16,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UNiagaraSystem> SlamEffect;
 
+	UPROPERTY()
+	FTimerHandle SpikeTimer;
 public:
 	AMinotaurCharacter();
+	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "Method that is set for the OnOverlap delegate of a collider, that handles dealing damage to the player.", ShortToolTip = "OnOverlap delegate."))
 	//Method that is set for the OnOverlap delegate of a collider, that handles dealing damage to the player
 	void BasicAttack(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -27,4 +30,5 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DelaySpikeCheck(float delay, float raduis, float damageMult, TArray<FVector> locations);
+	
 };
