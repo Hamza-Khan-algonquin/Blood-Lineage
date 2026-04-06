@@ -29,6 +29,8 @@ public:
 	TMap<USceneComponent*, FVector> SliceDirections;
 
 	UPROPERTY()
+	TSet<AActor*> AlreadyHitActors;
+	UPROPERTY()
 	TArray<UMaterialInstanceDynamic*> SliceMaterials;
 protected:
 
