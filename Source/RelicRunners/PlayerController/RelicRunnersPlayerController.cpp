@@ -90,18 +90,15 @@ ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 {
 	static ConstructorHelpers::FClassFinder<ULoadingScreen> BP_LoadingScreen(TEXT("/Game/Blueprints/Menu/BP_LoadingScreen"));
 
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GI->ApplyAllSettings(this);
+	}
+
 	if (BP_LoadingScreen.Class)
 	{
 		LoadingScreenClass = BP_LoadingScreen.Class;
 		UE_LOG(LogTemp, Warning, TEXT("Character Assigned Loading Screen"));
-	}
-
-	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
-	{
-		GetWorldTimerManager().SetTimerForNextTick([this, GI]()
-			{
-				GI->ApplyAllSettings(this);
-			});
 	}
 }
 
@@ -957,6 +954,7 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 	{
 		if (UIWidget == AbilitySelection && AbilitySelectionCloseSound)
 		{
+			AbilitySelection->CloseTooltip();
 			UGameplayStatics::PlaySound2D(this, AbilitySelectionCloseSound);
 		}
 
