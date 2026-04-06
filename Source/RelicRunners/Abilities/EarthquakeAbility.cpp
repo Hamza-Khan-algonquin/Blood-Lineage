@@ -150,10 +150,6 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
 
 void UEarthquakeAbility::LaunchShockwave()
 {
-    if (!IsActive() || !GetCurrentActorInfo())
-    {
-        return;
-    }
 
     const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
 
