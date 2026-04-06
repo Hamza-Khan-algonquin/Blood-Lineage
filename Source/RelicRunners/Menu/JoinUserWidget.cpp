@@ -214,10 +214,21 @@ void UJoinUserWidget::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector
 	else if (HoveredBorder == B_Agility)		{ StatKey = "Agility";      RawValue = Info.Dexterity; }
 	else if (HoveredBorder == B_Intelligence)	{ StatKey = "Intelligence"; RawValue = Info.Intelligence; }
 
-	else if (HoveredBorder == B_Ability1)		{ StatKey = "Ability1"; AbilityName = Info.Ability1; AbilityDesc = Info.Ability1Description1; }
-	else if (HoveredBorder == B_Ability2)		{ StatKey = "Ability2"; AbilityName = Info.Ability2; AbilityDesc = Info.Ability2Description1; }
-	else if (HoveredBorder == B_Ability3)		{ StatKey = "Ability3"; AbilityName = Info.Ability3; AbilityDesc = Info.Ability3Description1; }
-	else if (HoveredBorder == B_Ability4)		{ StatKey = "Ability4"; AbilityName = Info.Ability4; AbilityDesc = Info.Ability4Description1; }
+	else if (HoveredBorder == B_Ability1 || HoveredBorder == B_Ability2 || HoveredBorder == B_Ability3 || HoveredBorder == B_Ability4)
+	{
+		FString HoveredName = "";
+		if (HoveredBorder == B_Ability1) { HoveredName = Info.Ability1; }
+		else if (HoveredBorder == B_Ability2) { HoveredName = Info.Ability2; }
+		else if (HoveredBorder == B_Ability3) { HoveredName = Info.Ability3; }
+		else if (HoveredBorder == B_Ability4) { HoveredName = Info.Ability4; }
+
+		// This converts "ThunderousPunch" into "AbilityThunderousPunch" 
+		// to match your 'if (BorderType == "AbilityThunderousPunch")' logic
+		StatKey = "Ability" + HoveredName;
+		AbilityName = HoveredName;
+
+		RawValue = 0;
+	}
 
 	else if (HoveredBorder == B_BoarSection1) { StatKey = "BoarDifficulty"; Difficulty = true; DifficultyName = "Boar"; }
 	else if (HoveredBorder == B_BullSection1) { StatKey = "BullDifficulty"; Difficulty = true; DifficultyName = "Bull";}

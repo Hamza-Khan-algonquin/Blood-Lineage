@@ -366,6 +366,167 @@ public:
             Data.Descriptions.Add(FText::FromString("<Default>Spend points to get additional stats.</>"));
         }
 
+        else if (BorderType == "AbilityThunderousPunch")
+        {
+            Data.Name = FText::FromString("Thunderous Punch");
+            Data.Icon = LoadIcon("ThunderousPunch");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Heavy punch with</>\n<Default>thunderous shockwaves.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+}
+        else if (BorderType == "AbilityBloodRush")
+        {
+            Data.Name = FText::FromString("Blood Rush");
+            Data.Icon = LoadIcon("BloodRush");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Charge through enemies</>\n<Default>dealing damage & knockback.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(10)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(12)));
+            }
+        else if (BorderType == "AbilityWarBanner")
+        {
+            Data.Name = FText::FromString("War Banner");
+            Data.Icon = LoadIcon("WarBanner");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Buffs nearby allies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}</> <Default>STR / LEVEL</>"), FText::AsNumber(20)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(15)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityRageOfTheGods")
+        {
+            Data.Name = FText::FromString("Rage of the Gods");
+            Data.Icon = LoadIcon("RageOfTheGods");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Fury pulses that</>\n<Default>annihilate all enemies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityFireArrow")
+        {
+            Data.Name = FText::FromString("Fire Arrow");
+            Data.Icon = LoadIcon("FireArrow");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Shoot a flaming arrow that</>\n<Default>ignites the ground on impact.</>"));
+            // FIX: Added FText::AsNumber to satisfy the Format requirement
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(3)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityNaturesBlessing")
+        {
+            Data.Name = FText::FromString("Nature's Blessing");
+            Data.Icon = LoadIcon("NaturesBlessing");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Increase movement speed, leaving</>\n<Default>spectral trails in your path.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityMultiShot")
+        {
+            Data.Name = FText::FromString("Multi Shot");
+            Data.Icon = LoadIcon("MultiShot");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Shoot a spread of arrows to</>\n<Default>shred approaching hordes.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityMoonbeam")
+        {
+            Data.Name = FText::FromString("Moonbeam");
+            Data.Icon = LoadIcon("Moonbeam");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Channel lunar energy through</>\n<Default>your bow in a piercing beam.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(6)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityBackstab")
+        {
+            Data.Name = FText::FromString("Backstab");
+            Data.Icon = LoadIcon("Backstab");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Dash between foes with</>\n<Default>lethal strikes.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityImpunity")
+        {
+            Data.Name = FText::FromString("Impunity");
+            Data.Icon = LoadIcon("Impunity");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Strengthen your resolve to become</>\n<Default>immune to all incoming damage.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityVengefulDance")
+        {
+            Data.Name = FText::FromString("Vengeful Dance");
+            Data.Icon = LoadIcon("VengefulDance");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>A heavy slash that cuts</>\n<Default>down and knocks back all foes.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityDivinePunishment")
+        {
+            Data.Name = FText::FromString("Divine Punishment");
+            Data.Icon = LoadIcon("DivinePunishment");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Kneel and summon holy light</>\n<Default>to scour all nearby enemies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityBundleOfJoy")
+        {
+            Data.Name = FText::FromString("Bundle of Joy");
+            Data.Icon = LoadIcon("BundleOfJoy");
+            Data.IconColor = FColor::FromHex("B501FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Throw a heart that lures foes</>\n<Default>before detonating in a burst.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(12)));
+            }
+        else if (BorderType == "AbilityMirrorOfDesire")
+        {
+            Data.Name = FText::FromString("Mirror of Desire");
+            Data.Icon = LoadIcon("MirrorOfDesire");
+            Data.IconColor = FColor::FromHex("00FF2DFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Manifest a shield that</>\n<Default>punishes foes, reflecting damage.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(6)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(10)));
+            }
+        else if (BorderType == "AbilityKissOfLife")
+        {
+            Data.Name = FText::FromString("Kiss of Life");
+            Data.Icon = LoadIcon("KissOfLife");
+            Data.IconColor = FColor::FromHex("0093FFFF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Release pulses of life</>\n<Default>healing self and nearby allies.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>HP / S</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(10)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+        else if (BorderType == "AbilityGoddessOfLove")
+        {
+            Data.Name = FText::FromString("Goddess of Love");
+            Data.Icon = LoadIcon("GoddessOfLove");
+            Data.IconColor = FColor::FromHex("FFBC00FF");
+
+            Data.Descriptions.Add(FText::FromString("<Default>Release lightning bolts that</>\n<Default>strike nearby foes and heal self.</>"));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>+{0}%</> <Default>HP / S</>"), FText::AsNumber(5)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>DURATION</>"), FText::AsNumber(10)));
+            Data.Descriptions.Add(FText::Format(FText::FromString("<Green>{0}s</> <Default>COOLDOWN</>"), FText::AsNumber(15)));
+            }
+
         return Data;
     }
 

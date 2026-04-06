@@ -28,6 +28,8 @@ void USaveFileListWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 
     ParentWidget = SaveFileData->ParentWidget;
 
+    SetSelected(false);
+
     if (SaveFileData->IsEmptySlot)
     {
         TB_CreateNew->SetText(FText::FromString("+"));
@@ -35,18 +37,19 @@ void USaveFileListWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 
         TB_Name->SetText(FText::FromString(""));
         TB_TimePlayed->SetText(FText::FromString("Create New"));
+        TB_TimePlayed->SetVisibility(ESlateVisibility::Visible);
 
         B_Upgrades->SetVisibility(ESlateVisibility::Collapsed);
         B_Edit->SetVisibility(ESlateVisibility::Collapsed);
+
+        TB_CreateNew->SetColorAndOpacity(FLinearColor(0.82f, 0.82f, 0.82f, 1.0f)); 
     }
     else
     {
         TB_CreateNew->SetVisibility(ESlateVisibility::Collapsed);
-
         Setup(SaveFileData);
     }
 }
-
 
 void USaveFileListWidget::Setup(USaveFileListData* InData)
 {
@@ -57,22 +60,21 @@ void USaveFileListWidget::Setup(USaveFileListData* InData)
         TB_Name->SetText(FText::FromString(SaveFileData->GetName()));
         TB_MetaLevel->SetVisibility(ESlateVisibility::Visible);
         TB_MetaLevel->SetText(FText::FromString(FString::FromInt(SaveFileData->GetMetaLevel())));
+
         TB_CreateNew->SetText(FText::FromString(""));
         TB_CreateNew->SetVisibility(ESlateVisibility::Collapsed);
+
         B_Upgrades->SetVisibility(ESlateVisibility::Visible);
         B_Edit->SetVisibility(ESlateVisibility::Visible);
-
+        TB_TimePlayed->SetVisibility(ESlateVisibility::Hidden);
         int TotalSeconds = SaveFileData->GetTimePlayed();
-
         int Hours = TotalSeconds / 3600;
         int Minutes = (TotalSeconds % 3600) / 60;
         int Seconds = TotalSeconds % 60;
 
-        //Format as HH:MM:SS
         FString FormattedTime = FString::Printf(TEXT("%02dh %02dm %02ds"), Hours, Minutes, Seconds);
 
-        TB_TimePlayed->SetText(FText::FromString(""));
-
+        TB_TimePlayed->SetText(FText::FromString(FormattedTime));
     }
 }
 
@@ -95,32 +97,38 @@ void USaveFileListWidget::OnSaveFileButtonClicked()
 
 void USaveFileListWidget::SetSelected(bool bSelected)
 {
-    FLinearColor SelectedOutlineColor = FLinearColor(1.0f, 0.5f, 0.0f, 1.0f);
-    FLinearColor DefaultColor = FLinearColor::White;
-    FLinearColor DelectedColor = FLinearColor(0.062f, 0.049f, 0.031f, 1.0f);
-    FLinearColor DelectedColor2 = FLinearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    //Greek Theme Palette
+    FLinearColor OlympicGold = FLinearColor(1.0f, 0.84f, 0.0f, 1.0f);   // #FFD700
+    FLinearColor MarbleWhite = FLinearColor(0.82f, 0.82f, 0.82f, 1.0f); // #D1D1D1
+    FLinearColor DeepObsidian = FLinearColor(0.02f, 0.02f, 0.02f, 1.0f); // Very dark background
+    FLinearColor Terracotta = FLinearColor(0.12f, 0.08f, 0.05f, 1.0f);  // Subtle warm tint
 
-    FLinearColor ActiveTextColor = bSelected ? SelectedOutlineColor : DefaultColor;
+    FLinearColor ActiveAccent = bSelected ? OlympicGold : MarbleWhite;
+    FLinearColor ActiveBG = bSelected ? Terracotta : DeepObsidian;
 
-    TB_Name->SetColorAndOpacity(ActiveTextColor);
-    TB_TimePlayed->SetColorAndOpacity(ActiveTextColor);
-    EditIcon->SetColorAndOpacity(ActiveTextColor);
-
+    //Text & Icons
+    TB_Name->SetColorAndOpacity(ActiveAccent);
+    //TB_TimePlayed->SetColorAndOpacity(ActiveAccent);
+    EditText->SetColorAndOpacity(ActiveAccent);
+    //Font Outlines (Gold glow when selected)
     FSlateFontInfo NameFont = TB_Name->GetFont();
-    NameFont.OutlineSettings.OutlineColor = ActiveTextColor;
+    NameFont.OutlineSettings.OutlineColor = bSelected ? OlympicGold : FLinearColor::Black;
     TB_Name->SetFont(NameFont);
 
-    FSlateFontInfo TimeFont = TB_TimePlayed->GetFont();
-    TimeFont.OutlineSettings.OutlineColor = ActiveTextColor;
-    TB_TimePlayed->SetFont(TimeFont);
+    //FSlateFontInfo TimeFont = TB_TimePlayed->GetFont();
+    //TimeFont.OutlineSettings.OutlineColor = bSelected ? OlympicGold : FLinearColor::Black;
+    //TB_TimePlayed->SetFont(TimeFont);
+    TB_TimePlayed->SetVisibility(ESlateVisibility::Hidden);
 
-    B_SaveFile->SetBrushColor(bSelected ? DelectedColor2 : DelectedColor);
-    B_Upgrades->SetBrushColor(bSelected ? DelectedColor2 : DelectedColor);
-    B_Edit->SetBrushColor(bSelected ? DelectedColor2 : DelectedColor);
+    //Button Backgrounds
+    B_SaveFile->SetBrushColor(ActiveBG);
+    B_Upgrades->SetBrushColor(ActiveBG);
+    B_Edit->SetBrushColor(ActiveBG);
 
-    SaveFileButton->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
-    EditButton->SetBackgroundColor(bSelected ? SelectedOutlineColor : DefaultColor);
-    Upgrades->SetBackgroundColor(bSelected ? DefaultColor : DefaultColor);
+    //Button Borders/Frames
+    SaveFileButton->SetBackgroundColor(ActiveAccent);
+    EditButton->SetBackgroundColor(ActiveAccent);
+    Upgrades->SetBackgroundColor(ActiveAccent);
 }
 
 void USaveFileListWidget::OnEditButtonClicked()

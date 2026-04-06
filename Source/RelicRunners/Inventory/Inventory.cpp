@@ -750,10 +750,6 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
     else if (HoveredBorder == B_MetaLevel)      { StatKey = "MetaLevel";    if(GI->SelectedSaveSlot) RawValue = GI->SelectedSaveSlot->SaveData.MetaLevel; }
     else if (HoveredBorder == B_AbilityUpgrade) { StatKey = "AbilityUpgrade"; }
     else if (HoveredBorder == B_HealthPotion) { StatKey = "HealthPotion"; }
-    else if (HoveredBorder == B_Ability1) { StatKey = "Ability1"; if (Info) AbilityName = Info->Ability1; if (Info) AbilityDesc = Info->Ability1Description1; }
-    else if (HoveredBorder == B_Ability2) { StatKey = "Ability2"; if (Info) AbilityName = Info->Ability2; if (Info) AbilityDesc = Info->Ability2Description1; }
-    else if (HoveredBorder == B_Ability3) { StatKey = "Ability3"; if (Info) AbilityName = Info->Ability3; if (Info) AbilityDesc = Info->Ability3Description1; }
-    else if (HoveredBorder == B_Ability4) { StatKey = "Ability4"; if (Info) AbilityName = Info->Ability4; if (Info) AbilityDesc = Info->Ability4Description1; }
 
     FVector2D Offset(-5.0f, 5.0f);
     FVector2D Anchor(1.f, 0.f);
@@ -784,7 +780,24 @@ void UInventory::ShowTooltipForBorder(UBorder* HoveredBorder, const FVector2D& C
             TD = ItemStats::GetStatTooltipData(StatKey, 0, 0, 0, "", "");
         }
     }
-    else if (HoveredBorder == B_Ability1 || HoveredBorder == B_Ability2 || HoveredBorder == B_Ability3 || HoveredBorder == B_Ability4 || HoveredBorder == B_AbilityUpgrade || HoveredBorder == B_HealthPotion)
+    else if (HoveredBorder == B_Ability1 || HoveredBorder == B_Ability2 || HoveredBorder == B_Ability3 || HoveredBorder == B_Ability4)
+    {
+        Offset = FVector2D(0, -50.0f);
+        Anchor = FVector2D(0.5f, 1);
+
+        FString HoveredName = "";
+        if (HoveredBorder == B_Ability1) { HoveredName = Info->Ability1; }
+        else if (HoveredBorder == B_Ability2) { HoveredName = Info->Ability2; }
+        else if (HoveredBorder == B_Ability3) { HoveredName = Info->Ability3; }
+        else if (HoveredBorder == B_Ability4) { HoveredName = Info->Ability4; }
+
+        StatKey = "Ability" + HoveredName;
+        AbilityName = HoveredName;
+        RawValue = 0;
+
+        TD = ItemStats::GetStatTooltipData(StatKey, RawValue, 0, 0, AbilityName, AbilityDesc);
+    }
+    else if (HoveredBorder == B_AbilityUpgrade || HoveredBorder == B_HealthPotion)
     {
         Offset = FVector2D(0, -50.0f);
         Anchor = FVector2D(0.5f, 1);
