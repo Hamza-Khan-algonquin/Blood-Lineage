@@ -557,9 +557,10 @@ void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESe
 			EWindowMode::Type Mode = EWindowMode::Windowed;
 			if (SelectedItem == "FullScreen")
 			{
-				FIntPoint NewRes(2560, 1440);
+				//FIntPoint NewRes(1920, 1080);
+				//GS->SetScreenResolution(NewRes);
 				GS->SetFullscreenMode(EWindowMode::Fullscreen);
-				GS->SetScreenResolution(NewRes);
+
 			}
 			else if (SelectedItem == "WindowedFullscreen")
 			{

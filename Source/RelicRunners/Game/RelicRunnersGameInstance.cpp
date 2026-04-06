@@ -149,8 +149,6 @@ void URelicRunnersGameInstance::ApplyKeybindings()
         PC->PlayerCameraManager->SetFOV(SavedFOV > 0.f ? SavedFOV : Keys->FOV);
 }
 
-
-
 USaveFileListData* URelicRunnersGameInstance::CreateSaveFromData(const FSaveData& SaveData, UObject* Outer)
 {
     if (!Outer)
