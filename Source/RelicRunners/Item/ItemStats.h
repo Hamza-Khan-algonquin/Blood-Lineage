@@ -659,7 +659,7 @@ public:
             }
             else
             {
-                ItemData.Regen = RandomValue / 3.0f;
+                ItemData.Regen = FMath::RoundToFloat((RandomValue / 3.0f) * 10.0f) / 10.0f;
             }
         }
 
