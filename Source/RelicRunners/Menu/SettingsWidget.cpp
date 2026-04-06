@@ -145,19 +145,13 @@ void USettingsWidget::NativeConstruct()
 		ResolutionDropDown->ClearOptions();
 		ResMap.Empty();
 
-		TArray<FIntPoint> Resolutions = { {1280, 720}, {1600, 900},{ 1920, 1080 }, {2560, 1440}};
+		TArray<FIntPoint> Resolutions = { {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440} };
 
 		for (const FIntPoint& Res : Resolutions)
 		{
 			FString Label = FString::Printf(TEXT("%dx%d"), Res.X, Res.Y);
 			ResolutionDropDown->AddOption(Label);
 			ResMap.Add(Label, Res);
-		}
-
-		FString DefaultRes = TEXT("1920X1080");
-		if (ResolutionDropDown)
-		{
-			ResolutionDropDown->SetSelectedOption(DefaultRes);
 		}
 
 		ResolutionDropDown->OnSelectionChanged.AddDynamic(this, &USettingsWidget::HandleResolutionSelectionChanged);
@@ -560,31 +554,19 @@ void USettingsWidget::HandleWindowModeSelectionChanged(FString SelectedItem, ESe
 	if(SelectionType == ESelectInfo::OnMouseClick)
 		if (UGameUserSettings* GS = GEngine->GetGameUserSettings())
 		{
-			FIntPoint ResolutionToUse = GS->GetScreenResolution();
-
-			if (URelicRunnersGameInstance* GI = Cast<URelicRunnersGameInstance>(GetGameInstance()))
-			{
-				if (GI->Resolution.X > 0 && GI->Resolution.Y > 0)
-				{
-					ResolutionToUse = GI->Resolution;
-				}
-			}
-
 			EWindowMode::Type Mode = EWindowMode::Windowed;
 			if (SelectedItem == "FullScreen")
-			{				
-				GS->SetScreenResolution(ResolutionToUse);
+			{
+				FIntPoint NewRes(2560, 1440);
 				GS->SetFullscreenMode(EWindowMode::Fullscreen);
-				
+				GS->SetScreenResolution(NewRes);
 			}
 			else if (SelectedItem == "WindowedFullscreen")
 			{
-				
 				GS->SetFullscreenMode(EWindowMode::WindowedFullscreen);
 			}
 			else if (SelectedItem == "Windowed")
 			{
-			
 				GS->SetFullscreenMode(EWindowMode::Windowed);
 			}
 			
