@@ -150,14 +150,15 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
 
 void UEarthquakeAbility::LaunchShockwave()
 {
-    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
-    if (!ActorInfo)
+    if (!IsActive() || !GetCurrentActorInfo())
     {
         return;
     }
 
+    const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+
     AActor* AvatarActor = ActorInfo->AvatarActor.Get();
-    if (!IsValid(AvatarActor))
+    if (!IsValid(AvatarActor) || AvatarActor->IsPendingKillPending())
     {
         return;
     }
