@@ -481,11 +481,12 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Projectile.Location += Projectile.Velocity * DeltaTime;
 
         // Move VFX
-        if (IsValid(Projectile.VFXComponent))
+        if (IsValid(Projectile.VFXComponent) && Projectile.VFXComponent->IsRegistered())
         {
             Projectile.VFXComponent->SetWorldLocation(Projectile.Location);
             Projectile.VFXComponent->SetWorldRotation(Projectile.Velocity.Rotation());
         }
+
         TArray<FHitResult> Hits;
         FCollisionQueryParams Params;
         Params.AddIgnoredActor(this);
@@ -552,6 +553,21 @@ void AAphroditeCharacter::Tick(float DeltaTime)
             ActiveProjectiles.RemoveAt(i);
         }
     }
+}
+
+void AAphroditeCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+
+    for (FBasicProjectile& Projectile : ActiveProjectiles)
+    {
+        if (Projectile.VFXComponent)
+        {
+            Projectile.VFXComponent->DestroyComponent();
+        }
+    }
+
+    ActiveProjectiles.Empty();
 }
 
 void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)

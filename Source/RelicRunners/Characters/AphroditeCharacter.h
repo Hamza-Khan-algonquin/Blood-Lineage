@@ -40,6 +40,7 @@ protected:
 	virtual void ActivateDefenceAbilities() override;
 	virtual void ActivateUtilityAbilities() override;
 	virtual void ActivateUltimateAbilities() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION(Server, Reliable)
 	void Server_BasicAttack();
