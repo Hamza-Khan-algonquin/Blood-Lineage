@@ -22,14 +22,11 @@
 #include "RelicRunners/Menu/SaveFileListData.h"
 #include "RelicRunners/Menu/SaveFilePopupWidget.h"
 #include "GameFramework/GameUserSettings.h"
-#include "Camera/CameraComponent.h"
-#include "GameFramework/GameUserSettings.h"
 #include "RelicRunners/Menu/EditSaveFilePopupWidget.h"
 #include "RelicRunners/Menu/ModeSelectionWidget.h"
 #include "RelicRunners/RelicRunnersCharacter.h"
 #include <RelicRunners/Menu/KeybindingsListData.h>
 #include "RelicRunners/UserNavigation/UserNavigationConfig.h"
-
 #include "Kismet/KismetInternationalizationLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "RelicRunners/Item/IconLibrary.h"
@@ -178,12 +175,37 @@ void URelicRunnersGameInstance::ApplyAllSettings(APlayerController* PC)
     if (!PC) return;
 
     //screen settings
+    if (!PC) return;
+
     if (UGameUserSettings* Settings = UGameUserSettings::GetGameUserSettings())
     {
-        Settings->SetScreenResolution(Resolution);
-        Settings->SetFullscreenMode(WindowMode);
+
+        Settings->SetFullscreenMode(EWindowMode::Fullscreen);
+        Settings->SetScreenResolution(Settings->GetDesktopResolution());
+
+        Settings->ConfirmVideoMode();
+
         Settings->ApplySettings(false);
         Settings->SaveSettings();
+
+        if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
+        {
+            FViewport::ViewportResizedEvent.Broadcast(GEngine->GameViewport->Viewport, 0);
+        }
+
+        if (GEngine && GEngine->GameViewport)
+        {
+            if (UWorld* World = GetWorld())
+            {
+                World->GetTimerManager().SetTimerForNextTick([this]()
+                    {
+                        if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
+                        {
+                            FViewport::ViewportResizedEvent.Broadcast(GEngine->GameViewport->Viewport, 0);
+                        }
+                    });
+            }
+        }
     }
 
     //FOV

@@ -95,6 +95,14 @@ ARelicRunnersPlayerController::ARelicRunnersPlayerController()
 		LoadingScreenClass = BP_LoadingScreen.Class;
 		UE_LOG(LogTemp, Warning, TEXT("Character Assigned Loading Screen"));
 	}
+
+	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
+	{
+		GetWorldTimerManager().SetTimerForNextTick([this, GI]()
+			{
+				GI->ApplyAllSettings(this);
+			});
+	}
 }
 
 void ARelicRunnersPlayerController::Tick(float DeltaTime)
@@ -269,13 +277,21 @@ void ARelicRunnersPlayerController::PostSeamlessTravel()
 
 	PlayerPreviewInstance = nullptr;
 
-	if (IsLocalController()) RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
-		ApplyColorblindMode();
+	if (IsLocalController())
+	{
+		FInputModeGameOnly InputMode;
+		SetInputMode(InputMode);
 
+		FSlateApplication::Get().SetAllUserFocusToGameViewport();
+
+		RelicPlayerState = GetPlayerState<ARelicRunnersPlayerState>();
+	}
 	if (URelicRunnersGameInstance* GI = GetGameInstance<URelicRunnersGameInstance>())
 	{
-		GetWorldTimerManager().SetTimerForNextTick(this, &ARelicRunnersPlayerController::ApplySavedFOV);
-		GI->ApplyAllSettings(this);
+			GetWorldTimerManager().SetTimerForNextTick([this, GI]()
+				{
+					GI->ApplyAllSettings(this);
+				});
 	}
 	if (HasAuthority())
 	{
