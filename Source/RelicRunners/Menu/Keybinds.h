@@ -60,7 +60,7 @@ public:
     bool bAutoLoot = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
-    float FOV = 90.0f;
+    float FOV = 85.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
     FString ColorBlindMode = "Normal";
