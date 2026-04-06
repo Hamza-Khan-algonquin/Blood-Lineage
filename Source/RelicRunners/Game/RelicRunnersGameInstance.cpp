@@ -195,7 +195,7 @@ void URelicRunnersGameInstance::ApplyAllSettings(APlayerController* PC)
 
         if (FinalFOV <= 0.f)
         {
-            FinalFOV = (Keys ? Keys->FOV : 90.f);
+            FinalFOV = (Keys ? Keys->FOV : 85.f);
         }
 
         PC->PlayerCameraManager->SetFOV(FinalFOV);
