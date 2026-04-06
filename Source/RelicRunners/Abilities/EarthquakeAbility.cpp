@@ -122,7 +122,29 @@ void UEarthquakeAbility::ActivateAbility( const FGameplayAbilitySpecHandle Handl
 
     LastUseTime = World->GetTimeSeconds();
 
-    World->GetTimerManager().SetTimer(CooldownTimerHandle,[this, Handle, ActorInfo, ActivationInfo]() { EndAbility(Handle, ActorInfo, ActivationInfo, true, false); },Duration,false);
+    TWeakObjectPtr<UEarthquakeAbility> WeakThis(this);
+
+    World->GetTimerManager().SetTimer(
+        CooldownTimerHandle,
+        [WeakThis, Handle, ActivationInfo]()
+        {
+            if (!WeakThis.IsValid()) return;
+
+            UEarthquakeAbility* Ability = WeakThis.Get();
+
+            if (!Ability->CurrentActorInfo) return;
+
+            Ability->EndAbility(
+                Handle,
+                Ability->CurrentActorInfo,
+                ActivationInfo,
+                true,
+                false
+            );
+        },
+        Duration,
+        false
+    );
 }
 
 
@@ -131,60 +153,75 @@ void UEarthquakeAbility::LaunchShockwave()
     const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
     if (!ActorInfo)
     {
-        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
 
     AActor* AvatarActor = ActorInfo->AvatarActor.Get();
     if (!IsValid(AvatarActor))
     {
-        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
 
-    if (!AvatarActor->HasAuthority()) return;
+    if (!AvatarActor->HasAuthority())
+    {
+        return;
+    }
 
-    ARelicRunnersPlayerState* RRPS = CurrentActorInfo->PlayerController.IsValid() ? CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>() : nullptr;
+    ARelicRunnersPlayerState* RRPS =
+        ActorInfo->PlayerController.IsValid()
+        ? ActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>()
+        : nullptr;
+
     if (RRPS)
     {
         RRPS->SetInvincible(false);
     }
 
-
     UWorld* World = AvatarActor->GetWorld();
-    if (!World) return;
+    if (!World)
+    {
+        return;
+    }
 
-    // Shockwave parameters
     const int NumSteps = 5;
-    const float StepDistance = AreaRadius / NumSteps; 
-    const float StepInterval = 0.3f; 
+    const float StepDistance = AreaRadius / NumSteps;
+    const float StepInterval = 0.3f;
 
     FVector StartLocation = AvatarActor->GetActorLocation();
     FVector Forward = AvatarActor->GetActorForwardVector();
     Forward.Z = 0.f;
     Forward.Normalize();
 
-
     for (int i = 1; i <= NumSteps; ++i)
     {
         FTimerHandle StepTimer;
         FVector StepLocation = StartLocation + Forward * StepDistance * i;
 
-        TWeakObjectPtr<UEarthquakeAbility> weakThis = this;
+        TWeakObjectPtr<UEarthquakeAbility> WeakThis = this;
+
+        FTimerDelegate Delegate;
+        Delegate.BindLambda([WeakThis, StepLocation, Forward]()
+            {
+                if (!WeakThis.IsValid())
+                {
+                    return;
+                }
+
+                UWorld* InnerWorld = WeakThis->GetWorld();
+                if (!InnerWorld)
+                {
+                    return;
+                }
+
+                WeakThis->ApplyShockwaveStep(StepLocation, Forward, InnerWorld);
+            });
 
         World->GetTimerManager().SetTimer(
             StepTimer,
-            [weakThis, StepLocation, Forward, World]()
-            {
-                if (weakThis.IsValid())
-                {
-                    weakThis->ApplyShockwaveStep(StepLocation, Forward, World);
-                }
-            },
+            Delegate,
             StepInterval * i,
             false
         );
-
     }
 }
 
@@ -260,7 +297,7 @@ void UEarthquakeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
             if (!bWasCancelled)
             {
                 LastUseTime = World->GetTimeSeconds();
-                World->GetTimerManager().ClearTimer(CooldownTimerHandle);
+                World->GetTimerManager().ClearAllTimersForObject(this);
 
 
                 if (ActorInfo->IsLocallyControlled())

@@ -68,7 +68,7 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
     PS->SetPlayerResource(PS->GetPlayerResource() - FinalManaCost);
     PS->UpdateRemoteHUDResource();
-
+    PS->SetInvincible(true);
     const FVector PawnLocation = AvatarActor->GetActorLocation();
     const FVector ForwardVector = AvatarActor->GetActorForwardVector();
 
@@ -117,6 +117,7 @@ void UWarBannerAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         }
     }
 
+    PlayerLevel = PS->GetPlayerLevel();
     World->GetTimerManager().SetTimer( DurationTimerHandle,[this, Handle, ActorInfo, ActivationInfo]() {EndAbility(Handle, ActorInfo, ActivationInfo, true, false);},Duration,  false);
 
 }
@@ -144,8 +145,7 @@ void UWarBannerAbility::SpawnBanner()
 
     if (CurrentActorInfo->PlayerController.IsValid())
     {
-        if (ARelicRunnersPlayerState* PS =
-            CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>())
+        if (ARelicRunnersPlayerState* PS = CurrentActorInfo->PlayerController->GetPlayerState<ARelicRunnersPlayerState>())
         {
             PS->Multicast_SpawnVFX( CachedBannerLocation + FVector(0,0,-100), FRotator::ZeroRotator, FVector(1.2f), AbilityVFX, false);
 
@@ -241,7 +241,7 @@ void UWarBannerAbility::ApplyBuffToActor(AActor* Actor)
 
     if (PS)
     {
-        PS->BuffedStrength += BuffAmount;
+        PS->BuffedStrength += PlayerLevel * BuffAmount;
         PS->GetInventoryComponent()->UpdateTotalEquippedStats(Actor->GetInstigatorController()->GetPawn());
     }
 }
@@ -259,7 +259,7 @@ void UWarBannerAbility::RemoveBuffFromActor(AActor* Actor)
 
     if (PS)
     {
-        PS->BuffedStrength -= BuffAmount;
+        PS->BuffedStrength -= PlayerLevel * BuffAmount;
         PS->GetInventoryComponent()->UpdateTotalEquippedStats(Actor->GetInstigatorController()->GetPawn());
     }
 }

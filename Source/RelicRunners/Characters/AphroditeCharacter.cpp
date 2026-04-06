@@ -481,12 +481,11 @@ void AAphroditeCharacter::Tick(float DeltaTime)
         Projectile.Location += Projectile.Velocity * DeltaTime;
 
         // Move VFX
-        if (Projectile.VFXComponent)
+        if (IsValid(Projectile.VFXComponent))
         {
             Projectile.VFXComponent->SetWorldLocation(Projectile.Location);
             Projectile.VFXComponent->SetWorldRotation(Projectile.Velocity.Rotation());
         }
-
         TArray<FHitResult> Hits;
         FCollisionQueryParams Params;
         Params.AddIgnoredActor(this);
