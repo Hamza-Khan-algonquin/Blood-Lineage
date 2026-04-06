@@ -188,13 +188,13 @@ void URelicRunnersGameInstance::ApplyAllSettings(APlayerController* PC)
         Settings->ApplySettings(false);
         Settings->SaveSettings();
 
-        if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
-        {
-            FViewport::ViewportResizedEvent.Broadcast(GEngine->GameViewport->Viewport, 0);
-        }
-
         if (GEngine && GEngine->GameViewport)
         {
+            if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
+            {
+                FViewport::ViewportResizedEvent.Broadcast(GEngine->GameViewport->Viewport, 0);
+            }
+
             if (UWorld* World = GetWorld())
             {
                 World->GetTimerManager().SetTimerForNextTick([this]()
