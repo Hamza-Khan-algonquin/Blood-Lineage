@@ -567,22 +567,6 @@ void AAphroditeCharacter::Tick(float DeltaTime)
     }
 }
 
-void AAphroditeCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    for (FBasicProjectile& Projectile : ActiveProjectiles)
-    {
-        if (Projectile.VFXComponent && IsValid(Projectile.VFXComponent))
-        {
-            Projectile.VFXComponent->Deactivate();
-            Projectile.VFXComponent->UnregisterComponent();
-            Projectile.VFXComponent = nullptr;
-        }
-    }
-    ActiveProjectiles.Empty();
-
-    Super::EndPlay(EndPlayReason);
-}
-
 void AAphroditeCharacter::ExplodeProjectile(const FVector& ImpactPoint)
 {
     TArray<FHitResult> Hits;
