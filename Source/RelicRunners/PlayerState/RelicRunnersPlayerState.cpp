@@ -71,7 +71,7 @@ ARelicRunnersPlayerState::ARelicRunnersPlayerState()
 	PlayerMaxResource = PlayerStartingMaxResource;
 	PlayerResource = PlayerMaxResource;
 	PlayerStartingResourceRegen = 5; //Percent
-	PassiveResourceTime = 3; //Time in seconds
+	PassiveResourceTime = 2; //Time in seconds
 
 	//Stats
 	PlayerStartingArmor = 0;
@@ -113,6 +113,22 @@ void ARelicRunnersPlayerState::BeginPlay()
 	Super::BeginPlay();
 
 	GetWorldTimerManager().SetTimer(RegenTimer, this, &ARelicRunnersPlayerState::PassiveResourceRegen, PassiveResourceTime, true);
+
+
+	if (GetWorld())
+	{
+		FString MapName = GetWorld()->GetMapName();
+
+		if (MapName.Contains(TEXT("shopdemo"), ESearchCase::IgnoreCase))
+		{
+			GetWorldTimerManager().SetTimer(HealthRegenTimer, this, &ARelicRunnersPlayerState::PassiveHealthRegen, 1.0f, true);
+			UE_LOG(LogTemp, Log, TEXT("Health Regen Activated: Player is in Shop."));
+		}
+		else
+		{
+			GetWorldTimerManager().ClearTimer(HealthRegenTimer);
+		}
+	}
 }
 
 void ARelicRunnersPlayerState::CopyProperties(APlayerState* PlayerState)
@@ -312,7 +328,7 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 	for (int i = 0; i < 3; i++)
 	{
 		FString RandomType = ItemStats::GetRandomItemType();
-		FItemData RandData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), RandomType, "Common", ItemMeshData, Lib);
+		FItemData RandData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), RandomType, "Uncommon", ItemMeshData, Lib);
 		InventoryComponent->AddItem(ItemStats::CreateItemFromData(RandData, InventoryComponent));
 	}
 
@@ -334,7 +350,8 @@ void ARelicRunnersPlayerState::GiveStarterItems()
 		int ItemsToGive = FMath::Min(PlayerLevel - 1, 5);
 		for (int i = 0; i < ItemsToGive; i++)
 		{
-			FItemData ArmorData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), ItemTypes[i], ItemStats::GetRandomRarity(), ItemMeshData, Lib);
+			float LuckForStarting = 90;
+			FItemData ArmorData = ItemStats::CreateSpecificItemData(FMath::RandRange(1, PlayerLevel), ItemTypes[i], ItemStats::GetRandomRarityWithLuck(LuckForStarting), ItemMeshData, Lib);
 			UItemObject* Armor = ItemStats::CreateItemFromData(ArmorData, InventoryComponent);
 			if (Armor)
 			{
@@ -525,15 +542,15 @@ void ARelicRunnersPlayerState::ApplyRelicSpecialStat(UItemObject* Item)
 	switch (RandomStat)
 	{
 	case 0:
-		Item->ItemData.Purity += 0.1f;
+		Item->ItemData.Purity += FMath::FRandRange(0.3, 0.8);
 		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Purity"));
 		break;
 	case 1:
-		Item->ItemData.Luck += 0.1f;
+		Item->ItemData.Luck += FMath::FRandRange(0.2, 0.4);
 		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Luck"));
 		break;
 	case 2:
-		Item->ItemData.Regen += 0.1f;
+		Item->ItemData.Regen += FMath::FRandRange(0.1, 0.2);
 		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Regen"));
 		break;
 	default:
@@ -548,7 +565,7 @@ void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
 	//Don't upgrade if already at max rarity
 	if (CurrentIndex == INDEX_NONE || CurrentIndex >= RarityOrder.Num() - 1) return;
 
-	float SuccessChance = 0.0f + RarityPityCounter;
+	float SuccessChance = 10.0f + RarityPityCounter;
 	float Roll = FMath::FRandRange(0.0f, 100.0f);
 
 	if (Roll <= SuccessChance)
@@ -559,7 +576,7 @@ void ARelicRunnersPlayerState::HandleRarityUpgrade(UItemObject* Item)
 	}
 	else
 	{
-		RarityPityCounter += 6.0f; //Increase odds for next level
+		RarityPityCounter += 15.0f; //Increase odds for next level
 	}
 }
 

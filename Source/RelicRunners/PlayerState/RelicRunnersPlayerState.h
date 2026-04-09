@@ -349,6 +349,7 @@ protected:
 
 
 	FTimerHandle RegenTimer;
+	FTimerHandle HealthRegenTimer;
 
 	//Virtual Functions
 	virtual void BeginPlay() override;
