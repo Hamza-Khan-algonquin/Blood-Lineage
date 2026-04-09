@@ -78,7 +78,7 @@ void AShockwaveRing::OnSliceOverlap(UPrimitiveComponent* OverlappedComp, AActor*
         //Base 12.5 with Multiplier 2.0 hits 400 at Difficulty 5
         //12.5 * 2^1 = 25
         //12.5 * 2^5 = 400
-        float BaseDamage = 12.0f;
+        float BaseDamage = 15.0f;
         float ExponentialDamage = BaseDamage * FMath::Pow(2.0f, Difficulty);
 
         UGameplayStatics::ApplyDamage(

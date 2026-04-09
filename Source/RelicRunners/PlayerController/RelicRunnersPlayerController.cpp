@@ -938,13 +938,11 @@ void ARelicRunnersPlayerController::HideUI(UUserWidget* UIWidget)
 		UInventoryItemOptions::CloseAnyOpenPopup();
 		UInventorySortingOptions::CloseAnyOpenPopup();
 
-		Inventory->PlayAnimation(Inventory->InventoryClose);
-
 		if (InventoryCloseSound)
 		{
 			UGameplayStatics::PlaySound2D(this, InventoryCloseSound);
 		}
-
+		Inventory->PlayAnimation(Inventory->InventoryClose);
 		Inventory->ToggleShopUI(false);
 		Inventory->ToggleForgeUI(false);
 		Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
@@ -1103,7 +1101,6 @@ void ARelicRunnersPlayerController::SetupObjectives()
 
 void ARelicRunnersPlayerController::Server_RequestCurrentObjective_Implementation()
 {
-	//Find the Spawner in the world
 	for (TActorIterator<AIslandSpawner> It(GetWorld()); It; ++It)
 	{
 		It->SyncObjectiveToSinglePlayer(this);
@@ -1293,7 +1290,6 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 
 		for (const FPendingObjective& PendingData : ObjectiveBuffer)
 		{
-			// 1. Check if we already have this ID
 			bool bAlreadyInUI = false;
 			for (UObjectiveItemData* Existing : ObjectiveStageTitle->SubObjectives)
 			{
@@ -1305,7 +1301,6 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 				}
 			}
 
-			// 2. Add if it's new
 			if (!bAlreadyInUI)
 			{
 				UObjectiveItemData* NewGoal = Internal_AddObjectiveFromBuffer(PendingData);
@@ -1316,8 +1311,6 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 			}
 		}
 
-		// 3. HISTORY CLEANUP (Protect Index 0)
-		// We only mark as "Done" starting from the SECOND item (Index 1)
 		if (ObjectiveStageTitle->SubObjectives.Num() > 1)
 		{
 			for (int32 i = 1; i < ObjectiveStageTitle->SubObjectives.Num(); ++i)
@@ -1325,9 +1318,8 @@ void ARelicRunnersPlayerController::FlushObjectiveBuffer()
 				UObjectiveItemData* OldObj = ObjectiveStageTitle->SubObjectives[i];
 				if (OldObj)
 				{
-					OldObj->Completed = true; // Mark old history as done
+					OldObj->Completed = true; 
 
-					// Force visual "Finished" state for old history items
 					if (UPayloadData* PL = Cast<UPayloadData>(OldObj)) PL->ProgressFraction = 1.0f;
 					else if (UPandoraData* PD = Cast<UPandoraData>(OldObj)) { PD->Percent = 1.0f; PD->TimeRemainingText = TEXT(""); }
 				}
@@ -1626,7 +1618,7 @@ void ARelicRunnersPlayerController::InitLocalUI()
 			}
 			else if (MapName.Contains(TEXT("IslandTest")))
 			{
-				MinimapWidget->SetLevelTitle(FText::FromString("Stage"));
+				MinimapWidget->SetLevelTitle(FText::FromString("Olympus"));
 			}
 			else if (MapName.Contains(TEXT("BossLevel")))
 			{
@@ -1641,7 +1633,10 @@ void ARelicRunnersPlayerController::InitLocalUI()
 		if (Inventory)
 		{
 			Inventory->AddToViewport();
-			HideUI(Inventory);
+			Inventory->PlayAnimation(Inventory->InventoryClose);
+			Inventory->ToggleShopUI(false);
+			Inventory->ToggleForgeUI(false);
+			Inventory->SetVisibility(ESlateVisibility::HitTestInvisible);
 		}
 	}
 

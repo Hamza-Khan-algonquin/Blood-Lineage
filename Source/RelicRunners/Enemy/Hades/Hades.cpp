@@ -43,6 +43,7 @@ void AHades::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
     DOREPLIFETIME(AHades, AbilityLookAtTarget);
     DOREPLIFETIME(AHades, CurrentTarget);
     DOREPLIFETIME(AHades, ReplicatedVortexForce);
+    DOREPLIFETIME(AHades, BaseDamageFromDifficulty);
 }
 
 void AHades::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage, float Speed, float StartPosition)
@@ -748,6 +749,13 @@ void AHades::ExecuteDamage(FVector ImpactLocation, float ImpactRadius)
             {
                 float DamageToApply = RRPS->PlayerMaxHealth * (BaseDamageFromDifficulty / 100.0f);
                 UGameplayStatics::ApplyDamage(OverlappedActor, DamageToApply, nullptr, this, nullptr);
+                ActorsToIgnore.Add(OverlappedActor);
+                continue;
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("ExecuteDamage: Hit Pawn but PlayerState was NULL!"));
+                UGameplayStatics::ApplyDamage(OverlappedActor, 40 * DifficultyStrength, nullptr, this, nullptr);
                 ActorsToIgnore.Add(OverlappedActor);
                 continue;
             }

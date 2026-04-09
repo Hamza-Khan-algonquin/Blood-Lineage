@@ -137,7 +137,7 @@ void UPlayerHUD::UpdateBloodSplatter(float HealthPercent, float InDeltaTime)
 	float TargetIntensity = 0.f;
 	if (HealthPercent < 1.f)
 	{
-		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.6f), FVector2D(1.f, 0.f), HealthPercent);
+		TargetIntensity = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 0.6f), FVector2D(5.0f, 0.f), HealthPercent);
 
 		float Pulse = (FMath::Sin(GetWorld()->GetTimeSeconds() * 3.0f) * 0.2f) + 0.8f;
 		TargetIntensity *= Pulse;

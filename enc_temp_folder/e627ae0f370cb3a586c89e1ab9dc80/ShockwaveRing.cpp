@@ -21,7 +21,6 @@ void AShockwaveRing::InitializeRing(int Diff, float Speed)
     int TotalSteps = 12;
     float SliceWidth = 30.0f;
 
-
     float GapChance = 0.8f - (Difficulty * 0.08f);
     bool bAtLeastOneGap = false;
 
@@ -62,9 +61,33 @@ void AShockwaveRing::InitializeRing(int Diff, float Speed)
 
 void AShockwaveRing::OnSliceOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (OtherActor && OtherActor != GetOwner() && OtherActor->IsA(ARelicRunnersCharacter::StaticClass()))
+    if (!OtherActor || OtherActor == GetOwner() || OtherActor == this)
     {
-        UGameplayStatics::ApplyDamage(OtherActor, 20.0f * Difficulty, GetInstigatorController(), this, UDamageType::StaticClass());
+        return;
+    }
+
+    if (AlreadyHitActors.Contains(OtherActor))
+    {
+        return;
+    }
+
+    if (OtherActor->IsA(ARelicRunnersCharacter::StaticClass()))
+    {
+        AlreadyHitActors.Add(OtherActor);
+
+        //Base 12.5 with Multiplier 2.0 hits 400 at Difficulty 5
+        //12.5 * 2^1 = 25
+        //12.5 * 2^5 = 400
+        float BaseDamage = 12.0f;
+        float ExponentialDamage = BaseDamage * FMath::Pow(2.0f, Difficulty);
+
+        UGameplayStatics::ApplyDamage(
+            OtherActor,
+            ExponentialDamage,
+            GetInstigatorController(),
+            this,
+            UDamageType::StaticClass()
+        );
     }
 }
 

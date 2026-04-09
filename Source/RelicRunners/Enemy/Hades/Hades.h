@@ -87,6 +87,7 @@ public:
     UPROPERTY(Replicated)
     bool bIsInitialSlamming = false; 
 
+    UPROPERTY(Replicated, BlueprintReadWrite, Category = "Combat")
     float BaseDamageFromDifficulty = 50;
 
     float MaxHealth = 10000.0f;
