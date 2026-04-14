@@ -542,15 +542,15 @@ void ARelicRunnersPlayerState::ApplyRelicSpecialStat(UItemObject* Item)
 	switch (RandomStat)
 	{
 	case 0:
-		Item->ItemData.Purity += FMath::FRandRange(0.3, 0.8);
+		Item->ItemData.Purity += FMath::RoundToFloat(FMath::FRandRange(0.3f, 0.8f) * 10.0f) / 10.0f;
 		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Purity"));
 		break;
 	case 1:
-		Item->ItemData.Luck += FMath::FRandRange(0.2, 0.4);
+		Item->ItemData.Luck += FMath::RoundToFloat(FMath::FRandRange(0.2f, 0.4f) * 10.0f) / 10.0f;
 		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Luck"));
 		break;
 	case 2:
-		Item->ItemData.Regen += FMath::FRandRange(0.1, 0.2);
+		Item->ItemData.Regen += FMath::RoundToFloat(FMath::FRandRange(0.1f, 0.2f) * 10.0f) / 10.0f;
 		UE_LOG(LogTemp, Log, TEXT("Relic Level Up: Increased Regen"));
 		break;
 	default:

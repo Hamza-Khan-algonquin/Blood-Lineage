@@ -974,7 +974,7 @@ void ARelicRunnersPlayerController::DisableInventoryUIFromTimer()
 
 void ARelicRunnersPlayerController::RemoveOtherUI(UUserWidget* KeepAlive)
 {
-	TArray<UUserWidget*> AllMenus = { Inventory, PauseMenuWidget, AbilitySelection };
+	TArray<UUserWidget*> AllMenus = { PauseMenuWidget, AbilitySelection };
 
 	for (UUserWidget* Menu : AllMenus)
 	{
