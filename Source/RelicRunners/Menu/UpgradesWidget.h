@@ -23,11 +23,11 @@ public:
 
 protected:
 
-	int MaxValue = 5;
 	void ShowTooltipForBorder(UWidget* HoveredWidget, const FVector2D& CursorPos, const FGeometry& ParentGeometry);
 	class UWidget* CurrentHovered;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	void UpdateStatVisuals(class UTextBlock* TB, class URadialSlider* Slider, int Value, int MaxVal);
 	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
 	TSubclassOf<class UStandardTooltip> StandardTooltipClass;
 
@@ -201,8 +201,6 @@ protected:
 
 	UFUNCTION()
 	void BackButtonClicked();
-
-	void UpdateStatVisuals(class UTextBlock* TB, class URadialSlider* Slider, int Value);
 
 	void RefreshUI();
 

@@ -25,7 +25,7 @@ struct FSaveData
 	UPROPERTY(BlueprintReadWrite)
 	float MetaExperienceToLevel = 0;
 	UPROPERTY(BlueprintReadWrite)
-	int MetaPoints = 10;
+	int MetaPoints = 3;
 
 	//Meta Stats
 	UPROPERTY(BlueprintReadWrite)

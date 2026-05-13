@@ -1167,68 +1167,59 @@ void UInventory::CompleteForgeSequence()
 
     PlayUISound(ForgeSuccessSound);
 
-    FLinearColor FinalColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color;
+    FString FinalRarity = InventoryComponent->ForgeItemResult->ItemData.Rarity;
+    FLinearColor FinalColor = ItemStats::GetRarityDataMap()[FinalRarity].Color;
 
+    // Reset visibility
     if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Hidden);
     if (B_Odds2) B_Odds2->SetVisibility(ESlateVisibility::Hidden);
 
     UpdateForgeUI();
 
-    if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity1)
+    FString ResultMessage = TEXT("Quality Unaffected");
+
+    static const TArray<FString> ROrder = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic" };
+    int FinalIdx = ROrder.IndexOfByKey(FinalRarity);
+    int BaseSuccessIdx = ROrder.IndexOfByKey(ForgeRarity3);
+
+    if (FinalIdx > BaseSuccessIdx)
     {
-        FLinearColor RarityColor = ItemStats::GetRarityDataMap()[ForgeRarity1].Color;
-        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
-        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetColorAndOpacity(RarityColor);
-
-        FSlateFontInfo FontInfo = TB_Odds->GetFont();
-        FontInfo.OutlineSettings.OutlineColor = RarityColor;
-        TB_Odds->SetFont(FontInfo);
-
-        TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(TEXT("Quality Decreased")));
+        ResultMessage = TEXT("LUCKY UPGRADE!");
+    }
+    else if (FinalRarity == ForgeRarity1)
+    {
+        ResultMessage = TEXT("Quality Decreased");
+    }
+    else if (FinalRarity == ForgeRarity3)
+    {
+        ResultMessage = TEXT("Quality Increased");
     }
 
-    if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity2)
+    if (TB_Odds)
     {
-        FLinearColor RarityColor = ItemStats::GetRarityDataMap()[ForgeRarity2].Color;
-        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
-        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetColorAndOpacity(RarityColor);
+        TB_Odds->SetText(FText::FromString(ResultMessage));
+        TB_Odds->SetColorAndOpacity(FinalColor);
+        TB_Odds->SetVisibility(ESlateVisibility::Visible);
 
         FSlateFontInfo FontInfo = TB_Odds->GetFont();
-        FontInfo.OutlineSettings.OutlineColor = RarityColor;
+        FontInfo.OutlineSettings.OutlineColor = FinalColor;
         TB_Odds->SetFont(FontInfo);
-
-        TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(TEXT("Quality Unaffected")));
     }
 
-    if (InventoryComponent->ForgeItemResult->ItemData.Rarity == ForgeRarity3)
+    if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
+    if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
+
+    if (TB_Odds1)
     {
-        FLinearColor RarityColor = ItemStats::GetRarityDataMap()[ForgeRarity3].Color;
-        if (B_Odds) B_Odds->SetVisibility(ESlateVisibility::Visible);
-        if (B_Odds1) B_Odds1->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetColorAndOpacity(RarityColor);
+        TB_Odds1->SetVisibility(ESlateVisibility::Visible);
+        TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s item"), *FinalRarity)));
+        TB_Odds1->SetColorAndOpacity(FinalColor);
 
-        FSlateFontInfo FontInfo = TB_Odds->GetFont();
-        FontInfo.OutlineSettings.OutlineColor = RarityColor;
-        TB_Odds->SetFont(FontInfo);
-
-        TB_Odds->SetVisibility(ESlateVisibility::Visible);
-        TB_Odds->SetText(FText::FromString(TEXT("Quality Increased")));
+        FSlateFontInfo FontInfo1 = TB_Odds1->GetFont();
+        FontInfo1.OutlineSettings.OutlineColor = FinalColor;
+        TB_Odds1->SetFont(FontInfo1);
     }
-
-    FinalColor = ItemStats::GetRarityDataMap()[InventoryComponent->ForgeItemResult->ItemData.Rarity].Color;
-
-    TB_Odds1->SetVisibility(ESlateVisibility::Visible);
-    TB_Odds1->SetText(FText::FromString(FString::Printf(TEXT("%s item"), *InventoryComponent->ForgeItemResult->ItemData.Rarity)));
-    TB_Odds1->SetColorAndOpacity(FinalColor);
-
-    FSlateFontInfo FontInfo1 = TB_Odds1->GetFont();
-    FontInfo1.OutlineSettings.OutlineColor = FinalColor;
-    TB_Odds1->SetFont(FontInfo1);
 
     if (ItemFrame_2) ItemFrame_2->SetBrushTintColor(FinalColor);
     if (B_ForgeItemResult) B_ForgeItemResult->SetBrushColor(FinalColor);

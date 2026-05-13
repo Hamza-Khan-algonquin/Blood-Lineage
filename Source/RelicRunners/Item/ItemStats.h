@@ -961,21 +961,36 @@ public:
     static FString RollForgeRarity(const FForgeResultOdds& Odds)
     {
         float Roll = FMath::FRandRange(0.f, 100.f);
-
-        UE_LOG(LogTemp, Warning, TEXT("Forge Roll: %.2f | Odds: O1:%.1f O2:%.1f O3:%.1f"),
-            Roll, Odds.Chance1, Odds.Chance2, Odds.Chance3);
+        FString ResultRarity;
 
         if (Roll <= Odds.Chance1)
         {
-            return Odds.Rarity1;
+            ResultRarity = Odds.Rarity1;
         }
-
-        if (Roll <= (Odds.Chance1 + Odds.Chance2))
+        else if (Roll <= (Odds.Chance1 + Odds.Chance2))
         {
-            return Odds.Rarity2;
+            ResultRarity = Odds.Rarity2;
+        }
+        else
+        {
+            ResultRarity = Odds.Rarity3;
         }
 
-        return Odds.Rarity3;
+        static const TArray<FString> RarityOrder = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Relic" };
+        int CurrentIndex = RarityOrder.IndexOfByKey(ResultRarity);
+        int MaxIndex = RarityOrder.Num() - 1;
+
+        while (CurrentIndex < MaxIndex && FMath::FRandRange(0.f, 100.f) <= 10.0f)
+        {
+            CurrentIndex++;
+            UE_LOG(LogTemp, Log, TEXT("Lucky Roll! Upgraded to: %s"), *RarityOrder[CurrentIndex]);
+        }
+
+        ResultRarity = RarityOrder[CurrentIndex];
+
+        UE_LOG(LogTemp, Warning, TEXT("Final Forge Result: %s | Base Roll: %.2f"), *ResultRarity, Roll);
+
+        return ResultRarity;
     }
 
     static FItemData CreateRandomItemData(UItemMeshData* MeshData, UIconLibrary* IconLibrary)

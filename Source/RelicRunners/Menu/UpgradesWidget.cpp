@@ -173,7 +173,7 @@ FReply UUpgradesWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPo
 	return FReply::Handled();
 }
 
-void UUpgradesWidget::UpdateStatVisuals(UTextBlock* TB, URadialSlider* Slider, int Value)
+void UUpgradesWidget::UpdateStatVisuals(UTextBlock* TB, URadialSlider* Slider, int Value, int MaxVal)
 {
 	if (TB)
 	{
@@ -182,7 +182,8 @@ void UUpgradesWidget::UpdateStatVisuals(UTextBlock* TB, URadialSlider* Slider, i
 
 	if (Slider)
 	{
-		Slider->SetValue((float)(Value) / MaxValue);
+		float Percent = (MaxVal > 0) ? (float)Value / (float)MaxVal : 0.0f;
+		Slider->SetValue(Percent);
 	}
 }
 
@@ -199,21 +200,23 @@ void UUpgradesWidget::RefreshUI()
 		float Percent = (SD.MetaExperienceToLevel > 0) ? (SD.MetaExperience / SD.MetaExperienceToLevel) : 0.f;
 		MetaExperienceBar->SetPercent(Percent);
 	}
+
 	if (TB_MetaExperience)
 	{
 		FString ExpString = FString::Printf(TEXT("%d / %d"), (int)SD.MetaExperience, (int)SD.MetaExperienceToLevel);
 		TB_MetaExperience->SetText(FText::FromString(ExpString));
 	}
 
-	UpdateStatVisuals(TB_HP, HP_Slider, SD.MetaHealth);
-	UpdateStatVisuals(TB_DEF, DEF_Slider, SD.MetaDefence);
-	UpdateStatVisuals(TB_LUCK, LUCK_Slider, SD.MetaLuck);
-	UpdateStatVisuals(TB_STR, STR_Slider, SD.MetaStrength);
-	UpdateStatVisuals(TB_AGI, AGI_Slider, SD.MetaAgility);
-	UpdateStatVisuals(TB_INT, INT_Slider, SD.MetaIntelligence);
-	UpdateStatVisuals(TB_ResourceRegen, ResourceRegen_Slider, SD.MetaResourceRegen);
-	UpdateStatVisuals(TB_StartingLevel, StartingLevel_Slider, SD.MetaStartingLevel);
-	UpdateStatVisuals(TB_PotionEfficiency, PotionEfficiency_Slider, SD.MetaPotionEfficiency);
+	UpdateStatVisuals(TB_HP, HP_Slider, SD.MetaHealth, 10);
+	UpdateStatVisuals(TB_DEF, DEF_Slider, SD.MetaDefence, 10);
+	UpdateStatVisuals(TB_LUCK, LUCK_Slider, SD.MetaLuck, 10);
+	UpdateStatVisuals(TB_STR, STR_Slider, SD.MetaStrength, 10);
+	UpdateStatVisuals(TB_AGI, AGI_Slider, SD.MetaAgility, 10);
+	UpdateStatVisuals(TB_INT, INT_Slider, SD.MetaIntelligence, 10);
+
+	UpdateStatVisuals(TB_ResourceRegen, ResourceRegen_Slider, SD.MetaResourceRegen, 5);
+	UpdateStatVisuals(TB_StartingLevel, StartingLevel_Slider, SD.MetaStartingLevel, 5);
+	UpdateStatVisuals(TB_PotionEfficiency, PotionEfficiency_Slider, SD.MetaPotionEfficiency, 5);
 }
 
 void UUpgradesWidget::OnResetHPClicked()
@@ -365,27 +368,61 @@ void UUpgradesWidget::OnUpgradeClicked(FString StatType)
 	if (!CurrentSaveData || CurrentSaveData->SaveData.MetaPoints <= 0) return;
 
 	FSaveData& SD = CurrentSaveData->SaveData;
+	bool bUpgradeSuccessful = false;
 
-	if (StatType == "HP" && SD.MetaHealth < MaxValue) { SD.MetaHealth++; }
-	else if (StatType == "DEF" && SD.MetaDefence < MaxValue) { SD.MetaDefence++; }
-	else if (StatType == "LUCK" && SD.MetaLuck < MaxValue) { SD.MetaLuck++; }
-	else if (StatType == "STR" && SD.MetaStrength < MaxValue) { SD.MetaStrength++; }
-	else if (StatType == "AGI" && SD.MetaAgility < MaxValue) { SD.MetaAgility++; }
-	else if (StatType == "INT" && SD.MetaIntelligence < MaxValue) { SD.MetaIntelligence++; }
-	else if (StatType == "REGEN" && SD.MetaResourceRegen < MaxValue) { SD.MetaResourceRegen++; }
-	else if (StatType == "LEVEL" && SD.MetaStartingLevel < MaxValue) { SD.MetaStartingLevel++; }
-	else if (StatType == "EFFICIENCY" && SD.MetaPotionEfficiency < MaxValue) { SD.MetaPotionEfficiency++; }
-	else return;
+	int DefaultMax = 10;
+	int SpecialMax = 5;
 
-	CurrentSaveData->SaveData.MetaPoints--;
-
-	if (UpgradeSound)
+	// Max 10
+	if (StatType == "HP")
 	{
-		UGameplayStatics::PlaySound2D(this, UpgradeSound);
+		if (SD.MetaHealth < DefaultMax) { SD.MetaHealth++; bUpgradeSuccessful = true; }
+	}
+	else if (StatType == "DEF")
+	{
+		if (SD.MetaDefence < DefaultMax) { SD.MetaDefence++; bUpgradeSuccessful = true; }
+	}
+	else if (StatType == "LUCK")
+	{
+		if (SD.MetaLuck < DefaultMax) { SD.MetaLuck++; bUpgradeSuccessful = true; }
+	}
+	else if (StatType == "STR")
+	{
+		if (SD.MetaStrength < DefaultMax) { SD.MetaStrength++; bUpgradeSuccessful = true; }
+	}
+	else if (StatType == "AGI")
+	{
+		if (SD.MetaAgility < DefaultMax) { SD.MetaAgility++; bUpgradeSuccessful = true; }
+	}
+	else if (StatType == "INT")
+	{
+		if (SD.MetaIntelligence < DefaultMax) { SD.MetaIntelligence++; bUpgradeSuccessful = true; }
+	}
+	// Max 5
+	else if (StatType == "REGEN")
+	{
+		if (SD.MetaResourceRegen < SpecialMax) { SD.MetaResourceRegen++; bUpgradeSuccessful = true; }
+	}
+	else if (StatType == "EFFICIENCY")
+	{
+		if (SD.MetaPotionEfficiency < SpecialMax) { SD.MetaPotionEfficiency++; bUpgradeSuccessful = true; }
+	}
+	if (StatType == "LEVEL")
+	{
+		if (SD.MetaStartingLevel < SpecialMax) { SD.MetaStartingLevel++; bUpgradeSuccessful = true; }
 	}
 
-	//Update the visuals
-	RefreshUI();
+	if (bUpgradeSuccessful)
+	{
+		CurrentSaveData->SaveData.MetaPoints--;
+
+		if (UpgradeSound)
+		{
+			UGameplayStatics::PlaySound2D(this, UpgradeSound);
+		}
+
+		RefreshUI();
+	}
 }
 
 void UUpgradesWidget::SetParentMenu(UMainMenuWidget* InParentMenu)
